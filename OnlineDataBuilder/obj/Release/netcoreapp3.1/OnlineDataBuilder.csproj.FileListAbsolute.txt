@@ -1,0 +1,4 @@
+F:\Projects\OnlineDataBuilder\Server\OnlineDataBuilder\obj\Release\netcoreapp3.1\OnlineDataBuilder.AssemblyInfoInputs.cache
+F:\Projects\OnlineDataBuilder\Server\OnlineDataBuilder\obj\Release\netcoreapp3.1\OnlineDataBuilder.AssemblyInfo.cs
+F:\Projects\OnlineDataBuilder\Server\OnlineDataBuilder\obj\Release\netcoreapp3.1\OnlineDataBuilder.csproj.CoreCompileInputs.cache
+F:\Projects\OnlineDataBuilder\Server\OnlineDataBuilder\obj\Release\netcoreapp3.1\OnlineDataBuilder.MvcApplicationPartsAssemblyInfo.cache

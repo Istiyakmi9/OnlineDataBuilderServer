@@ -1,0 +1,4 @@
+F:\Projects\OnlineDataBuilder\Server\ServiceLayer\obj\Release\netcoreapp3.1\ServiceLayer.csprojAssemblyReference.cache
+F:\Projects\OnlineDataBuilder\Server\ServiceLayer\obj\Release\netcoreapp3.1\ServiceLayer.AssemblyInfoInputs.cache
+F:\Projects\OnlineDataBuilder\Server\ServiceLayer\obj\Release\netcoreapp3.1\ServiceLayer.AssemblyInfo.cs
+F:\Projects\OnlineDataBuilder\Server\ServiceLayer\obj\Release\netcoreapp3.1\ServiceLayer.csproj.CoreCompileInputs.cache

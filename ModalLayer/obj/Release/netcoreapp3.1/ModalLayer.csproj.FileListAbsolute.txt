@@ -1,0 +1,8 @@
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\bin\Release\netcoreapp3.1\ModalLayer.deps.json
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\bin\Release\netcoreapp3.1\ModalLayer.dll
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\bin\Release\netcoreapp3.1\ModalLayer.pdb
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\obj\Release\netcoreapp3.1\ModalLayer.AssemblyInfoInputs.cache
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\obj\Release\netcoreapp3.1\ModalLayer.AssemblyInfo.cs
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\obj\Release\netcoreapp3.1\ModalLayer.csproj.CoreCompileInputs.cache
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\obj\Release\netcoreapp3.1\ModalLayer.dll
+F:\Projects\OnlineDataBuilder\Server\ModalLayer\obj\Release\netcoreapp3.1\ModalLayer.pdb
