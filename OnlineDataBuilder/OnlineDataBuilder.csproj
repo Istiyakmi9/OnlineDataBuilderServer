@@ -9,9 +9,13 @@
 
   <ItemGroup>
     <Compile Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <Compile Remove="ServerLogs\**" />
     <Content Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <Content Remove="ServerLogs\**" />
     <EmbeddedResource Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <EmbeddedResource Remove="ServerLogs\**" />
     <None Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <None Remove="ServerLogs\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,10 +34,6 @@
     <ProjectReference Include="..\EMailService\EMailService.csproj" />
     <ProjectReference Include="..\MultiTypeDocumentConverter\MultiTypeDocumentConverter.csproj" />
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="ServerLogs\" />
   </ItemGroup>
 
 
