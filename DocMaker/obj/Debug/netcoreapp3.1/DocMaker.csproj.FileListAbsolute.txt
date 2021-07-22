@@ -1,0 +1,9 @@
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\obj\Debug\netcoreapp3.1\DocMaker.csprojAssemblyReference.cache
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\obj\Debug\netcoreapp3.1\DocMaker.AssemblyInfoInputs.cache
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\obj\Debug\netcoreapp3.1\DocMaker.AssemblyInfo.cs
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\obj\Debug\netcoreapp3.1\DocMaker.csproj.CoreCompileInputs.cache
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\bin\Debug\netcoreapp3.1\DocMaker.deps.json
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\bin\Debug\netcoreapp3.1\DocMaker.dll
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\bin\Debug\netcoreapp3.1\DocMaker.pdb
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\obj\Debug\netcoreapp3.1\DocMaker.dll
+F:\Projects\OnlineDataBuilder\OnlineDataBuilderServer\DocMaker\obj\Debug\netcoreapp3.1\DocMaker.pdb

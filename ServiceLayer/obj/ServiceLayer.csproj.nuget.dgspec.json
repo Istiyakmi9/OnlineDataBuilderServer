@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "F:\\Projects\\OnlineDataBuilder\\Server\\ServiceLayer\\ServiceLayer.csproj": {}
+    "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ServiceLayer\\ServiceLayer.csproj": {}
   },
   "projects": {
-    "E:\\Projects\\BottomhalfCore\\BottomhalfCore.csproj": {
+    "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\BottomhalfCore\\BottomhalfCore.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Projects\\BottomhalfCore\\BottomhalfCore.csproj",
+        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\BottomhalfCore\\BottomhalfCore.csproj",
         "projectName": "BottomhalfCore",
-        "projectPath": "E:\\Projects\\BottomhalfCore\\BottomhalfCore.csproj",
+        "projectPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\BottomhalfCore\\BottomhalfCore.csproj",
         "packagesPath": "C:\\Users\\IstiyaQ\\.nuget\\packages\\",
-        "outputPath": "E:\\Projects\\BottomhalfCore\\obj\\",
+        "outputPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\BottomhalfCore\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\IstiyaQ\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -41,25 +41,9 @@
         "netcoreapp3.1": {
           "targetAlias": "netcoreapp3.1",
           "dependencies": {
-            "Microsoft.AspNetCore.Http": {
-              "target": "Package",
-              "version": "[2.2.2, )"
-            },
-            "Microsoft.AspNetCore.Mvc.Core": {
-              "target": "Package",
-              "version": "[2.2.5, )"
-            },
-            "Microsoft.Extensions.Configuration": {
-              "target": "Package",
-              "version": "[3.1.8, )"
-            },
             "MySql.Data": {
               "target": "Package",
-              "version": "[8.0.21, )"
-            },
-            "Newtonsoft.Json": {
-              "target": "Package",
-              "version": "[12.0.3, )"
+              "version": "[8.0.25, )"
             },
             "System.Data.SqlClient": {
               "target": "Package",
@@ -85,14 +69,14 @@
         }
       }
     },
-    "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj": {
+    "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj",
+        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj",
         "projectName": "ModalLayer",
-        "projectPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj",
+        "projectPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj",
         "packagesPath": "C:\\Users\\IstiyaQ\\.nuget\\packages\\",
-        "outputPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\obj\\",
+        "outputPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\IstiyaQ\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -140,14 +124,14 @@
         }
       }
     },
-    "F:\\Projects\\OnlineDataBuilder\\Server\\ServiceLayer\\ServiceLayer.csproj": {
+    "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ServiceLayer\\ServiceLayer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\Server\\ServiceLayer\\ServiceLayer.csproj",
+        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ServiceLayer\\ServiceLayer.csproj",
         "projectName": "ServiceLayer",
-        "projectPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ServiceLayer\\ServiceLayer.csproj",
+        "projectPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ServiceLayer\\ServiceLayer.csproj",
         "packagesPath": "C:\\Users\\IstiyaQ\\.nuget\\packages\\",
-        "outputPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ServiceLayer\\obj\\",
+        "outputPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ServiceLayer\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\IstiyaQ\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -165,11 +149,11 @@
           "netcoreapp3.1": {
             "targetAlias": "netcoreapp3.1",
             "projectReferences": {
-              "E:\\Projects\\BottomhalfCore\\BottomhalfCore.csproj": {
-                "projectPath": "E:\\Projects\\BottomhalfCore\\BottomhalfCore.csproj"
+              "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\BottomhalfCore\\BottomhalfCore.csproj": {
+                "projectPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\BottomhalfCore\\BottomhalfCore.csproj"
               },
-              "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj": {
-                "projectPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj"
+              "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj": {
+                "projectPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj"
               }
             }
           }
@@ -184,6 +168,22 @@
         "netcoreapp3.1": {
           "targetAlias": "netcoreapp3.1",
           "dependencies": {
+            "Microsoft.AspNetCore.Hosting.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Microsoft.Extensions.Options": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
+            },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",
               "version": "[6.11.1, )"

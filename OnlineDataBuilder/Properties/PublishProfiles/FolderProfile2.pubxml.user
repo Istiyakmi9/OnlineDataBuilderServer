@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <History>True|2021-07-01T18:05:24.6224681Z;True|2021-07-01T21:13:11.0696491+05:30;False|2021-07-01T20:49:36.2295363+05:30;</History>
+    <_PublishTargetUrl>F:\Projects\OnlineDataBuilder\publish</_PublishTargetUrl>
+  </PropertyGroup>
+</Project>

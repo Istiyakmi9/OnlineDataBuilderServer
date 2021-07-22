@@ -1,5 +1,4 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.FactoryContext;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -15,7 +14,6 @@ namespace ServiceLayer.Code
     public class SqlSampleDataService : ISqlSampleDataService
     {
         private readonly IDb db;
-        private readonly BeanContext context;
         private readonly IGenerateSelectInsertQuery generateSelectInsertQuery;
         private readonly IGenerateSchema generateSchema;
         private readonly IGenerateDataTableSchema generateDataTableSchema;
@@ -25,7 +23,6 @@ namespace ServiceLayer.Code
             GenerateSelectInsertQuery generateSelectInsertQuery)
         {
             this.db = db;
-            this.context = BeanContext.GetInstance();
             this.generateSchema = generateSchema;
             this.generateDataTableSchema = generateDataTableSchema;
             this.generateSelectInsertQuery = generateSelectInsertQuery;
@@ -122,7 +119,7 @@ namespace ServiceLayer.Code
             }
             catch (Exception ex)
             {
-                context.LogException(ex);
+                throw ex;
             }
             return Result;
         }
@@ -133,7 +130,7 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(StringifySchemaData))
             {
                 List<SchemaDataResult> schemaDataResultList = JsonConvert.DeserializeObject<List<SchemaDataResult>>(StringifySchemaData);
-                IPublish<Publish> publish = context.GetBean(typeof(Publish)) as IPublish<Publish>;
+                IPublish<Publish> publish = new Publish();
                 string SqlFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DynamicScript");
                 if (!Directory.Exists(SqlFolderPath))
                     Directory.CreateDirectory(SqlFolderPath);
@@ -212,7 +209,7 @@ namespace ServiceLayer.Code
                         }
                     }
                 }
-                IPublish<Publish> publish = context.GetBean(typeof(Publish)) as IPublish<Publish>;
+                IPublish<Publish> publish = new Publish();
                 string SqlFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DynamicScript");
                 if (!Directory.Exists(SqlFolderPath))
                     Directory.CreateDirectory(SqlFolderPath);
@@ -274,7 +271,7 @@ namespace ServiceLayer.Code
                     ResultSet = new DataSet();
                 }
 
-                IRandomDataGenerator<RandomDataGenerator> randomDataGenerator = context.GetBean(typeof(RandomDataGenerator)) as IRandomDataGenerator<RandomDataGenerator>;
+                IRandomDataGenerator<RandomDataGenerator> randomDataGenerator = new RandomDataGenerator();
                 int Index = 0;
                 if (ResultSet.Tables.Count > 0)
                 {
@@ -351,10 +348,9 @@ namespace ServiceLayer.Code
 
         private SchemaDataResult GetTableScheme(DynamicTableDetail dynamicTableDetail, string TableName)
         {
-            SchemaDataResult schemaDataResult = context.GetBean(typeof(SchemaDataResult)) as SchemaDataResult;
-            IGenerateSchema generateSchema = context.GetBean(typeof(GenerateSchema)) as GenerateSchema;
-            IGenerateCrudProcedure<GenerateCrudProcedure> generateCrudProcedure =
-                context.GetBean(typeof(GenerateCrudProcedure)) as IGenerateCrudProcedure<GenerateCrudProcedure>;
+            SchemaDataResult schemaDataResult = new SchemaDataResult();
+            IGenerateSchema generateSchema = new GenerateSchema(null);
+            IGenerateCrudProcedure<GenerateCrudProcedure> generateCrudProcedure = new GenerateCrudProcedure(null);
             var Result = generateSchema.GenerateSchemaString(dynamicTableDetail);
             schemaDataResult.ProcedureSchema = generateCrudProcedure.GetProcedureSchema(dynamicTableDetail.Data, TableName);
             schemaDataResult.Schema = Result;

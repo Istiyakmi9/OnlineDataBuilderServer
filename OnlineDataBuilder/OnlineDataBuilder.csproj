@@ -14,9 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
+    <ProjectReference Include="..\DocMaker\DocMaker.csproj" />
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
-    <ProjectReference Include="E:\Projects\BottomhalfCore\BottomhalfCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

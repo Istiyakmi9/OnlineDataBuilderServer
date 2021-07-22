@@ -1,5 +1,4 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.FactoryContext;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -12,19 +11,16 @@ namespace ServiceLayer.Code
     public class LoginService : ILoginService
     {
         private readonly IDb db;
-        private readonly BeanContext context;
         private readonly IAuthenticationService _authenticationService;
         public LoginService(IDb db, IAuthenticationService authenticationService)
         {
             this.db = db;
-            this.context = BeanContext.GetInstance();
             _authenticationService = authenticationService;
         }
 
         public Boolean RemoveUserDetailService(string Token)
         {
             Boolean Flag = false;
-            this.context.RemoveToken(Token);
             return Flag;
         }
         public UserDetail GetUserDetail(AuthUser authUser)

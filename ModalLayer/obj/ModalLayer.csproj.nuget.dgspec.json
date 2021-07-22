@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj": {}
+    "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj": {}
   },
   "projects": {
-    "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj": {
+    "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj",
+        "projectUniqueName": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj",
         "projectName": "ModalLayer",
-        "projectPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\ModalLayer.csproj",
+        "projectPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\ModalLayer.csproj",
         "packagesPath": "C:\\Users\\IstiyaQ\\.nuget\\packages\\",
-        "outputPath": "F:\\Projects\\OnlineDataBuilder\\Server\\ModalLayer\\obj\\",
+        "outputPath": "F:\\Projects\\OnlineDataBuilder\\OnlineDataBuilderServer\\ModalLayer\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\IstiyaQ\\AppData\\Roaming\\NuGet\\NuGet.Config",

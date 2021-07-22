@@ -1,7 +1,4 @@
-﻿using BottomhalfCore.CacheManagement.Caching;
-using BottomhalfCore.CacheManagement.CachingInterface;
-using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.FactoryContext;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -12,11 +9,9 @@ namespace ServiceLayer.Code
     public class ManageUserCommentService : IManageUserCommentService<ManageUserCommentService>
     {
         private readonly IDb db;
-        private readonly ICacheManager<CacheManager> cacheManager;
         public ManageUserCommentService(IDb db)
         {
             this.db = db;
-            this.cacheManager = CacheManager.GetInstance();
         }
         public string PostUserCommentService(UserComments userComments)
         {

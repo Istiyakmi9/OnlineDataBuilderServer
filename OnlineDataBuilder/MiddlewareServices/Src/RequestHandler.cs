@@ -1,6 +1,4 @@
-﻿using BottomhalfCore.DiService;
-using BottomhalfCore.FactoryContext;
-using BottomhalfCore.Flags;
+﻿using BottomhalfCore.Flags;
 using Education.MiddlewareServices.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -20,11 +18,9 @@ namespace SchoolInMindServer.MiddlewareServices.Src
         private CurrentSession currentSession;
         private IConfiguration configuration;
         private string TokenName;
-        private BeanContext beanContext;
         private List<string> NoCheck;
         public RequestHandler()
         {
-            beanContext = BeanContext.GetInstance();
         }
         public async Task HandleRequest(HttpContext context, RequestDelegate next, IConfiguration configuration)
         {
@@ -123,7 +119,6 @@ namespace SchoolInMindServer.MiddlewareServices.Src
         {
             Boolean IsValidToken = false;
             int StatusCode = default(int);
-            DiQueue diQueue = DiQueue.GetInstance();
             currentSession = context.RequestServices.GetService(typeof(CurrentSession)) as CurrentSession;
             currentSession.RequestPath = context.Request != null ? context.Request.Path.Value : "";
             currentSession.FileUploadFolderName = this.configuration.GetValue<string>("Configuration:FolderName");
@@ -140,7 +135,7 @@ namespace SchoolInMindServer.MiddlewareServices.Src
             {
                 if (!string.IsNullOrEmpty(currentSession.Authorization)) 
                 {
-                    EFlags flag = this.beanContext.ValidateToken(currentSession.Authorization);
+                    EFlags flag = EFlags.InvalidToken;
                     StatusCode = (int)flag;
                     IsValidToken = false;
                     if (flag == EFlags.Success)

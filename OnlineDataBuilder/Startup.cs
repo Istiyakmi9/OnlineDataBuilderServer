@@ -1,6 +1,7 @@
-using BottomhalfCore.FactoryContext;
-using BottomhalfCore.Flags;
+using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.DatabaseLayer.MsSql.Code;
 using CoreServiceLayer.Implementation;
+using DocMaker.PdfService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,7 +17,6 @@ using SchoolInMindServer.MiddlewareServices;
 using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -36,7 +36,6 @@ namespace OnlineDataBuilder
 
                 this.Configuration = config.Build();
 
-                context = BeanContext.Load(env.ContentRootPath);
             }
             catch (Exception ex)
             {
@@ -46,7 +45,6 @@ namespace OnlineDataBuilder
 
         public IConfiguration Configuration { get; }
         public string CorsPolicy = "BottomhalfCORS";
-        public BeanContext context;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -79,12 +77,7 @@ namespace OnlineDataBuilder
             });
 
             string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
-            context.BuildServices(services, new List<string>
-            {
-                "ModalLayer.Modal",
-                "ServiceLayer.Code",
-            }, DbContextType.MsSql, connectionString);
-
+            services.AddScoped<IDb, Db>(x => new Db(connectionString));
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IOnlineDocumentService, OnlineDocumentService>();
@@ -94,6 +87,7 @@ namespace OnlineDataBuilder
             services.Configure<JwtSetting>(o => Configuration.GetSection("jwtSetting").Bind(o));
             services.AddHttpContextAccessor();
             services.AddSingleton<CurrentSession>();
+            services.AddScoped<IFileMake, CreatePDFFile>();
 
             services.AddCors(options =>
             {

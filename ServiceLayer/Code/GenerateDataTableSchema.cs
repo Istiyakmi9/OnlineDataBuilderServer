@@ -1,6 +1,4 @@
-﻿using BottomhalfCore.CacheManagement.Caching;
-using BottomhalfCore.CacheManagement.CachingInterface;
-using ModalLayer.Modal;
+﻿using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -12,13 +10,9 @@ namespace ServiceLayer.Code
     public class GenerateDataTableSchema : IGenerateDataTableSchema
     {
         private readonly SqlMappedTypes sqlMappedTypes;
-        private readonly MasterTables masterData;
-        private ICacheManager<CacheManager> cacheManager;
         public GenerateDataTableSchema(SqlMappedTypes sqlMappedTypes)
         {
-            this.cacheManager = CacheManager.GetInstance();
             this.sqlMappedTypes = sqlMappedTypes;
-            this.masterData = this.cacheManager.Get("MasterData") as MasterTables;
         }
         public DataTable GenerateEmptyDataTableSchema(List<DynamicTableSchema> dynamicTableSchema, string TableName)
         {
@@ -46,8 +40,6 @@ namespace ServiceLayer.Code
                                 column.MaxLength = GetSize(Convert.ToInt32(schema.Size));
                             if (!string.IsNullOrEmpty(schema.DefaultValue))
                                 column.DefaultValue = schema.DefaultValue;
-                            if (this.masterData.mappedUISqlDataType.Where(x => x.Data == GivenDataType).FirstOrDefault() != null)
-                                column.Prefix = GivenDataType;
                             table.Columns.Add(column);
                         }
                     }

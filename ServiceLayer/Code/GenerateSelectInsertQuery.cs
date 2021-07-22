@@ -1,6 +1,4 @@
-﻿using BottomhalfCore.CacheManagement.Caching;
-using BottomhalfCore.CacheManagement.CachingInterface;
-using ModalLayer.Modal;
+﻿using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -12,12 +10,9 @@ namespace ServiceLayer.Code
 {
     public class GenerateSelectInsertQuery : IGenerateSelectInsertQuery
     {
-        private readonly ICacheManager<CacheManager> cacheManager;
         private readonly MasterTables masterData;
         public GenerateSelectInsertQuery(SqlMappedTypes sqlMappedTypes)
         {
-            this.cacheManager = CacheManager.GetInstance();
-            this.masterData = this.cacheManager.Get("MasterData") as MasterTables;
         }
 
         public string BuildSelectQueryColumns(List<DynamicTableSchema> dynamicTableSchemas, int RowCount)

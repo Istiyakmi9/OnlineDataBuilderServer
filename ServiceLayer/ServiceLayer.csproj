@@ -5,12 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.11.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
     <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
-    <ProjectReference Include="E:\Projects\BottomhalfCore\BottomhalfCore.csproj" />
   </ItemGroup>
 
 </Project>
