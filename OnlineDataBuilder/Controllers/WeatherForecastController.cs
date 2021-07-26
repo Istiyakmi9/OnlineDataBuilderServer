@@ -42,9 +42,9 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            var stream = _fileMake.GeneratePdf();
-            string path = Path.Combine(Assembly.GetExecutingAssembly().Location, "a.pdf");
-            System.IO.File.WriteAllBytes(path, stream.ToArray());
+            //var stream = _fileMake.GeneratePdf();
+            //string path = Path.Combine(Assembly.GetExecutingAssembly().Location, "a.pdf");
+            //System.IO.File.WriteAllBytes(path, stream.ToArray());
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
