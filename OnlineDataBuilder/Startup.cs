@@ -87,7 +87,8 @@ namespace OnlineDataBuilder
             services.Configure<JwtSetting>(o => Configuration.GetSection("jwtSetting").Bind(o));
             services.AddHttpContextAccessor();
             services.AddSingleton<CurrentSession>();
-            services.AddScoped<IFileMake, CreatePDFFile>();
+            services.AddScoped<IFileMaker, CreatePDFFile>();
+            services.AddScoped<IHtmlMaker, ToHtml>();
 
             services.AddCors(options =>
             {
