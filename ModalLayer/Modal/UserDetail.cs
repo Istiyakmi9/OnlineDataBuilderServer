@@ -8,7 +8,7 @@ namespace ModalLayer.Modal
 {
     public class UserDetail
     {
-        public Guid UserUid { set; get; }
+        public long UserUid { set; get; }
         public string RoleUid { set; get; }
         public string FirstName { set; get; }
         public string LastName { set; get; }
