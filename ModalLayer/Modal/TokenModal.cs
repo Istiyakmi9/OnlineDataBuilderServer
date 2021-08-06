@@ -6,7 +6,7 @@ namespace ModalLayer.Modal
 {
     public class TokenModal
     {
-        public Guid UserId { set; get; }
+        public long UserId { set; get; }
         public string RefreshToken { set; get; }
         public DateTime ExpiryTime { set; get; }
     }
