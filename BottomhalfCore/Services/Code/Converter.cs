@@ -4,6 +4,7 @@ using System.Data;
 using System.Reflection;
 using System.Text;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BottomhalfCore.Services.Code
 {
@@ -11,8 +12,18 @@ namespace BottomhalfCore.Services.Code
     {
         public static List<T> ToList<T>(this DataTable table) where T : new()
         {
-            IList<PropertyInfo> properties = typeof(T).GetProperties().ToList();
+            IList<PropertyInfo> availableProperties = typeof(T).GetProperties().ToList();
+            IList<PropertyInfo> properties = new List<PropertyInfo>();
             List<T> result = new List<T>();
+
+            DataColumnCollection columns = table.Columns;
+            string name = null;
+            Parallel.For(0, availableProperties.Count, index =>
+            {
+                name = availableProperties.ElementAt(index).Name;
+                if (columns.Contains(name))
+                    properties.Add(availableProperties[index]);
+            });
 
             foreach (var row in table.Rows)
             {

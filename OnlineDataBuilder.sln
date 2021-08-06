@@ -13,7 +13,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BottomhalfCore", "Bottomhal
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{52EFC9F9-2D3D-45B0-85D7-DF99F375E7EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocMaker", "DocMaker\DocMaker.csproj", "{C37A96DE-8203-4140-AC23-13D388D60AF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocMaker", "DocMaker\DocMaker.csproj", "{C37A96DE-8203-4140-AC23-13D388D60AF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentManager", "DocumentManager\DocumentManager.csproj", "{8694997C-D44E-4FEA-9B58-21A25C2DDA78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackEmployees", "TrackEmployees\TrackEmployees.csproj", "{F0E14FBB-786B-49B5-A117-6E86B674A4E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,12 +45,22 @@ Global
 		{C37A96DE-8203-4140-AC23-13D388D60AF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C37A96DE-8203-4140-AC23-13D388D60AF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C37A96DE-8203-4140-AC23-13D388D60AF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8694997C-D44E-4FEA-9B58-21A25C2DDA78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8694997C-D44E-4FEA-9B58-21A25C2DDA78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8694997C-D44E-4FEA-9B58-21A25C2DDA78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8694997C-D44E-4FEA-9B58-21A25C2DDA78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0E14FBB-786B-49B5-A117-6E86B674A4E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0E14FBB-786B-49B5-A117-6E86B674A4E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0E14FBB-786B-49B5-A117-6E86B674A4E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0E14FBB-786B-49B5-A117-6E86B674A4E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C37A96DE-8203-4140-AC23-13D388D60AF4} = {52EFC9F9-2D3D-45B0-85D7-DF99F375E7EE}
+		{8694997C-D44E-4FEA-9B58-21A25C2DDA78} = {52EFC9F9-2D3D-45B0-85D7-DF99F375E7EE}
+		{F0E14FBB-786B-49B5-A117-6E86B674A4E8} = {52EFC9F9-2D3D-45B0-85D7-DF99F375E7EE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59D2017D-7EB2-4A95-97E9-127AD521F735}

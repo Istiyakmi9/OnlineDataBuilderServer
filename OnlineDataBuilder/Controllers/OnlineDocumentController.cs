@@ -57,6 +57,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [HttpPost("EditCurrentFile")]
+        public IResponse<ApiResponse> EditCurrentFile([FromBody] Files fileDetail)
+        {
+            var Result = _ionlineDocumentService.EditCurrentFileService(fileDetail);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
         [HttpPost("UploadDocumentDetail")]
         public IResponse<ApiResponse> UploadDocumentDetail()
         {

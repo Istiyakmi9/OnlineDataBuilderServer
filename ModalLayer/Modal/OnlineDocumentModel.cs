@@ -19,6 +19,7 @@ namespace ModalLayer.Modal
         public int DocumentId { set; get; }
         public string Title { set; get; }
         public string Description { set; get; }
+        public int TotalRows { set; get; }
         public Guid UserId { set; get; }
         public string DocPath { set; get; }
         public DateTime CreatedOn { set; get; }

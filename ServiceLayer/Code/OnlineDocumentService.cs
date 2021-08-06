@@ -105,10 +105,17 @@ namespace ServiceLayer.Code
                 if (FileCollection.Count > 0 && fileDetail.Count > 0)
                 {
                     string FolderPath = Path.Combine("Documents",
-                        createPageModel.Email);
+                        createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
                     List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
                     if (files != null && files.Count > 0)
                     {
+                        Parallel.ForEach(files, item =>
+                        {
+                            item.Status = "Pending";
+                            item.BillTypeId = 1;
+                            item.UserId = 1;
+                            item.PaidOn = null;
+                        });
                         DataSet fileDs = Converter.ToDataSet<Files>(files);
                         if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
                         {
@@ -141,7 +148,7 @@ namespace ServiceLayer.Code
 
 
                 DataSet documentFileSet = Converter.ToDataSet<DocumentFile>(deletingFiles);
-                
+
                 DbParam[] dbParams = new DbParam[]
                 {
                     new DbParam(fileDetails.FirstOrDefault().DocumentId, typeof(int), "@DocumentId"),
@@ -154,6 +161,26 @@ namespace ServiceLayer.Code
                     db.InsertUpdateBatchRecord("sp_OnlieDocument_Del_Multi", documentFileSet.Tables[0]);
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
                     _fileService.DeleteFiles(files);
+                    Result = "Success";
+                }
+            }
+            return Result;
+        }
+
+        public string EditCurrentFileService(Files editFile)
+        {
+            string Result = "Fail";
+            if (editFile != null)
+            {
+                editFile.BillTypeId = 1;
+                editFile.UserId = 1;
+
+                DataSet fileDs = Converter.ToDataSet<Files>(new List<Files>() { editFile });
+                if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
+                {
+                    DataTable table = fileDs.Tables[0];
+                    table.TableName = "Files";
+                    db.InsertUpdateBatchRecord("sp_Files_InsUpd", table);
                     Result = "Success";
                 }
             }

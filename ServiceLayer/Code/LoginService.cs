@@ -69,9 +69,9 @@ namespace ServiceLayer.Code
             {
                 userDetail = new UserDetail();
                 if (ds.Tables[0].Rows[0]["UserUid"] != DBNull.Value)
-                    userDetail.UserUid = Guid.Parse(ds.Tables[0].Rows[0]["UserUid"].ToString());
+                    userDetail.UserUid = Convert.ToInt64(ds.Tables[0].Rows[0]["UserUid"]);
                 else
-                    userDetail.UserUid = Guid.Empty;
+                    userDetail.UserUid = 0;
 
                 if (ds.Tables[0].Rows[0]["MobileNo"] != DBNull.Value)
                     userDetail.MobileNo = ds.Tables[0].Rows[0]["MobileNo"].ToString();

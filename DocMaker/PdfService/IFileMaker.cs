@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
 namespace DocMaker.PdfService
 {
-    public interface IFileMake
+    public interface IFileMaker
     {
         MemoryStream GeneratePdf();
     }
