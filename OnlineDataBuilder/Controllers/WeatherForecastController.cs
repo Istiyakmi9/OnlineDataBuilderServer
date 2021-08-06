@@ -38,12 +38,16 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
+<<<<<<< HEAD
             //string path = PathLocator.GetProjectDirectoryLocation("Documents");
             //_htmlMaker.DocxFileToHtml(@"F:\DocAndResumes\Istiyak-bh.docx", path);
 
 
             //var stream = _fileMake.GeneratePdf();
             //_htmlMaker.HtmlToDocxFile(@"E:\HtmlWork\demo.html", path);
+=======
+            //var stream = _fileMake.GeneratePdf();
+>>>>>>> f533d8e (Testing comment message)
             //string path = Path.Combine(Assembly.GetExecutingAssembly().Location, "a.pdf");
             //System.IO.File.WriteAllBytes(path, stream.ToArray());
             var rng = new Random();
