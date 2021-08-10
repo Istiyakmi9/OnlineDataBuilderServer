@@ -5,5 +5,7 @@ namespace DocMaker.PdfService
     public interface IFileMaker
     {
         MemoryStream GeneratePdf();
+        bool TextSharpGeneratePdf();
     }
+    
 }
