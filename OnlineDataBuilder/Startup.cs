@@ -89,6 +89,7 @@ namespace OnlineDataBuilder
             services.AddSingleton<CurrentSession>();
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
+            services.AddScoped<PdfGenerateHelper>();
 
             services.AddCors(options =>
             {

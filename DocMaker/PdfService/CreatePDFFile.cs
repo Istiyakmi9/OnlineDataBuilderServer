@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
@@ -7,26 +9,101 @@ namespace DocMaker.PdfService
 {
     public class CreatePDFFile : IFileMaker
     {
+        private readonly string LogoPath = @"F:\BH_logo\logo.png";
+        private readonly PdfGenerateHelper _pdfGenerateHelper;
+
+        public CreatePDFFile(PdfGenerateHelper pdfGenerateHelper)
+        {
+            _pdfGenerateHelper = pdfGenerateHelper;
+        }
+
+        private PdfPTable CreateTable(List<Phrase> columnDetail)
+        {
+            PdfPTable pdfTable = new PdfPTable(columnDetail.Count);
+            int i = 0;
+            while (i < columnDetail.Count)
+            {
+                pdfTable.AddCell(columnDetail[i]);
+                i++;
+            }
+            pdfTable.DefaultCell.Border = 0;
+            return pdfTable;
+        }
+
+        private PdfPTable CreateTableWithBorder(List<Phrase> columnDetail, float borderWidth)
+        {
+            PdfPTable pdfTable = new PdfPTable(columnDetail.Count);
+            int i = 0;
+            while (i < columnDetail.Count)
+            {
+                pdfTable.AddCell(columnDetail[i]);
+                i++;
+            }
+            pdfTable.DefaultCell.BorderWidth = borderWidth;
+            return pdfTable;
+        }
+
+        private iTextSharp.text.Image AddImage(string Url)
+        {
+            iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(Url);
+            //imgae  size
+            png.ScaleToFit(140f, 120f);
+            //Give space before image
+            png.SpacingBefore = 10f;
+            //Give Space after image
+            png.SpacingAfter = 1f;
+            png.Alignment = Element.ALIGN_CENTER;
+            //End Region
+            return png;
+        }
+
         public bool TextSharpGeneratePdf()
+        {
+            iTextSharp.text.Image png = _pdfGenerateHelper.AddImage(LogoPath);
+
+            //Dictionary<int, List<Phrase>> rows = new Dictionary<int, List<Phrase>>();
+            //rows.Add(1, new List<Phrase> {
+            //    new Phrase("BottomHalf Pvt. Ltd"),
+            //    new Phrase("Bairagi Talab K.T Road"),
+            //    new Phrase("Asansol Pin: 713302"),
+            //    new Phrase("Mobile No# +91-9100544384")
+            //});
+
+            //rows.Add(2, new List<Phrase> {
+            //    new Phrase("BottomHalf Pvt. Ltd"),
+            //    new Phrase("Bairagi Talab K.T Road")
+            //});
+
+            _pdfGenerateHelper.CreateHeader();
+            //_pdfGenerateHelper.CreateTable(null);
+
+            _pdfGenerateHelper.CreateFile(@"E:\Workspace\");
+            return true;
+        }
+
+        public bool TextSharpGeneratePdf1()
         {
             try
             {
-                //region Common Part
-                PdfPTable pdfTableBlank = new PdfPTable(1);
+                //region Common Part --------------- Header
+                List<Phrase> emptyColumn = new List<Phrase>();
+                emptyColumn.Add(new Phrase(" "));
+                PdfPTable pdfTableBlank = CreateTable(emptyColumn);
 
-                //Footer Section
-                PdfPTable pdfTableFooter = new PdfPTable(1);
-                pdfTableFooter.DefaultCell.BorderWidth = 0;
+
+
+
+                //Footer Section ------------------ Footer
+                List<Phrase> footer = new List<Phrase>();
+                Chunk cnkFooter = new Chunk("@ Marghub", FontFactory.GetFont("Arial", 14));
+                footer.Add(new Phrase(cnkFooter));
+                PdfPTable pdfTableFooter = CreateTable(footer);
                 pdfTableFooter.WidthPercentage = 100;
                 pdfTableFooter.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
 
-                Chunk cnkFooter = new Chunk("@ Marghub", FontFactory.GetFont("Arial", 14));
                 //cnkFooter.Font.Size = 12;
-                pdfTableFooter.AddCell(new Phrase(cnkFooter));
                 //End of Footer Section
 
-                pdfTableBlank.AddCell(new Phrase(" "));
-                pdfTableBlank.DefaultCell.Border = 0;
                 //end region
 
                 //region Page
@@ -130,17 +207,7 @@ namespace DocMaker.PdfService
 
                 //Image Section
                 string imageURL = @"C:\Users\botto\Downloads\logo.png";
-                iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(imageURL);
-
-                //imgae  size
-                png.ScaleToFit(140f, 120f);
-                //Give space before image
-                png.SpacingBefore = 10f;
-                //Give Space after image
-                png.SpacingAfter = 1f;
-
-                png.Alignment = Element.ALIGN_CENTER;
-                //End Region
+                iTextSharp.text.Image png = AddImage(imageURL);
 
                 //Section Table Region
                 pdfPTable3.AddCell(new Phrase("COMPANY NAME"));
@@ -155,7 +222,7 @@ namespace DocMaker.PdfService
                 //End Region
 
                 //For PDF Generation
-                string folderPath = "E:\\Workspace\\";
+                string folderPath = @"E:\Workspace\";
                 if (!Directory.Exists(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
@@ -189,11 +256,6 @@ namespace DocMaker.PdfService
                     pdfDoc.Close();
                     stream.Close();
                 }
-
-                //Display PDF
-                System.Diagnostics.Process.Start(folderPath + "\\" + strFileName);
-
-
             }
             catch (Exception ex)
             {
@@ -294,9 +356,5 @@ namespace DocMaker.PdfService
             //}
             return memoryStream;
         }
-
-        
-
-     
     }
 }
