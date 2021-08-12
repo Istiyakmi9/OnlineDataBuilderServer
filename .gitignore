@@ -4,4 +4,4 @@ _ReSharper.*
 bin
 obj
 packages
-*.dtbcache.v2
+*/.vs/
