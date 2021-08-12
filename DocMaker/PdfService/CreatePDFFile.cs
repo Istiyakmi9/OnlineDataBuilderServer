@@ -9,220 +9,342 @@ namespace DocMaker.PdfService
 {
     public class CreatePDFFile : IFileMaker
     {
-        private readonly string LogoPath = @"F:\BH_logo\logo.png";
-        private readonly PdfGenerateHelper _pdfGenerateHelper;
-
-        public CreatePDFFile(PdfGenerateHelper pdfGenerateHelper)
+        static void Main(string[] args)
         {
-            _pdfGenerateHelper = pdfGenerateHelper;
+            PrintReceipt();
         }
 
-        private PdfPTable CreateTable(List<Phrase> columnDetail)
-        {
-            PdfPTable pdfTable = new PdfPTable(columnDetail.Count);
-            int i = 0;
-            while (i < columnDetail.Count)
-            {
-                pdfTable.AddCell(columnDetail[i]);
-                i++;
-            }
-            pdfTable.DefaultCell.Border = 0;
-            return pdfTable;
-        }
-
-        private PdfPTable CreateTableWithBorder(List<Phrase> columnDetail, float borderWidth)
-        {
-            PdfPTable pdfTable = new PdfPTable(columnDetail.Count);
-            int i = 0;
-            while (i < columnDetail.Count)
-            {
-                pdfTable.AddCell(columnDetail[i]);
-                i++;
-            }
-            pdfTable.DefaultCell.BorderWidth = borderWidth;
-            return pdfTable;
-        }
-
-        private iTextSharp.text.Image AddImage(string Url)
-        {
-            iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(Url);
-            //imgae  size
-            png.ScaleToFit(140f, 120f);
-            //Give space before image
-            png.SpacingBefore = 10f;
-            //Give Space after image
-            png.SpacingAfter = 1f;
-            png.Alignment = Element.ALIGN_CENTER;
-            //End Region
-            return png;
-        }
-
-        public bool TextSharpGeneratePdf()
-        {
-            iTextSharp.text.Image png = _pdfGenerateHelper.AddImage(LogoPath);
-
-            //Dictionary<int, List<Phrase>> rows = new Dictionary<int, List<Phrase>>();
-            //rows.Add(1, new List<Phrase> {
-            //    new Phrase("BottomHalf Pvt. Ltd"),
-            //    new Phrase("Bairagi Talab K.T Road"),
-            //    new Phrase("Asansol Pin: 713302"),
-            //    new Phrase("Mobile No# +91-9100544384")
-            //});
-
-            //rows.Add(2, new List<Phrase> {
-            //    new Phrase("BottomHalf Pvt. Ltd"),
-            //    new Phrase("Bairagi Talab K.T Road")
-            //});
-
-            _pdfGenerateHelper.CreateHeader();
-            //_pdfGenerateHelper.CreateTable(null);
-
-            _pdfGenerateHelper.CreateFile(@"E:\Workspace\");
-            return true;
-        }
-
-        public bool TextSharpGeneratePdf1()
+        private static void PrintReceipt()
         {
             try
             {
-                //region Common Part --------------- Header
-                List<Phrase> emptyColumn = new List<Phrase>();
-                emptyColumn.Add(new Phrase(" "));
-                PdfPTable pdfTableBlank = CreateTable(emptyColumn);
-
-
-
-
-                //Footer Section ------------------ Footer
-                List<Phrase> footer = new List<Phrase>();
-                Chunk cnkFooter = new Chunk("@ Marghub", FontFactory.GetFont("Arial", 14));
-                footer.Add(new Phrase(cnkFooter));
-                PdfPTable pdfTableFooter = CreateTable(footer);
-                pdfTableFooter.WidthPercentage = 100;
-                pdfTableFooter.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
-
-                //cnkFooter.Font.Size = 12;
-                //End of Footer Section
-
-                //end region
+                //Image Section
+                string imageURL = @"C:\Users\botto\Downloads\logo.png";
+                iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(imageURL);
+                //imgae  size
+                png.ScaleToFit(200f, 150f);
+                //Give space before image
+                png.SpacingBefore = 10f;
+                //Give Space after image
+                png.SpacingAfter = 15f;
+                png.Alignment = Element.ALIGN_CENTER;
+                //End Region
 
                 //region Page
                 //region for Header
-                PdfPTable pdfPTable1 = new PdfPTable(1);
-                PdfPTable pdfPTable2 = new PdfPTable(1);
-                PdfPTable pdfPTable3 = new PdfPTable(2);
-                PdfPTable pdfPTable5 = new PdfPTable(1);
-                PdfPTable pdfPTable6 = new PdfPTable(1);
-                PdfPTable pdfPTable7 = new PdfPTable(1);
-
-                //Font style
-                System.Drawing.Font fontH1 = new System.Drawing.Font("Currier", 16);
-
-                //PdfTable
+                PdfPTable pdfPTable1 = new PdfPTable(3);
                 pdfPTable1.WidthPercentage = 80;
-                pdfPTable1.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
                 pdfPTable1.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
                 pdfPTable1.DefaultCell.BorderWidth = 0;
-
-                pdfPTable2.WidthPercentage = 80;
-                pdfPTable2.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
-                pdfPTable2.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
-                pdfPTable2.DefaultCell.BorderWidth = 0;
-
-                pdfPTable5.WidthPercentage = 80;
-                pdfPTable5.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
-                pdfPTable5.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
-                pdfPTable5.DefaultCell.BorderWidth = 0;
-
-                pdfPTable3.DefaultCell.Padding = 5;
-                pdfPTable3.WidthPercentage = 80;
-                pdfPTable3.DefaultCell.BorderWidth = 0.5f;
-
-                pdfPTable6.WidthPercentage = 80;
-                pdfPTable6.DefaultCell.HorizontalAlignment = Element.ALIGN_LEFT;
-                pdfPTable6.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
-                pdfPTable6.DefaultCell.BorderWidth = 0;
-                pdfPTable6.DefaultCell.PaddingBottom = 5;
-
-                pdfPTable7.WidthPercentage = 80;
-                pdfPTable7.DefaultCell.HorizontalAlignment = Element.ALIGN_LEFT;
-                pdfPTable7.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
-                pdfPTable7.DefaultCell.BorderWidth = 0;
-                pdfPTable7.DefaultCell.PaddingBottom = 5;
-
-                Chunk c1 = new Chunk("DEMO Enterprise", FontFactory.GetFont("Time New Roman"));
+                Chunk c1 = new Chunk("BottomHalf Pvt. Ltd.", FontFactory.GetFont("Time New Roman"));
                 c1.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
-                c1.Font.SetStyle(0);
-                c1.Font.Size = 14;
+                c1.Font.SetStyle(1);
+                c1.Font.Size = 15;
                 Phrase p1 = new Phrase();
                 p1.Add(c1);
                 pdfPTable1.AddCell(p1);
+                pdfPTable1.AddCell("");
+                Chunk c9 = new Chunk("INVOICE", FontFactory.GetFont("Franklin Gothic Demi"));
+                c9.Font.Size = 18;
+                c9.Font.SetStyle(1);
+                Phrase p9 = new Phrase();
+                p9.Add(c9);
+                pdfPTable1.AddCell(p9);
 
-                Chunk c2 = new Chunk("18/3, ABC Narayana XYZ, Asansol - 713302", FontFactory.GetFont("Time New Roman"));
-                c2.Font.Size = 14;
+
+                PdfPTable pdfPTable2 = new PdfPTable(3);
+                pdfPTable2.WidthPercentage = 80;
+                pdfPTable2.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable2.DefaultCell.BorderWidth = 0;
+                Chunk c2 = new Chunk("Bairagi Talab K.T Road", FontFactory.GetFont("Franklin Gothic Demi"));
+                c2.Font.Size = 9;
                 c2.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
                 c2.Font.SetStyle(0);
                 Phrase p2 = new Phrase();
                 p2.Add(c2);
                 pdfPTable2.AddCell(p2);
+                pdfPTable2.AddCell("");
+                Chunk c10 = new Chunk("Bill No. #000024", FontFactory.GetFont("Franklin Gothic Demi"));
+                c10.Font.Size = 9;
+                Phrase p10 = new Phrase();
+                p10.Add(c10);
+                pdfPTable2.AddCell(p10);
 
-                Chunk c3 = new Chunk("Customer Care: 0341-12345, 8798000000", FontFactory.GetFont("Time New Roman"));
-                c3.Font.Size = 14;
+
+                PdfPTable pdfPTable3 = new PdfPTable(5);
+                pdfPTable3.DefaultCell.Padding = 5;
+                pdfPTable3.WidthPercentage = 80;
+                pdfPTable3.DefaultCell.BorderWidth = 0.5f;
+                pdfPTable3.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
+                Chunk ch1 = new Chunk("S.NO#");
+                ch1.Font.SetStyle(1);
+                ch1.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch1));
+                Chunk ch2 = new Chunk("DEVELOPER");
+                ch2.Font.SetStyle(1);
+                ch2.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch2));
+                Chunk ch3 = new Chunk("MONTH");
+                ch3.Font.SetStyle(1);
+                ch3.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch3));
+                Chunk ch4 = new Chunk("PRICE");
+                ch4.Font.SetStyle(1);
+                ch4.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch4));
+                Chunk ch5 = new Chunk("TOTAL");
+                ch5.Font.SetStyle(1);
+                ch5.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch5));
+                Chunk ch6 = new Chunk("1");
+                ch6.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch6));
+                Chunk ch7 = new Chunk("ABC");
+                ch7.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch7));
+                Chunk ch8 = new Chunk("APRIL");
+                ch8.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch8));
+                Chunk ch9 = new Chunk("000000");
+                ch9.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch9));
+                Chunk ch10 = new Chunk("0000000");
+                ch10.Font.Size = 9;
+                pdfPTable3.AddCell(new Phrase(ch10));
+
+
+                PdfPTable pdfPTable5 = new PdfPTable(1);
+                pdfPTable5.WidthPercentage = 80;
+                pdfPTable5.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable5.DefaultCell.BorderWidth = 0;
+                Chunk c3 = new Chunk("Asansol. Pin: 713302", FontFactory.GetFont("Time New Roman"));
+                c3.Font.Size = 9;
                 c3.Font.SetStyle(0);
                 c3.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
                 Phrase p3 = new Phrase();
                 p3.Add(c3);
                 pdfPTable5.AddCell(p3);
 
-                Chunk c6 = new Chunk("Company Details", FontFactory.GetFont("Time New Roman", 14));
-                c6.Font.SetStyle(0);
-                c6.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
-                Phrase p6 = new Phrase();
-                p6.Add(c6);
-                pdfPTable6.AddCell(p6);
 
-                Chunk c7 = new Chunk("Bill Details", FontFactory.GetFont("Time New Roman", 14));
-                c7.Font.SetStyle(0);
-                c7.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
-                Phrase p7 = new Phrase();
-                p7.Add(c7);
-                pdfPTable7.AddCell(p7);
+                PdfPTable pdfPTable11 = new PdfPTable(1);
+                pdfPTable11.WidthPercentage = 80;
+                pdfPTable11.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable11.DefaultCell.BorderWidth = 0;
+                Chunk c11 = new Chunk("Phone: +91-9100544384", FontFactory.GetFont("Time New Roman"));
+                c11.Font.Size = 9;
+                c11.Font.SetStyle(0);
+                c11.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
+                Phrase p11 = new Phrase();
+                p11.Add(c11);
+                pdfPTable11.AddCell(p11);
 
-                //End Region
-                // Section-1 Upper Part
-                PdfPTable pdfPTable4 = new PdfPTable(2);
-                pdfPTable4.DefaultCell.Padding = 5;
-                pdfPTable4.WidthPercentage = 80;
-                pdfPTable4.DefaultCell.BorderWidth = 0.5f;
+                PdfPTable blank = new PdfPTable(1);
+                blank.WidthPercentage = 80;
+                blank.DefaultCell.BorderWidth = 0.5f;
+                blank.AddCell(new Phrase("HI"));
 
-                pdfPTable4.AddCell(new Phrase("Bill No."));
-                pdfPTable4.AddCell(new Phrase("B001"));
-                pdfPTable4.AddCell(new Phrase("Date"));
-                pdfPTable4.AddCell(new Phrase("01-01-2021"));
-                pdfPTable4.AddCell(new Phrase("Vendor"));
-                pdfPTable4.AddCell(new Phrase("Demo Vendor"));
-                pdfPTable4.AddCell(new Phrase("Address"));
-                pdfPTable4.AddCell(new Phrase("Asansol"));
-                //End Region
+                //Chunk linebreak = new Chunk(new DottedLineSeparator());
 
-                //Image Section
-                string imageURL = @"C:\Users\botto\Downloads\logo.png";
-                iTextSharp.text.Image png = AddImage(imageURL);
+                PdfPTable pdfPTable12 = new PdfPTable(1);
+                pdfPTable12.WidthPercentage = 80;
+                pdfPTable12.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable12.DefaultCell.BorderWidth = 0;
+                Chunk c12 = new Chunk("GSTIN No: - 19AAICB3816G1ZO", FontFactory.GetFont("Time New Roman"));
+                c12.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
+                c12.Font.SetStyle(1);
+                c12.Font.Size = 11;
+                Phrase p12 = new Phrase();
+                p12.Add(c12);
+                pdfPTable12.AddCell(p12);
 
-                //Section Table Region
-                pdfPTable3.AddCell(new Phrase("COMPANY NAME"));
-                pdfPTable3.AddCell(new Phrase(""));
-                pdfPTable3.AddCell(new Phrase("JOB TITLE"));
-                pdfPTable3.AddCell(new Phrase(""));
 
-                pdfPTable3.AddCell(new Phrase("ADDRESS"));
-                pdfPTable3.AddCell(new Phrase(""));
-                pdfPTable3.AddCell(new Phrase("CONTACT NO"));
-                pdfPTable3.AddCell(new Phrase(""));
-                //End Region
+                PdfPTable pdfPTable13 = new PdfPTable(1);
+                pdfPTable13.WidthPercentage = 80;
+                pdfPTable13.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable13.DefaultCell.BorderWidth = 0;
+                Chunk c13 = new Chunk("ICICI Bank", FontFactory.GetFont("Franklin Gothic Demi"));
+                c13.Font.Size = 9;
+                c13.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
+                c13.Font.SetStyle(0);
+                Phrase p13 = new Phrase();
+                p13.Add(c13);
+                pdfPTable13.AddCell(p13);
+
+                PdfPTable pdfPTable14 = new PdfPTable(3);
+                pdfPTable14.WidthPercentage = 80;
+                pdfPTable14.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable14.DefaultCell.BorderWidth = 0;
+                Chunk c14 = new Chunk("BOTTOMHALF PRIVATE LIMITED", FontFactory.GetFont("Franklin Gothic Demi"));
+                c14.Font.Size = 9;
+                c14.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
+                c14.Font.SetStyle(0);
+                Phrase p14 = new Phrase();
+                p14.Add(c14);
+                pdfPTable14.AddCell(p14);
+                pdfPTable14.AddCell("");
+                Chunk c15 = new Chunk("INVOICE #000246", FontFactory.GetFont("Franklin Gothic Demi"));
+                c15.Font.Size = 9;
+                c15.Font.Color = new iTextSharp.text.BaseColor(0, 32, 255);
+                Phrase p15 = new Phrase();
+                p15.Add(c15);
+                pdfPTable14.AddCell(p15);
+
+                PdfPTable pdfPTable16 = new PdfPTable(3);
+                pdfPTable16.WidthPercentage = 80;
+                pdfPTable16.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable16.DefaultCell.BorderWidth = 0;
+                Chunk c16 = new Chunk("Account Number: 029105005572 ", FontFactory.GetFont("Franklin Gothic Demi"));
+                c16.Font.Size = 9;
+                c16.Font.Color = new iTextSharp.text.BaseColor(0, 0, 0);
+                c16.Font.SetStyle(0);
+                Phrase p16 = new Phrase();
+                p16.Add(c16);
+                pdfPTable16.AddCell(p16);
+                pdfPTable16.AddCell("");
+                Chunk c17 = new Chunk("DATE: 1st AUG, 2021", FontFactory.GetFont("Franklin Gothic Demi", 9));
+
+                c17.Font.Color = new iTextSharp.text.BaseColor(0, 32, 255);
+                Phrase p17 = new Phrase();
+                p17.Add(c17);
+                pdfPTable16.AddCell(p17);
+
+                PdfPTable pdfPTable18 = new PdfPTable(1);
+                pdfPTable18.WidthPercentage = 80;
+                pdfPTable18.DefaultCell.VerticalAlignment = Element.ALIGN_CENTER;
+                pdfPTable18.DefaultCell.BorderWidth = 0;
+                Chunk c18 = new Chunk("IFSC: ICIC0000291", FontFactory.GetFont("Verdana"));
+                c18.Font.Size = 9;
+                c18.Font.Color = new iTextSharp.text.BaseColor(255, 0, 0);
+                c18.Font.SetStyle(0);
+                Phrase p18 = new Phrase();
+                p18.Add(c18);
+                pdfPTable18.AddCell(p18);
+
+                PdfPTable pdfPTable19 = new PdfPTable(1);
+                pdfPTable19.WidthPercentage = 80;
+                pdfPTable19.DefaultCell.BorderWidth = 0;
+                Chunk c19 = new Chunk("BILL TO:", FontFactory.GetFont("Arial", 9));
+                c19.Font.Color = new iTextSharp.text.BaseColor(0, 32, 255);
+                c19.Font.SetStyle(1);
+                pdfPTable19.AddCell(new Phrase(c19));
+
+                PdfPTable pdfPTable20 = new PdfPTable(1);
+                pdfPTable20.DefaultCell.BorderWidth = 0;
+                pdfPTable20.WidthPercentage = 80;
+                Chunk c20 = new Chunk("Charter Global Pvt. Ltd", FontFactory.GetFont("Arial", 12));
+                c20.Font.SetStyle(1);
+                pdfPTable20.AddCell(new Phrase(c20));
+
+                PdfPTable pdfPTable21 = new PdfPTable(1);
+                pdfPTable21.DefaultCell.BorderWidth = 0;
+                pdfPTable21.WidthPercentage = 80;
+                Chunk c21 = new Chunk("GSTIN NO: 36AAICS8032K1Z0 3 - 6 - 770 / 2", FontFactory.GetFont("Arial", 10));
+                c21.Font.SetStyle(0);
+                pdfPTable21.AddCell(new Phrase(c21));
+
+                PdfPTable pdfPTable22 = new PdfPTable(1);
+                pdfPTable22.DefaultCell.BorderWidth = 0;
+                pdfPTable22.WidthPercentage = 80;
+                Chunk c22 = new Chunk("Himayatnagar, Hyderabad", FontFactory.GetFont("Arial", 9));
+                c22.Font.SetStyle(0);
+                pdfPTable22.AddCell(new Phrase(c22));
+
+                PdfPTable pdfPTable23 = new PdfPTable(1);
+                pdfPTable23.DefaultCell.BorderWidth = 0;
+                pdfPTable23.WidthPercentage = 80;
+                Chunk c23 = new Chunk("India – 500029", FontFactory.GetFont("Arial", 9));
+                c23.Font.SetStyle(0);
+                pdfPTable23.AddCell(new Phrase(c23));
+
+                PdfPTable pdfPTable24 = new PdfPTable(1);
+                pdfPTable24.DefaultCell.BorderWidth = 0;
+                pdfPTable24.WidthPercentage = 80;
+                Chunk c24 = new Chunk("Phone: (040) 66465977, 78, 79", FontFactory.GetFont("Arial", 9));
+                c24.Font.SetStyle(0);
+                pdfPTable24.AddCell(new Phrase(c24));
+
+                PdfPTable pdfPTable25 = new PdfPTable(1);
+                pdfPTable25.DefaultCell.BorderWidth = 0;
+                pdfPTable25.WidthPercentage = 80;
+                Chunk c25 = new Chunk("COMMENTS OR SPECIAL INSTRUCTIONS:", FontFactory.GetFont("Arial", 10));
+                c25.Font.SetStyle(1);
+                pdfPTable25.AddCell(new Phrase(c25));
+
+                PdfPTable pdfPTable26 = new PdfPTable(1);
+                pdfPTable26.DefaultCell.BorderWidth = 0;
+                pdfPTable26.WidthPercentage = 80;
+                Chunk c26 = new Chunk("[N/ A]", FontFactory.GetFont("Arial", 9));
+                c26.Font.SetStyle(0);
+                pdfPTable26.AddCell(new Phrase(c26));
+
+                PdfPTable pdfPTable27 = new PdfPTable(1);
+                pdfPTable27.DefaultCell.BorderWidth = 0;
+                pdfPTable27.WidthPercentage = 80;
+                Chunk c27 = new Chunk("Bank Detail:", FontFactory.GetFont("Arial", 11));
+                c27.Font.SetStyle(1);
+                pdfPTable27.AddCell(new Phrase(c27));
+
+                PdfPTable pdfPTable28 = new PdfPTable(1);
+                pdfPTable28.DefaultCell.BorderWidth = 0;
+                pdfPTable28.WidthPercentage = 80;
+                Chunk c28 = new Chunk("ICICI Bank", FontFactory.GetFont("Arial", 9));
+                c28.Font.SetStyle(0);
+                pdfPTable28.AddCell(new Phrase(c28));
+
+                PdfPTable pdfPTable29 = new PdfPTable(1);
+                pdfPTable29.DefaultCell.BorderWidth = 0;
+                pdfPTable29.WidthPercentage = 80;
+                Chunk c29 = new Chunk("BOTTOMHALF PRIVATE LIMITED", FontFactory.GetFont("Arial", 9));
+                pdfPTable29.AddCell(new Phrase(c29));
+
+                PdfPTable pdfPTable30 = new PdfPTable(1);
+                pdfPTable30.DefaultCell.BorderWidth = 0;
+                pdfPTable30.WidthPercentage = 80;
+                Chunk c30 = new Chunk("Account Number: 029105005572", FontFactory.GetFont("Arial", 9));
+                pdfPTable30.AddCell(new Phrase(c30));
+
+                PdfPTable pdfPTable31 = new PdfPTable(1);
+                pdfPTable31.DefaultCell.BorderWidth = 0;
+                pdfPTable31.WidthPercentage = 80;
+                Chunk c31 = new Chunk("IFSC: ICIC0000291", FontFactory.GetFont("Arial", 9));
+                pdfPTable31.AddCell(new Phrase(c31));
+
+                PdfPTable pdfPTable32 = new PdfPTable(1);
+                pdfPTable32.DefaultCell.BorderWidth = 0;
+                pdfPTable32.WidthPercentage = 80;
+                Chunk c32 = new Chunk("Place: Asansol (West Bengal)", FontFactory.GetFont("Arial", 9));
+                pdfPTable29.AddCell(new Phrase(c32));
+
+                PdfPTable pdfPTable33 = new PdfPTable(1);
+                pdfPTable33.DefaultCell.BorderWidth = 0;
+                pdfPTable33.WidthPercentage = 80;
+                Chunk c33 = new Chunk("Make all checks payable to BottomHalf Pvt. Ltd.", FontFactory.GetFont("Arial", 9));
+                pdfPTable33.AddCell(new Phrase(c33));
+
+                PdfPTable pdfPTable34 = new PdfPTable(1);
+                pdfPTable34.DefaultCell.BorderWidth = 0;
+                pdfPTable34.WidthPercentage = 80;
+                Chunk c34 = new Chunk("If you have any questions concerning this invoice, contact:[ Miss. Ali Lubna, 9701633741, lubna@bottomhalf.in", FontFactory.GetFont("Arial", 9));
+                pdfPTable34.AddCell(new Phrase(c34));
+
+                //Footer Section
+                PdfPTable pdfTableFooter = new PdfPTable(1);
+                pdfTableFooter.DefaultCell.BorderWidth = 0;
+                pdfTableFooter.WidthPercentage = 100;
+                pdfTableFooter.DefaultCell.HorizontalAlignment = Element.ALIGN_CENTER;
+                Chunk cnkFooter = new Chunk("THANK YOU FOR YOUR BUSINESS!", FontFactory.GetFont("Arial", 10));
+                cnkFooter.Font.SetStyle(1);
+                cnkFooter.Font.Color = new iTextSharp.text.BaseColor(0, 32, 255);
+                pdfTableFooter.AddCell(new Phrase(cnkFooter));
+                //End of Footer Section
+
+
+
+                //Font style
+                //System.Drawing.Font fontH1 = new System.Drawing.Font("Currier", 9);
 
                 //For PDF Generation
-                string folderPath = @"E:\Workspace\";
+                string folderPath = "E:\\Workspace\\";
                 if (!Directory.Exists(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
@@ -234,20 +356,49 @@ namespace DocMaker.PdfService
 
                 using (FileStream stream = new FileStream(folderPath + strFileName, FileMode.Create))
                 {
-                    Document pdfDoc = new Document(PageSize.A4, 10f, 10f, 10f, 0f);
+                    Document pdfDoc = new Document(PageSize.A4, 5f, 5f, 60f, 0f);
                     PdfWriter.GetInstance(pdfDoc, stream);
                     pdfDoc.Open();
 
                     //region Page-1
+                    pdfDoc.Add(png);
                     pdfDoc.Add(pdfPTable1);
                     pdfDoc.Add(pdfPTable2);
                     pdfDoc.Add(pdfPTable5);
-                    pdfDoc.Add(pdfTableBlank);
-                    pdfDoc.Add(png);
-                    pdfDoc.Add(pdfPTable6);
+                    pdfDoc.Add(pdfPTable11);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(blank);
+                    //pdfDoc.Add(linebreak);
+                    pdfDoc.Add(pdfPTable12);
+                    pdfDoc.Add(pdfPTable13);
+                    pdfDoc.Add(pdfPTable14);
+                    pdfDoc.Add(pdfPTable16);
+                    pdfDoc.Add(pdfPTable18);
+                    pdfDoc.Add(pdfPTable19);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(pdfPTable20);
+                    pdfDoc.Add(pdfPTable21);
+                    pdfDoc.Add(pdfPTable22);
+                    pdfDoc.Add(pdfPTable23);
+                    pdfDoc.Add(pdfPTable24);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(pdfPTable25);
+                    pdfDoc.Add(pdfPTable26);
+                    pdfDoc.Add(blank);
                     pdfDoc.Add(pdfPTable3);
-                    pdfDoc.Add(pdfPTable7);
-                    pdfDoc.Add(pdfPTable4);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(pdfPTable27);
+                    pdfDoc.Add(pdfPTable28);
+                    pdfDoc.Add(pdfPTable29);
+                    pdfDoc.Add(pdfPTable30);
+                    pdfDoc.Add(pdfPTable31);
+                    pdfDoc.Add(pdfPTable32);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(pdfPTable33);
+                    pdfDoc.Add(pdfPTable34);
+                    pdfDoc.Add(blank);
+                    pdfDoc.Add(blank);
                     pdfDoc.Add(pdfTableFooter);
                     pdfDoc.NewPage();
                     //End Region
@@ -256,12 +407,16 @@ namespace DocMaker.PdfService
                     pdfDoc.Close();
                     stream.Close();
                 }
+
+                //Display PDF
+                System.Diagnostics.Process.Start(folderPath + "\\" + strFileName);
+
+
             }
             catch (Exception ex)
             {
                 throw;
             }
-            return true;
         }
         public MemoryStream GeneratePdf()
         {
