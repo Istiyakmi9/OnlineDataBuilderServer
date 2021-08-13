@@ -1,0 +1,414 @@
+{
+  "StaffingBill": {
+    "tables": [
+      {
+        "table": {
+          "spaceAfter": 12,
+          "columnCount": 1,
+          "rows": [
+            {
+              "columns": [
+                { "img": "F:\\BH_logo\\logo.png" }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 20,
+          "columnCount": 2,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "BottomHalf Pvt. Ltd.",
+                      "isBold": true,
+                      "fontSize": 10
+                    },
+                    { "text": "Rail par bairagi talab k.t road" },
+                    { "text": "Asansol. Pin: 713302" },
+                    { "text": "Phone: +91-9100544384" }
+                  ]
+                },
+                {
+                  "text": [
+                    {
+                      "text": "INVOICE",
+                      "fontSize": 16,
+                      "isBold": true,
+                      "color": "#ccc"
+                    },
+                    { "text": "Bill No. #000024" }
+                  ],
+                  "align": "r"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 16,
+          "columnCount": 2,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "GSTIN NO: - 19AAICB3816G1ZO",
+                      "isBold": true,
+                      "fontSize": 10
+                    },
+                    {
+                      "text": "ICICI Bank"
+                    },
+                    {
+                      "text": "BOTTOMHALF PRIVATE LIMITED"
+                    },
+                    {
+                      "text": "Account Number: 029105005572"
+                    },
+                    {
+                      "text": "IFSC: ICIC0000291"
+                    }
+                  ]
+                },
+                {
+                  "text": [
+                    { "text": "Invoice No: #000024" },
+                    { "text": "Date: 1st AUG, 2021" }
+                  ],
+                  "align": "r"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 16,
+          "columnCount": 1,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "BILL TO:",
+                      "isBold": true
+                    },
+                    {
+                      "text": "Charter Global Pvt. Ltd.",
+                      "isBold": true,
+                      "fontSize": 10
+                    },
+                    {
+                      "text": "GSTIN NO: 36AAICS8032K1Z0",
+                      "isBold": true
+                    },
+                    { "text": "3-6-770/2" },
+                    { "text": "Himaratnagar, Hyderabad India - 500029" },
+                    { "text": "Phone: (040)66465977, 78, 79" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 24,
+          "columnCount": 1,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "COMMENTS OR SPECIAL INSTRUCTIONS:",
+                      "isBold": true
+                    },
+                    {
+                      "text": "[NA]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 16,
+          "columnCount": 5,
+          "isBorder": true,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "S.NO#",
+                      "isBold": true
+                    }
+                  ],
+                  "paddingLeft": 10,
+                  "paddingTop": 6,
+                  "paddingBottom": 6
+                },
+                {
+                  "text": [
+                    {
+                      "text": "DEVELOPER",
+                      "isBold": true
+                    }
+                  ],
+                  "paddingLeft": 10,
+                  "paddingTop": 6,
+                  "paddingBottom": 6
+                },
+                {
+                  "text": [
+                    {
+                      "text": "MONTH",
+                      "isBold": true
+                    }
+                  ],
+                  "paddingLeft": 10,
+                  "paddingTop": 6,
+                  "paddingBottom": 6
+                },
+                {
+                  "text": [
+                    {
+                      "text": "PRICE",
+                      "isBold": true
+                    }
+                  ],
+                  "paddingLeft": 10,
+                  "paddingTop": 6,
+                  "paddingBottom": 6
+                },
+                {
+                  "text": [
+                    {
+                      "text": "TOTAL",
+                      "isBold": true
+                    }
+                  ],
+                  "paddingLeft": 10,
+                  "paddingTop": 6,
+                  "paddingBottom": 6
+                }
+              ]
+            },
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "1"
+                    }
+                  ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    {
+                      "text": "MD ISTIYAK"
+                    }
+                  ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    {
+                      "text": "APRIL"
+                    }
+                  ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    {
+                      "text": "140,000"
+                    }
+                  ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    {
+                      "text": "140,000"
+                    }
+                  ],
+                  "paddingLeft": 10
+                }
+              ]
+            },
+            {
+              "columns": [
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] }
+              ]
+            },
+            {
+              "columns": [
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] },
+                { "text": [ { "text": "" } ] }
+              ]
+            },
+            {
+              "columns": [
+                {
+                  "text": [
+                    { "text": "SUBTOTAL" }
+                  ],
+                  "colSpan": 4,
+                  "align": "r",
+                  "removeBorder": true,
+                  "paddingRight": 10
+                },
+                {
+                  "text": [ { "text": "155,000" } ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    { "text": "CGST(0%)" }
+                  ],
+                  "colSpan": 4,
+                  "align": "r",
+                  "removeBorder": true,
+                  "paddingRight": 10
+                },
+                {
+                  "text": [ { "text": "0" } ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    { "text": "SGST(0%)" }
+                  ],
+                  "colSpan": 4,
+                  "align": "r",
+                  "removeBorder": true,
+                  "paddingRight": 10
+                },
+                {
+                  "text": [ { "text": "0" } ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    { "text": "IGST(18%)" }
+                  ],
+                  "colSpan": 4,
+                  "align": "r",
+                  "removeBorder": true,
+                  "paddingRight": 10
+                },
+                {
+                  "text": [ { "text": "10,000" } ],
+                  "paddingLeft": 10
+                },
+                {
+                  "text": [
+                    { "text": "TOTAL" }
+                  ],
+                  "colSpan": 4,
+                  "align": "r",
+                  "removeBorder": true,
+                  "paddingRight": 10
+                },
+                {
+                  "text": [ { "text": "Rs. 165,000" } ],
+                  "paddingLeft": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 24,
+          "columnCount": 1,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "Bank Detail:",
+                      "isBold": true,
+                      "fontSize": 12
+                    },
+                    { "text": "ICICI Bank" },
+                    { "text": "BottomHalf Pvt. Ltd." },
+                    { "text": "Account Number: 029105005572" },
+                    { "text": "IFSC: ICIC0000291" },
+                    { "text": "Place: Asansol (West Bengal)" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 24,
+          "columnCount": 1,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    { "text": "Make all checks payable to BottomHalf Pvt. Ltd." },
+                    { "text": "If you have any questions concerning this invoice, contact: Miss. Ali Lubna, Mob: 9701633741, Email: lubna@bottomhalf.in" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "table": {
+          "spaceAfter": 24,
+          "columnCount": 1,
+          "rows": [
+            {
+              "columns": [
+                {
+                  "text": [
+                    {
+                      "text": "THANK YOU FOR YOUR BUSINESS!",
+                      "isBold": true
+                    }
+                  ],
+                  "align": "c"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,11 +1,11 @@
-﻿using System.IO;
+﻿using ModalLayer.Modal;
+using System.IO;
 
 namespace DocMaker.PdfService
 {
     public interface IFileMaker
     {
-        MemoryStream GeneratePdf();
-        bool TextSharpGeneratePdf();
+        bool BuildPdfBill(BuildPdfTable _buildPdfTable);
     }
-    
+
 }

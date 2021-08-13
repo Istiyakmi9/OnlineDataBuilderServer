@@ -24,14 +24,15 @@ namespace OnlineDataBuilder
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration, IWebHostEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
-            Configuration = configuration;
             try
             {
                 var config = new ConfigurationBuilder()
                     .SetBasePath(env.ContentRootPath)
-                    .AddJsonFile("appsettings.json", false, false);
+                    .AddJsonFile("appsettings.json", false, false)
+                    .AddJsonFile("staffingbill.json", false, false)
+                    .AddEnvironmentVariables();
                 //AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: false, reloadOnChange: false);
 
                 this.Configuration = config.Build();
@@ -65,7 +66,7 @@ namespace OnlineDataBuilder
                        ValidateAudience = false,
                        ValidateLifetime = true,
                        ValidateIssuerSigningKey = true,
-                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["jwtSetting:Key"])),
+                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtSetting:Key"])),
                        ClockSkew = TimeSpan.Zero
                    };
                });
@@ -76,6 +77,9 @@ namespace OnlineDataBuilder
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
             });
 
+            var data = Configuration.GetSection("StaffingBill").Get<BuildPdfTable>();
+            //var data = Configuration.GetSection("JwtSetting").Get<JwtSetting>();
+
             string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
             services.AddScoped<IDb, Db>(x => new Db(connectionString));
             services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -84,7 +88,8 @@ namespace OnlineDataBuilder
             services.AddScoped<IFileService, FileService>();
             services.AddScoped<ILiveUrlService, LiveUrlService>();
 
-            services.Configure<JwtSetting>(o => Configuration.GetSection("jwtSetting").Bind(o));
+            services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
+            services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
             services.AddHttpContextAccessor();
             services.AddSingleton<CurrentSession>();
             services.AddScoped<IFileMaker, CreatePDFFile>();
