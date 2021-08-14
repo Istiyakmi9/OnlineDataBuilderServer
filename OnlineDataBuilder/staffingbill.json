@@ -1,7 +1,7 @@
 {
   "StaffingBill": {
-    "tables": [
-      {
+    "tables": {
+      "headerIcon": {
         "table": {
           "spaceAfter": 12,
           "columnCount": 1,
@@ -14,7 +14,7 @@
           ]
         }
       },
-      {
+      "fromAddress": {
         "table": {
           "spaceAfter": 20,
           "columnCount": 2,
@@ -50,7 +50,7 @@
           ]
         }
       },
-      {
+      "fromBriefAccountDetail": {
         "table": {
           "spaceAfter": 16,
           "columnCount": 2,
@@ -90,7 +90,7 @@
           ]
         }
       },
-      {
+      "toAddress": {
         "table": {
           "spaceAfter": 16,
           "columnCount": 1,
@@ -122,7 +122,7 @@
           ]
         }
       },
-      {
+      "instruction": {
         "table": {
           "spaceAfter": 24,
           "columnCount": 1,
@@ -145,7 +145,7 @@
           ]
         }
       },
-      {
+      "billingTable": {
         "table": {
           "spaceAfter": 16,
           "columnCount": 5,
@@ -223,7 +223,7 @@
                 {
                   "text": [
                     {
-                      "text": "MD ISTIYAK"
+                      "text": "{{developer_name}}"
                     }
                   ],
                   "paddingLeft": 10
@@ -231,7 +231,7 @@
                 {
                   "text": [
                     {
-                      "text": "APRIL"
+                      "text": "{{month}}"
                     }
                   ],
                   "paddingLeft": 10
@@ -239,7 +239,7 @@
                 {
                   "text": [
                     {
-                      "text": "140,000"
+                      "text": "{{package_amount}}"
                     }
                   ],
                   "paddingLeft": 10
@@ -247,7 +247,7 @@
                 {
                   "text": [
                     {
-                      "text": "140,000"
+                      "text": "{{package_amount_total}}"
                     }
                   ],
                   "paddingLeft": 10
@@ -284,12 +284,12 @@
                   "paddingRight": 10
                 },
                 {
-                  "text": [ { "text": "155,000" } ],
+                  "text": [ { "text": "{{sub_total}}" } ],
                   "paddingLeft": 10
                 },
                 {
                   "text": [
-                    { "text": "CGST(0%)" }
+                    { "text": "CGST({{cgst_percent}}%)" }
                   ],
                   "colSpan": 4,
                   "align": "r",
@@ -297,12 +297,12 @@
                   "paddingRight": 10
                 },
                 {
-                  "text": [ { "text": "0" } ],
+                  "text": [ { "text": "{{cgst_amount}}" } ],
                   "paddingLeft": 10
                 },
                 {
                   "text": [
-                    { "text": "SGST(0%)" }
+                    { "text": "SGST({{sgst_percent}}%)" }
                   ],
                   "colSpan": 4,
                   "align": "r",
@@ -310,12 +310,12 @@
                   "paddingRight": 10
                 },
                 {
-                  "text": [ { "text": "0" } ],
+                  "text": [ { "text": "{{sgst_amount}}" } ],
                   "paddingLeft": 10
                 },
                 {
                   "text": [
-                    { "text": "IGST(18%)" }
+                    { "text": "IGST({{igst_percent}}%)" }
                   ],
                   "colSpan": 4,
                   "align": "r",
@@ -323,7 +323,7 @@
                   "paddingRight": 10
                 },
                 {
-                  "text": [ { "text": "10,000" } ],
+                  "text": [ { "text": "{{igst_amount}}" } ],
                   "paddingLeft": 10
                 },
                 {
@@ -336,7 +336,7 @@
                   "paddingRight": 10
                 },
                 {
-                  "text": [ { "text": "Rs. 165,000" } ],
+                  "text": [ { "text": "Rs. {{grand_total}}" } ],
                   "paddingLeft": 10
                 }
               ]
@@ -344,7 +344,7 @@
           ]
         }
       },
-      {
+      "completeBankDetail": {
         "table": {
           "spaceAfter": 24,
           "columnCount": 1,
@@ -370,7 +370,7 @@
           ]
         }
       },
-      {
+      "finalInstruction": {
         "table": {
           "spaceAfter": 24,
           "columnCount": 1,
@@ -388,7 +388,7 @@
           ]
         }
       },
-      {
+      "thanking": {
         "table": {
           "spaceAfter": 24,
           "columnCount": 1,
@@ -409,6 +409,6 @@
           ]
         }
       }
-    ]
+    }
   }
 }

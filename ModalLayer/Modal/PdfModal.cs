@@ -13,12 +13,16 @@ namespace ModalLayer.Modal
         public int cGST { get; set; }
         public int sGST { get; set; }
         public int iGST { get; set; }
+        public float cGstAmount { get; set; }
+        public float sGstAmount { get; set; }
+        public float iGstAmount { get; set; }
         public int noOfWorkingDay { get; set; }
         public int packageAmount { get; set; }
         public double grandTotalAmount { get; set; }
         public string companyName { get; set; }
         public string companyAddress { get; set; }
         public string senderName { get; set; }
+        public string developerName { set; get; }
         public string senderAddress { get; set; }
     }
 }

@@ -23,7 +23,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("GeneratePdf")]
         public IResponse<ApiResponse> GeneratePdf([FromBody] PdfModal pdfModal)
         {
-            _iFileMaker.BuildPdfBill(_buildPdfTable);
+            _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
             //_iFileMaker.BuildPdfBill_Single();
             return BuildResponse(true, System.Net.HttpStatusCode.OK);
         }

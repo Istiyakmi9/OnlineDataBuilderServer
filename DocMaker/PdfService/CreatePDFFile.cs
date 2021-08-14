@@ -135,8 +135,10 @@ namespace DocMaker.PdfService
             return pdfTable;
         }
 
-        public bool BuildPdfBill(BuildPdfTable _buildPdfTable)
+        public bool BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
         {
+            _buildPdfTable = _pdfGenerateHelper.MapUserDetail(_buildPdfTable, pdfModal);
+
             string folderPath = "E:\\Workspace\\";
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);
@@ -150,8 +152,36 @@ namespace DocMaker.PdfService
                 PdfWriter.GetInstance(pdfDoc, stream);
                 pdfDoc.Open();
 
-                foreach (var item in _buildPdfTable.tables)
-                    pdfDoc.Add(CreatePdfTable(item.table));
+                PTables _pTable = null;
+                _buildPdfTable.tables.TryGetValue("headerIcon", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("fromAddress", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("fromBriefAccountDetail", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("toAddress", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("instruction", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("billingTable", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("completeBankDetail", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("finalInstruction", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                _buildPdfTable.tables.TryGetValue("thanking", out _pTable);
+                pdfDoc.Add(CreatePdfTable(_pTable.table));
+
+                //foreach (var item in _buildPdfTable.tables)
+                //    pdfDoc.Add(CreatePdfTable(item.Value.table));
 
                 pdfDoc.NewPage();
                 pdfDoc.Close();

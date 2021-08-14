@@ -2,6 +2,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MsSql.Code;
 using CoreServiceLayer.Implementation;
 using DocMaker.PdfService;
+using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -95,6 +96,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
             services.AddScoped<PdfGenerateHelper>();
+            services.AddScoped<IEMailManager, EMailManager>();
 
             services.AddCors(options =>
             {

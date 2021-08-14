@@ -6,7 +6,7 @@ namespace ModalLayer.Modal
 {
     public class BuildPdfTable
     {
-        public List<PTables> tables { set; get; }
+        public Dictionary<string, PTables> tables { set; get; }
     }
 
     public class PTables

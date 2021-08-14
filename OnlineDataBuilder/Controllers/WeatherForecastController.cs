@@ -1,4 +1,5 @@
 ﻿using DocMaker.PdfService;
+using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,8 +18,7 @@ namespace OnlineDataBuilder.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private readonly BuildPdfTable _buildPdfTable;
-        private readonly IFileMaker _iFileMaker;
+        private readonly IEMailManager _eMailManager;
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -26,18 +26,17 @@ namespace OnlineDataBuilder.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, IOptions<BuildPdfTable> options, IFileMaker iFileMaker)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IEMailManager eMailManager)
         {
             _logger = logger;
-            _buildPdfTable = options.Value;
-            _iFileMaker = iFileMaker;
+            _eMailManager = eMailManager;
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            _iFileMaker.BuildPdfBill(_buildPdfTable);
+            //_eMailManager.Send();
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
