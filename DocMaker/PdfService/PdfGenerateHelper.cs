@@ -8,18 +8,33 @@ namespace DocMaker.PdfService
         public BuildPdfTable MapUserDetail(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
         {
             string strScript = JsonConvert.SerializeObject(_buildPdfTable);
-            strScript = strScript.Replace("{{developer_name}}", pdfModal.developerName);
-            strScript = strScript.Replace("{{month}}", pdfModal.billForMonth);
-            strScript = strScript.Replace("{{package_amount}}", pdfModal.packageAmount.ToString());
-            strScript = strScript.Replace("{{package_amount_total}}", pdfModal.packageAmount.ToString());
-            strScript = strScript.Replace("{{cgst_percent}}", pdfModal.cGST.ToString());
-            strScript = strScript.Replace("{{cgst_amount}}", pdfModal.cGstAmount.ToString());
-            strScript = strScript.Replace("{{sgst_percent}}", pdfModal.sGST.ToString());
-            strScript = strScript.Replace("{{sgst_amount}}", pdfModal.sGstAmount.ToString());
-            strScript = strScript.Replace("{{igst_percent}}", pdfModal.iGST.ToString());
-            strScript = strScript.Replace("{{igst_amount}}", pdfModal.iGstAmount.ToString());
-            strScript = strScript.Replace("{{sub_total}}", pdfModal.packageAmount.ToString());
-            strScript = strScript.Replace("{{grand_total}}", pdfModal.grandTotalAmount.ToString());
+            strScript = strScript.Replace("{{developer_name}}", pdfModal.developerName)
+                                .Replace("{{month}}", pdfModal.billForMonth)
+                                .Replace("{{package_amount}}", pdfModal.packageAmount.ToString())
+                                .Replace("{{package_amount_total}}", pdfModal.packageAmount.ToString())
+                                .Replace("{{cgst_percent}}", pdfModal.cGST.ToString())
+                                .Replace("{{cgst_amount}}", pdfModal.cGstAmount.ToString())
+                                .Replace("{{sgst_percent}}", pdfModal.sGST.ToString())
+                                .Replace("{{sgst_amount}}", pdfModal.sGstAmount.ToString())
+                                .Replace("{{igst_percent}}", pdfModal.iGST.ToString())
+                                .Replace("{{igst_amount}}", pdfModal.iGstAmount.ToString())
+                                .Replace("{{sub_total}}", pdfModal.packageAmount.ToString())
+                                .Replace("{{grand_total}}", pdfModal.grandTotalAmount.ToString())
+                                .Replace("{{receiverCompanyName}}", pdfModal.receiverCompanyName.ToString())
+                                .Replace("{{receiverGstInNo}}", pdfModal.receiverGSTNo.ToString())
+                                .Replace("{{receiverFirstAddress}}", pdfModal.receiverFirstAddress.ToString())
+                                .Replace("{{receiverSecondAddress}}", pdfModal.receiverSecondAddress.ToString())
+                                .Replace("{{receiverPrimaryContactNo}}", pdfModal.receiverPrimaryContactNo.ToString())
+                                .Replace("{{receiverEmailId}}", pdfModal.receiverEmail.ToString())
+                                .Replace("{{senderCompanyName}}", pdfModal.senderCompanyName.ToString())
+                                .Replace("{{senderGstInNo}}", pdfModal.senderGSTNo.ToString())
+                                .Replace("{{senderFirstAddress}}", pdfModal.senderFirstAddress.ToString())
+                                .Replace("{{senderSecondAddress}}", pdfModal.senderSecondAddress.ToString())
+                                .Replace("{{senderPrimaryContactNo}}", pdfModal.senderPrimaryContactNo.ToString())                                                               
+                                .Replace("{{senderEmailId}}", pdfModal.senderEmail.ToString())
+                                .Replace("{{billNo}}", pdfModal.billNo.ToString())
+                                .Replace("{{dateOfBilling}}", pdfModal.dateOfBilling.ToString("dd MMM yyyy"))
+                                ;
 
             _buildPdfTable = JsonConvert.DeserializeObject<BuildPdfTable>(strScript);
             return _buildPdfTable;
