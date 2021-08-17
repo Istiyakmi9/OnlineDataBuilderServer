@@ -8,7 +8,7 @@
           "rows": [
             {
               "columns": [
-                { "img": "F:\\BH_logo\\logo.png" }
+                { "img": "C:\\Users\\botto\\Downloads\\logo.png" }
               ]
             }
           ]
@@ -24,24 +24,30 @@
                 {
                   "text": [
                     {
-                      "text": "BottomHalf Pvt. Ltd.",
+                      "text": "{{senderCompanyName}}",
+                      "isBold": true,
+                      "fontSize": 12
+                    },
+                    {
+                      "text": "GSTIN NO: {{senderGstInNo}}",
                       "isBold": true,
                       "fontSize": 10
                     },
-                    { "text": "Rail par bairagi talab k.t road" },
-                    { "text": "Asansol. Pin: 713302" },
-                    { "text": "Phone: +91-9100544384" }
+                    { "text": "{{senderFirstAddress}}" },
+                    { "text": "{{senderSecondAddress}}" },
+                    { "text": "Phone: {{senderPrimaryContactNo}}" },
+                    { "text": "{{senderEmailId}}" }
                   ]
                 },
                 {
                   "text": [
                     {
                       "text": "INVOICE",
-                      "fontSize": 16,
+                      "fontSize": 18,
                       "isBold": true,
                       "color": "#ccc"
                     },
-                    { "text": "Bill No. #000024" }
+                    { "text": "Bill No. #{{billNo}}" }
                   ],
                   "align": "r"
                 }
@@ -80,8 +86,8 @@
                 },
                 {
                   "text": [
-                    { "text": "Invoice No: #000024" },
-                    { "text": "Date: 1st AUG, 2021" }
+                    { "text": "Invoice No: #{{billNo}}" },
+                    { "text": "Date: {{dateOfBilling}}" }
                   ],
                   "align": "r"
                 }
@@ -104,17 +110,19 @@
                       "isBold": true
                     },
                     {
-                      "text": "Charter Global Pvt. Ltd.",
+                      "text": "{{receiverCompanyName}}",
+                      "isBold": true,
+                      "fontSize": 12
+                    },
+                    {
+                      "text": "GSTIN NO: {{receiverGstInNo}}",
                       "isBold": true,
                       "fontSize": 10
                     },
-                    {
-                      "text": "GSTIN NO: 36AAICS8032K1Z0",
-                      "isBold": true
-                    },
-                    { "text": "3-6-770/2" },
-                    { "text": "Himaratnagar, Hyderabad India - 500029" },
-                    { "text": "Phone: (040)66465977, 78, 79" }
+                    { "text": "{{receiverFirstAddress}}" },
+                    { "text": "{{receiverSecondAddress}}" },
+                    { "text": "Phone: {{receiverPrimaryContactNo}}" },
+                    { "text": "{{receiverEmailId}}" }
                   ]
                 }
               ]
