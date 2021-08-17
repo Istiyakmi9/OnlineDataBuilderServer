@@ -198,6 +198,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 var result = cmd.ExecuteNonQuery();
                 if (OutParam)
                     state = cmd.Parameters["_ProcessingResult"].Value.ToString();
+                else
+                    state = result.ToString();
                 return state;
             }
             catch (Exception ex)

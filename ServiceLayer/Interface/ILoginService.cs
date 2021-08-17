@@ -8,5 +8,6 @@ namespace ServiceLayer.Interface
         UserDetail GetLoginUserObject(AuthUser outhUser);
         Boolean RemoveUserDetailService(string Token);
         UserDetail GetUserDetail(AuthUser authUser);
+        string SignUpUser(UserDetail userDetail);
     }
 }

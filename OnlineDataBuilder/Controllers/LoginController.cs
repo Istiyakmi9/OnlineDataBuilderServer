@@ -53,5 +53,13 @@ namespace OnlineDataBuilder.Controllers
             var userDetail = this.loginService.GetUserDetail(authUser);
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
+
+        [HttpPost("SignUp")]
+        [AllowAnonymous]
+        public IResponse<ApiResponse> SignUp(UserDetail userDetail)
+        {
+            var result = loginService.SignUpUser(userDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }

@@ -39,6 +39,25 @@ namespace ServiceLayer.Code
             return userDetail;
         }
 
+        public string SignUpUser(UserDetail userDetail)
+        {
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(userDetail.UserUid, typeof(long), "_UserId"),
+                new DbParam(userDetail.FirstName, typeof(string), "_FirstName"),
+                new DbParam(userDetail.LastName, typeof(string), "_LastName"),
+                new DbParam(userDetail.MobileNo, typeof(string), "_MobileNo"),
+                new DbParam(userDetail.EmailId, typeof(string), "_EmailId"),
+                new DbParam(userDetail.Address, typeof(string), "_Address"),
+                new DbParam(userDetail.Company, typeof(string), "_CompanyName"),
+                new DbParam(null, typeof(string), "_AdminId")
+            };
+
+            var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_insupd", param, false);
+
+            return ResultSet;
+        }
+
         public UserDetail GetLoginUserObject(AuthUser authUser)
         {
             UserDetail userDetail = default;
