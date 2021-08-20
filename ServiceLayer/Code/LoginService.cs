@@ -1,21 +1,29 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using SocialMediaServices;
+using SocialMediaServices.Modal;
 using System;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
     public class LoginService : ILoginService
     {
         private readonly IDb db;
+        private readonly JwtSetting _jwtSetting;
         private readonly IAuthenticationService _authenticationService;
-        public LoginService(IDb db, IAuthenticationService authenticationService)
+        private readonly IMediaService _mediaService;
+        public LoginService(IDb db, IOptions<JwtSetting> options, IAuthenticationService authenticationService, IMediaService mediaService)
         {
             this.db = db;
+            _jwtSetting = options.Value;
             _authenticationService = authenticationService;
+            _mediaService = mediaService;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -39,108 +47,131 @@ namespace ServiceLayer.Code
             return userDetail;
         }
 
-        public string SignUpUser(UserDetail userDetail)
+        public async Task<LoginResponse> SignUpUser(UserDetail userDetail)
         {
-            DbParam[] param = new DbParam[]
+            LoginResponse loginResponse = null;
+            GoogleResponseModal googleResponseModal = await _mediaService.FetchUserProfileByAccessToken(userDetail.AccessToken);
+            if (googleResponseModal != null)
             {
-                new DbParam(userDetail.UserUid, typeof(long), "_UserId"),
-                new DbParam(userDetail.FirstName, typeof(string), "_FirstName"),
-                new DbParam(userDetail.LastName, typeof(string), "_LastName"),
-                new DbParam(userDetail.MobileNo, typeof(string), "_MobileNo"),
-                new DbParam(userDetail.EmailId, typeof(string), "_EmailId"),
-                new DbParam(userDetail.Address, typeof(string), "_Address"),
-                new DbParam(userDetail.Company, typeof(string), "_CompanyName"),
-                new DbParam(null, typeof(string), "_AdminId")
-            };
+                userDetail.EmailId = googleResponseModal.email;
+                DbParam[] param = new DbParam[]
+                {
+                    new DbParam(userDetail.UserId, typeof(long), "_UserId"),
+                    new DbParam(userDetail.FirstName, typeof(string), "_FirstName"),
+                    new DbParam(userDetail.LastName, typeof(string), "_LastName"),
+                    new DbParam(userDetail.Mobile, typeof(string), "_MobileNo"),
+                    new DbParam(userDetail.EmailId, typeof(string), "_EmailId"),
+                    new DbParam(userDetail.Address, typeof(string), "_Address"),
+                    new DbParam(userDetail.CompanyName, typeof(string), "_CompanyName"),
+                    new DbParam(null, typeof(string), "_AdminId")
+                };
 
-            var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_insupd", param, false);
-
-            return ResultSet;
+                var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_Ins", param, true);
+                if (!string.IsNullOrEmpty(ResultSet))
+                    loginResponse = FetchUserDetail(userDetail, true);
+            }
+            return loginResponse;
         }
 
-        public UserDetail GetLoginUserObject(AuthUser authUser)
+        public async Task<string> RegisterEmployee(Employee employee)
         {
-            UserDetail userDetail = default;
-            Boolean IsMobileNoFlag = false;
-            if (!string.IsNullOrEmpty(authUser.UserId))
+            return await Task.Run(() =>
             {
-                if (authUser.UserId.IndexOf('@') > 0)
+                string status = "Fail";
+                long AdminId = 0;
+                string AdminUid = _authenticationService.ReadJwtToken();
+                if (!string.IsNullOrEmpty(AdminUid))
                 {
-                    authUser.Email = authUser.UserId;
+                    AdminId = Convert.ToInt64(AdminUid);
+                    DbParam[] param = new DbParam[]
+                    {
+                        new DbParam(employee.EmployeeNo, typeof(long), "_EmployeeUid"),
+                        new DbParam(employee.FirstName, typeof(string), "_FirstName"),
+                        new DbParam(employee.LastName, typeof(string), "_LastName"),
+                        new DbParam(employee.Email, typeof(string), "_Email"),
+                        new DbParam(employee.Mobile, typeof(string), "_Mobile"),
+                        new DbParam(employee.ActualPackage, typeof(double), "_ActualPackage"),
+                        new DbParam(employee.FinalPackage, typeof(double), "_FinalPackage"),
+                        new DbParam(employee.TakeHomeByCandidate, typeof(double), "_TakeHomeByCandidate"),
+                        new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
+                        new DbParam(AdminId, typeof(bool), "_AdminId")
+                    };
+
+                    status = this.db.ExecuteNonQuery("sp_Employees_InsUpd", param, true);
                 }
-                else
+                return status;
+            });
+        }
+
+        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)
+        {
+            return await Task.Run(() =>
+            {
+                LoginResponse loginResponse = default;
+                RefreshTokenModal refreshTokenModal = _authenticationService.RenewAndGenerateNewToken(authUser.Mobile, authUser.EmailId);
+                if (refreshTokenModal != null)
                 {
-                    IsMobileNoFlag = true;
-                    authUser.MobileNo = authUser.UserId;
+                    if (!string.IsNullOrEmpty(authUser.EmailId))
+                    {
+                        loginResponse = FetchUserDetail(authUser, true);
+                    }
+                    else if (!string.IsNullOrEmpty(authUser.EmailId) && !string.IsNullOrEmpty(authUser.Mobile))
+                    {
+                        loginResponse = FetchUserDetail(authUser, false);
+                    }
                 }
-            }
-            else
-                return null;
+                return loginResponse;
+            });
+        }
+
+        private LoginResponse FetchUserDetail(UserDetail authUser, bool flag)
+        {
+            LoginResponse loginResponse = default;
+            UserDetail userDetail = default;
             DbParam[] param = new DbParam[]
             {
-                new DbParam(authUser.Password, typeof(System.String), "@PASSWORD"),
-                new DbParam(authUser.Email, typeof(System.String), "@EMAILID"),
-                new DbParam(authUser.MobileNo, typeof(System.String), "@MOBILENO"),
-                new DbParam(IsMobileNoFlag, typeof(System.Boolean), "@ISMOBILE")
+                new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
+                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
+                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
+                new DbParam(flag, typeof(System.Boolean), "_isAccessTokenAvailable"),
+                new DbParam(authUser.Password, typeof(System.String), "_Password")
             };
-            DataSet ds = db.GetDataset("sp_Userlogin_Get", param);
-            if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            DataSet ds = db.GetDataset("sp_Userlogin_Auth", param);
+            if (ds != null && ds.Tables.Count == 2)
             {
-                userDetail = new UserDetail();
-                if (ds.Tables[0].Rows[0]["UserUid"] != DBNull.Value)
-                    userDetail.UserUid = Convert.ToInt64(ds.Tables[0].Rows[0]["UserUid"]);
-                else
-                    userDetail.UserUid = 0;
-
-                if (ds.Tables[0].Rows[0]["MobileNo"] != DBNull.Value)
-                    userDetail.MobileNo = ds.Tables[0].Rows[0]["MobileNo"].ToString();
-                else
-                    userDetail.MobileNo = null;
-
-                if (ds.Tables[0].Rows[0]["EmailId"] != DBNull.Value)
-                    userDetail.EmailId = ds.Tables[0].Rows[0]["EmailId"].ToString();
-                else
-                    userDetail.EmailId = null;
-
-                if (ds.Tables[0].Rows[0]["RoleUid"] != DBNull.Value)
-                    userDetail.RoleUid = ds.Tables[0].Rows[0]["RoleUid"].ToString();
-                else
-                    userDetail.RoleUid = null;
-
-                if (ds.Tables[0].Rows[0]["FirstName"] != DBNull.Value)
-                    userDetail.FirstName = ds.Tables[0].Rows[0]["FirstName"].ToString();
-                else
-                    userDetail.FirstName = "UNKNOWN";
-
-                if (ds.Tables[0].Rows[0]["LastName"] != DBNull.Value)
-                    userDetail.LastName = ds.Tables[0].Rows[0]["LastName"].ToString();
-                else
-                    userDetail.LastName = "USER";
-
-                if (ds.Tables[0].Rows[0]["Address"] != DBNull.Value)
-                    userDetail.Address = ds.Tables[0].Rows[0]["Address"].ToString();
-                else
-                    userDetail.Address = null;
-
-                if (ds.Tables[0].Rows[0]["Designation"] != DBNull.Value)
-                    userDetail.Designation = ds.Tables[0].Rows[0]["Designation"].ToString();
-                else
-                    userDetail.Designation = "USER";
-
-                if (ds.Tables[0].Rows[0]["Dob"] != DBNull.Value)
-                    userDetail.Dob = Convert.ToDateTime(ds.Tables[0].Rows[0]["Dob"]);
-                else
-                    userDetail.Dob = DateTime.Now;
-
-                var _token = _authenticationService.Authenticate(authUser.UserId);
-                if (_token != null)
+                if (ds.Tables[0].Rows.Count > 0)
                 {
-                    userDetail.Token = _token.Token;
-                    userDetail.RefreshToken = _token.RefreshToken;
+                    loginResponse = new LoginResponse();
+                    var LoginDetailList = Converter.ToList<LoginDetail>(ds.Tables[0]);
+                    var loginDetail = LoginDetailList.FirstOrDefault();
+                    if (loginDetail != null)
+                    {
+                        userDetail = new UserDetail
+                        {
+                            FirstName = loginDetail.FirstName,
+                            LastName = loginDetail.LastName,
+                            Address = loginDetail.Address,
+                            Mobile = loginDetail.Mobile,
+                            EmailId = loginDetail.EmailId,
+                            UserId = loginDetail.UserId,
+                            CompanyName = loginDetail.CompanyName
+                        };
+
+                        var _token = _authenticationService.Authenticate(userDetail.UserId);
+                        if (_token != null)
+                        {
+                            userDetail.Token = _token.Token;
+                            userDetail.TokenExpiryDuration = DateTime.Now.AddHours(_jwtSetting.AccessTokenExpiryTimeInHours);
+                            userDetail.RefreshToken = _token.RefreshToken;
+                        }
+
+                        loginResponse.Menu = ds.Tables[1];
+                        loginResponse.UserDetail = userDetail;
+                    }
                 }
             }
 
-            return userDetail;
+            return loginResponse;
         }
     }
 }

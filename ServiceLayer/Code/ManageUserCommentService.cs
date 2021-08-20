@@ -6,7 +6,7 @@ using System.Data;
 
 namespace ServiceLayer.Code
 {
-    public class ManageUserCommentService : IManageUserCommentService<ManageUserCommentService>
+    public class ManageUserCommentService : IManageUserCommentService
     {
         private readonly IDb db;
         public ManageUserCommentService(IDb db)
@@ -36,7 +36,7 @@ namespace ServiceLayer.Code
         {
             string Result = string.Empty;
             if (string.IsNullOrEmpty(EmailId))
-                EmailId = "";
+                return new DataSet();
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmailId, typeof(System.String), "@EMAILID")

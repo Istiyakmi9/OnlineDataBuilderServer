@@ -63,6 +63,9 @@ namespace BottomhalfCore.Services.Code
                                 case "System.Guid":
                                     property.SetValue(item, Guid.Parse(row[property.Name].ToString()), null);
                                     break;
+                                case "System.DateTime":
+                                    property.SetValue(item, Convert.ToDateTime(row[property.Name].ToString()), null);
+                                    break;
                                 default:
                                     property.SetValue(item, row[property.Name], null);
                                     break;

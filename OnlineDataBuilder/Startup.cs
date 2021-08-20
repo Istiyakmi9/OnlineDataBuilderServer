@@ -17,6 +17,7 @@ using OnlineDataBuilder.Model;
 using SchoolInMindServer.MiddlewareServices;
 using ServiceLayer.Code;
 using ServiceLayer.Interface;
+using SocialMediaServices;
 using System;
 using System.IO;
 using System.Text;
@@ -91,12 +92,15 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
+
             services.AddHttpContextAccessor();
-            services.AddSingleton<CurrentSession>();
+            services.AddScoped<CurrentSession>();
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
             services.AddScoped<PdfGenerateHelper>();
             services.AddScoped<IEMailManager, EMailManager>();
+            services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
+            services.AddScoped<IMediaService, GooogleService>();
 
             services.AddCors(options =>
             {

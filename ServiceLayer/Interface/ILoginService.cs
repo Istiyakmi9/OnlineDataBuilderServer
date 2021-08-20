@@ -1,13 +1,15 @@
 ﻿using ModalLayer.Modal;
 using System;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
     public interface ILoginService
     {
-        UserDetail GetLoginUserObject(AuthUser outhUser);
+        Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser);
         Boolean RemoveUserDetailService(string Token);
         UserDetail GetUserDetail(AuthUser authUser);
-        string SignUpUser(UserDetail userDetail);
+        Task<LoginResponse> SignUpUser(UserDetail userDetail);
+        Task<string> RegisterEmployee(Employee employee);
     }
 }

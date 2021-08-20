@@ -4,6 +4,7 @@ using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -31,9 +32,9 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost]
         [AllowAnonymous]
         [Route("AuthenticateUser")]
-        public IResponse<ApiResponse> AuthenticateUser(AuthUser authUser)
+        public async Task<ApiResponse> AuthenticateUser(UserDetail authUser)
         {
-            var userDetail = this.loginService.GetLoginUserObject(authUser);
+            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser);
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
@@ -42,7 +43,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("GenerateNewToken/{UserId}")]
         public IResponse<ApiResponse> GenerateNewToken(string UserId = null)
         {
-            var userDetail = _authenticationService.RenewAndGenerateNewToken();
+            var userDetail = _authenticationService.RenewAndGenerateNewToken(default, default);
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
@@ -54,11 +55,18 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
-        [HttpPost("SignUp")]
+        [HttpPost("SignUpViaSocialMedia")]
         [AllowAnonymous]
-        public IResponse<ApiResponse> SignUp(UserDetail userDetail)
+        public async Task<ApiResponse> SignUpViaSocialMedia(UserDetail userDetail)
         {
-            var result = loginService.SignUpUser(userDetail);
+            var result = await loginService.SignUpUser(userDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("employeeregistration")]
+        public async Task<ApiResponse> EmployeeRegistration([FromBody] Employee employee)
+        {
+            var result = await loginService.RegisterEmployee(employee);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

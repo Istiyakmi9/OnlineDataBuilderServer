@@ -3,7 +3,7 @@ using System.Data;
 
 namespace ServiceLayer.Interface
 {
-    public interface IManageUserCommentService<T>
+    public interface IManageUserCommentService
     {
         string PostUserCommentService(UserComments userComments);
         DataSet GetCommentsService(string EmailId);
