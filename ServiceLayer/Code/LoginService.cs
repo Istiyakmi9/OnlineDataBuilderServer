@@ -85,7 +85,7 @@ namespace ServiceLayer.Code
                     AdminId = Convert.ToInt64(AdminUid);
                     DbParam[] param = new DbParam[]
                     {
-                        new DbParam(employee.EmployeeNo, typeof(long), "_EmployeeUid"),
+                        new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
                         new DbParam(employee.FirstName, typeof(string), "_FirstName"),
                         new DbParam(employee.LastName, typeof(string), "_LastName"),
                         new DbParam(employee.Email, typeof(string), "_Email"),
@@ -137,7 +137,7 @@ namespace ServiceLayer.Code
                 new DbParam(authUser.Password, typeof(System.String), "_Password")
             };
             DataSet ds = db.GetDataset("sp_Userlogin_Auth", param);
-            if (ds != null && ds.Tables.Count == 2)
+            if (ds != null && ds.Tables.Count == 3)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -166,6 +166,7 @@ namespace ServiceLayer.Code
                         }
 
                         loginResponse.Menu = ds.Tables[1];
+                        loginResponse.ReportColumnMapping = ds.Tables[2];
                         loginResponse.UserDetail = userDetail;
                     }
                 }

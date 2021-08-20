@@ -66,6 +66,9 @@ namespace BottomhalfCore.Services.Code
                                 case "System.DateTime":
                                     property.SetValue(item, Convert.ToDateTime(row[property.Name].ToString()), null);
                                     break;
+                                case "System.Int32":
+                                    property.SetValue(item, Convert.ToInt32(row[property.Name].ToString()), null);
+                                    break;
                                 default:
                                     property.SetValue(item, row[property.Name], null);
                                     break;

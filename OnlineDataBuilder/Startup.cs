@@ -101,6 +101,8 @@ namespace OnlineDataBuilder
             services.AddScoped<IEMailManager, EMailManager>();
             services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
             services.AddScoped<IMediaService, GooogleService>();
+            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<CommonFilterService>();
 
             services.AddCors(options =>
             {

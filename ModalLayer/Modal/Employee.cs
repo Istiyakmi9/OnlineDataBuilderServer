@@ -33,6 +33,7 @@ namespace ModalLayer.Modal
         public float ActualPackage { set; get; }
         public float FinalPackage { set; get; }
         public float TakeHomeByCandidate { set; get; }
-        public long EmployeeNo { set; get; }
+        public long EmployeeUid { set; get; }
+        public int Index { set; get; }
     }
 }

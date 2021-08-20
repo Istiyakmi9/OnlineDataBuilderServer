@@ -38,5 +38,6 @@ namespace ModalLayer.Modal
     {
         public UserDetail UserDetail { set; get; }
         public DataTable Menu { set; get; }
+        public DataTable ReportColumnMapping { set; get; }
     }
 }
