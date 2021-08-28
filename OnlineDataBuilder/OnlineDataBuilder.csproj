@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DocMaker\DocMaker.csproj" />
     <ProjectReference Include="..\EMailService\EMailService.csproj" />
+    <ProjectReference Include="..\MultiTypeDocumentConverter\MultiTypeDocumentConverter.csproj" />
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
 

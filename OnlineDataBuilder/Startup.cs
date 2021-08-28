@@ -12,6 +12,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
+using MultiTypeDocumentConverter.Service;
 using Newtonsoft.Json.Serialization;
 using OnlineDataBuilder.Model;
 using SchoolInMindServer.MiddlewareServices;
@@ -103,6 +104,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IMediaService, GooogleService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<CommonFilterService>();
+            services.AddScoped<IDocumentConverter, DocumentConverter>();
 
             services.AddCors(options =>
             {

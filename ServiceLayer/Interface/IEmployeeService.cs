@@ -8,5 +8,6 @@ namespace ServiceLayer.Interface
     public interface IEmployeeService
     {
         List<Employee> GetEmployees(FilterModel filterModel);
+        Employee GetEmployeeByIdService(int EmployeeId);
     }
 }

@@ -29,5 +29,12 @@ namespace OnlineDataBuilder.Controllers
             var Result = _employeeService.GetEmployees(filterModel);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
+
+        [HttpPost("GetEmployeeById/{EmployeeId}")]
+        public ApiResponse GetEmployeeById(int EmployeeId)
+        {
+            var Result = _employeeService.GetEmployeeByIdService(EmployeeId);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
     }
 }
