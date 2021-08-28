@@ -23,6 +23,7 @@ namespace ModalLayer.Modal
         public string AadharNo { set; get; }
         public string AccountNumber { set; get; }
         public string BankName { set; get; }
+        public string BranchName { set; get; }
         public string IFSCCode { set; get; }
         public string Domain { set; get; }
         public string Specification { set; get; }

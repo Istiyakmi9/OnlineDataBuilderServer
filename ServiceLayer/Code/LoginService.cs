@@ -103,6 +103,7 @@ namespace ServiceLayer.Code
                         new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
                         new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
                         new DbParam(employee.BankName, typeof(string), "_BankName"),
+                        new DbParam(employee.BranchName, typeof(string), "_BranchName"),
                         new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
                         new DbParam(employee.Domain, typeof(string), "_Domain"),
                         new DbParam(employee.Specification, typeof(string), "_Specification"),
