@@ -77,48 +77,50 @@ namespace ServiceLayer.Code
         {
             return await Task.Run(() =>
             {
-                string status = "Fail";
+                string status = "expired";
                 long AdminId = 0;
                 string AdminUid = _authenticationService.ReadJwtToken();
                 if (!string.IsNullOrEmpty(AdminUid))
                 {
                     AdminId = Convert.ToInt64(AdminUid);
-                    DbParam[] param = new DbParam[]
-                    {
-                        new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
-                        new DbParam(employee.FirstName, typeof(string), "_FirstName"),
-                        new DbParam(employee.LastName, typeof(string), "_LastName"),
-                        new DbParam(employee.Mobile, typeof(string), "_Mobile"),
-                        new DbParam(employee.Email, typeof(string), "_Email"),
-                        new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
-                        new DbParam(employee.FatherName, typeof(string), "_FatherName"),
-                        new DbParam(employee.MotherName, typeof(string), "_MotherName"),
-                        new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
-                        new DbParam(employee.Gender, typeof(bool), "_Gender"),
-                        new DbParam(employee.State, typeof(string), "_State"),
-                        new DbParam(employee.City, typeof(string), "_City"),
-                        new DbParam(employee.Pincode, typeof(int), "_Pincode"),
-                        new DbParam(employee.Address, typeof(string), "_Address"),
-                        new DbParam(employee.PANNo, typeof(string), "_PANNo"),
-                        new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
-                        new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
-                        new DbParam(employee.BankName, typeof(string), "_BankName"),
-                        new DbParam(employee.BranchName, typeof(string), "_BranchName"),
-                        new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
-                        new DbParam(employee.Domain, typeof(string), "_Domain"),
-                        new DbParam(employee.Specification, typeof(string), "_Specification"),
-                        new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
-                        new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
-                        new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
-                        new DbParam(employee.AllocatedClientId, typeof(long), "_AllocatedClientId"),
-                        new DbParam(employee.AllocatedClientName, typeof(string), "_AllocatedClientName"),
-                        new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
-                        new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
-                        new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
-                        new DbParam(AdminId, typeof(long), "_AdminId")
-                    };
+                    if(AdminId > 0) {
+                        DbParam[] param = new DbParam[]
+                        {
+                            new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
+                            new DbParam(employee.FirstName, typeof(string), "_FirstName"),
+                            new DbParam(employee.LastName, typeof(string), "_LastName"),
+                            new DbParam(employee.Mobile, typeof(string), "_Mobile"),
+                            new DbParam(employee.Email, typeof(string), "_Email"),
+                            new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
+                            new DbParam(employee.FatherName, typeof(string), "_FatherName"),
+                            new DbParam(employee.MotherName, typeof(string), "_MotherName"),
+                            new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
+                            new DbParam(employee.Gender, typeof(bool), "_Gender"),
+                            new DbParam(employee.State, typeof(string), "_State"),
+                            new DbParam(employee.City, typeof(string), "_City"),
+                            new DbParam(employee.Pincode, typeof(int), "_Pincode"),
+                            new DbParam(employee.Address, typeof(string), "_Address"),
+                            new DbParam(employee.PANNo, typeof(string), "_PANNo"),
+                            new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
+                            new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
+                            new DbParam(employee.BankName, typeof(string), "_BankName"),
+                            new DbParam(employee.BranchName, typeof(string), "_BranchName"),
+                            new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
+                            new DbParam(employee.Domain, typeof(string), "_Domain"),
+                            new DbParam(employee.Specification, typeof(string), "_Specification"),
+                            new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
+                            new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
+                            new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
+                            new DbParam(employee.AllocatedClientId, typeof(long), "_AllocatedClientId"),
+                            new DbParam(employee.AllocatedClientName, typeof(string), "_AllocatedClientName"),
+                            new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
+                            new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
+                            new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
+                            new DbParam(AdminId, typeof(long), "_AdminId")
+                        };
 
-                    status = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
+                        status = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
+                    }
                 }
                 return status;
             });

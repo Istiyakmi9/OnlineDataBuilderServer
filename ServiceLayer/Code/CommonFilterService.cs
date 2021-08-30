@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
+using System;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Code
@@ -15,7 +16,19 @@ namespace ServiceLayer.Code
             // _currentSession = currentSession;
         }
 
-        public List<T> GetSingleModal<T>(FilterModel filterModel, string ProcedureName)
+        public List<T> GetResult<T>(FilterModel filterModel, string ProcedureName)
+            where T : new()
+        {
+            return GetList<T>(filterModel, ProcedureName);
+        }
+
+        public List<T> GetMultiResult<T, I>(FilterModel filterModel, string ProcedureName)
+            where T : new()
+        {
+            return GetList<T>(filterModel, ProcedureName);
+        }
+
+        private List<T> GetList<T>(FilterModel filterModel, string ProcedureName)
             where T : new()
         {
             DbParam[] dbParams = new DbParam[]

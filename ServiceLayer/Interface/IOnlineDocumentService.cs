@@ -6,7 +6,6 @@ namespace ServiceLayer.Interface
 {
     public interface IOnlineDocumentService
     {
-        List<OnlineDocumentModel> GetOnlineDocuments(FilterModel filterModel);
         List<OnlineDocumentModel> CreateDocument(CreatePageModel createPageModel);
         string DeleteFilesService(List<Files> fileDetails);
         string EditCurrentFileService(Files editFile);

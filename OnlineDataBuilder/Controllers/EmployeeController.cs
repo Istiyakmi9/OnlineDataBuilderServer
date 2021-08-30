@@ -30,10 +30,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpGet("GetEmployeeById/{EmployeeId}")]
-        public ApiResponse GetEmployeeById(int EmployeeId)
+        [HttpGet("GetEmployeeById/{EmployeeId}/{IsActive}")]
+        public ApiResponse GetEmployeeById(int EmployeeId, bool IsActive)
         {
-            var Result = _employeeService.GetEmployeeByIdService(EmployeeId);
+            var Result = _employeeService.GetEmployeeByIdService(EmployeeId, IsActive);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
     }

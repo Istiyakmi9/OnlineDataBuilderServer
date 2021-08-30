@@ -17,11 +17,15 @@ namespace ServiceLayer.Code
         private readonly IDb db;
         private readonly IFileService _fileService;
         private readonly ILoginService _loginService;
-        public OnlineDocumentService(IDb db, IFileService fileService, ILoginService loginService)
+        private readonly CommonFilterService _commonFilterService;
+        public OnlineDocumentService(IDb db, IFileService fileService, 
+            ILoginService loginService, 
+            CommonFilterService commonFilterService)
         {
             this.db = db;
             _fileService = fileService;
             _loginService = loginService;
+            _commonFilterService = commonFilterService;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -44,45 +48,23 @@ namespace ServiceLayer.Code
         {
             InsertOnlineDocument(createPageModel);
 
-            return GetDocumentData(new FilterModel
+            return _commonFilterService.GetResult<OnlineDocumentModel>(new FilterModel
             {
                 SearchString = createPageModel.SearchString,
                 PageIndex = createPageModel.PageIndex,
                 PageSize = createPageModel.PageSize,
                 SortBy = createPageModel.SortBy
-            });
-        }
-
-        private List<OnlineDocumentModel> GetDocumentData(FilterModel filterModel)
-        {
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(filterModel.SearchString, typeof(string), "@SearchString"),
-                new DbParam(filterModel.PageIndex, typeof(int), "@PageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "@PageSize")
-            };
-
-            List<OnlineDocumentModel> onlineDocumentModel = default;
-            var Result = this.db.GetDataset("SP_OnlineDocument_Get", dbParams);
-            if (Result.Tables.Count > 0 && Result.Tables[0].Rows.Count > 0)
-            {
-                onlineDocumentModel = Converter.ToList<OnlineDocumentModel>(Result.Tables[0]);
-            }
-            return onlineDocumentModel;
-        }
-
-        public List<OnlineDocumentModel> GetOnlineDocuments(FilterModel filterModel)
-        {
-            return GetDocumentData(filterModel);
+            }, "SP_OnlineDocument_Get");
         }
 
         public DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel)
         {
             DbParam[] dbParams = new DbParam[]
             {
-                new DbParam(filterModel.SearchString, typeof(string), "@SearchString"),
-                new DbParam(filterModel.PageIndex, typeof(int), "@PageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "@PageSize")
+                new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
+                new DbParam(filterModel.PageIndex, typeof(int), "_PageIndex"),
+                new DbParam(filterModel.PageSize, typeof(int), "_PageSize"),
+                new DbParam(filterModel.SortBy, typeof(string), "_SortBy"),
             };
 
             DocumentWithFileModel documentWithFileModel = new DocumentWithFileModel();

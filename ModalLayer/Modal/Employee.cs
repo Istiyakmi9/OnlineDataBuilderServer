@@ -37,5 +37,6 @@ namespace ModalLayer.Modal
         public float TakeHomeByCandidate { set; get; }
         public long EmployeeUid { set; get; }
         public int Index { set; get; }
+        public bool IsActive { set; get; }
     }
 }

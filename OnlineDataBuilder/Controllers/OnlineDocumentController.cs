@@ -9,6 +9,7 @@ using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
+using ServiceLayer.Code;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -18,19 +19,23 @@ namespace OnlineDataBuilder.Controllers
     public class OnlineDocumentController : BaseController
     {
         private readonly IOnlineDocumentService _ionlineDocumentService;
+        private readonly CommonFilterService _commonFilterService;
         private readonly HttpContext _httpContext;
 
-        public OnlineDocumentController(IOnlineDocumentService ionlineDocumentService, IHttpContextAccessor httpContext)
+        public OnlineDocumentController(IOnlineDocumentService ionlineDocumentService, 
+            IHttpContextAccessor httpContext, 
+            CommonFilterService commonFilterService)
         {
             _ionlineDocumentService = ionlineDocumentService;
             _httpContext = httpContext.HttpContext;
+            _commonFilterService = commonFilterService;
         }
 
         [HttpPost]
         [Route("GetOnlineDocuments")]
         public IResponse<ApiResponse> GetOnlineDocuments([FromBody] FilterModel filterModel)
         {
-            var Result = _ionlineDocumentService.GetOnlineDocuments(filterModel);
+            var Result = _commonFilterService.GetResult<OnlineDocumentModel>(filterModel, "SP_OnlineDocument_Get");
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
