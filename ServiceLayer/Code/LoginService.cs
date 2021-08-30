@@ -118,7 +118,7 @@ namespace ServiceLayer.Code
                         new DbParam(AdminId, typeof(long), "_AdminId")
                     };
 
-                    status = this.db.ExecuteNonQuery("sp_Employees_InsUpd", param, true);
+                    status = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
                 }
                 return status;
             });

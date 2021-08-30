@@ -26,10 +26,10 @@ namespace ServiceLayer.Code
             Employee employee = default;
             DbParam[] param = new DbParam[]
             {
-                new DbParam(EmployeeId, typeof(int), "")
+                new DbParam(EmployeeId, typeof(int), "_EmployeeId")
             };
 
-            var resultSet = _db.GetDataset("SP_Employees_ById");
+            var resultSet = _db.GetDataset("SP_Employees_ById", param);
             if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
             {
                 var emps = Converter.ToList<Employee>(resultSet.Tables[0]);

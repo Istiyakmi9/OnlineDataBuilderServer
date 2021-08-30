@@ -30,7 +30,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpPost("GetEmployeeById/{EmployeeId}")]
+        [HttpGet("GetEmployeeById/{EmployeeId}")]
         public ApiResponse GetEmployeeById(int EmployeeId)
         {
             var Result = _employeeService.GetEmployeeByIdService(EmployeeId);

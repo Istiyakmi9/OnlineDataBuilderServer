@@ -504,6 +504,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                 cmd.Parameters.Add(p.ParamName, MySqlDbType.Decimal).Value = Convert.DBNull;
                             else if (p.Type == typeof(System.Boolean))
                                 cmd.Parameters.Add(p.ParamName, MySqlDbType.Bit).Value = Convert.ToBoolean(p.Value);
+                            else if (p.Type == typeof(System.Single))
+                                cmd.Parameters.Add(p.ParamName, MySqlDbType.Bit).Value = Convert.ToSingle(p.Value);
                             else if (p.Type == typeof(System.DateTime))
                             {
                                 if (Convert.ToDateTime(p.Value).Year == 1)
