@@ -8,8 +8,8 @@ namespace DocMaker.PdfService
         public BuildPdfTable MapUserDetail(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
         {
             string strScript = JsonConvert.SerializeObject(_buildPdfTable);
-            strScript = strScript.Replace("{{developer_name}}", pdfModal.developerName)
-                                .Replace("{{month}}", pdfModal.billForMonth)
+            strScript = strScript.Replace("{{developer_name}}", pdfModal.developerName.ToUpper())
+                                .Replace("{{month}}", pdfModal.billingMonth.ToString("MMMM"))
                                 .Replace("{{package_amount}}", pdfModal.packageAmount.ToString())
                                 .Replace("{{package_amount_total}}", pdfModal.packageAmount.ToString())
                                 .Replace("{{cgst_percent}}", pdfModal.cGST.ToString())
@@ -24,8 +24,9 @@ namespace DocMaker.PdfService
                                 .Replace("{{receiverGstInNo}}", pdfModal.receiverGSTNo.ToString())
                                 .Replace("{{receiverFirstAddress}}", pdfModal.receiverFirstAddress.ToString())
                                 .Replace("{{receiverSecondAddress}}", pdfModal.receiverSecondAddress.ToString())
+                                .Replace("{{receiverThirdAddress}}", pdfModal.receiverThirdAddress.ToString())
                                 .Replace("{{receiverPrimaryContactNo}}", pdfModal.receiverPrimaryContactNo.ToString())
-                                .Replace("{{receiverEmailId}}", pdfModal.receiverEmail.ToString())
+                                .Replace("{{receiverEmailId}}", pdfModal.receiverEmail == null ? "" : pdfModal.receiverEmail)
                                 .Replace("{{senderCompanyName}}", pdfModal.senderCompanyName.ToString())
                                 .Replace("{{senderGstInNo}}", pdfModal.senderGSTNo.ToString())
                                 .Replace("{{senderFirstAddress}}", pdfModal.senderFirstAddress.ToString())

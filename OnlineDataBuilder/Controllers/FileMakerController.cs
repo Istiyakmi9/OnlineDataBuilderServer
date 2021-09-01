@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Interface;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -12,20 +13,23 @@ namespace OnlineDataBuilder.Controllers
     public class FileMakerController : BaseController
     {
         private readonly BuildPdfTable _buildPdfTable;
+        private readonly IOnlineDocumentService _onlineDocumentService;
         private readonly IFileMaker _iFileMaker;
-        public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration, IOptions<BuildPdfTable> options)
+        public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration, 
+            IOnlineDocumentService onlineDocumentService,
+            IOptions<BuildPdfTable> options)
         {
             _iFileMaker = iFileMaker;
             _buildPdfTable = options.Value;
+            _onlineDocumentService = onlineDocumentService;
         }
 
         [HttpPost]
         [Route("GeneratePdf")]
         public IResponse<ApiResponse> GeneratePdf([FromBody] PdfModal pdfModal)
         {
-            _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
-            //_iFileMaker.BuildPdfBill_Single();
-            return BuildResponse(true, System.Net.HttpStatusCode.OK);
+            FileDetail fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
+            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
     }
 }

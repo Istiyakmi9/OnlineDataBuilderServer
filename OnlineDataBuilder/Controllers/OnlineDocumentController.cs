@@ -87,5 +87,12 @@ namespace OnlineDataBuilder.Controllers
             }
             return apiResponse;
         }
+
+        [HttpGet("LoadApplicationData")]
+        public ApiResponse LoadApplicationData()
+        {
+            var Result = _ionlineDocumentService.LoadApplicationData();
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
     }
 }

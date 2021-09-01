@@ -8,7 +8,7 @@
           "rows": [
             {
               "columns": [
-                { "img": "C:\\Users\\botto\\Downloads\\logo.png" }
+                { "img": "logo.png" }
               ]
             }
           ]
@@ -28,11 +28,6 @@
                       "isBold": true,
                       "fontSize": 12
                     },
-                    {
-                      "text": "GSTIN NO: {{senderGstInNo}}",
-                      "isBold": true,
-                      "fontSize": 10
-                    },
                     { "text": "{{senderFirstAddress}}" },
                     { "text": "{{senderSecondAddress}}" },
                     { "text": "Phone: {{senderPrimaryContactNo}}" },
@@ -47,7 +42,7 @@
                       "isBold": true,
                       "color": "#ccc"
                     },
-                    { "text": "Bill No. #{{billNo}}" }
+                    { "text": "Bill No. {{billNo}}" }
                   ],
                   "align": "r"
                 }
@@ -66,7 +61,7 @@
                 {
                   "text": [
                     {
-                      "text": "GSTIN NO: - 19AAICB3816G1ZO",
+                      "text": "GSTIN NO: - {{senderGstInNo}}",
                       "isBold": true,
                       "fontSize": 10
                     },
@@ -86,7 +81,7 @@
                 },
                 {
                   "text": [
-                    { "text": "Invoice No: #{{billNo}}" },
+                    { "text": "Invoice No: {{billNo}}" },
                     { "text": "Date: {{dateOfBilling}}" }
                   ],
                   "align": "r"
@@ -121,8 +116,9 @@
                     },
                     { "text": "{{receiverFirstAddress}}" },
                     { "text": "{{receiverSecondAddress}}" },
+                    { "text": "{{receiverThirdAddress}}" },
                     { "text": "Phone: {{receiverPrimaryContactNo}}" },
-                    { "text": "{{receiverEmailId}}" }
+                    { "text": "Email: {{receiverEmailId}}" }
                   ]
                 }
               ]

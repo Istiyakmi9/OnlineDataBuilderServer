@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocMaker.PdfService;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -9,6 +10,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -18,14 +20,20 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly ILoginService _loginService;
         private readonly CommonFilterService _commonFilterService;
+        private readonly IAuthenticationService _authenticationService;
+        private readonly IFileMaker _iFileMaker;
         public OnlineDocumentService(IDb db, IFileService fileService, 
             ILoginService loginService, 
-            CommonFilterService commonFilterService)
+            IFileMaker iFileMaker,
+            CommonFilterService commonFilterService,
+            IAuthenticationService authenticationService)
         {
             this.db = db;
             _fileService = fileService;
             _loginService = loginService;
             _commonFilterService = commonFilterService;
+            _authenticationService = authenticationService;
+            _iFileMaker = iFileMaker;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -167,6 +175,123 @@ namespace ServiceLayer.Code
                 }
             }
             return Result;
+        }
+
+        public DropdownItems LoadApplicationData() {
+            DropdownItems dropdownItems = default;
+            long AdminId = 0;
+            string AdminUid = _authenticationService.ReadJwtToken();
+            if (!string.IsNullOrEmpty(AdminUid))
+            {
+                AdminId = Convert.ToInt64(AdminUid);
+                if(AdminId > 0) {
+                    DbParam[] dbParams = new DbParam[]
+                    {
+                        new DbParam(AdminId, typeof(long), "_AdminId")
+                    };
+
+                    dropdownItems = new DropdownItems();
+                    var Result = this.db.GetDataset("SP_ApplicationLevelDropdown_Get", dbParams);
+                    if (Result.Tables.Count == 2)
+                    {
+                        dropdownItems.clients = Converter.ToList<Client>(Result.Tables[0]);
+                        dropdownItems.employees = Converter.ToList<Employee>(Result.Tables[1]);
+                    }
+                }
+            }
+            return dropdownItems;
+        }
+
+        public Bills GetBillData() {
+            Bills bill = default;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(1, typeof(long), "_BillTypeUid")
+            };
+            DataSet ds = db.GetDataset("sp_billdata_get", param);
+            if(ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0){
+                var bills = Converter.ToList<Bills>(ds.Tables[0]);
+                if(bills != null && bills.Count > 0) {
+                    bill = bills[0];
+                }
+            }
+            return bill;
+        }
+
+        public FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal){
+            TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+            pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
+            pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
+            FileDetail fileDetail = new FileDetail();
+            long AdminId = 0;
+            string AdminUid = _authenticationService.ReadJwtToken();
+            if (!string.IsNullOrEmpty(AdminUid))
+            {
+                AdminId = Convert.ToInt64(AdminUid);
+                
+                Bills bill = GetBillData();
+                if(string.IsNullOrEmpty(pdfModal.billNo)) {                
+                    if(bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo)){
+                        fileDetail.Status = "Fail to generate bill no. Please contact admin.";
+                        return fileDetail;
+                    }
+                    pdfModal.billNo = bill.GeneratedBillNo;
+                } else {
+                    string GeneratedBillNo = "";
+                    int len = pdfModal.billNo.Length;
+                    int i = 0;
+                    while(i < bill.BillNoLength) {
+                        if(i < len) {
+                            GeneratedBillNo += pdfModal.billNo[i];
+                        } else {
+                            GeneratedBillNo = '0' + GeneratedBillNo;
+                        }
+                        i++;
+                    }
+                    pdfModal.billNo = "#" + GeneratedBillNo;
+                }
+                    
+                fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
+                if(AdminId > 0 && fileDetail.Status == "Generated") {
+                    int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
+                    DbParam[] dbParams = new DbParam[]
+                    {
+                        new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                        new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                        new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
+                        new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
+                        new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
+                        new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
+                        new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
+                        new DbParam(bill.BillUid, typeof(int), "_BillUid"),
+                        new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
+                        new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
+                        new DbParam(Year, typeof(int), "_BillYear"),
+                        new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
+                        new DbParam(DateTime.DaysInMonth(Year, pdfModal.billingMonth.Month) - pdfModal.workingDay, typeof(int), "_NoOfDaysAbsent"),
+                        new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
+                        new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
+                        new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
+                        new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
+                        new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
+                        new DbParam(null, typeof(int), "_PaidOn"),
+                        new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
+                        new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
+                        new DbParam(AdminId, typeof(long), "_AdminId")
+                    };
+
+                    fileDetail.Status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                    if(string.IsNullOrEmpty(fileDetail.Status)) {
+                        List<Files> files = new List<Files>();
+                        files.Add(new Files{
+                            FilePath = fileDetail.FilePath,
+                            FileName = fileDetail.FileName
+                        });
+                        _fileService.DeleteFiles(files);
+                    }
+                }
+            }
+            return fileDetail;
         }
     }
 }

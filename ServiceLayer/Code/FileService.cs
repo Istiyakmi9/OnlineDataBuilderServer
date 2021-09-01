@@ -20,15 +20,13 @@ namespace CoreServiceLayer.Implementation
         public int DeleteFiles(List<Files> files)
         {
             int deleteCount = 0;
-            string FilePath = string.Empty;
             if (files.Count > 0)
             {
                 foreach (var file in files)
                 {
-                    FilePath = file.FilePath;
-                    if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, FilePath)))
+                    if (Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, file.FilePath)))
                     {
-                        string ActualPath = Path.Combine(_hostingEnvironment.ContentRootPath, FilePath, file.FileName);
+                        string ActualPath = Path.Combine(_hostingEnvironment.ContentRootPath, file.FilePath, file.FileName);
                         if (File.Exists(ActualPath))
                         {
                             File.Delete(ActualPath);

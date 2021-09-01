@@ -10,6 +10,8 @@ namespace ServiceLayer.Interface
         string DeleteFilesService(List<Files> fileDetails);
         string EditCurrentFileService(Files editFile);
         string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
+        DropdownItems LoadApplicationData();
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
+        FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
     }
 }

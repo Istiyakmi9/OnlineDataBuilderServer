@@ -4,6 +4,9 @@ using iTextSharp.text.pdf;
 using ModalLayer.Modal;
 using System;
 using System.IO;
+using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
+using System.Data;
 
 namespace DocMaker.PdfService
 {
@@ -11,10 +14,12 @@ namespace DocMaker.PdfService
     {
         private readonly PdfGenerateHelper _pdfGenerateHelper;
         private readonly float DefaultFontSize;
-        public CreatePDFFile(PdfGenerateHelper pdfGenerateHelper)
+        private readonly IDb _db;
+        public CreatePDFFile(PdfGenerateHelper pdfGenerateHelper, IDb db)
         {
             _pdfGenerateHelper = pdfGenerateHelper;
             DefaultFontSize = 9;
+            _db = db;
         }
 
         private PdfPTable CreatePdfTable(Table table)
@@ -50,7 +55,9 @@ namespace DocMaker.PdfService
                 {
                     if (!string.IsNullOrEmpty(col.img))
                     {
-                        iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(col.img);
+                        iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(
+                                                        Path.Combine(Directory.GetCurrentDirectory(), "Documents", col.img)
+                                                    );
                         png.ScaleToFit(200f, 150f);
                         png.SpacingBefore = 10f;
                         png.SpacingAfter = 15f;
@@ -135,59 +142,83 @@ namespace DocMaker.PdfService
             return pdfTable;
         }
 
-        public bool BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        public FileDetail BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
         {
-            _buildPdfTable = _pdfGenerateHelper.MapUserDetail(_buildPdfTable, pdfModal);
+            FileDetail fileDetail = new FileDetail();
+            fileDetail.Status = "Client not selected";
+            if(pdfModal.ClientId > 0) {
+                try {                                        
+                    _buildPdfTable = _pdfGenerateHelper.MapUserDetail(_buildPdfTable, pdfModal);
+                    string MonthName = pdfModal.billingMonth.ToString("MMMM_yyyy");
 
-            string folderPath = "E:\\Workspace\\";
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
+                    string FolderLocation = Path.Combine("Documents", "Bills", MonthName);
+                    string FileName = pdfModal.developerName.Replace(" ", "_") + "_" + 
+                                      MonthName + "_" +
+                                      pdfModal.billNo.Replace("#", "") + ".pdf";
 
-            int fileCount = Directory.GetFiles(@"E:\\Workspace\\").Length;
-            string strFileName = "MonthlyBill" + (fileCount + 1) + ".pdf";
+                    string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+                    if (!Directory.Exists(folderPath))
+                        Directory.CreateDirectory(folderPath);
 
-            using (FileStream stream = new FileStream(folderPath + strFileName, FileMode.Create))
-            {
-                Document pdfDoc = new Document(PageSize.A4, 5f, 5f, 60f, 0f);
-                PdfWriter.GetInstance(pdfDoc, stream);
-                pdfDoc.Open();
+                    string physicalPath = Path.Combine(
+                                            folderPath, 
+                                            FileName
+                                    );
 
-                PTables _pTable = null;
-                _buildPdfTable.tables.TryGetValue("headerIcon", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                    fileDetail.FilePath = FolderLocation;
+                    fileDetail.FileName = FileName;
+                    fileDetail.FileExtension = "pdf";
+                    fileDetail.FileId = -1;
+                    fileDetail.ClientId = pdfModal.ClientId;
+                    fileDetail.StatusId = 2;
+                    fileDetail.PaidOn = null;
+                    using (FileStream stream = new FileStream(physicalPath , FileMode.Create))
+                    {
+                        Document pdfDoc = new Document(PageSize.A4, 5f, 5f, 60f, 0f);
+                        PdfWriter.GetInstance(pdfDoc, stream);
+                        pdfDoc.Open();
 
-                _buildPdfTable.tables.TryGetValue("fromAddress", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        PTables _pTable = null;
+                        _buildPdfTable.tables.TryGetValue("headerIcon", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("fromBriefAccountDetail", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("fromAddress", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("toAddress", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("fromBriefAccountDetail", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("instruction", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("toAddress", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("billingTable", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("instruction", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("completeBankDetail", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("billingTable", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("finalInstruction", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("completeBankDetail", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                _buildPdfTable.tables.TryGetValue("thanking", out _pTable);
-                pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        _buildPdfTable.tables.TryGetValue("finalInstruction", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                //foreach (var item in _buildPdfTable.tables)
-                //    pdfDoc.Add(CreatePdfTable(item.Value.table));
+                        _buildPdfTable.tables.TryGetValue("thanking", out _pTable);
+                        pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                pdfDoc.NewPage();
-                pdfDoc.Close();
-                stream.Close();
-            }
-            return false;
+                        //foreach (var item in _buildPdfTable.tables)
+                        //    pdfDoc.Add(CreatePdfTable(item.Value.table));
+
+                        pdfDoc.NewPage();
+                        pdfDoc.Close();
+                        stream.Close();
+                        fileDetail.Status = "Generated";
+                    }
+                } catch(Exception) {
+                    fileDetail.Status = "Got error while create PDF file.";
+                }
+            }            
+            return fileDetail;
         }
 
         #region HTML_TO_PDF_SAMPLE_CODE

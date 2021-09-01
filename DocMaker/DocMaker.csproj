@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
+    <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
   </ItemGroup>
 
 </Project>
