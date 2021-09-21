@@ -94,5 +94,12 @@ namespace OnlineDataBuilder.Controllers
             var Result = _ionlineDocumentService.LoadApplicationData();
             return BuildResponse(Result, HttpStatusCode.OK);
         }
+
+        [HttpGet("GetFilesAndFolderById/{Type}/{Uid}")]
+        public ApiResponse GetFilesAndFolderById(string Type, string Uid)
+        {
+            var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
     }
 }

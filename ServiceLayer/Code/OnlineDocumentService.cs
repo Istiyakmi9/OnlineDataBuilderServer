@@ -293,5 +293,21 @@ namespace ServiceLayer.Code
             }
             return fileDetail;
         }
+
+        public List<Files> GetFilesAndFolderByIdService(string Type, string Uid) {
+            List<Files> files = new List<Files>();
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(Type, typeof(string), "_Type"),
+                new DbParam(Uid, typeof(string), "_Uid")
+            };
+
+            var Result = this.db.GetDataset("sp_Files_GetById", dbParams);
+            if (Result.Tables.Count == 1)
+            {
+                files = Converter.ToList<Files>(Result.Tables[0]);
+            }
+            return files;
+        }
     }
 }
