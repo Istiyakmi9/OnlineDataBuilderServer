@@ -11,6 +11,7 @@ namespace ServiceLayer.Interface
         string EditCurrentFileService(Files editFile);
         string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
         DropdownItems LoadApplicationData();
+        List<Files> GetFilesAndFolderByIdService(string Type, string Uid);
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
         FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
     }
