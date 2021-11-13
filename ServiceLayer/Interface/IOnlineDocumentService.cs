@@ -14,5 +14,7 @@ namespace ServiceLayer.Interface
         List<Files> GetFilesAndFolderByIdService(string Type, string Uid);
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
         FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
+        List<Files> EditFileService(Files files);
+        string DeleteDataService(string Uid);
     }
 }

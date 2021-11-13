@@ -309,5 +309,27 @@ namespace ServiceLayer.Code
             }
             return files;
         }
+
+        public List<Files> EditFileService(Files files)
+        {
+            //List<Files> filses = new List<Files>();
+            //FileDetail fileDetail = new FileDetail();
+            //DbParam[] dbParams = new DbParam[]
+            //{
+            //    new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
+            //    new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
+            //    new DbParam(fileDetail.FileId, typeof(int), "_FileDetailId")
+            //};
+
+            //var Result = this.db.ExecuteNonQuery("sp_Files_GetById", dbParams, true);
+            //files = Converter.ToList<Files>(Result.Tables[0]);
+            //return files;
+            return null;
+        }
+
+        public string DeleteDataService(string Uid)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

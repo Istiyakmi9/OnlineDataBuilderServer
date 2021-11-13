@@ -101,5 +101,19 @@ namespace OnlineDataBuilder.Controllers
             var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
+
+        [HttpPost("EditFile")]
+        public IResponse<ApiResponse> EditFile([FromBody] Files files)
+        {
+            var result = _ionlineDocumentService.EditFileService(files);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpGet("DeleteData/{Uid}")]
+        public IResponse<ApiResponse> DeleteData (string Uid)
+        {
+            var result = _ionlineDocumentService.DeleteDataService(Uid);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
