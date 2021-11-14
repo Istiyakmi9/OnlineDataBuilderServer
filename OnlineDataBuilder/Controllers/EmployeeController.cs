@@ -30,6 +30,14 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [HttpGet]
+        [Route("GetManageEmployeeDetail/{EmployeeId}")]
+        public ApiResponse GetManageEmployeeDetail(long EmployeeId)
+        {
+            var Result = _employeeService.GetManageEmployeeDetailService(EmployeeId);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
         [HttpGet("GetEmployeeById/{EmployeeId}/{IsActive}")]
         public ApiResponse GetEmployeeById(int EmployeeId, bool IsActive)
         {

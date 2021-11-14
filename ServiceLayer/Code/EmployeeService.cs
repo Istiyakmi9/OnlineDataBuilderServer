@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Data;
 
 namespace ServiceLayer.Code
 {
@@ -19,6 +20,22 @@ namespace ServiceLayer.Code
         {
             List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
             return employees;
+        }
+
+        public DataSet GetManageEmployeeDetailService(long EmployeeId)
+        {
+            Employee employee = default;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(EmployeeId, typeof(long), "_employeeId")
+            };
+            var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
+            if (resultset.Tables.Count == 2)
+            {
+                resultset.Tables[0].TableName = "Employee";
+                resultset.Tables[1].TableName = "Clients";
+            }
+            return resultset;
         }
 
         public Employee GetEmployeeByIdService(int EmployeeId, bool IsActive)
