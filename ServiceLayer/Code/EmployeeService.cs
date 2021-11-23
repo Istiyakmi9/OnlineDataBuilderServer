@@ -24,17 +24,34 @@ namespace ServiceLayer.Code
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
         {
-            Employee employee = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 2)
+            if (resultset.Tables.Count == 3)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "Clients";
+                resultset.Tables[2].TableName = "AllocatedClients";
             }
+            return resultset;
+        }
+
+        public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
+        {
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(employee.EmployeeUid, typeof(long), "_employeeUid"),
+                new DbParam(employee.AllocatedClientId, typeof(long), "_clientUid"),
+                new DbParam(employee.FinalPackage, typeof(float), "_finalPackage"),
+                new DbParam(employee.ActualPackage, typeof(float), "_actualPackage"),
+                new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
+                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
+                new DbParam(employee.IsActive, typeof(bool), "_isActive"),
+                new DbParam(IsUpdating, typeof(bool), "_isUpdate"),
+            };
+            var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
             return resultset;
         }
 

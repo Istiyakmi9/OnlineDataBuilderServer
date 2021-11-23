@@ -146,13 +146,15 @@ namespace DocMaker.PdfService
         {
             FileDetail fileDetail = new FileDetail();
             fileDetail.Status = "Client not selected";
-            if(pdfModal.ClientId > 0) {
-                try {                                        
+            if (pdfModal.ClientId > 0)
+            {
+                try
+                {
                     _buildPdfTable = _pdfGenerateHelper.MapUserDetail(_buildPdfTable, pdfModal);
                     string MonthName = pdfModal.billingMonth.ToString("MMMM_yyyy");
 
                     string FolderLocation = Path.Combine("Documents", "Bills", MonthName);
-                    string FileName = pdfModal.developerName.Replace(" ", "_") + "_" + 
+                    string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
                                       MonthName + "_" +
                                       pdfModal.billNo.Replace("#", "") + ".pdf";
 
@@ -161,18 +163,24 @@ namespace DocMaker.PdfService
                         Directory.CreateDirectory(folderPath);
 
                     string physicalPath = Path.Combine(
-                                            folderPath, 
+                                            folderPath,
                                             FileName
                                     );
+
+                    if (File.Exists(physicalPath))
+                        File.Delete(physicalPath);
 
                     fileDetail.FilePath = FolderLocation;
                     fileDetail.FileName = FileName;
                     fileDetail.FileExtension = "pdf";
-                    fileDetail.FileId = -1;
+                    if (pdfModal.FileId > 0)
+                        fileDetail.FileId = pdfModal.FileId;
+                    else
+                        fileDetail.FileId = -1;
                     fileDetail.ClientId = pdfModal.ClientId;
                     fileDetail.StatusId = 2;
                     fileDetail.PaidOn = null;
-                    using (FileStream stream = new FileStream(physicalPath , FileMode.Create))
+                    using (FileStream stream = new FileStream(physicalPath, FileMode.Create))
                     {
                         Document pdfDoc = new Document(PageSize.A4, 5f, 5f, 60f, 0f);
                         PdfWriter.GetInstance(pdfDoc, stream);
@@ -214,10 +222,12 @@ namespace DocMaker.PdfService
                         stream.Close();
                         fileDetail.Status = "Generated";
                     }
-                } catch(Exception) {
+                }
+                catch (Exception)
+                {
                     fileDetail.Status = "Got error while create PDF file.";
                 }
-            }            
+            }
             return fileDetail;
         }
 

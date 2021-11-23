@@ -31,5 +31,13 @@ namespace OnlineDataBuilder.Controllers
             FileDetail fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
+
+        [HttpPost]
+        [Route("EditEmployeeBillDetail")]
+        public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] FileDetail fileDetail)
+        {
+            var result = _onlineDocumentService.EditEmployeeBillDetailService(fileDetail);
+            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+        }
     }
 }

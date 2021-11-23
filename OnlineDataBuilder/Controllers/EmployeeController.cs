@@ -38,6 +38,14 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [HttpPost]
+        [Route("UpdateEmployeeDetail/{IsUpdating}")]
+        public ApiResponse UpdateEmployeeDetail([FromBody] Employee employee, bool IsUpdating)
+        {
+            var Result = _employeeService.UpdateEmployeeDetailService(employee, IsUpdating);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
         [HttpGet("GetEmployeeById/{EmployeeId}/{IsActive}")]
         public ApiResponse GetEmployeeById(int EmployeeId, bool IsActive)
         {

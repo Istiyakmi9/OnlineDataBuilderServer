@@ -177,29 +177,28 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public DropdownItems LoadApplicationData() {
-            DropdownItems dropdownItems = default;
-            long AdminId = 0;
+        public DataSet LoadApplicationData() {
             string AdminUid = _authenticationService.ReadJwtToken();
             if (!string.IsNullOrEmpty(AdminUid))
             {
-                AdminId = Convert.ToInt64(AdminUid);
+                var AdminId = Convert.ToInt64(AdminUid);
                 if(AdminId > 0) {
                     DbParam[] dbParams = new DbParam[]
                     {
                         new DbParam(AdminId, typeof(long), "_AdminId")
                     };
 
-                    dropdownItems = new DropdownItems();
                     var Result = this.db.GetDataset("SP_ApplicationLevelDropdown_Get", dbParams);
-                    if (Result.Tables.Count == 2)
+                    if (Result.Tables.Count == 3)
                     {
-                        dropdownItems.clients = Converter.ToList<Client>(Result.Tables[0]);
-                        dropdownItems.employees = Converter.ToList<Employee>(Result.Tables[1]);
+                        Result.Tables[0].TableName = "clients";
+                        Result.Tables[1].TableName = "employees";
+                        Result.Tables[2].TableName = "allocatedClients";
                     }
+                    return Result;
                 }
             }
-            return dropdownItems;
+            return null;
         }
 
         public Bills GetBillData() {
@@ -248,7 +247,8 @@ namespace ServiceLayer.Code
                         }
                         i++;
                     }
-                    pdfModal.billNo = "#" + GeneratedBillNo;
+                    pdfModal.billNo = GeneratedBillNo;
+                    bill.BillUid = pdfModal.billId;
                 }
                     
                 fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
@@ -264,6 +264,7 @@ namespace ServiceLayer.Code
                         new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
                         new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
                         new DbParam(bill.BillUid, typeof(int), "_BillUid"),
+                        new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
                         new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
                         new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
                         new DbParam(Year, typeof(int), "_BillYear"),
@@ -294,8 +295,7 @@ namespace ServiceLayer.Code
             return fileDetail;
         }
 
-        public List<Files> GetFilesAndFolderByIdService(string Type, string Uid) {
-            List<Files> files = new List<Files>();
+        public DataSet GetFilesAndFolderByIdService(string Type, string Uid) {
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(Type, typeof(string), "_Type"),
@@ -303,11 +303,12 @@ namespace ServiceLayer.Code
             };
 
             var Result = this.db.GetDataset("sp_Files_GetById", dbParams);
-            if (Result.Tables.Count == 1)
+            if (Result.Tables.Count == 2)
             {
-                files = Converter.ToList<Files>(Result.Tables[0]);
+                Result.Tables[0].TableName = "Files";
+                Result.Tables[1].TableName = "Employee";
             }
-            return files;
+            return Result;
         }
 
         public List<Files> EditFileService(Files files)
@@ -324,6 +325,36 @@ namespace ServiceLayer.Code
             //var Result = this.db.ExecuteNonQuery("sp_Files_GetById", dbParams, true);
             //files = Converter.ToList<Files>(Result.Tables[0]);
             //return files;
+            return null;
+        }
+
+        public DataSet EditEmployeeBillDetailService(FileDetail fileDetail)
+        {
+            string AdminUid = _authenticationService.ReadJwtToken();
+            if (!string.IsNullOrEmpty(AdminUid))
+            {
+                var AdminId = Convert.ToInt64(AdminUid);
+                if (AdminId > 0)
+                {
+                    DbParam[] dbParams = new DbParam[]
+                    {
+                        new DbParam(AdminId, typeof(long), "_AdminId"),
+                        new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
+                        new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                        new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                    };
+
+                    var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
+                    if (Result.Tables.Count == 4)
+                    {
+                        Result.Tables[0].TableName = "fileDetail";
+                        Result.Tables[1].TableName = "clients";
+                        Result.Tables[2].TableName = "employees";
+                        Result.Tables[3].TableName = "allocatedClients";
+                    }
+                    return Result;
+                }
+            }
             return null;
         }
 
