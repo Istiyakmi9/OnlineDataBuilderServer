@@ -18,5 +18,6 @@ namespace ServiceLayer.Interface
         List<Files> EditFileService(Files files);
         string DeleteDataService(string Uid);
         DataSet EditEmployeeBillDetailService(FileDetail fileDetail);
+        string UpdateRecord(FileDetail fileDetail, long Uid);
     }
 }

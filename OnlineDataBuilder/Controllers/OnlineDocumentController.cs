@@ -22,8 +22,8 @@ namespace OnlineDataBuilder.Controllers
         private readonly CommonFilterService _commonFilterService;
         private readonly HttpContext _httpContext;
 
-        public OnlineDocumentController(IOnlineDocumentService ionlineDocumentService, 
-            IHttpContextAccessor httpContext, 
+        public OnlineDocumentController(IOnlineDocumentService ionlineDocumentService,
+            IHttpContextAccessor httpContext,
             CommonFilterService commonFilterService)
         {
             _ionlineDocumentService = ionlineDocumentService;
@@ -110,9 +110,16 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("DeleteData/{Uid}")]
-        public IResponse<ApiResponse> DeleteData (string Uid)
+        public IResponse<ApiResponse> DeleteData(string Uid)
         {
             var result = _ionlineDocumentService.DeleteDataService(Uid);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("UpdateRecord/{Uid}")]
+        public IResponse<ApiResponse> UpdateRecord([FromBody] FileDetail fileDetail, [FromRoute] long Uid)
+        {
+            var result = _ionlineDocumentService.UpdateRecord(fileDetail, Uid);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

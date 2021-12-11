@@ -362,5 +362,29 @@ namespace ServiceLayer.Code
         {
             throw new NotImplementedException();
         }
+
+        public string UpdateRecord(FileDetail fileDetail, long Uid)
+        {
+            string status = string.Empty;
+            string AdminUid = _authenticationService.ReadJwtToken();
+            if (!string.IsNullOrEmpty(AdminUid))
+            {
+                var AdminId = Convert.ToInt64(AdminUid);
+                if (AdminId > 0)
+                {
+                    DbParam[] dbParams = new DbParam[]
+                    {
+                        new DbParam(Uid, typeof(long), "_FileId"),
+                        new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
+                        new DbParam(fileDetail.UpdatedOn, typeof(DateTime), "_UpdatedOn"),
+                        new DbParam(AdminId, typeof(long), "_AdminId"),
+                        new DbParam(fileDetail.Notes, typeof(string), "_Notes"),
+                    };
+
+                    status = this.db.ExecuteNonQuery("sp_FileDetail_PatchRecord", dbParams, true);
+                }
+            }
+            return status;
+        }
     }
 }
