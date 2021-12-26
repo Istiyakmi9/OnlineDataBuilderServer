@@ -26,7 +26,7 @@ namespace ModalLayer.Modal
         public string developerName { set; get; }
         public string receiverSecondAddress { get; set; }
         public string receiverThirdAddress { set; get; }
-        public string senderFirstAddress { get; set; }        
+        public string senderFirstAddress { get; set; }
         public string senderSecondAddress { get; set; }
         public string senderPrimaryContactNo { get; set; }
         public string senderEmail { get; set; }
@@ -34,5 +34,6 @@ namespace ModalLayer.Modal
         public string receiverGSTNo { get; set; }
         public string receiverPrimaryContactNo { get; set; }
         public string receiverEmail { get; set; }
+        public int UpdateSeqNo { set; get; }
     }
 }

@@ -154,21 +154,30 @@ namespace DocMaker.PdfService
                     string MonthName = pdfModal.billingMonth.ToString("MMMM_yyyy");
 
                     string FolderLocation = Path.Combine("Documents", "Bills", MonthName);
+                    string OldFileName = pdfModal.developerName.Replace(" ", "_") + "_" +
+                                      MonthName + "_" +
+                                      pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo + ".pdf";
+
+                    pdfModal.UpdateSeqNo++;
                     string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
                                       MonthName + "_" +
-                                      pdfModal.billNo.Replace("#", "") + ".pdf";
-
+                                      pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo + ".pdf";
                     string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
                     if (!Directory.Exists(folderPath))
                         Directory.CreateDirectory(folderPath);
+
+                    string OldphysicalPath = Path.Combine(
+                                            folderPath,
+                                            OldFileName
+                                    );
 
                     string physicalPath = Path.Combine(
                                             folderPath,
                                             FileName
                                     );
 
-                    if (File.Exists(physicalPath))
-                        File.Delete(physicalPath);
+                    if (File.Exists(OldphysicalPath))
+                        File.Delete(OldphysicalPath);
 
                     fileDetail.FilePath = FolderLocation;
                     fileDetail.FileName = FileName;

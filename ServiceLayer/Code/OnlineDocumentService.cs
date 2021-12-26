@@ -22,8 +22,8 @@ namespace ServiceLayer.Code
         private readonly CommonFilterService _commonFilterService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IFileMaker _iFileMaker;
-        public OnlineDocumentService(IDb db, IFileService fileService, 
-            ILoginService loginService, 
+        public OnlineDocumentService(IDb db, IFileService fileService,
+            ILoginService loginService,
             IFileMaker iFileMaker,
             CommonFilterService commonFilterService,
             IAuthenticationService authenticationService)
@@ -177,12 +177,14 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public DataSet LoadApplicationData() {
+        public DataSet LoadApplicationData()
+        {
             string AdminUid = _authenticationService.ReadJwtToken();
             if (!string.IsNullOrEmpty(AdminUid))
             {
                 var AdminId = Convert.ToInt64(AdminUid);
-                if(AdminId > 0) {
+                if (AdminId > 0)
+                {
                     DbParam[] dbParams = new DbParam[]
                     {
                         new DbParam(AdminId, typeof(long), "_AdminId")
@@ -201,23 +203,27 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public Bills GetBillData() {
+        public Bills GetBillData()
+        {
             Bills bill = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(1, typeof(long), "_BillTypeUid")
             };
             DataSet ds = db.GetDataset("sp_billdata_get", param);
-            if(ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0){
+            if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            {
                 var bills = Converter.ToList<Bills>(ds.Tables[0]);
-                if(bills != null && bills.Count > 0) {
+                if (bills != null && bills.Count > 0)
+                {
                     bill = bills[0];
                 }
             }
             return bill;
         }
 
-        public FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal){
+        public FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        {
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
             pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
             pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
@@ -227,22 +233,30 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(AdminUid))
             {
                 AdminId = Convert.ToInt64(AdminUid);
-                
+
                 Bills bill = GetBillData();
-                if(string.IsNullOrEmpty(pdfModal.billNo)) {                
-                    if(bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo)){
+                if (string.IsNullOrEmpty(pdfModal.billNo))
+                {
+                    if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
+                    {
                         fileDetail.Status = "Fail to generate bill no. Please contact admin.";
                         return fileDetail;
                     }
                     pdfModal.billNo = bill.GeneratedBillNo;
-                } else {
+                }
+                else
+                {
                     string GeneratedBillNo = "";
                     int len = pdfModal.billNo.Length;
                     int i = 0;
-                    while(i < bill.BillNoLength) {
-                        if(i < len) {
+                    while (i < bill.BillNoLength)
+                    {
+                        if (i < len)
+                        {
                             GeneratedBillNo += pdfModal.billNo[i];
-                        } else {
+                        }
+                        else
+                        {
                             GeneratedBillNo = '0' + GeneratedBillNo;
                         }
                         i++;
@@ -250,9 +264,10 @@ namespace ServiceLayer.Code
                     pdfModal.billNo = GeneratedBillNo;
                     bill.BillUid = pdfModal.billId;
                 }
-                    
+
                 fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
-                if(AdminId > 0 && fileDetail.Status == "Generated") {
+                if (AdminId > 0 && fileDetail.Status == "Generated")
+                {
                     int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
                     DbParam[] dbParams = new DbParam[]
                     {
@@ -261,7 +276,7 @@ namespace ServiceLayer.Code
                         new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
                         new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
                         new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                        new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
+                        new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
                         new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
                         new DbParam(bill.BillUid, typeof(int), "_BillUid"),
                         new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
@@ -275,16 +290,20 @@ namespace ServiceLayer.Code
                         new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
                         new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
                         new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                        new DbParam(null, typeof(int), "_PaidOn"),
+                        new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
                         new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
+                        new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
                         new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
+                        new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
                         new DbParam(AdminId, typeof(long), "_AdminId")
                     };
 
                     fileDetail.Status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                    if(string.IsNullOrEmpty(fileDetail.Status)) {
+                    if (string.IsNullOrEmpty(fileDetail.Status))
+                    {
                         List<Files> files = new List<Files>();
-                        files.Add(new Files{
+                        files.Add(new Files
+                        {
                             FilePath = fileDetail.FilePath,
                             FileName = fileDetail.FileName
                         });
@@ -295,7 +314,8 @@ namespace ServiceLayer.Code
             return fileDetail;
         }
 
-        public DataSet GetFilesAndFolderByIdService(string Type, string Uid) {
+        public DataSet GetFilesAndFolderByIdService(string Type, string Uid)
+        {
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(Type, typeof(string), "_Type"),
@@ -372,6 +392,8 @@ namespace ServiceLayer.Code
                 var AdminId = Convert.ToInt64(AdminUid);
                 if (AdminId > 0)
                 {
+                    TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+                    fileDetail.UpdatedOn = TimeZoneInfo.ConvertTimeFromUtc(fileDetail.UpdatedOn, istTimeZome);
                     DbParam[] dbParams = new DbParam[]
                     {
                         new DbParam(Uid, typeof(long), "_FileId"),

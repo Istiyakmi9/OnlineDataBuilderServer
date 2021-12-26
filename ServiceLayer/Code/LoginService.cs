@@ -83,7 +83,8 @@ namespace ServiceLayer.Code
                 if (!string.IsNullOrEmpty(AdminUid))
                 {
                     AdminId = Convert.ToInt64(AdminUid);
-                    if(AdminId > 0) {
+                    if (AdminId > 0)
+                    {
                         DbParam[] param = new DbParam[]
                         {
                             new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
@@ -138,11 +139,16 @@ namespace ServiceLayer.Code
                     {
                         loginResponse = FetchUserDetail(authUser, true);
                     }
-                    else if (!string.IsNullOrEmpty(authUser.EmailId) && !string.IsNullOrEmpty(authUser.Mobile))
+                    else if (!string.IsNullOrEmpty(authUser.Mobile))
                     {
                         loginResponse = FetchUserDetail(authUser, false);
                     }
                 }
+                else if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
+                {
+                    loginResponse = FetchUserDetail(authUser, false);
+                }
+
                 return loginResponse;
             });
         }
