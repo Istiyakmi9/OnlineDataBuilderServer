@@ -27,6 +27,7 @@ namespace ModalLayer.Modal
         public string receiverSecondAddress { get; set; }
         public string receiverThirdAddress { set; get; }
         public string senderFirstAddress { get; set; }
+        public int daysAbsent { set; get; }
         public string senderSecondAddress { get; set; }
         public string senderPrimaryContactNo { get; set; }
         public string senderEmail { get; set; }
