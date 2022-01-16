@@ -122,5 +122,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _ionlineDocumentService.UpdateRecord(fileDetail, Uid);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("UploadDocumentRecords")]
+        public IResponse<ApiResponse> UploadDocumentRecords([FromBody] List<UploadDocument> uploadDocument)
+        {
+            var result = _ionlineDocumentService.UploadDocumentRecord(uploadDocument);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
