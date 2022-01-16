@@ -19,5 +19,6 @@ namespace ServiceLayer.Interface
         string DeleteDataService(string Uid);
         DataSet EditEmployeeBillDetailService(FileDetail fileDetail);
         string UpdateRecord(FileDetail fileDetail, long Uid);
+        string UploadDocumentRecord(List<UploadDocument> uploadDocument);
     }
 }

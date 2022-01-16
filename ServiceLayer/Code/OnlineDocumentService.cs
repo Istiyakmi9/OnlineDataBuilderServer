@@ -284,7 +284,7 @@ namespace ServiceLayer.Code
                         new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
                         new DbParam(Year, typeof(int), "_BillYear"),
                         new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                        new DbParam(pdfModal.daysAbsent, "_NoOfDaysAbsent"),
+                        new DbParam(pdfModal.daysAbsent, typeof(int), "_NoOfDaysAbsent"),
                         new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
                         new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
                         new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
@@ -407,6 +407,14 @@ namespace ServiceLayer.Code
                 }
             }
             return status;
+        }
+
+        public string UploadDocumentRecord(List<UploadDocument> uploadDocuments)
+        {
+            DataSet ds = Converter.ToDataSet<UploadDocument>(uploadDocuments);
+            var status = this.db.BatchInsert("sp_ProfessionalCandidates_InsUpdate", ds, true);
+            return "Uploaded success";
+
         }
     }
 }
