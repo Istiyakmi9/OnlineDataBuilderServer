@@ -129,5 +129,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _ionlineDocumentService.UploadDocumentRecord(uploadDocument);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("GetUploadedRecords")]
+        public IResponse<ApiResponse> GetProfessionalCandidatesRecords(FilterModel filterModel)
+        {
+            var result = _ionlineDocumentService.GetProfessionalCandidatesRecords(filterModel);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }

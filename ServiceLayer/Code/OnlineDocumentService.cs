@@ -416,5 +416,18 @@ namespace ServiceLayer.Code
             return "Uploaded success";
 
         }
+
+        public DataSet GetProfessionalCandidatesRecords(FilterModel filterModel)
+        {
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
+                new DbParam(filterModel.PageIndex, typeof(int), "_PageIndex"),
+                new DbParam(filterModel.PageSize, typeof(int), "_PageSize"),
+                new DbParam(filterModel.SortBy, typeof(string), "_SortBy")
+            };
+            DataSet Result = this.db.GetDataset("SP_professionalcandidates_filter", dbParams);
+            return Result;
+        }
     }
 }
