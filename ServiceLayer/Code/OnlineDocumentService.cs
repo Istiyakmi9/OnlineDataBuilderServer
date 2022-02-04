@@ -86,40 +86,6 @@ namespace ServiceLayer.Code
             return documentWithFileModel;
         }
 
-        public string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection FileCollection, List<Files> fileDetail)
-        {
-            string Result = "Fail";
-            var NewDocId = InsertOnlineDocument(createPageModel);
-            if (!string.IsNullOrEmpty(NewDocId))
-            {
-                if (FileCollection.Count > 0 && fileDetail.Count > 0)
-                {
-                    string FolderPath = Path.Combine("Documents",
-                        createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
-                    List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
-                    if (files != null && files.Count > 0)
-                    {
-                        Parallel.ForEach(files, item =>
-                        {
-                            item.Status = "Pending";
-                            item.BillTypeId = 1;
-                            item.UserId = 1;
-                            item.PaidOn = null;
-                        });
-                        DataSet fileDs = Converter.ToDataSet<Files>(files);
-                        if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
-                        {
-                            DataTable table = fileDs.Tables[0];
-                            table.TableName = "Files";
-                            db.InsertUpdateBatchRecord("sp_Files_InsUpd", table);
-                            Result = "Success";
-                        }
-                    }
-                }
-            }
-            return Result;
-        }
-
         public string DeleteFilesService(List<Files> fileDetails)
         {
 
@@ -295,6 +261,7 @@ namespace ServiceLayer.Code
                         new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
                         new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
                         new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
+                        new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
                         new DbParam(AdminId, typeof(long), "_AdminId")
                     };
 
@@ -428,6 +395,97 @@ namespace ServiceLayer.Code
             };
             DataSet Result = this.db.GetDataset("SP_professionalcandidates_filter", dbParams);
             return Result;
+        }
+
+        public string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection FileCollection, List<Files> fileDetail)
+        {
+            string Result = "Fail";
+            var NewDocId = InsertOnlineDocument(createPageModel);
+            if (!string.IsNullOrEmpty(NewDocId))
+            {
+                if (FileCollection.Count > 0 && fileDetail.Count > 0)
+                {
+                    string FolderPath = Path.Combine("Documents",
+                        createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
+                    List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
+                    if (files != null && files.Count > 0)
+                    {
+                        Parallel.ForEach(files, item =>
+                        {
+                            item.Status = "Pending";
+                            item.BillTypeId = 1;
+                            item.UserId = 1;
+                            item.PaidOn = null;
+                        });
+                        DataSet fileDs = Converter.ToDataSet<Files>(files);
+                        if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
+                        {
+                            DataTable table = fileDs.Tables[0];
+                            table.TableName = "Files";
+                            db.InsertUpdateBatchRecord("sp_Files_InsUpd", table);
+                            Result = "Success";
+                        }
+                    }
+                }
+            }
+            return Result;
+        }
+
+        public DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection FileCollection)
+        {
+            DataSet Result = null;
+            Files file = fileDetail.FirstOrDefault();
+            if (FileCollection.Count > 0 && fileDetail.Count > 0)
+            {
+                string FolderPath = Path.Combine("Documents", "User");
+                List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
+                if (files != null && files.Count > 0)
+                {
+
+                    var Data = InsertFileDetails(fileDetail);
+                    Result = GetDoocumentResultById(file);
+                }
+            }
+
+            return Result;
+        }
+
+        public DataSet GetDoocumentResultById(Files fileDetail)
+        {
+            DataSet Result = null;
+            if (fileDetail != null)
+            {
+                DbParam[] dbParams = new DbParam[]
+                {
+                        new DbParam(fileDetail.UserId, typeof(long), "_OwnerId")
+                };
+
+                Result = this.db.GetDataset("sp_document_filedetail_get", dbParams);
+            }
+
+            return Result;
+        }
+
+        public int InsertFileDetails(List<Files> fileDetail)
+        {
+            var fileInfo = (from n in fileDetail.AsEnumerable()
+                            select new
+                            {
+                                FileId = n.FileUid,
+                                FileOwnerId = n.UserId,
+                                FileName = n.FileName,
+                                FilePath = n.FilePath,
+                                FileExtension = n.FileExtension,
+                                StatusId = 0,
+                                UserTypeId = (int)n.UserTypeId,
+                                AdminId = 1
+                            });
+
+            DataTable table = Converter.ToDataTable(fileInfo);
+            var dataSet = new DataSet();
+            dataSet.Tables.Add(table);
+            var result = this.db.BatchInsert("sp_document_filedetail_insupd", dataSet, true);
+            return result;
         }
     }
 }

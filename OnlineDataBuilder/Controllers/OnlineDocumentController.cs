@@ -136,5 +136,28 @@ namespace OnlineDataBuilder.Controllers
             var result = _ionlineDocumentService.GetProfessionalCandidatesRecords(filterModel);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("GetDocumentByUserId")]
+        public IResponse<ApiResponse> GetDocumentByUserId(Files filterModel)
+        {
+            var result = _ionlineDocumentService.GetDoocumentResultById(filterModel);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("UploadFile")]
+        public IResponse<ApiResponse> UploadProfessionalCandidatesFile()
+        {
+            StringValues RegistrationData = default(string);
+            StringValues FileData = default(string);
+            _httpContext.Request.Form.TryGetValue("fileDetail", out FileData);
+            if (FileData.Count > 0)
+            {
+                List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var Result = this._ionlineDocumentService.UploadFilesOrDocuments(fileDetail, files);
+                BuildResponse(Result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
+        }
     }
 }

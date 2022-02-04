@@ -38,5 +38,6 @@ namespace ModalLayer.Modal
         public long EmployeeUid { set; get; }
         public int Index { set; get; }
         public bool IsActive { set; get; }
+        public int Total { set; get; }
     }
 }
