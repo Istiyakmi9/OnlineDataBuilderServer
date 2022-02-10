@@ -28,7 +28,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("GeneratePdf")]
         public IResponse<ApiResponse> GeneratePdf([FromBody] PdfModal pdfModal)
         {
-            FileDetail fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
+            var fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 

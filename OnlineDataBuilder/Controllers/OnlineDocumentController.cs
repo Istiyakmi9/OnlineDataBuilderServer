@@ -95,10 +95,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpGet("GetFilesAndFolderById/{Type}/{Uid}")]
-        public ApiResponse GetFilesAndFolderById(string Type, string Uid)
+        [HttpPost("GetFilesAndFolderById/{Type}/{Uid}")]
+        public ApiResponse GetFilesAndFolderById(string Type, string Uid, [FromBody] FilterModel filterModel)
         {
-            var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid);
+            var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid, filterModel);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 

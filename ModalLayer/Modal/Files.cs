@@ -15,7 +15,7 @@ namespace ModalLayer.Modal
     public class DocumentFile
     {
         public long FileUid { set; get; }
-        public int DocumentId { set; get; }
+        public long DocumentId { set; get; }
         public string ProfileUid { set; get; }
         public UserType UserTypeId { set; get; }
     }

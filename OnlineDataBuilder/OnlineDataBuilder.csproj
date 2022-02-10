@@ -37,5 +37,11 @@
     <Folder Include="ServerLogs\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Documents\logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 
 </Project>

@@ -67,7 +67,7 @@ namespace CoreServiceLayer.Implementation
                             }
 
                             currentFile.FileExtension = Extension;
-                            currentFile.DocumentId = Convert.ToInt32(ProfileUid);
+                            currentFile.DocumentId = Convert.ToInt64(ProfileUid);
                             currentFile.FilePath = FolderPath;
 
                             using (FileStream fs = System.IO.File.Create(ActualPath))
