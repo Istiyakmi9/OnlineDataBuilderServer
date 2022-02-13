@@ -231,7 +231,6 @@ namespace ServiceLayer.Code
                             i++;
                         }
                         pdfModal.billNo = GeneratedBillNo;
-                        bill.BillUid = pdfModal.billId;
                     }
 
                     fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
@@ -248,12 +247,13 @@ namespace ServiceLayer.Code
                             new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
                             new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
                             new DbParam(bill.BillUid, typeof(int), "_BillUid"),
+                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
                             new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
                             new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
                             new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
                             new DbParam(Year, typeof(int), "_BillYear"),
                             new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                            new DbParam(pdfModal.daysAbsent, typeof(int), "_NoOfDaysAbsent"),
+                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
                             new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
                             new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
                             new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
@@ -453,7 +453,7 @@ namespace ServiceLayer.Code
             Files file = fileDetail.FirstOrDefault();
             if (FileCollection.Count > 0 && fileDetail.Count > 0)
             {
-                string FolderPath = Path.Combine("Documents", "User");
+                string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
                 List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
                 if (files != null && files.Count > 0)
                 {

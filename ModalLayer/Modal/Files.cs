@@ -33,5 +33,7 @@ namespace ModalLayer.Modal
         public string Email { set; get; }
         public string FileType { set; get; }
         public string FileSize { set; get; }
+        public string? LocalImgPath { get; set; }
+        public FileSystemType SystemFileType { set; get; }
     }
 }

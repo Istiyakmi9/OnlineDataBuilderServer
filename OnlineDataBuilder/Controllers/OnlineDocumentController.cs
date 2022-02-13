@@ -155,7 +155,7 @@ namespace OnlineDataBuilder.Controllers
                 List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
                 var Result = this._ionlineDocumentService.UploadFilesOrDocuments(fileDetail, files);
-                BuildResponse(Result, HttpStatusCode.OK);
+                return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
