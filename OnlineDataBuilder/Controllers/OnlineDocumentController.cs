@@ -140,7 +140,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetDocumentByUserId")]
         public IResponse<ApiResponse> GetDocumentByUserId(Files filterModel)
         {
-            var result = _ionlineDocumentService.GetDoocumentResultById(filterModel);
+            var result = _ionlineDocumentService.GetDocumentResultById(filterModel);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

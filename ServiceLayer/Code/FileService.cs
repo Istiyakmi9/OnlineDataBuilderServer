@@ -48,35 +48,43 @@ namespace CoreServiceLayer.Implementation
         {
             string Extension = "";
             string NewFileName = string.Empty;
+            string ActualPath = string.Empty;
             if (!string.IsNullOrEmpty(FolderPath))
             {
                 foreach (var file in formFiles)
                 {
                     if (!string.IsNullOrEmpty(file.Name))
                     {
-                        if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, FolderPath)))
-                            Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, FolderPath));
+                        var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
+                        if (!string.IsNullOrEmpty(currentFile.FilePath))
+                            ActualPath = Path.Combine(FolderPath, currentFile.FilePath);
+                        else
+                            ActualPath = FolderPath;
+
+                        ActualPath = ActualPath.ToLower();
+                        currentFile.FilePath = ActualPath;
+                        if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath)))
+                            Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath));
 
                         Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
                         NewFileName = file.Name;
 
-                        var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
 
                         if (currentFile != null)
                         {
-                            string ActualPath = Path.Combine(_hostingEnvironment.ContentRootPath, FolderPath, NewFileName);
-                            if (File.Exists(ActualPath))
+                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
+                            if (File.Exists(FilePath))
                             {
                                 NewFileName = DateTime.Now.Ticks.ToString() + "_" + NewFileName;
-                                ActualPath = Path.Combine(_hostingEnvironment.ContentRootPath, FolderPath, NewFileName);
+                                FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
                                 currentFile.FileName = NewFileName;
                             }
 
                             currentFile.FileExtension = Extension;
                             currentFile.DocumentId = Convert.ToInt64(ProfileUid);
-                            currentFile.FilePath = FolderPath;
+                            currentFile.FilePath = ActualPath;
 
-                            using (FileStream fs = System.IO.File.Create(ActualPath))
+                            using (FileStream fs = System.IO.File.Create(FilePath))
                             {
                                 file.CopyTo(fs);
                                 fs.Flush();
@@ -111,13 +119,20 @@ namespace CoreServiceLayer.Implementation
             return Result;
         }
 
-        public string CreateFolder(Files fileDetail)
+        public DataSet CreateFolder(Files fileDetail)
         {
             bool isLocationFound = false;
             string actualFolderPath = string.Empty;
-            string resultStatus = string.Empty;
+            DataSet dataSet = null;
             if (fileDetail != null)
             {
+                fileDetail.FilePath = fileDetail.FilePath.ToLower();
+                if (string.IsNullOrEmpty(fileDetail.ParentFolder))
+                    fileDetail.ParentFolder = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                else
+                    fileDetail.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), fileDetail.ParentFolder);
+
+                fileDetail.ParentFolder = fileDetail.ParentFolder.ToLower();
                 if (!string.IsNullOrEmpty(fileDetail.FilePath))
                 {
                     switch (fileDetail.SystemFileType)
@@ -132,7 +147,7 @@ namespace CoreServiceLayer.Implementation
                                     fileDetail.FilePath
                                 );
 
-
+                            fileDetail.FilePath = fileDetail.FilePath.ToLower();
                             actualFolderPath = Path.Combine(
                                         _hostingEnvironment.ContentRootPath,
                                         fileDetail.FilePath
@@ -152,18 +167,18 @@ namespace CoreServiceLayer.Implementation
                             fileDetail
                         };
 
-                        var result = this.InsertFileDetails(files, ApplicationConstants.InserUserFileDetail);
-                        resultStatus = result.Item1;
+                        this.InsertFileDetails(files, ApplicationConstants.InserUserFileDetail);
+                        dataSet = this.GetUserFilesById(fileDetail.UserId);
                     }
                 }
             }
-            return resultStatus;
+            return dataSet;
         }
 
         public Tuple<string, bool> InsertFileDetails(List<Files> fileDetail, string procedure)
         {
-            var Items = fileDetail.Where(x => x.UserId <= 0);
-            if (Items.Count() > 0)
+            var Items = fileDetail.Where(x => x.UserId > 0);
+            if (Items.Count() == 0)
             {
                 return new Tuple<string, bool>("Incorrect userId provided.", false);
             }
@@ -175,6 +190,7 @@ namespace CoreServiceLayer.Implementation
                                 FileOwnerId = n.UserId,
                                 FileName = n.FileName,
                                 FilePath = n.FilePath,
+                                ParentFolder = n.ParentFolder,
                                 FileExtension = n.FileExtension,
                                 StatusId = 0,
                                 UserTypeId = (int)n.UserTypeId,

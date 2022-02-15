@@ -45,6 +45,7 @@ namespace ServiceLayer.Code
                                             FileOwnerId = n.UserId,
                                             FileName = n.FileName,
                                             FilePath = n.FilePath,
+                                            ParentFolder = n.ParentFolder,
                                             FileExtension = n.FileExtension,
                                             StatusId = 0,
                                             UserTypeId = (int)n.UserTypeId,
@@ -54,7 +55,7 @@ namespace ServiceLayer.Code
                         DataTable table = Converter.ToDataTable(fileInfo);
                         var dataSet = new DataSet();
                         dataSet.Tables.Add(table);
-                        this.db.BatchInsert("sp_document_filedetail_insupd", dataSet, true);
+                        this.db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
                     }
                 }
             }

@@ -453,20 +453,32 @@ namespace ServiceLayer.Code
             Files file = fileDetail.FirstOrDefault();
             if (FileCollection.Count > 0 && fileDetail.Count > 0)
             {
+                fileDetail.ForEach(item =>
+                {
+                    if (string.IsNullOrEmpty(item.ParentFolder))
+                    {
+                        item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                    }
+                    else
+                    {
+                        item.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), item.ParentFolder);
+                        item.ParentFolder = item.ParentFolder.ToLower();
+                    }
+                });
+
                 string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
                 List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
                 if (files != null && files.Count > 0)
                 {
-
                     var Data = InsertFileDetails(fileDetail);
-                    Result = GetDoocumentResultById(file);
+                    Result = GetDocumentResultById(file);
                 }
             }
 
             return Result;
         }
 
-        public DataSet GetDoocumentResultById(Files fileDetail)
+        public DataSet GetDocumentResultById(Files fileDetail)
         {
             DataSet Result = null;
             if (fileDetail != null)
@@ -491,6 +503,7 @@ namespace ServiceLayer.Code
                                 FileOwnerId = n.UserId,
                                 FileName = n.FileName,
                                 FilePath = n.FilePath,
+                                ParentFolder = n.ParentFolder,
                                 FileExtension = n.FileExtension,
                                 StatusId = 0,
                                 UserTypeId = (int)n.UserTypeId,
@@ -500,7 +513,7 @@ namespace ServiceLayer.Code
             DataTable table = Converter.ToDataTable(fileInfo);
             var dataSet = new DataSet();
             dataSet.Tables.Add(table);
-            var result = this.db.BatchInsert("sp_document_filedetail_insupd", dataSet, true);
+            var result = this.db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
             return result;
         }
     }

@@ -22,6 +22,6 @@ namespace ServiceLayer.Interface
         string UploadDocumentRecord(List<UploadDocument> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
         DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
-        DataSet GetDoocumentResultById(Files fileDetail);
+        DataSet GetDocumentResultById(Files fileDetail);
     }
 }
