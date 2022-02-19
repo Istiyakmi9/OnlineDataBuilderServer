@@ -96,21 +96,22 @@ namespace CoreServiceLayer.Implementation
             return fileDetail;
         }
 
-        public DataSet DeleteFiles(long userId, List<string> fileIds)
+        public DataSet DeleteFiles(long userId, List<string> fileIds, int userTypeId)
         {
             this.DeleteFilesEntry(fileIds, ApplicationConstants.GetUserFileById);
-            var resultSet = GetUserFilesById(userId);
+            var resultSet = GetUserFilesById(userId, userTypeId);
             return resultSet;
         }
 
-        public DataSet GetUserFilesById(long userId)
+        public DataSet GetUserFilesById(long userId, int userTypeId)
         {
             DataSet Result = null;
             if (userId > 0)
             {
                 DbParam[] dbParams = new DbParam[]
                 {
-                        new DbParam(userId, typeof(long), "_OwnerId")
+                        new DbParam(userId, typeof(long), "_OwnerId"),
+                        new DbParam(userTypeId, typeof(int), "_UserTypeId")
                 };
 
                 Result = _db.GetDataset("sp_document_filedetail_get", dbParams);
@@ -168,7 +169,7 @@ namespace CoreServiceLayer.Implementation
                         };
 
                         this.InsertFileDetails(files, ApplicationConstants.InserUserFileDetail);
-                        dataSet = this.GetUserFilesById(fileDetail.UserId);
+                        dataSet = this.GetUserFilesById(fileDetail.UserId, (int)fileDetail.UserTypeId);
                     }
                 }
             }

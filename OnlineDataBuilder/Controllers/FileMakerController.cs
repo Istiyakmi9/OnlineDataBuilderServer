@@ -54,10 +54,10 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpDelete]
-        [Route("DeleteFile/{userId}")]
-        public IResponse<ApiResponse> DeleteFiles(long userId, List<string> fileIds)
+        [Route("DeleteFile/{userId}/{UserTypeId}")]
+        public IResponse<ApiResponse> DeleteFiles(long userId, int userTypeId, List<string> fileIds)
         {
-            var result = _fileService.DeleteFiles(userId, fileIds);
+            var result = _fileService.DeleteFiles(userId, fileIds, userTypeId);
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
     }

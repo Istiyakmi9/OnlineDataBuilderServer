@@ -30,5 +30,6 @@ namespace ModalLayer.Modal
         public string PanNo { set; get; }
         public long AdminId { set; get; }
         public bool IsActive { set; get; }
+        public int Total { get; set; }
     }
 }

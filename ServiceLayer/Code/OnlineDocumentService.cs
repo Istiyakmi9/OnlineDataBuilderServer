@@ -485,7 +485,8 @@ namespace ServiceLayer.Code
             {
                 DbParam[] dbParams = new DbParam[]
                 {
-                        new DbParam(fileDetail.UserId, typeof(long), "_OwnerId")
+                        new DbParam(fileDetail.UserId, typeof(long), "_OwnerId"),
+                        new DbParam(fileDetail.UserTypeId, typeof(long), "_UserTypeId")
                 };
 
                 Result = this.db.GetDataset("sp_document_filedetail_get", dbParams);

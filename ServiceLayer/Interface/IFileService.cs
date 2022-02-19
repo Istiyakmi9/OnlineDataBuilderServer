@@ -10,6 +10,6 @@ namespace ServiceLayer.Interface
         List<Files> SaveFile(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles, string ProfileUid);
         int DeleteFiles(List<Files> files);
         DataSet CreateFolder(Files file);
-        DataSet DeleteFiles(long userId, List<string> fileIds); 
+        DataSet DeleteFiles(long userId, List<string> fileIds, int userTypeId); 
     }
 }
