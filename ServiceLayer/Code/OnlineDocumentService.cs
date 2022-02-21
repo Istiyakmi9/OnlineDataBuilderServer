@@ -18,19 +18,20 @@ namespace ServiceLayer.Code
     {
         private readonly IDb db;
         private readonly IFileService _fileService;
-        private readonly ILoginService _loginService;
         private readonly CommonFilterService _commonFilterService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IFileMaker _iFileMaker;
+        private readonly ICommonService _commonService;
+
         public OnlineDocumentService(IDb db, IFileService fileService,
-            ILoginService loginService,
             IFileMaker iFileMaker,
             CommonFilterService commonFilterService,
-            IAuthenticationService authenticationService)
+            IAuthenticationService authenticationService,
+            ICommonService commonService)
         {
             this.db = db;
+            _commonService = commonService;
             _fileService = fileService;
-            _loginService = loginService;
             _commonFilterService = commonFilterService;
             _authenticationService = authenticationService;
             _iFileMaker = iFileMaker;
@@ -145,28 +146,7 @@ namespace ServiceLayer.Code
 
         public DataSet LoadApplicationData()
         {
-            string AdminUid = _authenticationService.ReadJwtToken();
-            if (!string.IsNullOrEmpty(AdminUid))
-            {
-                var AdminId = Convert.ToInt64(AdminUid);
-                if (AdminId > 0)
-                {
-                    DbParam[] dbParams = new DbParam[]
-                    {
-                        new DbParam(AdminId, typeof(long), "_AdminId")
-                    };
-
-                    var Result = this.db.GetDataset("SP_ApplicationLevelDropdown_Get", dbParams);
-                    if (Result.Tables.Count == 3)
-                    {
-                        Result.Tables[0].TableName = "clients";
-                        Result.Tables[1].TableName = "employees";
-                        Result.Tables[2].TableName = "allocatedClients";
-                    }
-                    return Result;
-                }
-            }
-            return null;
+            return _commonService.LoadApplicationData();
         }
 
         public Bills GetBillData()

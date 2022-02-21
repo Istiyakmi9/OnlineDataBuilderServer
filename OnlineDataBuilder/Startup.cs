@@ -107,7 +107,8 @@ namespace OnlineDataBuilder
             services.AddScoped<IDocumentConverter, DocumentConverter>();
             services.AddScoped<IClientsService, ClientsService>();
             services.AddScoped<IBillService, BillService>();
-
+            services.AddScoped<IAttendanceService, AttendanceService>();
+            services.AddScoped<ICommonService, CommonService>();
 
             services.AddCors(options =>
             {
