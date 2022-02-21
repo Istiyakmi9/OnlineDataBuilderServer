@@ -10,13 +10,13 @@ using System.Net;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ApiController]
     [Route("api/[controller]")]
     public class ManageUserCommentsController : BaseController
     {
-        private readonly IManageUserCommentService<ManageUserCommentService> manageUserCommentService;
-        public ManageUserCommentsController(ManageUserCommentService manageUserCommentService)
+        private readonly IManageUserCommentService manageUserCommentService;
+        public ManageUserCommentsController(IManageUserCommentService manageUserCommentService)
         {
             this.manageUserCommentService = manageUserCommentService;
         }
@@ -30,8 +30,8 @@ namespace OnlineDataBuilder.Controllers
             return apiResponse;
         }
 
-        [HttpGet]
-        [Route("GetComments")]
+        [HttpGet("GetComments")]
+        [AllowAnonymous]
         public IResponse<ApiResponse> GetComments(string EmailId)
         {
             var ResultSet = this.manageUserCommentService.GetCommentsService(EmailId);

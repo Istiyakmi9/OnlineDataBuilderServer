@@ -63,6 +63,12 @@ namespace BottomhalfCore.Services.Code
                                 case "System.Guid":
                                     property.SetValue(item, Guid.Parse(row[property.Name].ToString()), null);
                                     break;
+                                case "System.DateTime":
+                                    property.SetValue(item, Convert.ToDateTime(row[property.Name].ToString()), null);
+                                    break;
+                                case "System.Int32":
+                                    property.SetValue(item, Convert.ToInt32(row[property.Name].ToString()), null);
+                                    break;
                                 default:
                                     property.SetValue(item, row[property.Name], null);
                                     break;
@@ -103,6 +109,46 @@ namespace BottomhalfCore.Services.Code
             }
 
             return ds;
+        }
+
+        public static DataTable ToDataTable<T>(IEnumerable<T> Linqlist)
+        {
+            DataTable dt = new DataTable();
+            PropertyInfo[] columns = null;
+
+            if (Linqlist == null) return dt;
+
+            foreach (T Record in Linqlist)
+            {
+
+                if (columns == null)
+                {
+                    columns = ((Type)Record.GetType()).GetProperties();
+                    foreach (PropertyInfo GetProperty in columns)
+                    {
+                        Type colType = GetProperty.PropertyType;
+
+                        if ((colType.IsGenericType) && (colType.GetGenericTypeDefinition()
+                               == typeof(Nullable<>)))
+                        {
+                            colType = colType.GetGenericArguments()[0];
+                        }
+
+                        dt.Columns.Add(new DataColumn(GetProperty.Name, colType));
+                    }
+                }
+
+                DataRow dr = dt.NewRow();
+
+                foreach (PropertyInfo pinfo in columns)
+                {
+                    dr[pinfo.Name] = pinfo.GetValue(Record, null) == null ? DBNull.Value : pinfo.GetValue
+                           (Record, null);
+                }
+
+                dt.Rows.Add(dr);
+            }
+            return dt;
         }
     }
 }

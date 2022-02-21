@@ -12,13 +12,15 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         private SqlDataAdapter da = null;
         private DataSet ds = null;
         private SqlCommandBuilder builder = null;
+        private readonly string ConnectionString;
 
         public Db(string ConnectionString)
         {
-            StabilizeConnection(ConnectionString);
+            this.ConnectionString = ConnectionString;
+            SetupConnection(ConnectionString);
         }
 
-        public void StabilizeConnection(string ConnectionString)
+        public void SetupConnection(string ConnectionString)
         {
             if (cmd != null)
                 cmd.Parameters.Clear();
@@ -27,6 +29,18 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
                 con = new SqlConnection();
                 cmd = new SqlCommand();
                 con.ConnectionString = ConnectionString;
+            }
+        }
+
+        public void ReSetupConnection()
+        {
+            if (cmd != null)
+                cmd.Parameters.Clear();
+            if (con == null || con.State == ConnectionState.Closed || con.State == ConnectionState.Broken)
+            {
+                con = new SqlConnection();
+                cmd = new SqlCommand();
+                con.ConnectionString = this.ConnectionString;
             }
         }
 
@@ -608,6 +622,6 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         }
 
         #endregion
-    }
 
+    }
 }

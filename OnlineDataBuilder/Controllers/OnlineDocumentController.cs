@@ -9,6 +9,7 @@ using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
+using ServiceLayer.Code;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -18,19 +19,23 @@ namespace OnlineDataBuilder.Controllers
     public class OnlineDocumentController : BaseController
     {
         private readonly IOnlineDocumentService _ionlineDocumentService;
+        private readonly CommonFilterService _commonFilterService;
         private readonly HttpContext _httpContext;
 
-        public OnlineDocumentController(IOnlineDocumentService ionlineDocumentService, IHttpContextAccessor httpContext)
+        public OnlineDocumentController(IOnlineDocumentService ionlineDocumentService,
+            IHttpContextAccessor httpContext,
+            CommonFilterService commonFilterService)
         {
             _ionlineDocumentService = ionlineDocumentService;
             _httpContext = httpContext.HttpContext;
+            _commonFilterService = commonFilterService;
         }
 
         [HttpPost]
         [Route("GetOnlineDocuments")]
         public IResponse<ApiResponse> GetOnlineDocuments([FromBody] FilterModel filterModel)
         {
-            var Result = _ionlineDocumentService.GetOnlineDocuments(filterModel);
+            var Result = _commonFilterService.GetResult<OnlineDocumentModel>(filterModel, "SP_OnlineDocument_Get");
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
@@ -81,6 +86,78 @@ namespace OnlineDataBuilder.Controllers
                 }
             }
             return apiResponse;
+        }
+
+        [HttpGet("LoadApplicationData")]
+        public ApiResponse LoadApplicationData()
+        {
+            var Result = _ionlineDocumentService.LoadApplicationData();
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("GetFilesAndFolderById/{Type}/{Uid}")]
+        public ApiResponse GetFilesAndFolderById(string Type, string Uid, [FromBody] FilterModel filterModel)
+        {
+            var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid, filterModel);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("EditFile")]
+        public IResponse<ApiResponse> EditFile([FromBody] Files files)
+        {
+            var result = _ionlineDocumentService.EditFileService(files);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpGet("DeleteData/{Uid}")]
+        public IResponse<ApiResponse> DeleteData(string Uid)
+        {
+            var result = _ionlineDocumentService.DeleteDataService(Uid);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("UpdateRecord/{Uid}")]
+        public IResponse<ApiResponse> UpdateRecord([FromBody] FileDetail fileDetail, [FromRoute] long Uid)
+        {
+            var result = _ionlineDocumentService.UpdateRecord(fileDetail, Uid);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("UploadDocumentRecords")]
+        public IResponse<ApiResponse> UploadDocumentRecords([FromBody] List<UploadDocument> uploadDocument)
+        {
+            var result = _ionlineDocumentService.UploadDocumentRecord(uploadDocument);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("GetUploadedRecords")]
+        public IResponse<ApiResponse> GetProfessionalCandidatesRecords(FilterModel filterModel)
+        {
+            var result = _ionlineDocumentService.GetProfessionalCandidatesRecords(filterModel);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("GetDocumentByUserId")]
+        public IResponse<ApiResponse> GetDocumentByUserId(Files filterModel)
+        {
+            var result = _ionlineDocumentService.GetDocumentResultById(filterModel);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("UploadFile")]
+        public IResponse<ApiResponse> UploadProfessionalCandidatesFile()
+        {
+            StringValues RegistrationData = default(string);
+            StringValues FileData = default(string);
+            _httpContext.Request.Form.TryGetValue("fileDetail", out FileData);
+            if (FileData.Count > 0)
+            {
+                List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var Result = this._ionlineDocumentService.UploadFilesOrDocuments(fileDetail, files);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
         }
     }
 }

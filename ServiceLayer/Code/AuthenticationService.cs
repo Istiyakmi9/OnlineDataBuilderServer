@@ -7,6 +7,7 @@ using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -28,13 +29,13 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        private string ReadJwtToken()
+        public string ReadJwtToken()
         {
             string userId = string.Empty;
             if (!string.IsNullOrEmpty(_currentSession.Authorization))
             {
                 string token = _currentSession.Authorization.Replace("Bearer", "").Trim();
-                if (!string.IsNullOrEmpty(token))
+                if (!string.IsNullOrEmpty(token) && token != "null")
                 {
                     var handler = new JwtSecurityTokenHandler();
                     handler.ValidateToken(token, new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -55,11 +56,9 @@ namespace ServiceLayer.Code
             return userId;
         }
 
-        public RefreshTokenModal Authenticate(string userId)
+        public RefreshTokenModal Authenticate(long userId)
         {
-            if (string.IsNullOrEmpty(userId))
-                return null;
-            string generatedToken = GenerateAccessToken(userId);
+            string generatedToken = GenerateAccessToken(userId.ToString());
             var refreshToken = GenerateRefreshToken(null);
             refreshToken.Token = generatedToken;
             SaveRefreshToken(refreshToken, userId);
@@ -79,7 +78,10 @@ namespace ServiceLayer.Code
                     new Claim(ClaimTypes.Version, "1.0.0"),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 }),
-                Expires = DateTime.UtcNow.AddDays(1),
+
+                //----------- Expiry time at after what time token will get expired -----------------------------
+                Expires = DateTime.UtcNow.AddHours(_jwtSetting.AccessTokenExpiryTimeInHours),
+
                 SigningCredentials = new SigningCredentials(
                                             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSetting.Key)),
                                             SecurityAlgorithms.HmacSha256Signature
@@ -91,38 +93,47 @@ namespace ServiceLayer.Code
             return generatedToken;
         }
 
-        public RefreshTokenModal RenewAndGenerateNewToken()
+        public RefreshTokenModal RenewAndGenerateNewToken(string Mobile, string Email)
         {
-            string UserId = ReadJwtToken();
+            long UserId = 0;
+            string TokenUserId = ReadJwtToken();
+            if (!string.IsNullOrEmpty(TokenUserId))
+                UserId = Convert.ToInt64(TokenUserId);
             RefreshTokenModal refreshTokenModal = default;
-            DbParam[] param = new DbParam[]
+            if (UserId > 0 || !string.IsNullOrEmpty(Email) || !string.IsNullOrEmpty(Mobile))
             {
-                new DbParam(UserId, typeof(string), "@UserId")
-            };
-            var ResultSet = _db.GetDataset("SP_AuthenticationToken_VerifyAndGet", param);
-            if (ResultSet.Tables.Count > 0)
-            {
-                var Result = Converter.ToList<TokenModal>(ResultSet.Tables[0]);
-                if (Result.Count > 0)
+                DbParam[] param = new DbParam[]
                 {
-                    var currentModal = Result.FirstOrDefault();
-                    refreshTokenModal = new RefreshTokenModal
+                    new DbParam(UserId, typeof(long), "_UserId"),
+                    new DbParam(Mobile, typeof(string), "_Mobile"),
+                    new DbParam(Email, typeof(string), "_Email")
+                };
+                var ResultSet = _db.GetDataset("SP_AuthenticationToken_VerifyAndGet", param);
+                if (ResultSet.Tables.Count > 0)
+                {
+                    var Result = Converter.ToList<TokenModal>(ResultSet.Tables[0]);
+                    if (Result.Count > 0)
                     {
-                        Token = GenerateAccessToken(UserId),
-                        Expires = currentModal.ExpiryTime
-                    };
+                        var currentModal = Result.FirstOrDefault();
+                        refreshTokenModal = new RefreshTokenModal
+                        {
+                            Token = GenerateAccessToken(UserId.ToString()),
+                            Expires = currentModal.ExpiryTime
+                        };
+                    }
                 }
             }
+
             return refreshTokenModal;
         }
 
-        private void SaveRefreshToken(RefreshTokenModal refreshToken, string userId)
+        private void SaveRefreshToken(RefreshTokenModal refreshToken, long userId)
         {
             DbParam[] param = new DbParam[]
             {
-                new DbParam(userId, typeof(string), "@UserId"),
-                new DbParam(refreshToken.RefreshToken, typeof(string), "@RefreshToken"),
-                new DbParam(refreshToken.Expires, typeof(DateTime), "@ExpiryTime")
+                new DbParam(userId, typeof(long), "_UserId"),
+                new DbParam(refreshToken.RefreshToken, typeof(string), "_RefreshToken"),
+                new DbParam(refreshToken.Expires, typeof(DateTime), "_ExpiryTime")
             };
 
             _db.ExecuteNonQuery("sp_UpdateRefreshToken", param, false);
@@ -137,10 +148,167 @@ namespace ServiceLayer.Code
                 return new RefreshTokenModal
                 {
                     RefreshToken = Convert.ToBase64String(randomBytes),
-                    Expires = DateTime.UtcNow.AddDays(7),
+                    Expires = DateTime.UtcNow.AddHours(_jwtSetting.RefreshTokenExpiryTimeInHours),
                     Created = DateTime.UtcNow,
                     CreatedByIp = ipAddress
                 };
+            }
+        }
+
+        private int GetSaltSize(byte[] passwordBytes)
+        {
+            var key = new Rfc2898DeriveBytes(passwordBytes, passwordBytes, 1000);
+            byte[] ba = key.GetBytes(2);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < ba.Length; i++)
+            {
+                sb.Append(Convert.ToInt32(ba[i]).ToString());
+            }
+            int saltSize = 0;
+            string s = sb.ToString();
+            foreach (char c in s)
+            {
+                int intc = Convert.ToInt32(c.ToString());
+                saltSize = saltSize + intc;
+            }
+
+            return saltSize;
+        }
+        public byte[] GetRandomBytes(int length)
+        {
+            byte[] ba = new byte[length];
+            RNGCryptoServiceProvider.Create().GetBytes(ba);
+            return ba;
+        }
+
+        public string Encrypt(string text, string pwd)
+        {
+            byte[] originalBytes = Encoding.UTF8.GetBytes(text);
+            byte[] encryptedBytes = null;
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(pwd);
+
+            // Hash the password with SHA256  
+            passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
+
+            // Getting the salt size  
+            int saltSize = GetSaltSize(passwordBytes);
+            // Generating salt bytes  
+            byte[] saltBytes = GetRandomBytes(saltSize);
+
+            // Appending salt bytes to original bytes  
+            byte[] bytesToBeEncrypted = new byte[saltBytes.Length + originalBytes.Length];
+            for (int i = 0; i < saltBytes.Length; i++)
+            {
+                bytesToBeEncrypted[i] = saltBytes[i];
+            }
+            for (int i = 0; i < originalBytes.Length; i++)
+            {
+                bytesToBeEncrypted[i + saltBytes.Length] = originalBytes[i];
+            }
+
+            encryptedBytes = AES_Encrypt(bytesToBeEncrypted, passwordBytes);
+
+            return Convert.ToBase64String(encryptedBytes);
+        }
+        public string Decrypt(string decryptedText, string pwd)
+        {
+            byte[] bytesToBeDecrypted = Convert.FromBase64String(decryptedText);
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(pwd);
+
+            // Hash the password with SHA256  
+            passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
+
+            byte[] decryptedBytes = AES_Decrypt(bytesToBeDecrypted, passwordBytes);
+
+            if (decryptedBytes != null)
+            {
+                // Getting the size of salt  
+                int saltSize = GetSaltSize(passwordBytes);
+
+                // Removing salt bytes, retrieving original bytes  
+                byte[] originalBytes = new byte[decryptedBytes.Length - saltSize];
+                for (int i = saltSize; i < decryptedBytes.Length; i++)
+                {
+                    originalBytes[i - saltSize] = decryptedBytes[i];
+                }
+                return Encoding.UTF8.GetString(originalBytes);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private byte[] AES_Encrypt(byte[] bytesToBeEncrypted, byte[] passwordBytes)
+        {
+            byte[] encryptedBytes = null;
+
+            // Set your salt here, change it to meet your flavor:  
+            byte[] saltBytes = passwordBytes;
+            // Example:  
+            //saltBytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };  
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (RijndaelManaged AES = new RijndaelManaged())
+                {
+                    AES.KeySize = 256;
+                    AES.BlockSize = 128;
+
+                    var key = new Rfc2898DeriveBytes(passwordBytes, saltBytes, 1000);
+                    AES.Key = key.GetBytes(AES.KeySize / 8);
+                    AES.IV = key.GetBytes(AES.BlockSize / 8);
+
+                    AES.Mode = CipherMode.CBC;
+
+                    using (CryptoStream cs = new CryptoStream(ms, AES.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(bytesToBeEncrypted, 0, bytesToBeEncrypted.Length);
+                        cs.Close();
+                    }
+                    encryptedBytes = ms.ToArray();
+                }
+            }
+
+            return encryptedBytes;
+        }
+        private byte[] AES_Decrypt(byte[] bytesToBeDecrypted, byte[] passwordBytes)
+        {
+            try
+            {
+                byte[] decryptedBytes = null;
+                // Set your salt here to meet your flavor:  
+                byte[] saltBytes = passwordBytes;
+                // Example:  
+                //saltBytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };  
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (RijndaelManaged AES = new RijndaelManaged())
+                    {
+                        AES.KeySize = 256;
+                        AES.BlockSize = 128;
+
+                        var key = new Rfc2898DeriveBytes(passwordBytes, saltBytes, 1000);
+                        AES.Key = key.GetBytes(AES.KeySize / 8);
+                        AES.IV = key.GetBytes(AES.BlockSize / 8);
+
+                        //AES.Mode = CipherMode.CBC;  
+
+                        using (CryptoStream cs = new CryptoStream(ms, AES.CreateDecryptor(), CryptoStreamMode.Write))
+                        {
+                            cs.Write(bytesToBeDecrypted, 0, bytesToBeDecrypted.Length);
+                            //If(cs.Length = ""  
+                            cs.Close();
+                        }
+                        decryptedBytes = ms.ToArray();
+                    }
+                }
+                return decryptedBytes;
+            }
+            catch (Exception Ex)
+            {
+                return null;
             }
         }
     }
