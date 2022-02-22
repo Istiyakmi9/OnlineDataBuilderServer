@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -15,20 +17,23 @@ namespace OnlineDataBuilder.Controllers
         private readonly BuildPdfTable _buildPdfTable;
         private readonly IOnlineDocumentService _onlineDocumentService;
         private readonly IFileMaker _iFileMaker;
-        public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration, 
+        private readonly IFileService _fileService;
+        public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration,
             IOnlineDocumentService onlineDocumentService,
+            IFileService fileService,
             IOptions<BuildPdfTable> options)
         {
             _iFileMaker = iFileMaker;
             _buildPdfTable = options.Value;
             _onlineDocumentService = onlineDocumentService;
+            _fileService = fileService;
         }
 
         [HttpPost]
         [Route("GeneratePdf")]
         public IResponse<ApiResponse> GeneratePdf([FromBody] PdfModal pdfModal)
         {
-            FileDetail fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
+            var fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 
@@ -37,6 +42,22 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] FileDetail fileDetail)
         {
             var result = _onlineDocumentService.EditEmployeeBillDetailService(fileDetail);
+            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [Route("CreateFolder")]
+        public IResponse<ApiResponse> CreateFolder(Files file)
+        {
+            var result = _fileService.CreateFolder(file);
+            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+        }
+
+        [HttpDelete]
+        [Route("DeleteFile/{userId}/{UserTypeId}")]
+        public IResponse<ApiResponse> DeleteFiles(long userId, int userTypeId, List<string> fileIds)
+        {
+            var result = _fileService.DeleteFiles(userId, fileIds, userTypeId);
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
     }

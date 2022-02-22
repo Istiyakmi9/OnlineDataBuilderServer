@@ -12,9 +12,9 @@ namespace ServiceLayer.Interface
         string EditCurrentFileService(Files editFile);
         string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
         DataSet LoadApplicationData();
-        DataSet GetFilesAndFolderByIdService(string Type, string Uid);
+        DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel);
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
-        FileDetail InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
+        ResponseModel<FileDetail> InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
         List<Files> EditFileService(Files files);
         string DeleteDataService(string Uid);
         DataSet EditEmployeeBillDetailService(FileDetail fileDetail);
@@ -22,6 +22,6 @@ namespace ServiceLayer.Interface
         string UploadDocumentRecord(List<UploadDocument> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
         DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
-        DataSet GetDoocumentResultById(Files fileDetail);
+        DataSet GetDocumentResultById(Files fileDetail);
     }
 }

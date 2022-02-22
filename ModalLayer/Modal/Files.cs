@@ -15,7 +15,7 @@ namespace ModalLayer.Modal
     public class DocumentFile
     {
         public long FileUid { set; get; }
-        public int DocumentId { set; get; }
+        public long DocumentId { set; get; }
         public string ProfileUid { set; get; }
         public UserType UserTypeId { set; get; }
     }
@@ -33,5 +33,7 @@ namespace ModalLayer.Modal
         public string Email { set; get; }
         public string FileType { set; get; }
         public string FileSize { set; get; }
+        public string ParentFolder { set; get; } = null;
+        public FileSystemType SystemFileType { set; get; }
     }
 }

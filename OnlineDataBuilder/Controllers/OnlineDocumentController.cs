@@ -95,10 +95,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpGet("GetFilesAndFolderById/{Type}/{Uid}")]
-        public ApiResponse GetFilesAndFolderById(string Type, string Uid)
+        [HttpPost("GetFilesAndFolderById/{Type}/{Uid}")]
+        public ApiResponse GetFilesAndFolderById(string Type, string Uid, [FromBody] FilterModel filterModel)
         {
-            var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid);
+            var Result = _ionlineDocumentService.GetFilesAndFolderByIdService(Type, Uid, filterModel);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
@@ -140,7 +140,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetDocumentByUserId")]
         public IResponse<ApiResponse> GetDocumentByUserId(Files filterModel)
         {
-            var result = _ionlineDocumentService.GetDoocumentResultById(filterModel);
+            var result = _ionlineDocumentService.GetDocumentResultById(filterModel);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
@@ -155,7 +155,7 @@ namespace OnlineDataBuilder.Controllers
                 List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
                 var Result = this._ionlineDocumentService.UploadFilesOrDocuments(fileDetail, files);
-                BuildResponse(Result, HttpStatusCode.OK);
+                return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
