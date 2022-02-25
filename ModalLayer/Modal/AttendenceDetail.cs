@@ -19,5 +19,6 @@ namespace ModalLayer.Modal
         public long SubmittedBy { get; set; }
         public long UpdatedBy { get; set; }
         public string UserComments { get; set; }
+        public long EmployeeUid { get; set; }
     }
 }
