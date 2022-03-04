@@ -18,15 +18,17 @@ namespace OnlineDataBuilder.Controllers
         private readonly IOnlineDocumentService _onlineDocumentService;
         private readonly IFileMaker _iFileMaker;
         private readonly IFileService _fileService;
+        private readonly IBillService _billService;
         public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration,
             IOnlineDocumentService onlineDocumentService,
-            IFileService fileService,
+            IFileService fileService, IBillService billService,
             IOptions<BuildPdfTable> options)
         {
             _iFileMaker = iFileMaker;
             _buildPdfTable = options.Value;
             _onlineDocumentService = onlineDocumentService;
             _fileService = fileService;
+            _billService  = billService;
         }
 
         [HttpPost]
@@ -34,6 +36,14 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GeneratePdf([FromBody] PdfModal pdfModal)
         {
             var fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
+            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [Route("GenerateBill")]
+        public IResponse<ApiResponse> GenerateBill([FromBody] PdfModal pdfModal)
+        {
+            var fileDetail = _billService.GenerateDocument(pdfModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 

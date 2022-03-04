@@ -23,6 +23,7 @@ namespace ModalLayer.Modal
         public string senderCompanyName { get; set; }
         public string receiverFirstAddress { get; set; }
         public string receiverCompanyName { get; set; }
+        public int senderClientId { get; set; }
         public string developerName { set; get; }
         public string receiverSecondAddress { get; set; }
         public string receiverThirdAddress { set; get; }

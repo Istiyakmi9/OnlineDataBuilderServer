@@ -49,4 +49,12 @@ namespace ModalLayer.Modal
         public bool isBold { set; get; }
         public string color { set; get; }
     }
+
+    public class FileLocationDetail
+    {
+        public string Location { set; get; }
+        public List<string> HtmlTemplaePath { set; get; }
+        public string BillsPath { set; get; }
+        public string StaffingBillTemplate { set; get; }
+    }
 }

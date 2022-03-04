@@ -414,5 +414,11 @@
         }
       }
     }
+  },
+  "BillingFolders": {
+    "Location": "Documents",
+    "HtmlTemplaePath": [ "HtmlTemplates", "Billing" ],
+    "BillsPath": "Bills",
+    "StaffingBillTemplate": "staffingBill.html"
   }
 }
