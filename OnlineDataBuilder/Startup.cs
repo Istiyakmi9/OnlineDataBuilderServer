@@ -1,6 +1,7 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MySql.Code;
 using CoreServiceLayer.Implementation;
+using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -93,6 +94,7 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
+            services.Configure<FileLocationDetail>(o => Configuration.GetSection("BillingFolders").Bind(o));
 
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>();
@@ -109,6 +111,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IBillService, BillService>();
             services.AddScoped<IAttendanceService, AttendanceService>();
             services.AddScoped<ICommonService, CommonService>();
+            services.AddScoped<IHTMLConverter, HTMLConverter>();
 
             services.AddCors(options =>
             {
