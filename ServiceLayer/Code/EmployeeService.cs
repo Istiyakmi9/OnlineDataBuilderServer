@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Data;
 
@@ -11,10 +12,13 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CommonFilterService _commonFilterService;
-        public EmployeeService(IDb db, CommonFilterService commonFilterService)
+        private readonly IAuthenticationService _authenticationService;
+
+        public EmployeeService(IDb db, CommonFilterService commonFilterService, IAuthenticationService authenticationService)
         {
             _db = db;
             _commonFilterService = commonFilterService;
+            _authenticationService = authenticationService;
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
@@ -72,6 +76,35 @@ namespace ServiceLayer.Code
                     employee = emps[0];
             }
             return employee;
+        }
+
+        public string DeleteEmployeeById(int EmployeeId, bool IsActive)
+        {
+            var status = string.Empty;
+            long AdminId = 0;
+            string AdminUid = _authenticationService.ReadJwtToken();
+            if (!string.IsNullOrEmpty(AdminUid))
+            {
+                AdminId = Convert.ToInt64(AdminUid);
+                if (AdminId > 0)
+                {
+                    DbParam[] param = new DbParam[]
+                  {
+                    new DbParam(EmployeeId, typeof(int), "_employeeId"),
+                    new DbParam(IsActive, typeof(bool), "_active"),
+                    new DbParam(AdminId, typeof(long), "_adminId")
+                  };
+
+                    status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
+                    //if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
+                    //{
+                    //    var emps = Converter.ToList<Employee>(resultSet.Tables[0]);
+                    //    if (emps != null && emps.Count > 0)
+                    //        employee = emps[0];
+                    //}
+                }
+            }
+            return status;
         }
     }
 }

@@ -12,5 +12,6 @@ namespace ServiceLayer.Interface
         DataSet GetManageEmployeeDetailService(long EmployeeId);
         DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, bool IsActive);
+        string DeleteEmployeeById(int EmployeeId, bool IsActive);
     }
 }
