@@ -11,8 +11,6 @@ namespace DocMaker.HtmlToDocx
 {
     public class HTMLConverter : IHTMLConverter
     {
-        private readonly string DocFilePath = @"C:\Users\istiy\Downloads\Mohd_Anees_Resume (1).doc";
-
         public string ToDocx(string html, string destinationFolder, string headerLogoPath)
         {
             string status = string.Empty;
