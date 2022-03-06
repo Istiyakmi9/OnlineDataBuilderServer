@@ -29,6 +29,11 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
+        struct UserClaims
+        {
+
+        }
+
         public string ReadJwtToken()
         {
             string userId = string.Empty;
@@ -56,16 +61,29 @@ namespace ServiceLayer.Code
             return userId;
         }
 
-        public RefreshTokenModal Authenticate(long userId)
+        public RefreshTokenModal Authenticate(long userId, int roleId)
         {
-            string generatedToken = GenerateAccessToken(userId.ToString());
+            string role = string.Empty;
+            switch (roleId)
+            {
+                case 1:
+                    role = Role.Admin;
+                    break;
+                case 2:
+                    role = Role.User;
+                    break;
+                default:
+                    role = Role.Vendor;
+                    break;
+            }
+            string generatedToken = GenerateAccessToken(userId.ToString(), role);
             var refreshToken = GenerateRefreshToken(null);
             refreshToken.Token = generatedToken;
             SaveRefreshToken(refreshToken, userId);
             return refreshToken;
         }
 
-        private string GenerateAccessToken(string userId)
+        private string GenerateAccessToken(string userId, string role)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -73,14 +91,14 @@ namespace ServiceLayer.Code
             {
                 Subject = new System.Security.Claims.ClaimsIdentity(new Claim[] {
                     new Claim(JwtRegisteredClaimNames.Sub, userId),
-                    new Claim(ClaimTypes.Role, "Admin"),
+                    new Claim(ClaimTypes.Role, role),
                     new Claim(ClaimTypes.Name, userId),
                     new Claim(ClaimTypes.Version, "1.0.0"),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 }),
 
                 //----------- Expiry time at after what time token will get expired -----------------------------
-                Expires = DateTime.UtcNow.AddHours(_jwtSetting.AccessTokenExpiryTimeInHours),
+                Expires = DateTime.UtcNow.AddSeconds(_jwtSetting.AccessTokenExpiryTimeInSeconds),
 
                 SigningCredentials = new SigningCredentials(
                                             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSetting.Key)),
@@ -93,7 +111,7 @@ namespace ServiceLayer.Code
             return generatedToken;
         }
 
-        public RefreshTokenModal RenewAndGenerateNewToken(string Mobile, string Email)
+        public RefreshTokenModal RenewAndGenerateNewToken(string Mobile, string Email, string UserRole)
         {
             long UserId = 0;
             string TokenUserId = ReadJwtToken();
@@ -117,7 +135,7 @@ namespace ServiceLayer.Code
                         var currentModal = Result.FirstOrDefault();
                         refreshTokenModal = new RefreshTokenModal
                         {
-                            Token = GenerateAccessToken(UserId.ToString()),
+                            Token = GenerateAccessToken(UserId.ToString(), UserRole),
                             Expires = currentModal.ExpiryTime
                         };
                     }
@@ -148,7 +166,7 @@ namespace ServiceLayer.Code
                 return new RefreshTokenModal
                 {
                     RefreshToken = Convert.ToBase64String(randomBytes),
-                    Expires = DateTime.UtcNow.AddHours(_jwtSetting.RefreshTokenExpiryTimeInHours),
+                    Expires = DateTime.UtcNow.AddSeconds(_jwtSetting.RefreshTokenExpiryTimeInSeconds),
                     Created = DateTime.UtcNow,
                     CreatedByIp = ipAddress
                 };

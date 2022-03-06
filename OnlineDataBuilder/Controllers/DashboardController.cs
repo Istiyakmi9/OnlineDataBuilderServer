@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
@@ -8,7 +7,6 @@ using System.Net;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
     public class DashboardController : BaseController
@@ -19,6 +17,7 @@ namespace OnlineDataBuilder.Controllers
             _dashboardService = dashboardService;
         }
 
+        [Authorize(Role.Admin)]
         [HttpPost("GetEmployeeDeatils")]
         public IResponse<ApiResponse> GetEmployeeDeatils(AttendenceDetail userDetail)
         {

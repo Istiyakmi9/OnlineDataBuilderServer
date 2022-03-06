@@ -2,7 +2,6 @@
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -11,13 +10,13 @@ namespace ServiceLayer.Code
     public class ClientsService : IClientsService
     {
         private readonly IDb _db;
-        private readonly IAuthenticationService _authenticationService;
         private readonly CommonFilterService _commonFilterService;
-        public ClientsService(IDb db, CommonFilterService commonFilterService, IAuthenticationService authenticationService)
+        private readonly CurrentSession _currentSession;
+        public ClientsService(IDb db, CommonFilterService commonFilterService, CurrentSession currentSession)
         {
             _db = db;
-            _authenticationService = authenticationService;
             _commonFilterService = commonFilterService;
+            _currentSession = currentSession;
         }
         public List<Client> GetClients(FilterModel filterModel)
         {
@@ -49,41 +48,33 @@ namespace ServiceLayer.Code
             return await Task.Run(() =>
             {
                 string status = "expired";
-                long AdminId = 0;
-                string AdminUid = _authenticationService.ReadJwtToken();
-                if (!string.IsNullOrEmpty(AdminUid))
+                DbParam[] param = new DbParam[]
                 {
-                    AdminId = Convert.ToInt64(AdminUid);
-                    if(AdminId > 0) {
-                        DbParam[] param = new DbParam[]
-                        {
-                            new DbParam(client.ClientId, typeof(long), "_ClientId"),
-                            new DbParam(client.ClientName, typeof(string), "_ClientName"),
-                            new DbParam(client.PrimaryPhoneNo, typeof(string), "_PrimaryPhoneNo"),
-                            new DbParam(client.SecondaryPhoneNo, typeof(string), "_SecondaryPhoneNo"),
-                            new DbParam(client.MobileNo, typeof(string), "_MobileNo"),
-                            new DbParam(client.Email, typeof(string), "_Email"),
-                            new DbParam(client.Fax, typeof(string), "_Fax"),
-                            new DbParam(client.GSTNO, typeof(string), "_GSTNO"),
-                            new DbParam(client.PanNo, typeof(string), "_PanNo"),
-                            new DbParam(client.Pincode, typeof(int), "_Pincode"),
-                            new DbParam(client.Country, typeof(string), "_Country"),
-                            new DbParam(client.State, typeof(string), "_State"),
-                            new DbParam(client.City, typeof(string), "_City"),
-                            new DbParam(client.FirstAddress, typeof(string), "_FirstAddress"),
-                            new DbParam(client.SecondAddress, typeof(string), "_SecondAddress"),
-                            new DbParam(client.ThirdAddress, typeof(string), "_ThirdAddress"),
-                            new DbParam(client.ForthAddress, typeof(string), "_ForthAddress"),
-                            new DbParam(client.IFSC, typeof(string), "_IFSC"),
-                            new DbParam(client.AccountNo, typeof(string), "_AccountNo"),
-                            new DbParam(client.BankName, typeof(string), "_BankName"),
-                            new DbParam(client.BranchName, typeof(string), "_BranchName"),
-                            new DbParam(AdminId, typeof(long), "_AdminId")
-                        };
+                    new DbParam(client.ClientId, typeof(long), "_ClientId"),
+                    new DbParam(client.ClientName, typeof(string), "_ClientName"),
+                    new DbParam(client.PrimaryPhoneNo, typeof(string), "_PrimaryPhoneNo"),
+                    new DbParam(client.SecondaryPhoneNo, typeof(string), "_SecondaryPhoneNo"),
+                    new DbParam(client.MobileNo, typeof(string), "_MobileNo"),
+                    new DbParam(client.Email, typeof(string), "_Email"),
+                    new DbParam(client.Fax, typeof(string), "_Fax"),
+                    new DbParam(client.GSTNO, typeof(string), "_GSTNO"),
+                    new DbParam(client.PanNo, typeof(string), "_PanNo"),
+                    new DbParam(client.Pincode, typeof(int), "_Pincode"),
+                    new DbParam(client.Country, typeof(string), "_Country"),
+                    new DbParam(client.State, typeof(string), "_State"),
+                    new DbParam(client.City, typeof(string), "_City"),
+                    new DbParam(client.FirstAddress, typeof(string), "_FirstAddress"),
+                    new DbParam(client.SecondAddress, typeof(string), "_SecondAddress"),
+                    new DbParam(client.ThirdAddress, typeof(string), "_ThirdAddress"),
+                    new DbParam(client.ForthAddress, typeof(string), "_ForthAddress"),
+                    new DbParam(client.IFSC, typeof(string), "_IFSC"),
+                    new DbParam(client.AccountNo, typeof(string), "_AccountNo"),
+                    new DbParam(client.BankName, typeof(string), "_BankName"),
+                    new DbParam(client.BranchName, typeof(string), "_BranchName"),
+                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
+                };
 
-                        status = _db.ExecuteNonQuery("SP_Client_IntUpd", param, true);  
-                    }
-                }          
+                status = _db.ExecuteNonQuery("SP_Client_IntUpd", param, true);
                 return status;
             });
         }

@@ -9,7 +9,6 @@ namespace ModalLayer.Modal
 {
     public class UserDetail : LoginDetail
     {
-        public string RoleUid { set; get; }
         public DateTime? Dob { set; get; }
         public string State { set; get; }
         public string City { set; get; }
@@ -32,6 +31,7 @@ namespace ModalLayer.Modal
         public string EmailId { set; get; }
         public string Address { set; get; }
         public string CompanyName { set; get; }
+        public int RoleId { set; get; }
     }
 
     public class LoginResponse

@@ -13,6 +13,8 @@ public class ApplicationConstants
     public const string InserUpdateAttendance = "sp_attendance_insupd";
     public const string deleteUserFile = "sp_document_filedetail_delete";
     public const string GetUserFileById = "sp_document_filedetail_getById";
+
+    public const string JWTBearer = "Bearer";
 }
 
 public enum FileSystemType

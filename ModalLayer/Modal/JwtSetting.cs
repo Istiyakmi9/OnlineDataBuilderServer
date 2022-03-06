@@ -8,7 +8,7 @@ namespace ModalLayer.Modal
     {
         public string Key { set; get; }
         public string Issuer { get; set; }
-        public long AccessTokenExpiryTimeInHours { set; get; }
-        public long RefreshTokenExpiryTimeInHours { set; get; }
+        public long AccessTokenExpiryTimeInSeconds { set; get; }
+        public long RefreshTokenExpiryTimeInSeconds { set; get; }
     }
 }

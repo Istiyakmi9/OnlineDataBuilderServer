@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using OnlineDataBuilder.ContextHandler;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
 {
+    [Authorize]
     public abstract class BaseController : ControllerBase
     {
         protected ApiResponse apiResponse;

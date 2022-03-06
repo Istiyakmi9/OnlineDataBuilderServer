@@ -16,11 +16,6 @@ namespace DocMaker.HtmlToDocx
             string status = string.Empty;
             if (!string.IsNullOrEmpty(html))
             {
-                //using (FileStream stream = File.Open(templatePath, FileMode.Open))
-                //{
-                //    StreamReader reader = new StreamReader(stream);
-                //    string html = reader.ReadToEnd();
-
                 if (File.Exists(destinationFolder)) File.Delete(destinationFolder);
 
                 using (MemoryStream generatedDocument = new MemoryStream())
