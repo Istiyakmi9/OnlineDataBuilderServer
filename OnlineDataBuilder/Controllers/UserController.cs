@@ -20,5 +20,12 @@ namespace OnlineDataBuilder.Controllers
         {
             return null;
         }
+
+        [Authorize(Role.Admin)]
+        [HttpPost("CreateUser")]
+        public IResponse<ApiResponse> CreateUser(UserDetail userDetail)
+        {
+            return null;
+        }
     }
 }
