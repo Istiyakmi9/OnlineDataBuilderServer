@@ -8,8 +8,8 @@ namespace ServiceLayer.Interface
 {
     public interface IClientsService
     {
-        Task<string> RegisterClient(Client client);
-        Client GetClientDetailById(long ClientId, bool IsActive);
-        List<Client> GetClients(FilterModel filterModel);
+        Task<string> RegisterClient(Organization client);
+        Organization GetClientDetailById(long ClientId, bool IsActive);
+        List<Organization> GetClients(FilterModel filterModel);
     }
 }

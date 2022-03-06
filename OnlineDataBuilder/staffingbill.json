@@ -51,46 +51,6 @@
           ]
         }
       },
-      "fromBriefAccountDetail": {
-        "table": {
-          "spaceAfter": 16,
-          "columnCount": 2,
-          "rows": [
-            {
-              "columns": [
-                {
-                  "text": [
-                    {
-                      "text": "GSTIN NO: - {{senderGstInNo}}",
-                      "isBold": true,
-                      "fontSize": 10
-                    },
-                    {
-                      "text": "ICICI Bank"
-                    },
-                    {
-                      "text": "BOTTOMHALF PRIVATE LIMITED"
-                    },
-                    {
-                      "text": "Account Number: 029105005572"
-                    },
-                    {
-                      "text": "IFSC: ICIC0000291"
-                    }
-                  ]
-                },
-                {
-                  "text": [
-                    { "text": "Invoice No: {{billNo}}" },
-                    { "text": "Date: {{dateOfBilling}}" }
-                  ],
-                  "align": "r"
-                }
-              ]
-            }
-          ]
-        }
-      },
       "toAddress": {
         "table": {
           "spaceAfter": 16,
@@ -362,11 +322,11 @@
                       "isBold": true,
                       "fontSize": 12
                     },
-                    { "text": "ICICI Bank" },
-                    { "text": "BottomHalf Pvt. Ltd." },
-                    { "text": "Account Number: 029105005572" },
-                    { "text": "IFSC: ICIC0000291" },
-                    { "text": "Place: Asansol (West Bengal)" }
+                    { "text": "{{bankName}}" },
+                    { "text": "{{compnayName}}" },
+                    { "text": "Account Number: {{accountNumber}}" },
+                    { "text": "IFSC: {{ifsc}}" },
+                    { "text": "Place: {{city}} ({{state}})" }
                   ]
                 }
               ]
