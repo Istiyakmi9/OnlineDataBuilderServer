@@ -22,15 +22,18 @@ namespace ServiceLayer.Code
         private readonly IAuthenticationService _authenticationService;
         private readonly IFileMaker _iFileMaker;
         private readonly ICommonService _commonService;
+        private readonly CurrentSession _currentSession;
 
         public OnlineDocumentService(IDb db, IFileService fileService,
             IFileMaker iFileMaker,
             CommonFilterService commonFilterService,
             IAuthenticationService authenticationService,
+            CurrentSession currentSession,
             ICommonService commonService)
         {
             this.db = db;
             _commonService = commonService;
+            _currentSession = currentSession;
             _fileService = fileService;
             _commonFilterService = commonFilterService;
             _authenticationService = authenticationService;
@@ -177,88 +180,81 @@ namespace ServiceLayer.Code
                 pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
                 pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
                 FileDetail fileDetail = new FileDetail();
-                long AdminId = 0;
-                string AdminUid = _authenticationService.ReadJwtToken();
-                if (!string.IsNullOrEmpty(AdminUid))
+                Bills bill = GetBillData();
+                if (string.IsNullOrEmpty(pdfModal.billNo))
                 {
-                    AdminId = Convert.ToInt64(AdminUid);
-
-                    Bills bill = GetBillData();
-                    if (string.IsNullOrEmpty(pdfModal.billNo))
+                    if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
                     {
-                        if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
-                        {
-                            responseModel.ErroMessage = "Fail to generate bill no. Please contact admin.";
-                            return responseModel;
-                        }
-                        pdfModal.billNo = bill.GeneratedBillNo;
+                        responseModel.ErroMessage = "Fail to generate bill no. Please contact admin.";
+                        return responseModel;
                     }
-                    else
+                    pdfModal.billNo = bill.GeneratedBillNo;
+                }
+                else
+                {
+                    string GeneratedBillNo = "";
+                    int len = pdfModal.billNo.Length;
+                    int i = 0;
+                    while (i < bill.BillNoLength)
                     {
-                        string GeneratedBillNo = "";
-                        int len = pdfModal.billNo.Length;
-                        int i = 0;
-                        while (i < bill.BillNoLength)
+                        if (i < len)
                         {
-                            if (i < len)
-                            {
-                                GeneratedBillNo += pdfModal.billNo[i];
-                            }
-                            else
-                            {
-                                GeneratedBillNo = '0' + GeneratedBillNo;
-                            }
-                            i++;
+                            GeneratedBillNo += pdfModal.billNo[i];
                         }
-                        pdfModal.billNo = GeneratedBillNo;
+                        else
+                        {
+                            GeneratedBillNo = '0' + GeneratedBillNo;
+                        }
+                        i++;
                     }
+                    pdfModal.billNo = GeneratedBillNo;
+                }
 
-                    fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
-                    if (AdminId > 0 && fileDetail.Status == "Generated")
+                fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
+                if (fileDetail.Status == "Generated")
+                {
+                    int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
+                    DbParam[] dbParams = new DbParam[]
                     {
-                        int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
-                        DbParam[] dbParams = new DbParam[]
-                        {
-                            new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                            new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                            new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
-                            new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
-                            new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                            new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
-                            new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
-                            new DbParam(bill.BillUid, typeof(int), "_BillUid"),
-                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
-                            new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
-                            new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
-                            new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                            new DbParam(Year, typeof(int), "_BillYear"),
-                            new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
-                            new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
-                            new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
-                            new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
-                            new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
-                            new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                            new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
-                            new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
-                            new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
-                            new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
-                            new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
-                            new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                            new DbParam(AdminId, typeof(long), "_AdminId")
-                        };
+                        new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                        new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                        new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
+                        new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
+                        new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
+                        new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
+                        new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
+                        new DbParam(bill.BillUid, typeof(int), "_BillUid"),
+                        new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
+                        new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
+                        new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
+                        new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
+                        new DbParam(Year, typeof(int), "_BillYear"),
+                        new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
+                        new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
+                        new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
+                        new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
+                        new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
+                        new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
+                        new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
+                        new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
+                        new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
+                        new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
+                        new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
+                        new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
+                        new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
+                        new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
+                    };
 
-                        fileDetail.Status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                        if (string.IsNullOrEmpty(fileDetail.Status))
+                    fileDetail.Status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                    if (string.IsNullOrEmpty(fileDetail.Status))
+                    {
+                        List<Files> files = new List<Files>();
+                        files.Add(new Files
                         {
-                            List<Files> files = new List<Files>();
-                            files.Add(new Files
-                            {
-                                FilePath = fileDetail.FilePath,
-                                FileName = fileDetail.FileName
-                            });
-                            _fileService.DeleteFiles(files);
-                        }
+                            FilePath = fileDetail.FilePath,
+                            FileName = fileDetail.FileName
+                        });
+                        _fileService.DeleteFiles(files);
                     }
                 }
 
@@ -313,32 +309,23 @@ namespace ServiceLayer.Code
 
         public DataSet EditEmployeeBillDetailService(FileDetail fileDetail)
         {
-            string AdminUid = _authenticationService.ReadJwtToken();
-            if (!string.IsNullOrEmpty(AdminUid))
+            DbParam[] dbParams = new DbParam[]
             {
-                var AdminId = Convert.ToInt64(AdminUid);
-                if (AdminId > 0)
-                {
-                    DbParam[] dbParams = new DbParam[]
-                    {
-                        new DbParam(AdminId, typeof(long), "_AdminId"),
-                        new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
-                        new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                        new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                    };
+                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
+                new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
+                new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+            };
 
-                    var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
-                    if (Result.Tables.Count == 4)
-                    {
-                        Result.Tables[0].TableName = "fileDetail";
-                        Result.Tables[1].TableName = "clients";
-                        Result.Tables[2].TableName = "employees";
-                        Result.Tables[3].TableName = "allocatedClients";
-                    }
-                    return Result;
-                }
+            var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
+            if (Result.Tables.Count == 4)
+            {
+                Result.Tables[0].TableName = "fileDetail";
+                Result.Tables[1].TableName = "clients";
+                Result.Tables[2].TableName = "employees";
+                Result.Tables[3].TableName = "allocatedClients";
             }
-            return null;
+            return Result;
         }
 
         public string DeleteDataService(string Uid)
@@ -349,26 +336,18 @@ namespace ServiceLayer.Code
         public string UpdateRecord(FileDetail fileDetail, long Uid)
         {
             string status = string.Empty;
-            string AdminUid = _authenticationService.ReadJwtToken();
-            if (!string.IsNullOrEmpty(AdminUid))
+            TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+            fileDetail.UpdatedOn = TimeZoneInfo.ConvertTimeFromUtc(fileDetail.UpdatedOn, istTimeZome);
+            DbParam[] dbParams = new DbParam[]
             {
-                var AdminId = Convert.ToInt64(AdminUid);
-                if (AdminId > 0)
-                {
-                    TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-                    fileDetail.UpdatedOn = TimeZoneInfo.ConvertTimeFromUtc(fileDetail.UpdatedOn, istTimeZome);
-                    DbParam[] dbParams = new DbParam[]
-                    {
-                        new DbParam(Uid, typeof(long), "_FileId"),
-                        new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
-                        new DbParam(fileDetail.UpdatedOn, typeof(DateTime), "_UpdatedOn"),
-                        new DbParam(AdminId, typeof(long), "_AdminId"),
-                        new DbParam(fileDetail.Notes, typeof(string), "_Notes"),
-                    };
+                new DbParam(Uid, typeof(long), "_FileId"),
+                new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
+                new DbParam(fileDetail.UpdatedOn, typeof(DateTime), "_UpdatedOn"),
+                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
+                new DbParam(fileDetail.Notes, typeof(string), "_Notes"),
+            };
 
-                    status = this.db.ExecuteNonQuery("sp_FileDetail_PatchRecord", dbParams, true);
-                }
-            }
+            status = this.db.ExecuteNonQuery("sp_FileDetail_PatchRecord", dbParams, true);
             return status;
         }
 

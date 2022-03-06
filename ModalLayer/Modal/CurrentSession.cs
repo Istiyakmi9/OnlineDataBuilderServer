@@ -2,6 +2,10 @@
 {
     public class CurrentSession
     {
+        public CurrentSession()
+        {
+            CurrentUserDetail = new UserDetail();
+        }
         public string UserAgent { set; get; }
         public string Authorization { set; get; }
         public string Culture { set; get; } = "en";

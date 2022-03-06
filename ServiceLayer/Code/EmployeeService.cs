@@ -12,13 +12,13 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CommonFilterService _commonFilterService;
-        private readonly IAuthenticationService _authenticationService;
+        private readonly CurrentSession _currentSession;
 
-        public EmployeeService(IDb db, CommonFilterService commonFilterService, IAuthenticationService authenticationService)
+        public EmployeeService(IDb db, CommonFilterService commonFilterService, CurrentSession currentSession)
         {
             _db = db;
             _commonFilterService = commonFilterService;
-            _authenticationService = authenticationService;
+            _currentSession = currentSession;
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
@@ -81,29 +81,14 @@ namespace ServiceLayer.Code
         public string DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
             var status = string.Empty;
-            long AdminId = 0;
-            string AdminUid = _authenticationService.ReadJwtToken();
-            if (!string.IsNullOrEmpty(AdminUid))
+            DbParam[] param = new DbParam[]
             {
-                AdminId = Convert.ToInt64(AdminUid);
-                if (AdminId > 0)
-                {
-                    DbParam[] param = new DbParam[]
-                  {
-                    new DbParam(EmployeeId, typeof(int), "_employeeId"),
-                    new DbParam(IsActive, typeof(bool), "_active"),
-                    new DbParam(AdminId, typeof(long), "_adminId")
-                  };
+                new DbParam(EmployeeId, typeof(int), "_employeeId"),
+                new DbParam(IsActive, typeof(bool), "_active"),
+                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_adminId")
+            };
 
-                    status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
-                    //if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
-                    //{
-                    //    var emps = Converter.ToList<Employee>(resultSet.Tables[0]);
-                    //    if (emps != null && emps.Count > 0)
-                    //        employee = emps[0];
-                    //}
-                }
-            }
+            status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
             return status;
         }
     }

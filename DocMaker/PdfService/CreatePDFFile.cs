@@ -1,12 +1,11 @@
-﻿using iTextSharp.text;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using iTextSharp.text;
 using iTextSharp.text.html;
 using iTextSharp.text.pdf;
+using iTextSharp.tool.xml;
 using ModalLayer.Modal;
 using System;
 using System.IO;
-using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Code;
-using System.Data;
 
 namespace DocMaker.PdfService
 {
@@ -140,6 +139,24 @@ namespace DocMaker.PdfService
             }
 
             return pdfTable;
+        }
+
+        public void ConvertToPDF(string html, string path)
+        {
+            StringReader sr = new StringReader(html);
+            Document pdfDoc = new Document(PageSize.A4, 10f, 10f, 10f, 0f);
+            using (FileStream stream = new FileStream(path, FileMode.OpenOrCreate))
+            {
+                PdfWriter writer = PdfWriter.GetInstance(pdfDoc, stream);
+                pdfDoc.Open();
+
+                XMLWorkerHelper.GetInstance().ParseXHtml(writer, pdfDoc, sr);
+                pdfDoc.Close();
+
+                pdfDoc.NewPage();
+                pdfDoc.Close();
+                stream.Close();
+            }
         }
 
         public FileDetail BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal)

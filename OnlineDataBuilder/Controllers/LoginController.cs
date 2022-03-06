@@ -39,15 +39,6 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
-        [Route("GenerateNewToken/{UserId}")]
-        public IResponse<ApiResponse> GenerateNewToken(string UserId = null)
-        {
-            var userDetail = _authenticationService.RenewAndGenerateNewToken(default, default);
-            return BuildResponse(userDetail, HttpStatusCode.OK);
-        }
-
-        [HttpGet]
         [Route("GetUserDetail")]
         public IResponse<ApiResponse> GetUserDetail(AuthUser authUser)
         {

@@ -81,9 +81,6 @@ namespace OnlineDataBuilder
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
             });
 
-            var data = Configuration.GetSection("StaffingBill").Get<BuildPdfTable>();
-            //var data = Configuration.GetSection("JwtSetting").Get<JwtSetting>();
-
             string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
             services.AddScoped<IDb, Db>(x => new Db(connectionString));
             services.AddScoped<IAuthenticationService, AuthenticationService>();
