@@ -38,8 +38,8 @@ namespace ServiceLayer.Code
             UserDetail userDetail = default;
             DbParam[] param = new DbParam[]
             {
-                new DbParam(authUser.MobileNo, typeof(string), "@Mobile"),
-                new DbParam(authUser.Email, typeof(string), "@Email")
+                new DbParam(authUser.Email, typeof(string), "_email"),
+                new DbParam(authUser.MobileNo, typeof(string), "_mobile")
             };
 
             var ResultSet = this.db.GetDataset("sp_UserDetail_GetByMobileOrEmail", param);

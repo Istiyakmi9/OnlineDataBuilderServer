@@ -38,7 +38,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("GetUserDetail")]
         public IResponse<ApiResponse> GetUserDetail(AuthUser authUser)
         {
