@@ -5,7 +5,7 @@ namespace DocMaker.PdfService
 {
     public class PdfGenerateHelper
     {
-        public BuildPdfTable MapUserDetail(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        public BuildPdfTable MapUserDetail(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender)
         {
             string strScript = JsonConvert.SerializeObject(_buildPdfTable);
             strScript = strScript.Replace("{{developer_name}}", pdfModal.developerName.ToUpper())
@@ -31,11 +31,17 @@ namespace DocMaker.PdfService
                                 .Replace("{{senderGstInNo}}", pdfModal.senderGSTNo.ToString())
                                 .Replace("{{senderFirstAddress}}", pdfModal.senderFirstAddress.ToString())
                                 .Replace("{{senderSecondAddress}}", pdfModal.senderSecondAddress.ToString())
-                                .Replace("{{senderPrimaryContactNo}}", pdfModal.senderPrimaryContactNo.ToString())                                                               
+                                .Replace("{{senderPrimaryContactNo}}", pdfModal.senderPrimaryContactNo.ToString())
                                 .Replace("{{senderEmailId}}", pdfModal.senderEmail.ToString())
                                 .Replace("{{billNo}}", pdfModal.billNo.ToString())
                                 .Replace("{{dateOfBilling}}", pdfModal.dateOfBilling.ToString("dd MMM yyyy"))
-                                ;
+
+                                .Replace("{{bankName}}", sender.BankName)
+                                .Replace("{{compnayName}}", sender.ClientName)
+                                .Replace("{{accountNumber}}", sender.AccountNo)
+                                .Replace("{{ifsc}}", sender.IFSC)
+                                .Replace("{{city}}", sender.City)
+                                .Replace("{{state}}", sender.State);
 
             _buildPdfTable = JsonConvert.DeserializeObject<BuildPdfTable>(strScript);
             return _buildPdfTable;

@@ -210,8 +210,8 @@ namespace ServiceLayer.Code
                     pdfModal.billNo = GeneratedBillNo;
                 }
 
-                fileDetail = _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal);
-                if (fileDetail.Status == "Generated")
+                _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal, new Organization());
+                if (fileDetail.Status == 1)
                 {
                     int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
                     DbParam[] dbParams = new DbParam[]
@@ -245,8 +245,8 @@ namespace ServiceLayer.Code
                         new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                     };
 
-                    fileDetail.Status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                    if (string.IsNullOrEmpty(fileDetail.Status))
+                    var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                    if (string.IsNullOrEmpty(status))
                     {
                         List<Files> files = new List<Files>();
                         files.Add(new Files

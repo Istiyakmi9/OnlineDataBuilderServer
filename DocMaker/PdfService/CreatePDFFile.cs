@@ -21,6 +21,12 @@ namespace DocMaker.PdfService
             _db = db;
         }
 
+        public FileDetail _fileDetail { set; get; }
+        public FileDetail SetFileDetail
+        {
+            set { _fileDetail = value; }
+        }
+
         private PdfPTable CreatePdfTable(Table table)
         {
             int TotalColumns = table.columnCount;
@@ -54,9 +60,7 @@ namespace DocMaker.PdfService
                 {
                     if (!string.IsNullOrEmpty(col.img))
                     {
-                        iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(
-                                                        Path.Combine(Directory.GetCurrentDirectory(), "Documents", col.img)
-                                                    );
+                        iTextSharp.text.Image png = iTextSharp.text.Image.GetInstance(_fileDetail.LogoPath);
                         png.ScaleToFit(200f, 150f);
                         png.SpacingBefore = 10f;
                         png.SpacingAfter = 15f;
@@ -159,53 +163,15 @@ namespace DocMaker.PdfService
             }
         }
 
-        public FileDetail BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        public void BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender)
         {
-            FileDetail fileDetail = new FileDetail();
-            fileDetail.Status = "Client not selected";
+            string physicalPath = Path.Combine(_fileDetail.DiskFilePath, _fileDetail.FileName);
+            _fileDetail.Status = 0;
             if (pdfModal.ClientId > 0)
             {
                 try
                 {
-                    _buildPdfTable = _pdfGenerateHelper.MapUserDetail(_buildPdfTable, pdfModal);
-                    string MonthName = pdfModal.billingMonth.ToString("MMMM_yyyy");
-
-                    string FolderLocation = Path.Combine("Documents", "Bills", MonthName);
-                    string OldFileName = pdfModal.developerName.Replace(" ", "_") + "_" +
-                                      MonthName + "_" +
-                                      pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo + ".pdf";
-
-                    pdfModal.UpdateSeqNo++;
-                    string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
-                                      MonthName + "_" +
-                                      pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo + ".pdf";
-                    string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
-                    if (!Directory.Exists(folderPath))
-                        Directory.CreateDirectory(folderPath);
-
-                    string OldphysicalPath = Path.Combine(
-                                            folderPath,
-                                            OldFileName
-                                    );
-
-                    string physicalPath = Path.Combine(
-                                            folderPath,
-                                            FileName
-                                    );
-
-                    if (File.Exists(OldphysicalPath))
-                        File.Delete(OldphysicalPath);
-
-                    fileDetail.FilePath = FolderLocation;
-                    fileDetail.FileName = FileName;
-                    fileDetail.FileExtension = "pdf";
-                    if (pdfModal.FileId > 0)
-                        fileDetail.FileId = pdfModal.FileId;
-                    else
-                        fileDetail.FileId = -1;
-                    fileDetail.ClientId = pdfModal.ClientId;
-                    fileDetail.StatusId = 2;
-                    fileDetail.PaidOn = null;
+                    _buildPdfTable = _pdfGenerateHelper.MapUserDetail(_buildPdfTable, pdfModal, sender);
                     using (FileStream stream = new FileStream(physicalPath, FileMode.Create))
                     {
                         Document pdfDoc = new Document(PageSize.A4, 5f, 5f, 60f, 0f);
@@ -219,8 +185,8 @@ namespace DocMaker.PdfService
                         _buildPdfTable.tables.TryGetValue("fromAddress", out _pTable);
                         pdfDoc.Add(CreatePdfTable(_pTable.table));
 
-                        _buildPdfTable.tables.TryGetValue("fromBriefAccountDetail", out _pTable);
-                        pdfDoc.Add(CreatePdfTable(_pTable.table));
+                        //_buildPdfTable.tables.TryGetValue("fromBriefAccountDetail", out _pTable);
+                        //pdfDoc.Add(CreatePdfTable(_pTable.table));
 
                         _buildPdfTable.tables.TryGetValue("toAddress", out _pTable);
                         pdfDoc.Add(CreatePdfTable(_pTable.table));
@@ -246,15 +212,15 @@ namespace DocMaker.PdfService
                         pdfDoc.NewPage();
                         pdfDoc.Close();
                         stream.Close();
-                        fileDetail.Status = "Generated";
+                        _fileDetail.Status = 1;
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    fileDetail.Status = "Got error while create PDF file.";
+                    _fileDetail.Status = -1;
+                    throw ex;
                 }
             }
-            return fileDetail;
         }
 
         #region HTML_TO_PDF_SAMPLE_CODE

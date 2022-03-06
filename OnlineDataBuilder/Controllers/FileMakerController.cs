@@ -43,7 +43,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("GenerateBill")]
         public IResponse<ApiResponse> GenerateBill([FromBody] PdfModal pdfModal)
         {
-            var fileDetail = _billService.GenerateDocument(pdfModal);
+            var fileDetail = _billService.GenerateDocument(_buildPdfTable, pdfModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 

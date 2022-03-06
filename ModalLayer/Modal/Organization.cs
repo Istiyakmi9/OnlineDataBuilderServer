@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ModalLayer.Modal
 {
-    public class Client
+    public class Organization
     {
         public int Index { set; get; }
         public long ClientId { set; get; }

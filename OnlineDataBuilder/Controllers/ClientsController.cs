@@ -31,7 +31,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("RegisterClient")]
-        public async Task<ApiResponse> RegisterClient(Client client)
+        public async Task<ApiResponse> RegisterClient(Organization client)
         {
             var Result = await _clientsService.RegisterClient(client);
             return BuildResponse(Result, HttpStatusCode.OK);

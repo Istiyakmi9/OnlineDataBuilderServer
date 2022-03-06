@@ -18,15 +18,15 @@ namespace ServiceLayer.Code
             _commonFilterService = commonFilterService;
             _currentSession = currentSession;
         }
-        public List<Client> GetClients(FilterModel filterModel)
+        public List<Organization> GetClients(FilterModel filterModel)
         {
-            List<Client> client = _commonFilterService.GetResult<Client>(filterModel, "SP_Clients_Get");
+            List<Organization> client = _commonFilterService.GetResult<Organization>(filterModel, "SP_Clients_Get");
             return client;
         }
 
-        public Client GetClientDetailById(long ClientId, bool IsActive)
+        public Organization GetClientDetailById(long ClientId, bool IsActive)
         {
-            Client client = default;
+            Organization client = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(ClientId, typeof(long), "_ClientId"),
@@ -36,14 +36,14 @@ namespace ServiceLayer.Code
             var resultSet = _db.GetDataset("SP_Client_ById", param);
             if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
             {
-                var emps = Converter.ToList<Client>(resultSet.Tables[0]);
+                var emps = Converter.ToList<Organization>(resultSet.Tables[0]);
                 if (emps != null && emps.Count > 0)
                     client = emps[0];
             }
             return client;
         }
 
-        public async Task<string> RegisterClient(Client client)
+        public async Task<string> RegisterClient(Organization client)
         {
             return await Task.Run(() =>
             {

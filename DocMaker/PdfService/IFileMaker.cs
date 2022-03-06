@@ -5,7 +5,8 @@ namespace DocMaker.PdfService
 {
     public interface IFileMaker
     {
-        FileDetail BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
+        FileDetail _fileDetail { set; get; }
+        void BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender);
         void ConvertToPDF(string html, string path);
     }
 }
