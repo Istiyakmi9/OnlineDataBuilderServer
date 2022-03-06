@@ -15,8 +15,8 @@ namespace OnlineDataBuilder.Controllers
     public class UserController : ControllerBase
     {
         [Authorize(Role.Admin)]
-        [HttpPost("GetEmployeeDeatils")]
-        public IResponse<ApiResponse> InternalUser(UserDetail userDetail)
+        [HttpPost("CreateInternalUser")]
+        public IResponse<ApiResponse> CreateInternalUser(UserDetail userDetail)
         {
             return null;
         }
