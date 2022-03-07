@@ -1,6 +1,7 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:3.1 AS base
+RUN apt-get update && apt-get install -y tzdata
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
@@ -11,8 +12,11 @@ COPY ["OnlineDataBuilder/OnlineDataBuilder.csproj", "OnlineDataBuilder/"]
 COPY ["MultiTypeDocumentConverter/MultiTypeDocumentConverter.csproj", "MultiTypeDocumentConverter/"]
 COPY ["EMailService/EMailService.csproj", "EMailService/"]
 COPY ["DocMaker/DocMaker.csproj", "DocMaker/"]
+COPY ["DocxToHtml/HtmlConverter/HtmlConverter.csproj", "DocxToHtml/HtmlConverter/"]
+COPY ["DocxToHtml/OpenXmlPowerTools/OpenXmlPowerTools.csproj", "DocxToHtml/OpenXmlPowerTools/"]
 COPY ["ModalLayer/ModalLayer.csproj", "ModalLayer/"]
 COPY ["BottomhalfCore/BottomhalfCore.csproj", "BottomhalfCore/"]
+COPY ["Bot.DOMConverter/Bot.DOMConverter/Bot.DOMConverter.csproj", "Bot.DOMConverter/Bot.DOMConverter/"]
 COPY ["ServiceLayer/ServiceLayer.csproj", "ServiceLayer/"]
 COPY ["SocialMediaServices/SocialMediaServices.csproj", "SocialMediaServices/"]
 RUN dotnet restore "OnlineDataBuilder/OnlineDataBuilder.csproj"

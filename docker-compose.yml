@@ -1,8 +1,12 @@
-version: '3.4'
-
 services:
-  onlinedatabuilder:
-    image: onlinedatabuilder
+  hiringbellAPI:
+    image: api_hiringbell
+    network_mode: bridge
+    environment:
+      -  TZ=Asia/Kolkata
+      -  DEBIAN_FRONTENT=noninteractive
     build:
       context: .
-      dockerfile: OnlineDataBuilder/Dockerfile
+      dockerfile: Dockerfile
+    ports:
+      -  5000:80

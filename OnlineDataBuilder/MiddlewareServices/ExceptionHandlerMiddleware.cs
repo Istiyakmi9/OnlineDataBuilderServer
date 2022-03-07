@@ -1,0 +1,51 @@
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using ModalLayer.Modal;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SchoolInMindServer.MiddlewareServices
+{
+    public class ExceptionHandlerMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly IConfiguration configuration;
+
+        public ExceptionHandlerMiddleware(RequestDelegate next, IConfiguration configuration)
+        {
+            this.configuration = configuration;
+            _next = next;
+        }
+
+        public async Task Invoke(HttpContext context, CurrentSession currentSession)
+        {
+            try
+            {
+                await _next.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        private static Task HandleExceptionMessageAsync(HttpContext context, Exception exception)
+        {
+            context.Response.ContentType = "application/json";
+            int statusCode = (int)HttpStatusCode.InternalServerError;
+            var result = JsonConvert.SerializeObject(new
+            {
+                StatusCode = statusCode,
+                ErrorMessage = exception.Message
+            });
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = statusCode;
+            return context.Response.WriteAsync(result);
+        }
+    }
+}
