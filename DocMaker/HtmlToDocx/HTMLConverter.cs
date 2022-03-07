@@ -1,11 +1,7 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using HtmlService;
-using System;
 using System.IO;
-using System.Text;
-using System.Xml;
 
 namespace DocMaker.HtmlToDocx
 {
@@ -44,23 +40,6 @@ namespace DocMaker.HtmlToDocx
                 status = "Template path not found";
 
             return status;
-        }
-
-
-        public string ToHtml()
-        {
-            try
-            {
-                HtmlConverterService htmlConverterService = new HtmlConverterService();
-                string from = @"E:\test\misba.docx";
-                string to = @"E:\test";
-                htmlConverterService.ToHtml(from, to);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            return null;
         }
     }
 }
