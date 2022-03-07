@@ -25,28 +25,27 @@ http://www.microsoft.com/resources/sharedsource/licensingbasics/publiclicense.ms
  * in WmlToHtmlConverter is identical to the old HtmlConverter class.
 ***************************************************************************/
 
+using DocumentFormat.OpenXml.Packaging;
+using OpenXmlPowerTools;
 using System;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
-using DocumentFormat.OpenXml.Packaging;
-using OpenXmlPowerTools;
 
 namespace HtmlService
 {
     public class HtmlConverterService
     {
-        public void ToHtml(string filePath, string destinationLocation)
+        public string ToHtml(string filePath, string destinationLocation)
         {
-            ConvertToHtml(filePath, destinationLocation);
+            return ConvertToHtml(filePath, destinationLocation);
         }
 
-        public static void ConvertToHtml(string file, string outputDirectory)
+        public string ConvertToHtml(string file, string outputDirectory)
         {
+            string htmlString = string.Empty;
             var fi = new FileInfo(file);
             Console.WriteLine(fi.Name);
             byte[] byteArray = File.ReadAllBytes(fi.FullName);
@@ -154,10 +153,12 @@ namespace HtmlService
                     // If you further transform the XML tree returned by ConvertToHtmlTransform, you
                     // must do it correctly, or entities will not be serialized properly.
 
-                    var htmlString = html.ToString(SaveOptions.DisableFormatting);
-                    File.WriteAllText(destFileName.FullName, htmlString, Encoding.UTF8);
+                    htmlString = html.ToString(SaveOptions.DisableFormatting);
+                    //File.WriteAllText(destFileName.FullName, htmlString, Encoding.UTF8);
                 }
             }
+
+            return htmlString;
         }
     }
 }

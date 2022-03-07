@@ -1,4 +1,5 @@
-﻿using DocMaker.PdfService;
+﻿using DocMaker.HtmlToDocx;
+using DocMaker.PdfService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -6,7 +7,6 @@ using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -19,16 +19,20 @@ namespace OnlineDataBuilder.Controllers
         private readonly IFileMaker _iFileMaker;
         private readonly IFileService _fileService;
         private readonly IBillService _billService;
+        private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
+
         public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration,
             IOnlineDocumentService onlineDocumentService,
             IFileService fileService, IBillService billService,
-            IOptions<BuildPdfTable> options)
+            IOptions<BuildPdfTable> options,
+            IDOCXToHTMLConverter iDOCXToHTMLConverter)
         {
             _iFileMaker = iFileMaker;
             _buildPdfTable = options.Value;
             _onlineDocumentService = onlineDocumentService;
             _fileService = fileService;
             _billService  = billService;
+            _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }
 
         [HttpPost]
@@ -68,6 +72,14 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> DeleteFiles(long userId, int userTypeId, List<string> fileIds)
         {
             var result = _fileService.DeleteFiles(userId, fileIds, userTypeId);
+            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [Route("GetDocxHtml")]
+        public IResponse<ApiResponse> GetDocxHtml(FileDetail fileDetail)
+        {
+            var result = _iDOCXToHTMLConverter.ToHtml(fileDetail);
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
     }

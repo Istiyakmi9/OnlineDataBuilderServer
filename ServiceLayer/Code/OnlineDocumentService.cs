@@ -412,25 +412,64 @@ namespace ServiceLayer.Code
             Files file = fileDetail.FirstOrDefault();
             if (FileCollection.Count > 0 && fileDetail.Count > 0)
             {
-                fileDetail.ForEach(item =>
+                string userEmail = null;
+                if (file.UserTypeId == UserType.Employee)
                 {
-                    if (string.IsNullOrEmpty(item.ParentFolder))
+                    DbParam[] dbParams = new DbParam[]
                     {
-                        item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                    }
-                    else
-                    {
-                        item.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), item.ParentFolder);
-                        item.ParentFolder = item.ParentFolder.ToLower();
-                    }
-                });
+                        new DbParam(file.UserId, typeof(long), "_EmployeeId"),
+                        new DbParam(-1, typeof(int), "_IsActive")
+                    };
 
-                string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
-                if (files != null && files.Count > 0)
+                    DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
+                    if (ResultSet != null && ResultSet.Tables.Count == 1)
+                    {
+                        var employee = Converter.ToList<Employee>(ResultSet.Tables[0]).Single();
+                        userEmail = employee.Email;
+                    }
+                }
+                else if (file.UserTypeId == UserType.Client)
                 {
-                    var Data = InsertFileDetails(fileDetail);
-                    Result = GetDocumentResultById(file);
+                    DbParam[] dbParams = new DbParam[]
+                    {
+                        new DbParam(file.UserId, typeof(string), "_userId"),
+                    };
+
+                    DataSet ResultSet = this.db.GetDataset("sp_UserDetail_ById", dbParams);
+                    if (ResultSet != null && ResultSet.Tables.Count == 1)
+                    {
+                        var userDetail = Converter.ToList<UserDetail>(ResultSet.Tables[0]).Single();
+                        userEmail = userDetail.EmailId;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(userEmail))
+                {
+                    fileDetail.ForEach(item =>
+                    {
+                        if (string.IsNullOrEmpty(item.ParentFolder))
+                        {
+                            item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                        }
+                        else
+                        {
+                            item.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), item.ParentFolder);
+                            item.ParentFolder = item.ParentFolder.ToLower();
+                            item.Email = userEmail;
+                        }
+                    });
+
+                    string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                    List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
+                    if (files != null && files.Count > 0)
+                    {
+                        var Data = InsertFileDetails(fileDetail);
+                        Result = GetDocumentResultById(file);
+                    }
+                }
+                else
+                {
+                    throw new Exception("Invalid user detail.");
                 }
             }
 

@@ -46,6 +46,7 @@ namespace CoreServiceLayer.Implementation
         public List<Files> SaveFile(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles, string ProfileUid)
         {
             string Extension = "";
+            string Email = string.Empty;
             string NewFileName = string.Empty;
             string ActualPath = string.Empty;
             if (!string.IsNullOrEmpty(FolderPath))
@@ -55,6 +56,11 @@ namespace CoreServiceLayer.Implementation
                     if (!string.IsNullOrEmpty(file.Name))
                     {
                         var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
+                        Email = currentFile.Email.Replace("@", "_").Replace(".", "_");
+                        
+                        if (currentFile.FilePath.IndexOf(Email) == -1 && FolderPath.IndexOf(Email) == -1)
+                            FolderPath = Path.Combine(FolderPath, Email);
+                        
                         if (!string.IsNullOrEmpty(currentFile.FilePath))
                             ActualPath = Path.Combine(FolderPath, currentFile.FilePath);
                         else
