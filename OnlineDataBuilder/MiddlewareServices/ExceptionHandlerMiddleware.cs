@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (Exception ex)
             {
-                throw ex;
+                await HandleExceptionMessageAsync(context, ex);
             }
         }
 
