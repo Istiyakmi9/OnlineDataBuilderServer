@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DocMaker.HtmlToDocx
+﻿namespace DocMaker.HtmlToDocx
 {
     public interface IDOCXToHTMLConverter
     {
-        
+        string ToHtml(FileDetail fileDetail);
     }
 }

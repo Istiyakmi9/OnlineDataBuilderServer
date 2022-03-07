@@ -165,7 +165,7 @@ namespace DocMaker.PdfService
 
         public void BuildPdfBill(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender)
         {
-            string physicalPath = Path.Combine(_fileDetail.DiskFilePath, _fileDetail.FileName);
+            string physicalPath = Path.Combine(_fileDetail.DiskFilePath, _fileDetail.FileName + $".{ApplicationConstants.Pdf}");
             _fileDetail.Status = 0;
             if (pdfModal.ClientId > 0)
             {

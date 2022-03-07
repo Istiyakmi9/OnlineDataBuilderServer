@@ -4,6 +4,7 @@ using CoreServiceLayer.Implementation;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Service;
+using HtmlService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -109,6 +110,8 @@ namespace OnlineDataBuilder
             services.AddScoped<IAttendanceService, AttendanceService>();
             services.AddScoped<ICommonService, CommonService>();
             services.AddScoped<IHTMLConverter, HTMLConverter>();
+            services.AddScoped<HtmlConverterService>();
+            services.AddScoped<IDOCXToHTMLConverter, DOCXToHTMLConverter>();
 
             services.AddCors(options =>
             {

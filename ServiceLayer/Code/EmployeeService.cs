@@ -65,7 +65,7 @@ namespace ServiceLayer.Code
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmployeeId, typeof(int), "_EmployeeId"),
-                new DbParam(IsActive, typeof(bool), "_IsActive")
+                new DbParam(IsActive ? 1 : 0, typeof(int), "_IsActive")
             };
 
             var resultSet = _db.GetDataset("SP_Employees_ById", param);
