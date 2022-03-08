@@ -83,6 +83,7 @@ namespace ServiceLayer.Code
                     }
                     pdfModal.billNo = GeneratedBillNo;
                 }
+
                 pdfModal.billNo = pdfModal.billNo.Replace("#", "");
 
                 double grandTotalAmount = 0.00;
@@ -144,7 +145,7 @@ namespace ServiceLayer.Code
                         );
 
                         string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
-                        if (File.Exists(templatePath))
+                        if (File.Exists(templatePath) && File.Exists(headerLogo))
                         {
                             pdfModal.UpdateSeqNo++;
                             GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
@@ -238,7 +239,15 @@ namespace ServiceLayer.Code
                                 this.fileService.DeleteFiles(files);
                             }
                         }
+                        else
+                        {
+                            throw new Exception("HTML template or Logo file path is invalid");
+                        }
                     }
+                }
+                else
+                {
+                    throw new Exception("Amount calculation is not matching");
                 }
 
                 responseModel.Result = fileDetail;
@@ -297,7 +306,7 @@ namespace ServiceLayer.Code
                         }
                     }
 
-                    string MonthName = pdfModal.billingMonth.ToString("dd_MMM_yyyy");
+                    string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
                     string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
                     string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
                                       MonthName + "_" +

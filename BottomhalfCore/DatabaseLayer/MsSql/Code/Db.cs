@@ -32,6 +32,10 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             }
         }
 
+        public void StartTransaction(IsolationLevel isolationLevel) { }
+        public void Commit() { }
+        public void RollBack() { }
+
         public void ReSetupConnection()
         {
             if (cmd != null)
