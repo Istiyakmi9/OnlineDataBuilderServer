@@ -149,6 +149,8 @@ namespace OnlineDataBuilder
             app.UseRouting();
 
             app.UseCors(CorsPolicy);
+
+            app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseMiddleware<RequestMiddleware>();
 
             app.UseAuthentication();

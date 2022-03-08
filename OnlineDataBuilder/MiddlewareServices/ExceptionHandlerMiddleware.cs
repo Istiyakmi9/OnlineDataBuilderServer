@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using OnlineDataBuilder.ContextHandler;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -39,10 +40,12 @@ namespace SchoolInMindServer.MiddlewareServices
         {
             context.Response.ContentType = "application/json";
             int statusCode = (int)HttpStatusCode.InternalServerError;
-            var result = JsonConvert.SerializeObject(new
+            var result = JsonConvert.SerializeObject(new ApiResponse
             {
-                StatusCode = statusCode,
-                ErrorMessage = exception.Message
+                AuthenticationToken = string.Empty,
+                HttpStatusCode = HttpStatusCode.BadRequest,
+                HttpStatusMessage = exception.Message,
+                ResponseBody = null
             });
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;
