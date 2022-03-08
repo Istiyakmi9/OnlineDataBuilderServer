@@ -410,67 +410,80 @@ namespace ServiceLayer.Code
         {
             DataSet Result = null;
             Files file = fileDetail.FirstOrDefault();
-            if (FileCollection.Count > 0 && fileDetail.Count > 0)
+            try
             {
-                string userEmail = null;
-                if (file.UserTypeId == UserType.Employee)
+                if (FileCollection.Count > 0 && fileDetail.Count > 0)
                 {
-                    DbParam[] dbParams = new DbParam[]
+                    string userEmail = null;
+                    if (file.UserTypeId == UserType.Employee)
                     {
+                        DbParam[] dbParams = new DbParam[]
+                        {
                         new DbParam(file.UserId, typeof(long), "_EmployeeId"),
                         new DbParam(-1, typeof(int), "_IsActive")
-                    };
+                        };
 
-                    DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
-                    if (ResultSet != null && ResultSet.Tables.Count == 1)
-                    {
-                        var employee = Converter.ToList<Employee>(ResultSet.Tables[0]).Single();
-                        userEmail = employee.Email;
+                        DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
+                        if (ResultSet != null && ResultSet.Tables.Count == 1)
+                        {
+                            var employee = Converter.ToList<Employee>(ResultSet.Tables[0]).Single();
+                            userEmail = employee.Email;
+                        }
                     }
-                }
-                else if (file.UserTypeId == UserType.Client)
-                {
-                    DbParam[] dbParams = new DbParam[]
+                    else if (file.UserTypeId == UserType.Client)
                     {
+                        DbParam[] dbParams = new DbParam[]
+                        {
                         new DbParam(file.UserId, typeof(string), "_userId"),
-                    };
+                        };
 
-                    DataSet ResultSet = this.db.GetDataset("sp_UserDetail_ById", dbParams);
-                    if (ResultSet != null && ResultSet.Tables.Count == 1)
-                    {
-                        var userDetail = Converter.ToList<UserDetail>(ResultSet.Tables[0]).Single();
-                        userEmail = userDetail.EmailId;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(userEmail))
-                {
-                    fileDetail.ForEach(item =>
-                    {
-                        if (string.IsNullOrEmpty(item.ParentFolder))
+                        DataSet ResultSet = this.db.GetDataset("sp_UserDetail_ById", dbParams);
+                        if (ResultSet != null && ResultSet.Tables.Count == 1)
                         {
-                            item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                            var userDetail = Converter.ToList<UserDetail>(ResultSet.Tables[0]).Single();
+                            userEmail = userDetail.EmailId;
                         }
-                        else
-                        {
-                            item.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), item.ParentFolder);
-                            item.ParentFolder = item.ParentFolder.ToLower();
-                            item.Email = userEmail;
-                        }
-                    });
-
-                    string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                    List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
-                    if (files != null && files.Count > 0)
-                    {
-                        var Data = InsertFileDetails(fileDetail);
-                        Result = GetDocumentResultById(file);
                     }
+
+                    if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        fileDetail.ForEach(item =>
+                        {
+                            if (string.IsNullOrEmpty(item.ParentFolder))
+                            {
+                                item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                            }
+                            else
+                            {
+                                item.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), item.ParentFolder);
+                                item.ParentFolder = item.ParentFolder.ToLower();
+                                item.Email = userEmail;
+                            }
+                        });
+
+
+                        string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                        List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
+                        if (files != null && files.Count > 0)
+                        {
+                            db.StartTransaction(IsolationLevel.ReadUncommitted);
+                            var Data = InsertFileDetails(fileDetail);
+                            db.Commit();
+                            Result = GetDocumentResultById(file);
+                        }
+
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid user detail.");
+                    }
+
                 }
-                else
-                {
-                    throw new Exception("Invalid user detail.");
-                }
+            }
+            catch (Exception ex)
+            {
+                db.RollBack();
+                throw ex;
             }
 
             return Result;

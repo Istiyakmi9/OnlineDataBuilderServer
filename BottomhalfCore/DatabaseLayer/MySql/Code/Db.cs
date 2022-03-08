@@ -11,6 +11,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         private MySqlCommand cmd = null;
         private MySqlDataAdapter da = null;
         private MySqlCommandBuilder builder = null;
+        private MySqlTransaction transaction = null;
+        private bool IsTransactionStarted = false;
         private DataSet ds = null;
 
         public Db(string ConnectionString)
@@ -28,6 +30,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 cmd = new MySqlCommand();
                 con.ConnectionString = ConnectionString;
             }
+        }
+
+        public void StartTransaction(IsolationLevel isolationLevel)
+        {
+            this.IsTransactionStarted = true;
+            this.con.Open();
+            transaction = this.con.BeginTransaction(isolationLevel);
+        }
+
+        public void Commit()
+        {
+            this.IsTransactionStarted = false;
+            this.transaction.Commit();
+
+            if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                con.Close();
+        }
+
+        public void RollBack()
+        {
+            this.IsTransactionStarted = false;
+            this.transaction.Rollback();
+
+            if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                con.Close();
         }
 
         public DataSet FetchResult(string ProcedureName)
@@ -75,7 +102,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                con.Close();
+                if (!this.IsTransactionStarted)
+                    con.Close();
             }
 
             return ds;
@@ -290,7 +318,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 MySqlDataAdapter da = new MySqlDataAdapter();
                 da.InsertCommand = cmd;
                 da.UpdateBatchSize = 4;
-                con.Open();
+                if (!this.IsTransactionStarted)
+                    con.Open();
                 state = da.Update(dt);
             }
             catch (Exception ex)
@@ -299,7 +328,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                if (!this.IsTransactionStarted && (con.State == ConnectionState.Broken || con.State == ConnectionState.Open))
                     con.Close();
             }
 

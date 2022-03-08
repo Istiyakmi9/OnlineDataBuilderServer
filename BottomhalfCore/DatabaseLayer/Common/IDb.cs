@@ -19,5 +19,8 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         string InsertUpdateBatchRecord(string ProcedureName, DataTable table, Boolean OutParam = false);
         string SqlBulkInsert(DataTable table, string TableName);
         DataSet CommonadBuilderBulkInsertUpdate(string SelectQuery, string TableName);
+        void StartTransaction(IsolationLevel isolationLevel);
+        void Commit();
+        void RollBack();
     }
 }
