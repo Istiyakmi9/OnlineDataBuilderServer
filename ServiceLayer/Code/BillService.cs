@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using TimeZoneConverter;
 
 namespace ServiceLayer.Code
@@ -53,7 +52,7 @@ namespace ServiceLayer.Code
                 pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
                 FileDetail fileDetail = null;
 
-                Bills bill = GetBillData();
+                Bills bill = this.GetBillData();
                 if (string.IsNullOrEmpty(pdfModal.billNo))
                 {
                     if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
@@ -241,24 +240,31 @@ namespace ServiceLayer.Code
                         }
                         else
                         {
-                            throw new Exception("HTML template or Logo file path is invalid");
+                            throw new HiringBellException("HTML template or Logo file path is invalid");
                         }
                     }
+                    else
+                    {
+                        throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
+                    }
+
+                    responseModel.Result = fileDetail;
                 }
                 else
                 {
-                    throw new Exception("Amount calculation is not matching");
+                    throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
                 }
-
-                responseModel.Result = fileDetail;
-
+            }
+            catch(HiringBellException e)
+            {
+                throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
             catch (Exception ex)
             {
-                throw new Exception("Employee not found.");
+                throw new HiringBellException(ex.Message, ex);
             }
-            return null;
 
+            return responseModel;
         }
 
         private Bills GetBillData()
