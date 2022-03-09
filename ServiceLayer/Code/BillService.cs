@@ -10,8 +10,10 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using TimeZoneConverter;
 
 namespace ServiceLayer.Code
@@ -50,6 +52,7 @@ namespace ServiceLayer.Code
                 TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
                 pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
                 pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
+                this.ValidateBillModal(pdfModal);
                 FileDetail fileDetail = null;
 
                 Bills bill = this.GetBillData();
@@ -85,118 +88,99 @@ namespace ServiceLayer.Code
 
                 pdfModal.billNo = pdfModal.billNo.Replace("#", "");
 
-                double grandTotalAmount = 0.00;
-                double sGSTAmount = 0.00;
-                double cGSTAmount = 0.00;
-                double iGSTAmount = 0.00;
-
-                if (pdfModal.cGST > 0 || pdfModal.sGST > 0 || pdfModal.iGST > 0)
+                Organization sender = null;
+                Organization receiver = null;
+                Employee employeeMappedClient = null;
+                DataSet ds = new DataSet();
+                DbParam[] dbParams = new DbParam[]
                 {
-                    sGSTAmount = (pdfModal.packageAmount * pdfModal.sGST) / 100;
-                    cGSTAmount = (pdfModal.packageAmount * pdfModal.cGST) / 100;
-                    iGSTAmount = (pdfModal.packageAmount * pdfModal.iGST) / 100;
-                    grandTotalAmount = Math.Round(pdfModal.packageAmount + (cGSTAmount + sGSTAmount + iGSTAmount), 2);
-                }
-                else
-                {
-                    grandTotalAmount = pdfModal.packageAmount;
-                }
-
-                if (pdfModal.grandTotalAmount == grandTotalAmount && pdfModal.cGstAmount == cGSTAmount && pdfModal.sGstAmount == sGSTAmount && pdfModal.iGstAmount == iGSTAmount)
-                {
-                    Organization sender = null;
-                    Organization receiver = null;
-                    Employee employeeMappedClient = null;
-                    DataSet ds = new DataSet();
-                    DbParam[] dbParams = new DbParam[]
-                    {
                             new DbParam(pdfModal.ClientId, typeof(long), "_receiver"),
                             new DbParam(pdfModal.senderClientId, typeof(long), "_sender"),
                             new DbParam(pdfModal.billNo, typeof(long), "_billNo"),
                             new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId")
-                    };
+                };
 
-                    ds = this.db.GetDataset("sp_Billing_detail", dbParams);
-                    if (ds.Tables.Count == 4)
+                ds = this.db.GetDataset("sp_Billing_detail", dbParams);
+                if (ds.Tables.Count == 4)
+                {
+                    List<Organization> SenderDetails = Converter.ToList<Organization>(ds.Tables[0]);
+                    List<Organization> ReceiverDetails = Converter.ToList<Organization>(ds.Tables[1]);
+                    List<Employee> EmployeeMappedClient = Converter.ToList<Employee>(ds.Tables[2]);
+                    fileDetail = Converter.ToList<FileDetail>(ds.Tables[3]).FirstOrDefault();
+
+                    if (fileDetail == null)
                     {
-                        List<Organization> SenderDetails = Converter.ToList<Organization>(ds.Tables[0]);
-                        List<Organization> ReceiverDetails = Converter.ToList<Organization>(ds.Tables[1]);
-                        List<Employee> EmployeeMappedClient = Converter.ToList<Employee>(ds.Tables[2]);
-                        fileDetail = Converter.ToList<FileDetail>(ds.Tables[3]).FirstOrDefault();
-
-                        if (fileDetail == null)
+                        fileDetail = new FileDetail
                         {
-                            fileDetail = new FileDetail
-                            {
-                                ClientId = pdfModal.ClientId
-                            };
+                            ClientId = pdfModal.ClientId
+                        };
+                    }
+
+                    sender = SenderDetails.Single();
+                    receiver = ReceiverDetails.Single();
+                    employeeMappedClient = EmployeeMappedClient.Single();
+
+                    string rootPath = _hostingEnvironment.ContentRootPath;
+                    string templatePath = Path.Combine(rootPath,
+                        _fileLocationDetail.Location,
+                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        _fileLocationDetail.StaffingBillTemplate
+                    );
+
+                    string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
+                    if (File.Exists(templatePath) && File.Exists(headerLogo))
+                    {
+                        pdfModal.UpdateSeqNo++;
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
+                        fileDetail.LogoPath = headerLogo;
+
+                        using (FileStream stream = File.Open(templatePath, FileMode.Open))
+                        {
+                            StreamReader reader = new StreamReader(stream);
+                            string html = reader.ReadToEnd();
+
+                            html = html.Replace("[[BILLNO]]", pdfModal.billNo).
+                            Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
+                            Replace("[[senderFirstAddress]]", sender.FirstAddress).
+                            Replace("[[senderCompanyName]]", sender.ClientName).
+                            Replace("[[senderGSTNo]]", sender.GSTNO).
+                            Replace("[[senderSecondAddress]]", sender.SecondAddress).
+                            Replace("[[senderPrimaryContactNo]]", sender.PrimaryPhoneNo).
+                            Replace("[[senderEmail]]", sender.Email).
+                            Replace("[[receiverCompanyName]]", receiver.ClientName).
+                            Replace("[[receiverGSTNo]]", receiver.GSTNO).
+                            Replace("[[receiverFirstAddress]]", receiver.FirstAddress).
+                            Replace("[[receiverSecondAddress]]", receiver.SecondAddress).
+                            Replace("[[receiverPrimaryContactNo]]", receiver.PrimaryPhoneNo).
+                            Replace("[[receiverEmail]]", receiver.Email).
+                            Replace("[[developerName]]", pdfModal.developerName).
+                            Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
+                            Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
+                            Replace("[[cGST]]", pdfModal.cGST.ToString()).
+                            Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
+                            Replace("[[sGST]]", pdfModal.sGST.ToString()).
+                            Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
+                            Replace("[[iGST]]", pdfModal.iGST.ToString()).
+                            Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
+                            Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
+                            Replace("[[bankName]]", sender.BankName).
+                            Replace("[[clientName]]", sender.ClientName).
+                            Replace("[[accountNumber]]", sender.AccountNo).
+                            Replace("[[iFSCCode]]", sender.IFSC).
+                            Replace("[[city]]", sender.City).
+                            Replace("[[state]]", sender.State);
+
+                            string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
+                            this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
                         }
 
-                        sender = SenderDetails.Single();
-                        receiver = ReceiverDetails.Single();
-                        employeeMappedClient = EmployeeMappedClient.Single();
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
+                        _fileMaker._fileDetail = fileDetail;
+                        _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
 
-                        string rootPath = _hostingEnvironment.ContentRootPath;
-                        string templatePath = Path.Combine(rootPath,
-                            _fileLocationDetail.Location,
-                            Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
-                            _fileLocationDetail.StaffingBillTemplate
-                        );
-
-                        string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
-                        if (File.Exists(templatePath) && File.Exists(headerLogo))
+                        int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
+                        dbParams = new DbParam[]
                         {
-                            pdfModal.UpdateSeqNo++;
-                            GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
-                            fileDetail.LogoPath = headerLogo;
-
-                            using (FileStream stream = File.Open(templatePath, FileMode.Open))
-                            {
-                                StreamReader reader = new StreamReader(stream);
-                                string html = reader.ReadToEnd();
-
-                                html = html.Replace("[[BILLNO]]", pdfModal.billNo).
-                                Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
-                                Replace("[[senderFirstAddress]]", sender.FirstAddress).
-                                Replace("[[senderCompanyName]]", sender.ClientName).
-                                Replace("[[senderGSTNo]]", sender.GSTNO).
-                                Replace("[[senderSecondAddress]]", sender.SecondAddress).
-                                Replace("[[senderPrimaryContactNo]]", sender.PrimaryPhoneNo).
-                                Replace("[[senderEmail]]", sender.Email).
-                                Replace("[[receiverCompanyName]]", receiver.ClientName).
-                                Replace("[[receiverGSTNo]]", receiver.GSTNO).
-                                Replace("[[receiverFirstAddress]]", receiver.FirstAddress).
-                                Replace("[[receiverSecondAddress]]", receiver.SecondAddress).
-                                Replace("[[receiverPrimaryContactNo]]", receiver.PrimaryPhoneNo).
-                                Replace("[[receiverEmail]]", receiver.Email).
-                                Replace("[[developerName]]", pdfModal.developerName).
-                                Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
-                                Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
-                                Replace("[[cGST]]", pdfModal.cGST.ToString()).
-                                Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
-                                Replace("[[sGST]]", pdfModal.sGST.ToString()).
-                                Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
-                                Replace("[[iGST]]", pdfModal.iGST.ToString()).
-                                Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
-                                Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
-                                Replace("[[bankName]]", sender.BankName).
-                                Replace("[[clientName]]", sender.ClientName).
-                                Replace("[[accountNumber]]", sender.AccountNo).
-                                Replace("[[iFSCCode]]", sender.IFSC).
-                                Replace("[[city]]", sender.City).
-                                Replace("[[state]]", sender.State);
-
-                                string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
-                                this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
-                            }
-
-                            GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
-                            _fileMaker._fileDetail = fileDetail;
-                            _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
-
-                            int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
-                            dbParams = new DbParam[]
-                            {
                                 new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
                                 new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
                                 new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
@@ -224,38 +208,34 @@ namespace ServiceLayer.Code
                                 new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
                                 new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
                                 new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                            };
+                        };
 
-                            var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                            if (string.IsNullOrEmpty(status))
-                            {
-                                List<Files> files = new List<Files>();
-                                files.Add(new Files
-                                {
-                                    FilePath = fileDetail.FilePath,
-                                    FileName = fileDetail.FileName
-                                });
-                                this.fileService.DeleteFiles(files);
-                            }
-                        }
-                        else
+                        var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                        if (string.IsNullOrEmpty(status))
                         {
-                            throw new HiringBellException("HTML template or Logo file path is invalid");
+                            List<Files> files = new List<Files>();
+                            files.Add(new Files
+                            {
+                                FilePath = fileDetail.FilePath,
+                                FileName = fileDetail.FileName
+                            });
+                            this.fileService.DeleteFiles(files);
                         }
                     }
                     else
                     {
-                        throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
+                        throw new HiringBellException("HTML template or Logo file path is invalid");
                     }
-
-                    responseModel.Result = fileDetail;
                 }
                 else
                 {
                     throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
                 }
+
+                responseModel.Result = fileDetail;
+
             }
-            catch(HiringBellException e)
+            catch (HiringBellException e)
             {
                 throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
@@ -265,6 +245,83 @@ namespace ServiceLayer.Code
             }
 
             return responseModel;
+        }
+
+        private void ValidateBillModal(PdfModal pdfModal)
+        {
+            double grandTotalAmount = 0.00;
+            double sGSTAmount = 0.00;
+            double cGSTAmount = 0.00;
+            double iGSTAmount = 0.00;
+            int days = DateTime.DaysInMonth(pdfModal.billingMonth.Year, pdfModal.billingMonth.Month);
+
+            if (pdfModal.ClientId <= 0)
+                throw new HiringBellException { UserMessage = "Invald Client.", FieldName = nameof(pdfModal.ClientId), FieldValue = pdfModal.ClientId.ToString() };
+
+            if (pdfModal.EmployeeId <= 0)
+                throw new HiringBellException { UserMessage = "Invalid Employee", FieldName = nameof(pdfModal.EmployeeId), FieldValue = pdfModal.EmployeeId.ToString() };
+
+            if (pdfModal.senderClientId <= 0)
+                throw new HiringBellException { UserMessage = "Invalid Sender", FieldName = nameof(pdfModal.senderClientId), FieldValue = pdfModal.senderClientId.ToString() };
+
+            if (pdfModal.packageAmount <= 0)
+                throw new HiringBellException { UserMessage = "Invalid Package Amount", FieldName = nameof(pdfModal.packageAmount), FieldValue = pdfModal.packageAmount.ToString() };
+
+            if (pdfModal.cGST < 0)
+                throw new HiringBellException { UserMessage = "Invalid CGST", FieldName = nameof(pdfModal.cGST), FieldValue = pdfModal.cGST.ToString() };
+
+            if (pdfModal.iGST < 0)
+                throw new HiringBellException { UserMessage = "Invalid IGST", FieldName = nameof(pdfModal.iGST), FieldValue = pdfModal.iGST.ToString() };
+
+            if (pdfModal.sGST < 0)
+                throw new HiringBellException { UserMessage = "Invalid SGST", FieldName = nameof(pdfModal.sGST), FieldValue = pdfModal.sGST.ToString() };
+
+            if (pdfModal.cGstAmount < 0)
+                throw new HiringBellException { UserMessage = "Invalid CGST Amount", FieldName = nameof(pdfModal.cGstAmount), FieldValue = pdfModal.cGstAmount.ToString() };
+
+            if (pdfModal.iGstAmount < 0)
+                throw new HiringBellException { UserMessage = "Invalid IGST Amount", FieldName = nameof(pdfModal.iGstAmount), FieldValue = pdfModal.iGstAmount.ToString() };
+
+            if (pdfModal.sGstAmount < 0)
+                throw new HiringBellException { UserMessage = "Invalid CGST Amount", FieldName = nameof(pdfModal.cGstAmount), FieldValue = pdfModal.cGstAmount.ToString() };
+
+            if (pdfModal.cGST > 0 || pdfModal.sGST > 0 || pdfModal.iGST > 0)
+            {
+                sGSTAmount = (pdfModal.packageAmount * pdfModal.sGST) / 100;
+                cGSTAmount = (pdfModal.packageAmount * pdfModal.cGST) / 100;
+                iGSTAmount = (pdfModal.packageAmount * pdfModal.iGST) / 100;
+                grandTotalAmount = Math.Round(pdfModal.packageAmount + (cGSTAmount + sGSTAmount + iGSTAmount), 2);
+            }
+            else
+            {
+                grandTotalAmount = pdfModal.packageAmount;
+            }
+
+            if (pdfModal.grandTotalAmount != grandTotalAmount)
+                throw new HiringBellException { UserMessage = "Total Amount calculation is not matching", FieldName = nameof(pdfModal.grandTotalAmount), FieldValue = pdfModal.grandTotalAmount.ToString() };
+
+            if (pdfModal.sGstAmount != sGSTAmount)
+                throw new HiringBellException { UserMessage = "SGST Amount invalid calculation", FieldName = nameof(pdfModal.sGstAmount), FieldValue = pdfModal.sGstAmount.ToString() };
+
+            if (pdfModal.iGstAmount != iGSTAmount)
+                throw new HiringBellException { UserMessage = "IGST Amount invalid calculation", FieldName = nameof(pdfModal.iGstAmount), FieldValue = pdfModal.iGstAmount.ToString() };
+
+            if (pdfModal.cGstAmount != cGSTAmount)
+                throw new HiringBellException { UserMessage = "CGST Amount invalid calculation", FieldName = nameof(pdfModal.cGstAmount), FieldValue = pdfModal.cGstAmount.ToString() };
+
+            if (pdfModal.workingDay < 0 || pdfModal.workingDay > days)
+                throw new HiringBellException { UserMessage = "Invalid Working days", FieldName = nameof(pdfModal.workingDay), FieldValue = pdfModal.workingDay.ToString() };
+
+            if (pdfModal.billingMonth.Month < 0 || pdfModal.billingMonth.Month > 12)
+                throw new HiringBellException { UserMessage = "Invalid billing month", FieldName = nameof(pdfModal.billingMonth), FieldValue = pdfModal.billingMonth.ToString() };
+
+            if (pdfModal.daysAbsent < 0 || pdfModal.daysAbsent > days)
+                throw new HiringBellException { UserMessage = "Invalid No of days absent", FieldName = nameof(pdfModal.daysAbsent), FieldValue = pdfModal.daysAbsent.ToString() };
+
+            if (pdfModal.dateOfBilling == null)
+            {
+                throw new HiringBellException { UserMessage = "Invalid date of Billing", FieldName = nameof(pdfModal.dateOfBilling), FieldValue = pdfModal.dateOfBilling.ToString() };
+            }
         }
 
         private Bills GetBillData()
