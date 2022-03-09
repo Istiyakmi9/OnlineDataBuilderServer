@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -34,16 +35,23 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            // _billService.GenerateDocument(null);
-            // SendMail();
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            try
             {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
-            })
-            .ToArray();
+                // _billService.GenerateDocument(null, null);
+                // SendMail();
+                var rng = new Random();
+                return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+                {
+                    Date = DateTime.Now.AddDays(index),
+                    TemperatureC = rng.Next(-20, 55),
+                    Summary = Summaries[rng.Next(Summaries.Length)]
+                })
+                .ToArray();
+            }
+            catch(Exception e)
+            {
+                throw new HiringBellException(e.Message, e);
+            }
         }
 
         private void SendMail()

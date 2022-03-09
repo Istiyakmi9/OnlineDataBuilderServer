@@ -30,13 +30,33 @@ namespace SchoolInMindServer.MiddlewareServices
             {
                 await _next.Invoke(context);
             }
+            catch (HiringBellException exception)
+            {
+                await HandleHiringBellExceptionMessageAsync(context, exception);
+            }
             catch (Exception ex)
             {
                 await HandleExceptionMessageAsync(context, ex);
             }
         }
 
-        private static Task HandleExceptionMessageAsync(HttpContext context, Exception exception)
+        private static Task HandleHiringBellExceptionMessageAsync(HttpContext context, HiringBellException e)
+        {
+            context.Response.ContentType = "application/json";
+            int statusCode = (int)HttpStatusCode.InternalServerError;
+            var result = JsonConvert.SerializeObject(new ApiResponse
+            {
+                AuthenticationToken = string.Empty,
+                HttpStatusCode = e.HttpStatusCode,
+                HttpStatusMessage = e.UserMessage,
+                ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message }
+            });
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = statusCode;
+            return context.Response.WriteAsync(result);
+        }
+
+        private static Task HandleExceptionMessageAsync(HttpContext context, Exception e)
         {
             context.Response.ContentType = "application/json";
             int statusCode = (int)HttpStatusCode.InternalServerError;
@@ -44,8 +64,8 @@ namespace SchoolInMindServer.MiddlewareServices
             {
                 AuthenticationToken = string.Empty,
                 HttpStatusCode = HttpStatusCode.BadRequest,
-                HttpStatusMessage = exception.Message,
-                ResponseBody = null
+                HttpStatusMessage = e.Message,
+                ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message }
             });
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;
