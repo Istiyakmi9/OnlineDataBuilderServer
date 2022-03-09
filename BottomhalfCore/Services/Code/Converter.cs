@@ -1,15 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Reflection;
-using System.Text;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace BottomhalfCore.Services.Code
 {
     public static class Converter
     {
+        public static double TwoDecimalValue(double num)
+        {
+            string strNum = num.ToString();
+            if (strNum.IndexOf(".") == -1)
+                return num;
+            else
+               return Math.Floor(num * 100) / 100;
+        }
+
         public static List<T> ToList<T>(this DataTable table) where T : new()
         {
             IList<PropertyInfo> availableProperties = typeof(T).GetProperties().ToList();

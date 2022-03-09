@@ -43,25 +43,23 @@ namespace ServiceLayer.Code
             _fileMaker = fileMaker;
         }
 
-        public ResponseModel<FileDetail> GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        public FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
         {
             //this.iHTMLConverter.ToHtml();
-            ResponseModel<FileDetail> responseModel = new ResponseModel<FileDetail>();
+            FileDetail fileDetail = new FileDetail();
             try
             {
                 TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
                 pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
                 pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
                 this.ValidateBillModal(pdfModal);
-                FileDetail fileDetail = null;
 
                 Bills bill = this.GetBillData();
                 if (string.IsNullOrEmpty(pdfModal.billNo))
                 {
                     if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
                     {
-                        responseModel.ErroMessage = "Fail to generate bill no. Please contact admin.";
-                        return responseModel;
+                        throw new HiringBellException("Fail to generate bill no.");
                     }
 
                     pdfModal.billNo = bill.GeneratedBillNo;
@@ -231,9 +229,6 @@ namespace ServiceLayer.Code
                 {
                     throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
                 }
-
-                responseModel.Result = fileDetail;
-
             }
             catch (HiringBellException e)
             {
@@ -244,7 +239,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException(ex.Message, ex);
             }
 
-            return responseModel;
+            return fileDetail;
         }
 
         private void ValidateBillModal(PdfModal pdfModal)
@@ -287,10 +282,10 @@ namespace ServiceLayer.Code
 
             if (pdfModal.cGST > 0 || pdfModal.sGST > 0 || pdfModal.iGST > 0)
             {
-                sGSTAmount = (pdfModal.packageAmount * pdfModal.sGST) / 100;
-                cGSTAmount = (pdfModal.packageAmount * pdfModal.cGST) / 100;
-                iGSTAmount = (pdfModal.packageAmount * pdfModal.iGST) / 100;
-                grandTotalAmount = Math.Round(pdfModal.packageAmount + (cGSTAmount + sGSTAmount + iGSTAmount), 2);
+                sGSTAmount = Converter.TwoDecimalValue((pdfModal.packageAmount * pdfModal.sGST) / 100);
+                cGSTAmount = Converter.TwoDecimalValue((pdfModal.packageAmount * pdfModal.cGST) / 100);
+                iGSTAmount = Converter.TwoDecimalValue((pdfModal.packageAmount * pdfModal.iGST) / 100);
+                grandTotalAmount = Converter.TwoDecimalValue(pdfModal.packageAmount + (cGSTAmount + sGSTAmount + iGSTAmount));
             }
             else
             {

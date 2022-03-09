@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ModalLayer.Modal
 {
@@ -11,12 +9,12 @@ namespace ModalLayer.Modal
         public string billNo { get; set; }
         public long billId { get; set; }
         public DateTime dateOfBilling { get; set; }
-        public float cGST { get; set; }
-        public float sGST { get; set; }
-        public float iGST { get; set; }
-        public float cGstAmount { get; set; }
-        public float sGstAmount { get; set; }
-        public float iGstAmount { get; set; }
+        public double cGST { get; set; }
+        public double sGST { get; set; }
+        public double iGST { get; set; }
+        public double cGstAmount { get; set; }
+        public double sGstAmount { get; set; }
+        public double iGstAmount { get; set; }
         public int workingDay { get; set; }
         public double packageAmount { get; set; }
         public double grandTotalAmount { get; set; }
@@ -28,7 +26,7 @@ namespace ModalLayer.Modal
         public string receiverSecondAddress { get; set; }
         public string receiverThirdAddress { set; get; }
         public string senderFirstAddress { get; set; }
-        public float daysAbsent { set; get; }
+        public double daysAbsent { set; get; }
         public string senderSecondAddress { get; set; }
         public string senderPrimaryContactNo { get; set; }
         public string senderEmail { get; set; }
