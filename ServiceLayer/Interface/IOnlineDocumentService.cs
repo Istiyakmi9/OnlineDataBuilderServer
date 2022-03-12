@@ -18,6 +18,7 @@ namespace ServiceLayer.Interface
         List<Files> EditFileService(Files files);
         string DeleteDataService(string Uid);
         DataSet EditEmployeeBillDetailService(FileDetail fileDetail);
+        DataSet ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail);
         string UpdateRecord(FileDetail fileDetail, long Uid);
         string UploadDocumentRecord(List<UploadDocument> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);

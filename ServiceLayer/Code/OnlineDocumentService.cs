@@ -23,13 +23,15 @@ namespace ServiceLayer.Code
         private readonly IFileMaker _iFileMaker;
         private readonly ICommonService _commonService;
         private readonly CurrentSession _currentSession;
+        private readonly IBillService _billService;
 
         public OnlineDocumentService(IDb db, IFileService fileService,
             IFileMaker iFileMaker,
             CommonFilterService commonFilterService,
             IAuthenticationService authenticationService,
             CurrentSession currentSession,
-            ICommonService commonService)
+            ICommonService commonService,
+            IBillService billService)
         {
             this.db = db;
             _commonService = commonService;
@@ -38,6 +40,7 @@ namespace ServiceLayer.Code
             _commonFilterService = commonFilterService;
             _authenticationService = authenticationService;
             _iFileMaker = iFileMaker;
+            _billService = billService;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -326,6 +329,91 @@ namespace ServiceLayer.Code
                 Result.Tables[3].TableName = "allocatedClients";
             }
             return Result;
+        }
+
+        public DataSet ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail)
+        {
+            string Extension = Utility.GetExtension(fileDetail.FileExtension, "pdf");
+            if (Extension == null)
+            {
+                throw new HiringBellException("File extension not found.");
+            }
+
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, $"{fileDetail.FileName}.{Extension}");
+            if (!File.Exists(filePath))
+            {
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
+                    new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
+                    new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                    new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                };
+
+                var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
+
+                if (Result.Tables.Count == 4)
+                {
+                    BillDetail billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
+                    FileDetail currentFileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
+                    Organization receiverOrganization = Converter.ToType<Organization>(Result.Tables[2]);
+                    Organization organization = Converter.ToType<Organization>(Result.Tables[3]);
+
+                    PdfModal pdfModal = new PdfModal
+                    {
+                        header = null,
+                        billingMonth = billDetail.UpdatedOn == null ? billDetail.CreatedOn : billDetail.UpdatedOn,
+                        billNo = billDetail.BillNo,
+                        billId = billDetail.BillDetailUid,
+                        dateOfBilling = billDetail.UpdatedOn == null ? billDetail.CreatedOn : billDetail.UpdatedOn,
+                        cGST = billDetail.CGST,
+                        sGST = billDetail.SGST,
+                        iGST = billDetail.IGST,
+                        cGstAmount = 0,
+                        sGstAmount = 0,
+                        iGstAmount = 0,
+                        workingDay = billDetail.NoOfDays - (int)billDetail.NoOfDaysAbsent,
+                        packageAmount = billDetail.PaidAmount,
+                        grandTotalAmount = billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100,
+                        senderCompanyName = organization.ClientName,
+                        receiverFirstAddress = receiverOrganization.FirstAddress,
+                        receiverCompanyId = receiverOrganization.ClientId,
+                        receiverCompanyName = receiverOrganization.ClientName,
+                        senderClientId = organization.ClientId,
+                        developerName = billDetail.DeveloperName,
+                        receiverSecondAddress = receiverOrganization.SecondAddress,
+                        receiverThirdAddress = receiverOrganization.ThirdAddress,
+                        senderFirstAddress = receiverOrganization.FirstAddress,
+                        daysAbsent = billDetail.NoOfDaysAbsent,
+                        senderSecondAddress = organization.SecondAddress,
+                        senderPrimaryContactNo = organization.PrimaryPhoneNo,
+                        senderEmail = organization.Email,
+                        senderGSTNo = organization.GSTNO,
+                        receiverGSTNo = receiverOrganization.GSTNO,
+                        receiverPrimaryContactNo = receiverOrganization.PrimaryPhoneNo,
+                        receiverEmail = receiverOrganization.Email,
+                        UpdateSeqNo = billDetail.UpdateSeqNo,
+                        ClientId = receiverOrganization.ClientId,
+                        EmployeeId = billDetail.EmployeeUid,
+                        FileId = currentFileDetail.FileId,
+                        FileName = currentFileDetail.FileName,
+                        FilePath = currentFileDetail.FilePath,
+                        LogoPath = currentFileDetail.LogoPath,
+                        DiskFilePath = currentFileDetail.DiskFilePath,
+                        FileExtension = currentFileDetail.FileExtension,
+                        StatusId = billDetail.BillStatusId,
+                        PaidOn = billDetail.PaidOn,
+                        Status = (int)currentFileDetail.StatusId,
+                        GeneratedBillNo = billDetail.BillNo,
+                        UpdatedOn = currentFileDetail.UpdatedOn,
+                        Notes = null
+                    };
+
+                    _billService.GenerateDocument(_buildPdfTable, pdfModal);
+                }
+            }
+
+            return null;
         }
 
         public string DeleteDataService(string Uid)

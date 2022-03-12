@@ -60,6 +60,14 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost]
+        [Route("ReGenerateBill")]
+        public IResponse<ApiResponse> ReGenerateBill([FromBody] FileDetail fileDetail)
+        {
+            var Result = _onlineDocumentService.ReGenerateService(_buildPdfTable, fileDetail);
+            return BuildResponse(Result, System.Net.HttpStatusCode.OK);
+        }
+
+        [HttpPost]
         [Route("CreateFolder")]
         public IResponse<ApiResponse> CreateFolder(Files file)
         {
