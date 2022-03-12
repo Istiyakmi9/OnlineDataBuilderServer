@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using DocMaker.ExcelMaker;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -24,34 +24,30 @@ namespace OnlineDataBuilder.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly IBillService _billService;
+        private readonly ExcelWriter _excelWriter;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, IBillService billService)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IBillService billService, ExcelWriter excelWriter)
         {
             _logger = logger;
             _billService = billService;
+            _excelWriter = excelWriter;
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            try
+            _excelWriter.CreateSpreadsheetWorkbook(@"E:\test.xlsx");
+            // _billService.GenerateDocument(null);
+            // SendMail();
+            var rng = new Random();
+            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
-                // _billService.GenerateDocument(null, null);
-                // SendMail();
-                var rng = new Random();
-                return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-                {
-                    Date = DateTime.Now.AddDays(index),
-                    TemperatureC = rng.Next(-20, 55),
-                    Summary = Summaries[rng.Next(Summaries.Length)]
-                })
-                .ToArray();
-            }
-            catch(Exception e)
-            {
-                throw new HiringBellException(e.Message, e);
-            }
+                Date = DateTime.Now.AddDays(index),
+                TemperatureC = rng.Next(-20, 55),
+                Summary = Summaries[rng.Next(Summaries.Length)]
+            })
+            .ToArray();
         }
 
         private void SendMail()
