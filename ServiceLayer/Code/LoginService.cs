@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocMaker.ExcelMaker;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -19,13 +20,20 @@ namespace ServiceLayer.Code
         private readonly IMediaService _mediaService;
         private readonly CurrentSession _currentSession;
         private readonly IAuthenticationService _authenticationService;
-        public LoginService(IDb db, IOptions<JwtSetting> options, CurrentSession currentSession, IMediaService mediaService, IAuthenticationService authenticationService)
+        private readonly ExcelWriter _excelWriter;
+
+        public LoginService(IDb db, IOptions<JwtSetting> options, 
+            CurrentSession currentSession, 
+            IMediaService mediaService, 
+            IAuthenticationService authenticationService,
+            ExcelWriter excelWriter)
         {
             this.db = db;
             _jwtSetting = options.Value;
             _currentSession = currentSession;
             _mediaService = mediaService;
             _authenticationService = authenticationService;
+            _excelWriter = excelWriter;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -148,6 +156,8 @@ namespace ServiceLayer.Code
             DataSet ds = db.GetDataset("sp_Userlogin_Auth", param);
             if (ds != null && ds.Tables.Count == 3)
             {
+                // _excelWriter.ToExcel(ds.Tables[2], @"E:\test.xlsx");
+
                 if (ds.Tables[0].Rows.Count > 0)
                 {
                     loginResponse = new LoginResponse();
