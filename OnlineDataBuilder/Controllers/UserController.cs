@@ -1,31 +1,55 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ServiceLayer.Interface;
+using System.Net;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
-    public class UserController : ControllerBase
+    [Route("api/[controller]")]
+    public class UserController : BaseController
     {
-        [Authorize(Role.Admin)]
-        [HttpPost("CreateInternalUser")]
-        public IResponse<ApiResponse> CreateInternalUser(UserDetail userDetail)
+        private readonly HttpContext _httpContext;
+        private readonly IUserService _userService;
+        public UserController(IHttpContextAccessor httpContext, IUserService userService)
+        {
+            _httpContext = httpContext.HttpContext;
+            _userService = userService;
+        }
+
+        [HttpPost("ItSkill")]
+        public IResponse<ApiResponse> ItSkill(UserDetail userDetail)
         {
             return null;
         }
 
-        [Authorize(Role.Admin)]
         [HttpPost("CreateUser")]
         public IResponse<ApiResponse> CreateUser(UserDetail userDetail)
         {
             return null;
+        }
+
+        [HttpPost("UploadResume")]
+        public IResponse<ApiResponse> UploadResumeFile()
+        {
+            StringValues RegistrationData = default(string);
+            StringValues FileData = default(string);
+            _httpContext.Request.Form.TryGetValue("fileDetail", out FileData);
+            if (FileData.Count > 0)
+            {
+                Files fileDetail = (Files)JsonConvert.DeserializeObject(FileData);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var Result = this._userService.UploadResume(fileDetail, files);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
         }
     }
 }

@@ -1,6 +1,7 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MySql.Code;
 using CoreServiceLayer.Implementation;
+using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Service;
@@ -89,6 +90,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IOnlineDocumentService, OnlineDocumentService>();
             services.AddScoped<IFileService, FileService>();
             services.AddScoped<ILiveUrlService, LiveUrlService>();
+            services.AddScoped<IUserService, UserService>();
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
@@ -112,6 +114,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IHTMLConverter, HTMLConverter>();
             services.AddScoped<HtmlConverterService>();
             services.AddScoped<IDOCXToHTMLConverter, DOCXToHTMLConverter>();
+            services.AddScoped<ExcelWriter>();
 
             services.AddCors(options =>
             {
