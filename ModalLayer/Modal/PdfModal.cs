@@ -20,8 +20,9 @@ namespace ModalLayer.Modal
         public double grandTotalAmount { get; set; }
         public string senderCompanyName { get; set; }
         public string receiverFirstAddress { get; set; }
+        public long receiverCompanyId { get; set; }
         public string receiverCompanyName { get; set; }
-        public int senderClientId { get; set; }
+        public long senderClientId { get; set; }
         public string developerName { set; get; }
         public string receiverSecondAddress { get; set; }
         public string receiverThirdAddress { set; get; }
