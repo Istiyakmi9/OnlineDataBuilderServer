@@ -331,12 +331,16 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public DataSet ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail)
+        public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail)
         {
+            FileDetail pdffileDetail = new FileDetail();
+
             string Extension = Utility.GetExtension(fileDetail.FileExtension, "pdf");
             if (Extension == null)
             {
-                throw new HiringBellException("File extension not found.");
+                fileDetail.FileExtension = "pdf,docx";
+                Extension = "pdf";
+
             }
 
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, $"{fileDetail.FileName}.{Extension}");
@@ -358,23 +362,28 @@ namespace ServiceLayer.Code
                     FileDetail currentFileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
                     Organization receiverOrganization = Converter.ToType<Organization>(Result.Tables[2]);
                     Organization organization = Converter.ToType<Organization>(Result.Tables[3]);
+                    //billDetail.UpdatedOn == null ? billDetail.CreatedOn : billDetail.UpdatedOn,
+
+                    var billmonth = billDetail.BillYear.ToString() + billDetail.BillForMonth.ToString().PadLeft(2, '0') + billDetail.BillUpdatedOn.ToString("dd");
+                    DateTime billingForMonth = DateTime.ParseExact(billmonth, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+
 
                     PdfModal pdfModal = new PdfModal
                     {
                         header = null,
-                        billingMonth = billDetail.UpdatedOn == null ? billDetail.CreatedOn : billDetail.UpdatedOn,
+                        billingMonth = billingForMonth,
                         billNo = billDetail.BillNo,
                         billId = billDetail.BillDetailUid,
-                        dateOfBilling = billDetail.UpdatedOn == null ? billDetail.CreatedOn : billDetail.UpdatedOn,
+                        dateOfBilling = billDetail.BillUpdatedOn,
                         cGST = billDetail.CGST,
                         sGST = billDetail.SGST,
                         iGST = billDetail.IGST,
-                        cGstAmount = 0,
-                        sGstAmount = 0,
-                        iGstAmount = 0,
+                        cGstAmount = Converter.TwoDecimalValue((billDetail.SGST * billDetail.PaidAmount) / 100),
+                        sGstAmount = Converter.TwoDecimalValue((billDetail.CGST * billDetail.PaidAmount) / 100),
+                        iGstAmount = Converter.TwoDecimalValue((billDetail.IGST * billDetail.PaidAmount) / 100),
                         workingDay = billDetail.NoOfDays - (int)billDetail.NoOfDaysAbsent,
                         packageAmount = billDetail.PaidAmount,
-                        grandTotalAmount = billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100,
+                        grandTotalAmount = Converter.TwoDecimalValue(billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100),
                         senderCompanyName = organization.ClientName,
                         receiverFirstAddress = receiverOrganization.FirstAddress,
                         receiverCompanyId = receiverOrganization.ClientId,
@@ -409,11 +418,11 @@ namespace ServiceLayer.Code
                         Notes = null
                     };
 
-                    _billService.GenerateDocument(_buildPdfTable, pdfModal);
+                   pdffileDetail = _billService.GenerateDocument(_buildPdfTable, pdfModal, true);
                 }
             }
 
-            return null;
+            return pdffileDetail;
         }
 
         public string DeleteDataService(string Uid)
