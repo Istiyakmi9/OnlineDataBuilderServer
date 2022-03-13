@@ -37,7 +37,6 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            _excelWriter.CreateSpreadsheetWorkbook(@"E:\test.xlsx");
             // _billService.GenerateDocument(null);
             // SendMail();
             var rng = new Random();

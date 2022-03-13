@@ -11,7 +11,7 @@ namespace DocMaker.ExcelMaker
 {
     public class ExcelWriter
     {
-        public void CreateSpreadsheetWorkbook(string filepath)
+        public void ToExcel(DataTable table, string filepath)
         {
             // Create a spreadsheet document by supplying the filepath.
             // By default, AutoSave = true, Editable = true, and Type = xlsx.
@@ -24,7 +24,8 @@ namespace DocMaker.ExcelMaker
 
             // Add a WorksheetPart to the WorkbookPart.
             WorksheetPart worksheetPart = workbookpart.AddNewPart<WorksheetPart>();
-            worksheetPart.Worksheet = new Worksheet(new SheetData());
+            var sheetData = new SheetData();
+            worksheetPart.Worksheet = new Worksheet(sheetData);
 
             // Add Sheets to the Workbook.
             Sheets sheets = spreadsheetDocument.WorkbookPart.Workbook.
@@ -40,13 +41,47 @@ namespace DocMaker.ExcelMaker
             };
             sheets.Append(sheet);
 
+            BuildExcelRows(sheetData, table);
+
             workbookpart.Workbook.Save();
 
             // Close the document.
             spreadsheetDocument.Close();
         }
 
-        public void ToExcel(DataTable table, string fileName)
+        private void BuildExcelRows(SheetData sheetData, DataTable table)
+        {
+            Row headerRow = new Row();
+
+            List<String> columns = new List<string>();
+            foreach (System.Data.DataColumn column in table.Columns)
+            {
+                columns.Add(column.ColumnName);
+
+                Cell cell = new Cell();
+                cell.DataType = CellValues.String;
+                cell.CellValue = new CellValue(column.ColumnName);
+                headerRow.AppendChild(cell);
+            }
+
+            sheetData.AppendChild(headerRow);
+
+            foreach (DataRow dsrow in table.Rows)
+            {
+                Row newRow = new Row();
+                foreach (String col in columns)
+                {
+                    Cell cell = new Cell();
+                    cell.DataType = CellValues.String;
+                    cell.CellValue = new CellValue(dsrow[col].ToString());
+                    newRow.AppendChild(cell);
+                }
+
+                sheetData.AppendChild(newRow);
+            }
+        }
+
+        public void ToExcel1(DataTable table, string fileName)
         {
             var datetime = DateTime.Now.ToString().Replace("/", "_").Replace(":", "_");
 
