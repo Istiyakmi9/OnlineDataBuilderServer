@@ -15,7 +15,7 @@ namespace BottomhalfCore.Services.Code
             if (strNum.IndexOf(".") == -1)
                 return num;
             else
-               return Math.Floor(num * 100) / 100;
+                return Math.Floor(num * 100) / 100;
         }
 
         public static List<T> ToList<T>(this DataTable table) where T : new()
@@ -26,12 +26,14 @@ namespace BottomhalfCore.Services.Code
 
             DataColumnCollection columns = table.Columns;
             string name = null;
-            Parallel.For(0, availableProperties.Count, index =>
+            int index = 0;
+            while (index < availableProperties.Count)
             {
                 name = availableProperties.ElementAt(index).Name;
                 if (columns.Contains(name))
                     properties.Add(availableProperties[index]);
-            });
+                index++;
+            }
 
             foreach (var row in table.Rows)
             {
@@ -39,6 +41,28 @@ namespace BottomhalfCore.Services.Code
                 result.Add(item);
             }
 
+            return result;
+        }
+
+        public static T ToType<T>(this DataTable table) where T : new()
+        {
+            IList<PropertyInfo> availableProperties = typeof(T).GetProperties().ToList();
+            IList<PropertyInfo> properties = new List<PropertyInfo>();
+            T result = new T();
+
+            DataColumnCollection columns = table.Columns;
+            string name = null;
+            int index = 0;
+            while(index < availableProperties.Count)
+            {
+                name = availableProperties.ElementAt(index).Name;
+                if (columns.Contains(name))
+                    properties.Add(availableProperties[index]);
+                index++;
+            }
+
+            var row = table.Rows[0];
+            result = CreateItemFromRow<T>((DataRow)row, properties);
             return result;
         }
 

@@ -24,8 +24,8 @@ namespace OnlineDataBuilder.Controllers
             _userService = userService;
         }
 
-        [HttpPost("ItSkill")]
-        public IResponse<ApiResponse> ItSkill(UserDetail userDetail)
+        [HttpPost("ManageUserDetail")]
+        public IResponse<ApiResponse> ManageUserDetail(ManageUserDetail userDetail)
         {
             return null;
         }
@@ -44,7 +44,7 @@ namespace OnlineDataBuilder.Controllers
             _httpContext.Request.Form.TryGetValue("fileDetail", out FileData);
             if (FileData.Count > 0)
             {
-                Files fileDetail = (Files)JsonConvert.DeserializeObject(FileData);
+                Files fileDetail = JsonConvert.DeserializeObject<Files>(FileData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
                 var Result = this._userService.UploadResume(fileDetail, files);
                 return BuildResponse(Result, HttpStatusCode.OK);
