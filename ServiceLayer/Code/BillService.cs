@@ -43,9 +43,72 @@ namespace ServiceLayer.Code
             _fileMaker = fileMaker;
         }
 
-        public FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfModal, bool isRegenerate = false)
+        public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization organization)
         {
-            //this.iHTMLConverter.ToHtml();
+            FileDetail fileDetail = new FileDetail();
+            string rootPath = _hostingEnvironment.ContentRootPath;
+            string templatePath = Path.Combine(rootPath,
+                _fileLocationDetail.Location,
+                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                _fileLocationDetail.StaffingBillTemplate
+            );
+
+            string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
+            if (File.Exists(templatePath) && File.Exists(headerLogo))
+            {
+                fileDetail.LogoPath = headerLogo;
+                using (FileStream stream = File.Open(templatePath, FileMode.Open))
+                {
+                    StreamReader reader = new StreamReader(stream);
+                    string html = reader.ReadToEnd();
+
+                    html = html.Replace("[[BILLNO]]", pdfModal.billNo).
+                    Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
+                    Replace("[[senderFirstAddress]]", organization.FirstAddress).
+                    Replace("[[senderCompanyName]]", organization.ClientName).
+                    Replace("[[senderGSTNo]]", organization.GSTNO).
+                    Replace("[[senderSecondAddress]]", organization.SecondAddress).
+                    Replace("[[senderPrimaryContactNo]]", organization.PrimaryPhoneNo).
+                    Replace("[[senderEmail]]", organization.Email).
+                    Replace("[[receiverCompanyName]]", pdfModal.receiverCompanyName).
+                    Replace("[[receiverGSTNo]]", pdfModal.receiverGSTNo).
+                    Replace("[[receiverFirstAddress]]", pdfModal.receiverFirstAddress).
+                    Replace("[[receiverSecondAddress]]", pdfModal.receiverSecondAddress).
+                    Replace("[[receiverPrimaryContactNo]]", pdfModal.receiverPrimaryContactNo).
+                    Replace("[[receiverEmail]]", pdfModal.receiverEmail).
+                    Replace("[[developerName]]", pdfModal.developerName).
+                    Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
+                    Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
+                    Replace("[[cGST]]", pdfModal.cGST.ToString()).
+                    Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
+                    Replace("[[sGST]]", pdfModal.sGST.ToString()).
+                    Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
+                    Replace("[[iGST]]", pdfModal.iGST.ToString()).
+                    Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
+                    Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
+                    Replace("[[bankName]]", organization.BankName).
+                    Replace("[[clientName]]", organization.ClientName).
+                    Replace("[[accountNumber]]", organization.AccountNo).
+                    Replace("[[iFSCCode]]", organization.IFSC).
+                    Replace("[[city]]", organization.City).
+                    Replace("[[state]]", organization.State);
+
+                    fileDetail.DiskFilePath = Path.Combine(rootPath, pdfModal.FilePath);
+                    if (!Directory.Exists(fileDetail.DiskFilePath)) Directory.CreateDirectory(fileDetail.DiskFilePath);
+                    fileDetail.FileName = pdfModal.FileName;
+                    string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
+                    this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
+                }
+
+                _fileMaker._fileDetail = fileDetail;
+                _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, organization);
+            }
+
+            return fileDetail;
+        }
+
+        public FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        {
             FileDetail fileDetail = new FileDetail();
             try
             {
@@ -94,7 +157,7 @@ namespace ServiceLayer.Code
                 {
                             new DbParam(pdfModal.ClientId, typeof(long), "_receiver"),
                             new DbParam(pdfModal.senderClientId, typeof(long), "_sender"),
-                            new DbParam(pdfModal.billNo, typeof(long), "_billNo"),
+                            new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
                             new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId")
                 };
 
@@ -128,9 +191,7 @@ namespace ServiceLayer.Code
                     string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
                     if (File.Exists(templatePath) && File.Exists(headerLogo))
                     {
-                        if (isRegenerate == false)
-                            pdfModal.UpdateSeqNo++;
-                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx, isRegenerate);
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
                         fileDetail.LogoPath = headerLogo;
 
                         using (FileStream stream = File.Open(templatePath, FileMode.Open))
@@ -173,15 +234,13 @@ namespace ServiceLayer.Code
                             this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
                         }
 
-                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf, isRegenerate);
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
                         _fileMaker._fileDetail = fileDetail;
                         _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
 
-                        if (isRegenerate  == false)
+                        int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
+                        dbParams = new DbParam[]
                         {
-                            int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
-                            dbParams = new DbParam[]
-                            {
                                     new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
                                     new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
                                     new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
@@ -209,20 +268,19 @@ namespace ServiceLayer.Code
                                     new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
                                     new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
                                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                            };
+                        };
 
-                            var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                            if (string.IsNullOrEmpty(status))
+                        var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                        if (string.IsNullOrEmpty(status))
+                        {
+                            List<Files> files = new List<Files>();
+                            files.Add(new Files
                             {
-                                List<Files> files = new List<Files>();
-                                files.Add(new Files
-                                {
-                                    FilePath = fileDetail.FilePath,
-                                    FileName = fileDetail.FileName
-                                });
-                                this.fileService.DeleteFiles(files);
-                            }
-                        } 
+                                FilePath = fileDetail.FilePath,
+                                FileName = fileDetail.FileName
+                            });
+                            this.fileService.DeleteFiles(files);
+                        }
                     }
                     else
                     {
@@ -342,7 +400,7 @@ namespace ServiceLayer.Code
             return bill;
         }
 
-        private void GetFileDetail(PdfModal pdfModal, FileDetail fileDetail, string fileExtension, bool isRegenerate)
+        private void GetFileDetail(PdfModal pdfModal, FileDetail fileDetail, string fileExtension)
         {
             fileDetail.Status = 0;
             if (pdfModal.ClientId > 0)
@@ -370,18 +428,9 @@ namespace ServiceLayer.Code
 
                     string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
                     string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
-                    string FileName = string.Empty;
-                    if (isRegenerate == false)
-                    {
-                        FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
-                                      MonthName + "_" +
-                                      pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo;
-                    } else
-                    {
-                        FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
-                                      MonthName + "_" +
-                                      pdfModal.billNo.Replace("#", "");
-                    }
+                    string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
+                                  MonthName + "_" +
+                                  pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo;
 
                     string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
                     if (!Directory.Exists(folderPath))
