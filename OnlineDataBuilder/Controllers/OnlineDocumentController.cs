@@ -159,5 +159,12 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
+
+        [HttpGet("GetMenu/{AccessLevelId}")]
+        public IResponse<ApiResponse> GetsRolesandMenu(int AccessLevelId)
+        {
+            var result = _ionlineDocumentService.GetsRolesandMenu(AccessLevelId);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
