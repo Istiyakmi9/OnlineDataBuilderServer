@@ -128,8 +128,9 @@ namespace ServiceLayer.Code
                     string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
                     if (File.Exists(templatePath) && File.Exists(headerLogo))
                     {
-                        pdfModal.UpdateSeqNo++;
-                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
+                        if (isRegenerate == false)
+                            pdfModal.UpdateSeqNo++;
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx, isRegenerate);
                         fileDetail.LogoPath = headerLogo;
 
                         using (FileStream stream = File.Open(templatePath, FileMode.Open))
@@ -172,7 +173,7 @@ namespace ServiceLayer.Code
                             this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
                         }
 
-                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf, isRegenerate);
                         _fileMaker._fileDetail = fileDetail;
                         _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
 
@@ -221,7 +222,7 @@ namespace ServiceLayer.Code
                                 });
                                 this.fileService.DeleteFiles(files);
                             }
-                        }
+                        } 
                     }
                     else
                     {
@@ -341,7 +342,7 @@ namespace ServiceLayer.Code
             return bill;
         }
 
-        private void GetFileDetail(PdfModal pdfModal, FileDetail fileDetail, string fileExtension)
+        private void GetFileDetail(PdfModal pdfModal, FileDetail fileDetail, string fileExtension, bool isRegenerate)
         {
             fileDetail.Status = 0;
             if (pdfModal.ClientId > 0)
@@ -369,9 +370,18 @@ namespace ServiceLayer.Code
 
                     string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
                     string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
-                    string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
+                    string FileName = string.Empty;
+                    if (isRegenerate == false)
+                    {
+                        FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
                                       MonthName + "_" +
                                       pdfModal.billNo.Replace("#", "") + "_" + pdfModal.UpdateSeqNo;
+                    } else
+                    {
+                        FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
+                                      MonthName + "_" +
+                                      pdfModal.billNo.Replace("#", "");
+                    }
 
                     string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
                     if (!Directory.Exists(folderPath))
