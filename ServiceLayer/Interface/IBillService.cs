@@ -7,6 +7,7 @@ namespace ServiceLayer.Interface
     public interface IBillService
     {
         string UpdateGstStatus(GstStatusModel createPageModel, IFormFileCollection FileCollection, List<Files> fileDetail);
-        FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfmodal, bool isRegenerate = false);
+        FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfmodal);
+        FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfmodal, Organization organization);
     }
 }

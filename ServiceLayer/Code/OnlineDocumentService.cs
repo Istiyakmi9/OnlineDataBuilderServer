@@ -333,8 +333,6 @@ namespace ServiceLayer.Code
 
         public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail)
         {
-            FileDetail pdffileDetail = new FileDetail();
-
             string Extension = Utility.GetExtension(fileDetail.FileExtension, "pdf");
             if (Extension == null)
             {
@@ -418,11 +416,11 @@ namespace ServiceLayer.Code
                         Notes = null
                     };
 
-                   pdffileDetail = _billService.GenerateDocument(_buildPdfTable, pdfModal, true);
+                    _billService.CreateFiles(_buildPdfTable, pdfModal, organization);
                 }
             }
 
-            return pdffileDetail;
+            return fileDetail;
         }
 
         public string DeleteDataService(string Uid)
