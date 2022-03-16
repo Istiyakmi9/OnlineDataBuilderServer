@@ -191,6 +191,9 @@ namespace ServiceLayer.Code
                     string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
                     if (File.Exists(templatePath) && File.Exists(headerLogo))
                     {
+                        this.CleanOldFiles(fileDetail);
+                        pdfModal.UpdateSeqNo++;
+                        fileDetail.FileExtension = string.Empty;
                         GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
                         fileDetail.LogoPath = headerLogo;
 
@@ -241,33 +244,33 @@ namespace ServiceLayer.Code
                         int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
                         dbParams = new DbParam[]
                         {
-                                    new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                                    new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                                    new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
-                                    new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
-                                    new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                                    new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
-                                    new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
-                                    new DbParam(bill.BillUid, typeof(int), "_BillUid"),
-                                    new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
-                                    new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
-                                    new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
-                                    new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                                    new DbParam(Year, typeof(int), "_BillYear"),
-                                    new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                                    new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
-                                    new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
-                                    new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
-                                    new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
-                                    new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
-                                    new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                                    new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
-                                    new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
-                                    new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
-                                    new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
-                                    new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
-                                    new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
+                            new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                            new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                            new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
+                            new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
+                            new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
+                            new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
+                            new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
+                            new DbParam(bill.BillUid, typeof(int), "_BillUid"),
+                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
+                            new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
+                            new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
+                            new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
+                            new DbParam(Year, typeof(int), "_BillYear"),
+                            new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
+                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
+                            new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
+                            new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
+                            new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
+                            new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
+                            new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
+                            new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
+                            new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
+                            new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
+                            new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
+                            new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
+                            new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
+                            new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                         };
 
                         var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
@@ -400,6 +403,32 @@ namespace ServiceLayer.Code
             return bill;
         }
 
+        private void CleanOldFiles(FileDetail fileDetail)
+        {
+            // Old file name and path
+            if (!string.IsNullOrEmpty(fileDetail.FilePath))
+            {
+                string ExistingFolder = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath);
+                if (Directory.Exists(ExistingFolder))
+                {
+                    if (Directory.GetFiles(ExistingFolder).Length == 0)
+                    {
+                        Directory.Delete(ExistingFolder);
+                    }
+                    else
+                    {
+                        string ExistingFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, fileDetail.FileName + "." + ApplicationConstants.Docx);
+                        if (File.Exists(ExistingFilePath))
+                            File.Delete(ExistingFilePath);
+
+                        ExistingFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, fileDetail.FileName + "." + ApplicationConstants.Pdf);
+                        if (File.Exists(ExistingFilePath))
+                            File.Delete(ExistingFilePath);
+                    }
+                }
+            }
+        }
+
         private void GetFileDetail(PdfModal pdfModal, FileDetail fileDetail, string fileExtension)
         {
             fileDetail.Status = 0;
@@ -407,25 +436,6 @@ namespace ServiceLayer.Code
             {
                 try
                 {
-                    // Old file name and path
-                    if (!string.IsNullOrEmpty(fileDetail.FilePath) && fileExtension == fileDetail.FileExtension)
-                    {
-                        string ExistingFolder = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath);
-                        if (Directory.Exists(ExistingFolder))
-                        {
-                            if (Directory.GetFiles(ExistingFolder).Length == 0)
-                            {
-                                Directory.Delete(ExistingFolder);
-                            }
-                            else
-                            {
-                                string ExistingFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, fileDetail.FileName);
-                                if (File.Exists(ExistingFilePath))
-                                    File.Delete(ExistingFilePath);
-                            }
-                        }
-                    }
-
                     string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
                     string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
                     string FileName = pdfModal.developerName.Replace(" ", "_") + "_" +
