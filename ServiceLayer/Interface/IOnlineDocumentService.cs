@@ -24,6 +24,5 @@ namespace ServiceLayer.Interface
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
         DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
         DataSet GetDocumentResultById(Files fileDetail);
-        DataSet GetsRolesandMenu(int accessLevelId);
     }
 }
