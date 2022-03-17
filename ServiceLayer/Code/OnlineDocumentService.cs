@@ -624,19 +624,6 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public DataSet GetsRolesandMenu(int accessLevelId)
-        {
-            DataSet result = null;
-            if (accessLevelId > 0)
-            {
-                DbParam[] dbParam = new DbParam[]
-                {
-                    new DbParam(accessLevelId, typeof(int), "_accesslevelId")
-                };
-
-                result = this.db.GetDataset("sp_RolesAndMenu_GetAll", dbParam);
-            }
-            return result;
-        }
+        
     }
 }

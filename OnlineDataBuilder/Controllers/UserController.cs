@@ -24,7 +24,7 @@ namespace OnlineDataBuilder.Controllers
             _userService = userService;
         }
 
-        [HttpPost("ManageUserDetail")]
+        [HttpPost("PersonalDetail")]
         public IResponse<ApiResponse> ManageUserDetail(ManageUserDetail userDetail)
         {
             return null;
