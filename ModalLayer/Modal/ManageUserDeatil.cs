@@ -56,7 +56,18 @@ namespace ModalLayer.Modal
         public int ExpectedSalaryLakh { get; set; }
         public int ExpectedSalaryThousand { get; set; }
         public string ProfileSummary { get; set; }
-        public string DOB { get; set; }
+        public string OnlineProfile { get; set; }
+        public string WorkSample { get; set; }
+        public string Research { get; set; }
+        public string Presentation { get; set; }
+        public string Patent { get; set; }
+        public string Certification { get; set; }
+        public int UserId { get; set; }
+    }
+
+    class PersonalDetail
+    {
+        public DateTime DOB { get; set; }
         public string Gender { get; set; }
         public string Address { get; set; }
         public string HomeTown { get; set; }
@@ -66,17 +77,15 @@ namespace ModalLayer.Modal
         public string DifferentlyAbled { get; set; }
         public string PermitUSA { get; set; }
         public string PermitOtherCountry { get; set; }
+        public List<LanguageDetail> LanguageDetails { get; set; }
+    }
+
+    class LanguageDetail
+    {
         public string Language { get; set; }
-        public string LanguageRead { get; set; }
-        public string LanguageWrite { get; set; }
+        public bool LanguageRead { get; set; }
+        public bool LanguageWrite { get; set; }
         public string ProficiencyLanguage { get; set; }
-        public string LanguageSpeak { get; set; }
-        public string OnlineProfile { get; set; }
-        public string WorkSample { get; set; }
-        public string Research { get; set; }
-        public string Presentation { get; set; }
-        public string Patent { get; set; }
-        public string Certification { get; set; }
-        public int UserId { get; set; }
+        public bool LanguageSpeak { get; set; }
     }
 }
