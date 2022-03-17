@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using ModalLayer.Modal.Profile;
 
 namespace ServiceLayer.Interface
 {
     public interface IUserService
     {
-        string UploadResume(Files fileDetail, IFormFileCollection FileCollection);
+        string UploadUserInfo(string userId, UserInfo userInfo, IFormFileCollection FileCollection);
     }
 }
