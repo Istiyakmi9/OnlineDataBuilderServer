@@ -6,11 +6,7 @@ namespace ModalLayer.Modal
 {
     public class ManageUserDetail
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Mobile { get; set; }
-        public string Email { get; set; }
-        public string ProfileImg { get; set; }
+        
         public string Designation { get; set; }
         public string YourOrganization { get; set; }
         public string CurrentCompany { get; set; }
@@ -65,7 +61,8 @@ namespace ModalLayer.Modal
         public int UserId { get; set; }
     }
 
-    class PersonalDetail
+
+    public class PersonalDetail
     {
         public DateTime DOB { get; set; }
         public string Gender { get; set; }
@@ -80,7 +77,7 @@ namespace ModalLayer.Modal
         public List<LanguageDetail> LanguageDetails { get; set; }
     }
 
-    class LanguageDetail
+    public class LanguageDetail
     {
         public string Language { get; set; }
         public bool LanguageRead { get; set; }
