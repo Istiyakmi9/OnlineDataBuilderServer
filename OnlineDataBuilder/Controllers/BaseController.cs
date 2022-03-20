@@ -13,7 +13,7 @@ namespace OnlineDataBuilder.Controllers
         {
             apiResponse = new ApiResponse();
         }
-        public ApiResponse BuildResponse(dynamic Data, HttpStatusCode httpStatusCode, string Resion = null, string Token = null)
+        public ApiResponse BuildResponse(dynamic Data, HttpStatusCode httpStatusCode = HttpStatusCode.OK, string Resion = null, string Token = null)
         {
             apiResponse.AuthenticationToken = Token;
             apiResponse.HttpStatusMessage = Resion;

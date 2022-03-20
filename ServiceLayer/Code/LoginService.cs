@@ -78,7 +78,7 @@ namespace ServiceLayer.Code
 
                 var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_Ins", param, true);
                 if (!string.IsNullOrEmpty(ResultSet))
-                    loginResponse = FetchUserDetail(userDetail);
+                    loginResponse = FetchUserDetail(userDetail, "sp_Userlogin_Auth");
             }
             return loginResponse;
         }
@@ -135,14 +135,28 @@ namespace ServiceLayer.Code
                 LoginResponse loginResponse = default;
                 if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
                 {
-                    loginResponse = FetchUserDetail(authUser);
+                    loginResponse = FetchUserDetail(authUser, "sp_Candidatelogin_Auth");
                 }
 
                 return loginResponse;
             });
         }
 
-        private LoginResponse FetchUserDetail(UserDetail authUser)
+        public async Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser)
+        {
+            return await Task.Run(() =>
+            {
+                LoginResponse loginResponse = default;
+                if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
+                {
+                    loginResponse = FetchUserDetail(authUser, "sp_Userlogin_Auth");
+                }
+
+                return loginResponse;
+            });
+        }
+
+        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
         {
             LoginResponse loginResponse = default;
             UserDetail userDetail = default;
@@ -153,7 +167,7 @@ namespace ServiceLayer.Code
                 new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
                 new DbParam(authUser.Password, typeof(System.String), "_Password")
             };
-            DataSet ds = db.GetDataset("sp_Userlogin_Auth", param);
+            DataSet ds = db.GetDataset(ProcedureName, param);
             if (ds != null && ds.Tables.Count == 3)
             {
                 // _excelWriter.ToExcel(ds.Tables[2], @"E:\test.xlsx");
