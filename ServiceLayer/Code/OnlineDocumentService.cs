@@ -446,9 +446,9 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public string UploadDocumentRecord(List<UploadDocument> uploadDocuments)
+        public string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocuments)
         {
-            DataSet ds = Converter.ToDataSet<UploadDocument>(uploadDocuments);
+            DataSet ds = Converter.ToDataSet<ProfessionalUserDetail>(uploadDocuments);
             var status = this.db.BatchInsert("sp_ProfessionalCandidates_InsUpdate", ds, true);
             return "Uploaded success";
 

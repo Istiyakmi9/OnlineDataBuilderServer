@@ -124,7 +124,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UploadDocumentRecords")]
-        public IResponse<ApiResponse> UploadDocumentRecords([FromBody] List<UploadDocument> uploadDocument)
+        public IResponse<ApiResponse> UploadDocumentRecords([FromBody] List<ProfessionalUserDetail> uploadDocument)
         {
             var result = _ionlineDocumentService.UploadDocumentRecord(uploadDocument);
             return BuildResponse(result, HttpStatusCode.OK);

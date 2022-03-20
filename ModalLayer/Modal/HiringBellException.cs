@@ -13,11 +13,12 @@ namespace ModalLayer.Modal
 
         public HiringBellException() { }
         public HiringBellException(string Message, Exception InnerException) : base(Message, InnerException) { }
-        public HiringBellException(string Message, string FieldName = null, string FieldValue = null)
+        public HiringBellException(string Message, string FieldName = null, string FieldValue = null, HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest)
         {
             this.UserMessage = Message;
             this.FieldName = FieldName;
             this.FieldValue = FieldValue;
+            HttpStatusCode = httpStatusCode;
         }
 
         public HiringBellException BuildBadRequest(string Message, string Filed = null, string Value = null)

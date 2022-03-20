@@ -31,6 +31,15 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [Route("AuthenticateProvider")]
+        public async Task<ApiResponse> AuthenticateProvider(UserDetail authUser)
+        {
+            var userDetail = await this.loginService.FetchAuthenticatedProviderDetail(authUser);
+            return BuildResponse(userDetail, HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
         [Route("AuthenticateUser")]
         public async Task<ApiResponse> AuthenticateUser(UserDetail authUser)
         {

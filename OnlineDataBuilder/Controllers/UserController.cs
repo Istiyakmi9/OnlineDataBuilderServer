@@ -70,19 +70,23 @@ namespace OnlineDataBuilder.Controllers
             return null;
         }
 
-
-
-        [HttpPost("UploadResume")]
-        public IResponse<ApiResponse> UploadResumeFile()
+        [HttpGet("GetUserDetail/{userId}")]
+        public IResponse<ApiResponse> GetUserDetail(long userId)
         {
-            StringValues RegistrationData = default(string);
-            StringValues FileData = default(string);
-            _httpContext.Request.Form.TryGetValue("fileDetail", out FileData);
-            if (FileData.Count > 0)
+            var result = _userService.GetUserDetail(userId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("UploadProfileDetailFile/{userId}")]
+        public IResponse<ApiResponse> UploadProfileDetailFile(string userId)
+        {
+            StringValues UserInfoData = default(string);
+            _httpContext.Request.Form.TryGetValue("userInfo", out UserInfoData);
+            if (UserInfoData.Count > 0)
             {
-                Files fileDetail = JsonConvert.DeserializeObject<Files>(FileData);
+                var userInfo = JsonConvert.DeserializeObject<UserInfo>(UserInfoData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = this._userService.UploadResume(fileDetail, files);
+                var Result = this._userService.UploadUserInfo(userId, userInfo, files);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

@@ -2,6 +2,8 @@
 using MySql.Data.MySqlClient;
 using System;
 using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BottomhalfCore.DatabaseLayer.MySql.Code
 {
@@ -12,6 +14,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         private MySqlDataAdapter da = null;
         private MySqlCommandBuilder builder = null;
         private MySqlTransaction transaction = null;
+        private MySqlDataReader reader = null;
         private bool IsTransactionStarted = false;
         private DataSet ds = null;
 
@@ -73,6 +76,47 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         /*===========================================  GetDataSet =============================================================*/
 
         #region GetDataSet
+
+        public T Get<T>(string ProcedureName, DbParam[] param) where T : new()
+        {
+            T t = new T();
+            try
+            {
+                var props = typeof(T).GetProperties().ToList();
+
+                ds = null;
+                cmd.Parameters.Clear();
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = ProcedureName;
+                cmd = AddCommandParameter(cmd, param);
+
+                reader = cmd.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        Parallel.ForEach(props, x =>
+                        {
+                            if (reader[x.Name] != DBNull.Value)
+                                x.SetValue(t, reader[x.Name]);
+                        });
+                    }
+                }
+            }
+            catch (MySqlException MySqlException)
+            {
+                throw MySqlException;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return t;
+        }
+
+
         public DataSet GetDataset(string ProcedureName, DbParam[] param)
         {
             try

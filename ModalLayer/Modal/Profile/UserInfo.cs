@@ -6,6 +6,8 @@ namespace ModalLayer.Modal.Profile
 {
     public class UserInfo
     {
+        public long UserId { get; set; }
+        public long FileId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Mobile { get; set; }

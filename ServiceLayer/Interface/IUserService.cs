@@ -1,16 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Data;
 
 namespace ServiceLayer.Interface
 {
     public interface IUserService
     {
-        string UploadResume(Files fileDetail, IFormFileCollection FileCollection);
+        string UploadUserInfo(string userId, UserInfo userInfo, IFormFileCollection FileCollection);
         string ManageEmploymentDetail(EmploymentDetail employmentDetail);
         string ManageEducationDetail(List<EducationDetail> educationDetails);
+        DataSet GetUserDetail(long userId);
     }
 }

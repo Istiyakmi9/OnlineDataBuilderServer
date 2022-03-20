@@ -116,6 +116,23 @@ namespace OnlineDataBuilder
             services.AddScoped<HtmlConverterService>();
             services.AddScoped<IDOCXToHTMLConverter, DOCXToHTMLConverter>();
             services.AddScoped<ExcelWriter>();
+            services.AddSingleton<FileLocationDetail>(service =>
+            {
+                services.Configure<FileLocationDetail>(o => Configuration.GetSection("BillingFolders").Bind(o));
+
+                var fileLocationDetail = Configuration.GetSection("BillingFolders").Get<FileLocationDetail>();
+
+                return new FileLocationDetail
+                {
+                    BillsPath = fileLocationDetail.BillsPath,
+                    Location = fileLocationDetail.Location,
+                    HtmlTemplaePath = fileLocationDetail.HtmlTemplaePath,
+                    StaffingBillTemplate = fileLocationDetail.StaffingBillTemplate,
+                    DocumentFolder = fileLocationDetail.Location,
+                    UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
+                    BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath)
+                };
+            });
 
             services.AddCors(options =>
             {

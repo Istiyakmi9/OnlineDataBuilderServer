@@ -53,7 +53,12 @@ namespace ModalLayer.Modal
     public class FileLocationDetail
     {
         public string Location { set; get; }
+        public string AppLocation { set; get; }
+        public string DocumentFolder { set; get; }
+        public string UserFolder { set; get; }
+        public string BillFolder { set; get; }
         public List<string> HtmlTemplaePath { set; get; }
+        public string User { set; get; }
         public string BillsPath { set; get; }
         public string StaffingBillTemplate { set; get; }
     }

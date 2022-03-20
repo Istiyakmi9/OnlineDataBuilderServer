@@ -377,6 +377,7 @@
   },
   "BillingFolders": {
     "Location": "Documents",
+    "User": "User",
     "HtmlTemplaePath": [ "HtmlTemplates", "Billing" ],
     "BillsPath": "Bills",
     "StaffingBillTemplate": "staffingBill.html"
