@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ModalLayer.Modal
 {
-    public class UploadDocument
+    public class ProfessionalUserDetail
     {
         public string Source_Of_Application { set; get; }
         public string Job_Title { set; get; }

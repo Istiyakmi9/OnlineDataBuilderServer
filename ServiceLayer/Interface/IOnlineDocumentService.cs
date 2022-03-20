@@ -20,7 +20,7 @@ namespace ServiceLayer.Interface
         DataSet EditEmployeeBillDetailService(FileDetail fileDetail);
         FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail);
         string UpdateRecord(FileDetail fileDetail, long Uid);
-        string UploadDocumentRecord(List<UploadDocument> uploadDocument);
+        string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
         DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
         DataSet GetDocumentResultById(Files fileDetail);

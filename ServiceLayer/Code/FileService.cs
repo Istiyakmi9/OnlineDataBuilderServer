@@ -57,10 +57,10 @@ namespace CoreServiceLayer.Implementation
                     {
                         var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
                         Email = currentFile.Email.Replace("@", "_").Replace(".", "_");
-                        
+
                         if (currentFile.FilePath.IndexOf(Email) == -1 && FolderPath.IndexOf(Email) == -1)
                             FolderPath = Path.Combine(FolderPath, Email);
-                        
+
                         if (!string.IsNullOrEmpty(currentFile.FilePath))
                             ActualPath = Path.Combine(FolderPath, currentFile.FilePath);
                         else
@@ -72,7 +72,8 @@ namespace CoreServiceLayer.Implementation
                             Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath));
 
                         Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
-                        NewFileName = file.Name;
+                        currentFile.FileName = file.Name;
+                        NewFileName = file.Name + "." + Extension;
 
 
                         if (currentFile != null)
@@ -80,9 +81,7 @@ namespace CoreServiceLayer.Implementation
                             string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
                             if (File.Exists(FilePath))
                             {
-                                NewFileName = DateTime.Now.Ticks.ToString() + "_" + NewFileName;
-                                FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
-                                currentFile.FileName = NewFileName;
+                                File.Delete(FilePath);
                             }
 
                             currentFile.FileExtension = Extension;

@@ -17,7 +17,7 @@ namespace ModalLayer.Modal
         public string Icon { set; get; }
         public string Badge { set; get; }
         public string BadgeType { set; get; }
-        public long AccessCode { set; get; }
+        public int AccessCode { set; get; }
         public int Permission { set; get; }
         public string ParentMenu { get; set; }
     }
