@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ModalLayer.Modal.Profile
 {
@@ -8,8 +6,8 @@ namespace ModalLayer.Modal.Profile
     {
         public string ITSkill { get; set; }
         public int Version { get; set; }
-        public string LastUsed { get; set; }
-        public int ExperienceYear { get; set; }
-        public int ExperienceMonth { get; set; }
+        public Nullable<DateTime> LastUsed { get; set; }
+        public int ExperienceInYear { get; set; }
+        public int ExperienceINMonth { get; set; }
     }
 }
