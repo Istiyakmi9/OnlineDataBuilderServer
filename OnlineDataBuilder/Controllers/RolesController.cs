@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
-using System.Collections.Generic;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
