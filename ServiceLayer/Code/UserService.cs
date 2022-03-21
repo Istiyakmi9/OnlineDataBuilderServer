@@ -1,13 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -26,49 +25,36 @@ namespace ServiceLayer.Code
             _fileLocationDetail = fileLocationDetail;
         }
 
-        public string ManageEmploymentDetail(EmploymentDetail employmentDetail)
+        public string UpdateProfile(ProfessionalUser professionalUser, int IsProfileImageRequest = 0)
         {
             var result = string.Empty;
+            var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
             DbParam[] dbParams = new DbParam[]
             {
-                new DbParam(employmentDetail.CurrentCompany, typeof(string), ""),
-                new DbParam(employmentDetail.CurrentSalary, typeof(string), ""),
-                new DbParam(employmentDetail.CurrentSalaryLakh, typeof(int), ""),
-                new DbParam(employmentDetail.CurrentSalaryThousand, typeof(int), ""),
-                new DbParam(employmentDetail.Designation, typeof(string), ""),
-                new DbParam(employmentDetail.Experties, typeof(string), ""),
-                new DbParam(employmentDetail.YourOrganization, typeof(string), ""),
-                new DbParam(employmentDetail.WorkingYear, typeof(int), ""),
-                new DbParam(employmentDetail.WorkingMonth, typeof(int), ""),
-                new DbParam(employmentDetail.JobProfile, typeof(string), ""),
-                new DbParam(employmentDetail.NoticePeriod, typeof(string), ""),
-                new DbParam(employmentDetail.WorkedYear, typeof(int), ""),
-                new DbParam(employmentDetail.WorkedMonth, typeof(int), "")
+                new DbParam(professionalUser.UserId, typeof(long), "_UserId"),
+                new DbParam(professionalUser.FileId, typeof(long), "_FileId"),
+                new DbParam(professionalUser.Mobile_Number, typeof(string), "_Mobile"),
+                new DbParam(professionalUser.Email, typeof(string), "_Email"),
+                new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
+                new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
+                new DbParam(professionalUser.Date_Of_Application, typeof(DateTime), "_Date_Of_Application"),
+                new DbParam(professionalUser.Total_Experience_In_Months, typeof(int), "_Total_Experience_In_Months"),
+                new DbParam(professionalUser.Salary_Package, typeof(double), "_Salary_Package"),
+                new DbParam(professionalUser.Notice_Period, typeof(int), "_Notice_Period"),
+                new DbParam(professionalUser.Expeceted_CTC, typeof(double), "_Expeceted_CTC"),
+                new DbParam(professionalUser.Current_Location, typeof(string), "_Current_Location"),
+                new DbParam(JsonConvert.SerializeObject(professionalUser.Preferred_Locations), typeof(string), "_Preferred_Location"),
+                new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
+                new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
             };
 
+            result = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
             return result;
         }
 
-        public string ManageEducationDetail(List<EducationDetail> educationDetails)
+        public string UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection)
         {
-            var result = string.Empty;
-            //var permissionMenu = (from n in educationDetails
-            //                      select new EducationDetail
-            //                      {
-            //                          RoleAccessibilityMappingId = -1,
-            //                          AccessLevelId = rolesAndMenus.AccessLevelId,
-            //                          AccessCode = n.AccessCode,
-            //                          AccessibilityId = n.Permission
-            //                      }).ToList<EducationDetail>();
-
-            //DataSet ds = Converter.ToDataSet<RoleAccessibilityMapping>(permissionMenu);
-            //result = _db.BatchInsert("sp_role_accessibility_mapping_InsUpd", ds, false);
-            return result;
-        }
-
-        public string UploadUserInfo(string userId, UserInfo userInfo, IFormFileCollection FileCollection)
-        {
-            if (string.IsNullOrEmpty(userInfo.Email))
+            if (string.IsNullOrEmpty(professionalUser.Email))
             {
                 throw new HiringBellException("Email id is required field.");
             }
@@ -76,7 +62,7 @@ namespace ServiceLayer.Code
             int IsProfileImageRequest = 0;
             List<Files> files = new List<Files>();
             Files file = new Files();
-            if(FileCollection.Count > 0)
+            if (FileCollection.Count > 0)
             {
                 IsProfileImageRequest = 1;
                 Parallel.ForEach(FileCollection, x =>
@@ -85,7 +71,7 @@ namespace ServiceLayer.Code
                     {
                         FileName = x.Name,
                         FilePath = string.Empty,
-                        Email = userInfo.Email
+                        Email = professionalUser.Email
                     });
                 });
 
@@ -93,21 +79,7 @@ namespace ServiceLayer.Code
                 file = files.Single();
             }
 
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(userId, typeof(long), "_UserId"),
-                new DbParam(userInfo.FirstName + " " + userInfo.LastName, typeof(string), "_Name"),
-                new DbParam(null, typeof(string), "_Alternet_Numbers"),
-                new DbParam(userInfo.ResumeHeadline, typeof(string), "_Resume_Headline"),
-                new DbParam(userInfo.FileId, typeof(long), "_FileId"),
-                new DbParam(file.FilePath, typeof(string), "_FilePath"),
-                new DbParam(file.FileName, typeof(string), "_FileName"),
-                new DbParam(file.FileExtension, typeof(string), "_FileExtension"),
-                new DbParam(0, typeof(int), "_UserTypeId"),
-                new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
-            };
-
-            var result = _db.ExecuteNonQuery("sp_ProfessionalCandidates_UpdInfo", param, true);
+            var result = this.UpdateProfile(professionalUser, IsProfileImageRequest);
             if (string.IsNullOrEmpty(result))
             {
                 _fileService.DeleteFiles(files);
@@ -116,19 +88,36 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public DataSet GetUserDetail(long userId)
+        public ProfileDetail GetUserDetail(long userId)
         {
+            ProfileDetail profileDetail = new ProfileDetail();
             DbParam[] param = new DbParam[]
             {
                new DbParam(userId, typeof(long), "_UserId"),
-               new DbParam(null, typeof(string), "_MobileNo"),
-               new DbParam(null, typeof(string), "_EmailId")
+               new DbParam(null, typeof(string), "_Mobile"),
+               new DbParam(null, typeof(string), "_Email")
             };
 
-            var Result = _db.GetDataset("sp_professionalcandidates_Get", param);
+            var Result = _db.GetDataset("sp_professionaldetail_filter", param);
+
             if (Result.Tables.Count == 0)
+            {
                 throw new HiringBellException("Fail to get record.");
-            return Result;
+            }
+            else
+            {
+                profileDetail.profileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
+                string jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
+                if (!string.IsNullOrEmpty(jsonData))
+                {
+                    profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(jsonData);
+                }
+                else
+                {
+                    throw new HiringBellException("Fail to get record.");
+                }
+            }
+            return profileDetail;
         }
     }
 }

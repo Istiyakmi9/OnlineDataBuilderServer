@@ -6,7 +6,6 @@ namespace ModalLayer.Modal.Profile
 {
     public class AccomplishmentsDetail
     {
-        public List<string> ProfileSummary { get; set; }
         public List<string> OnlineProfile { get; set; }
         public List<string> WorkSample { get; set; }
         public List<string> Research { get; set; }

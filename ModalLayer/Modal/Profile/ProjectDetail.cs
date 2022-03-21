@@ -12,9 +12,10 @@ namespace ModalLayer.Modal.Profile
         public int ProjectWorkingMonth { get; set; }
         public int ProjectWorkedYear { get; set; }
         public int ProjectWorkedMonth { get; set; }
-        public string IsProjectInCompleted { get; set; }
-        public string IsProjectInProgress { get; set; }
+        public string ProjectStatus { get; set; }
         public string ClientName { get; set; }
         public string ProjectDetails { get; set; }
+        public string RolesResponsibility { get; set; }
+        public string TechnalogyStack { get; set; }
     }
 }
