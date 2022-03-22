@@ -11,15 +11,16 @@ namespace ModalLayer.Modal.Profile
         public string Designation { get; set; }
         public string Company_Name { get; set; }
         public string Functional_Area { get; set; }
-        public string DesiredJobType { get; set; }
-        public string DesiredEmploymentType { get; set; }
+        public bool JobTypeContractual { get; set; }
+        public bool JobTypePermanent { get; set; }
+        public bool FullTime { get; set; }
+        public bool PartTime { get; set; }
         public string PreferredShift { get; set; }
         public string PreferredWorkLocation { get; set; }
         public string ExpectedSalary { get; set; }
-        public int ExpectedSalaryInLakh { get; set; }
-        public int ExpectedSalaryInThousand { get; set; }
         public string RoleCategory { get; set; }
         public string Department { get; set; }
+        public string CurrencyType { get; set; }
 
     }
 }
