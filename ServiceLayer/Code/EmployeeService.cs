@@ -44,15 +44,20 @@ namespace ServiceLayer.Code
 
         public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
         {
+            if(employee == null || employee.EmployeeUid <= 0)
+            {
+                throw new HiringBellException("Invalid employee/client detail found. Please contact to admin.");
+            }
+
             DbParam[] param = new DbParam[]
             {
+                new DbParam(employee.EmployeeMappedClientsUid, typeof(long), "_employeeMappedClientsUid"),
                 new DbParam(employee.EmployeeUid, typeof(long), "_employeeUid"),
-                new DbParam(employee.AllocatedClientId, typeof(long), "_clientUid"),
+                new DbParam(employee.ClientUid, typeof(long), "_clientUid"),
                 new DbParam(employee.FinalPackage, typeof(float), "_finalPackage"),
                 new DbParam(employee.ActualPackage, typeof(float), "_actualPackage"),
                 new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
                 new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
-                new DbParam(employee.IsActive, typeof(bool), "_isActive"),
                 new DbParam(IsUpdating, typeof(bool), "_isUpdate"),
             };
             var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);

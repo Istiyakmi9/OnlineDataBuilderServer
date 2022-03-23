@@ -17,5 +17,7 @@ namespace ModalLayer.Modal.Profile
         public string ProjectDetails { get; set; }
         public string RolesResponsibility { get; set; }
         public string TechnalogyStack { get; set; }
+        public string ProjectDuration { get; set; }
+        public int ProjectIndex { get; set; }
     }
 }
