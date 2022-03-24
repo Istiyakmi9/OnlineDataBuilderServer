@@ -78,5 +78,28 @@ namespace ServiceLayer.Code
                 return status;
             });
         }
+
+        public List<Organization> DeactivateClient(Employee employee)
+        {
+            if (employee == null || employee.EmployeeUid <= 0)
+            {
+                throw new HiringBellException("Invalid client detail submitted.");
+            }
+
+            List<Organization> client = default;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(employee.EmployeeMappedClientsUid, typeof(long), "_ClientMappedId"),
+                new DbParam(employee.EmployeeUid, typeof(long), "_UserId")
+            };
+
+            var resultSet = _db.GetDataset("sp_deactivateOrganization_delandgetall", param);
+            if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
+            {
+                client = Converter.ToList<Organization>(resultSet.Tables[0]);
+            }
+
+            return client;
+        }
     }
 }

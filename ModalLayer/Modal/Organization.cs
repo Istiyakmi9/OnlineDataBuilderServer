@@ -7,6 +7,7 @@ namespace ModalLayer.Modal
     public class Organization
     {
         public int Index { set; get; }
+        public long Id { set; get; }
         public long ClientId { set; get; }
         public string ClientName { set; get; }
         public string MobileNo { set; get; }

@@ -11,5 +11,6 @@ namespace ServiceLayer.Interface
         Task<string> RegisterClient(Organization client);
         Organization GetClientDetailById(long ClientId, bool IsActive);
         List<Organization> GetClients(FilterModel filterModel);
+        List<Organization> DeactivateClient(Employee employee);
     }
 }

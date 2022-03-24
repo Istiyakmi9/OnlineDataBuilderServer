@@ -43,5 +43,12 @@ namespace OnlineDataBuilder.Controllers
             var Result = _clientsService.GetClients(filterModel);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
+
+        [HttpDelete("DeactivateClient")]
+        public ApiResponse DeactivateClient(Employee employee)
+        {
+            var result = _clientsService.DeactivateClient(employee);
+            return BuildResponse(result);
+        }
     }
 }
