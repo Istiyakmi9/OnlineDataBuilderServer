@@ -9,6 +9,7 @@ namespace OnlineDataBuilder.Controllers
     public abstract class BaseController : ControllerBase
     {
         protected ApiResponse apiResponse;
+        protected string responseMessage = string.Empty;
         public BaseController()
         {
             apiResponse = new ApiResponse();
