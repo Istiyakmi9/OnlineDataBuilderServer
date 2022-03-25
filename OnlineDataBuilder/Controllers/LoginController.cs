@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Net;
@@ -8,17 +12,20 @@ using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
     [Route("api/[controller]")]
     public class LoginController : BaseController
     {
         private readonly ILoginService loginService;
         private readonly IAuthenticationService _authenticationService;
-        public LoginController(ILoginService loginService, IAuthenticationService authenticationService)
+        private readonly HttpContext _httpContext;
+
+        public LoginController(ILoginService loginService, IAuthenticationService authenticationService, IHttpContextAccessor httpContext)
         {
             this.loginService = loginService;
             _authenticationService = authenticationService;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpGet]
@@ -64,10 +71,25 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("employeeregistration")]
-        public async Task<ApiResponse> EmployeeRegistration([FromBody] Employee employee)
+        public async Task<ApiResponse> EmployeeRegistration()
         {
-            var result = await loginService.RegisterEmployee(employee);
-            return BuildResponse(result, HttpStatusCode.OK);
+            StringValues UserInfoData = default(string);
+            StringValues Clients = default(string);
+            _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
+            _httpContext.Request.Form.TryGetValue("allocatedClients", out UserInfoData);
+            if (UserInfoData.Count > 0)
+            {
+                Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
+                Organization organization = JsonConvert.DeserializeObject<Organization>(Clients);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                this.responseMessage = await this.loginService.RegisterEmployee(employee, organization, files);
+            }
+            else
+            {
+                return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+            }
+
+            return BuildResponse(this.responseMessage);
         }
     }
 }

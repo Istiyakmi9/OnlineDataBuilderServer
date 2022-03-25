@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using DocMaker.ExcelMaker;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -8,6 +9,7 @@ using SocialMediaServices;
 using SocialMediaServices.Modal;
 using System;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,19 +23,25 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IAuthenticationService _authenticationService;
         private readonly ExcelWriter _excelWriter;
+        private readonly IFileService _fileService;
+        private readonly FileLocationDetail _fileLocationDetail;
 
-        public LoginService(IDb db, IOptions<JwtSetting> options, 
-            CurrentSession currentSession, 
-            IMediaService mediaService, 
+        public LoginService(IDb db, IOptions<JwtSetting> options,
+            CurrentSession currentSession,
+            IMediaService mediaService,
             IAuthenticationService authenticationService,
-            ExcelWriter excelWriter)
+            IFileService fileService,
+            ExcelWriter excelWriter,
+            FileLocationDetail fileLocationDetail)
         {
             this.db = db;
+            _fileService = fileService;
             _jwtSetting = options.Value;
             _currentSession = currentSession;
             _mediaService = mediaService;
             _authenticationService = authenticationService;
             _excelWriter = excelWriter;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -83,11 +91,14 @@ namespace ServiceLayer.Code
             return loginResponse;
         }
 
-        public async Task<string> RegisterEmployee(Employee employee)
+        public async Task<string> RegisterEmployee(Employee employee, Organization organization, IFormFileCollection fileCollection)
         {
+            if (string.IsNullOrEmpty(employee.Email))
+                throw new HiringBellException("Email id is a mandatory field.");
+
             return await Task.Run(() =>
             {
-                string status = "expired";
+                string status = string.Empty;
                 DbParam[] param = new DbParam[]
                 {
                     new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
@@ -123,7 +134,19 @@ namespace ServiceLayer.Code
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 
-                status = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
+                var employeeId = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
+                if(string.IsNullOrEmpty(status))
+                {
+                    throw new HiringBellException("Fail to insert or update record. Contact to admin.");
+                }
+
+                var files = fileCollection.Select(x => new Files
+                {
+                    FileName = x.FileName,
+                    Email = employee.Email,
+                    FileExtension = string.Empty
+                }).ToList<Files>();
+                _fileService.SaveFile(Path.Combine(_fileLocationDetail.UserFolder, employee.Email), files, fileCollection, employeeId);
                 return status;
             });
         }
