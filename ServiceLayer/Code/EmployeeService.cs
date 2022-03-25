@@ -44,9 +44,14 @@ namespace ServiceLayer.Code
 
         public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
         {
-            if(employee == null || employee.EmployeeUid <= 0)
+            if(employee == null)
             {
                 throw new HiringBellException("Invalid employee/client detail found. Please contact to admin.");
+            }
+
+            if (IsUpdating && !(employee.EmployeeUid > 0 && employee.ClientUid > 0 && employee.EmployeeMappedClientsUid > 0))
+            {
+                throw new HiringBellException("EmployeeId and Client is not allocated.");
             }
 
             DbParam[] param = new DbParam[]
@@ -57,8 +62,7 @@ namespace ServiceLayer.Code
                 new DbParam(employee.FinalPackage, typeof(float), "_finalPackage"),
                 new DbParam(employee.ActualPackage, typeof(float), "_actualPackage"),
                 new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
-                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
-                new DbParam(IsUpdating, typeof(bool), "_isUpdate"),
+                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent")
             };
             var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
             return resultset;

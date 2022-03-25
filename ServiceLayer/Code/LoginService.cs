@@ -8,6 +8,7 @@ using ServiceLayer.Interface;
 using SocialMediaServices;
 using SocialMediaServices.Modal;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -91,7 +92,7 @@ namespace ServiceLayer.Code
             return loginResponse;
         }
 
-        public async Task<string> RegisterEmployee(Employee employee, Organization organization, IFormFileCollection fileCollection)
+        public async Task<string> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection)
         {
             if (string.IsNullOrEmpty(employee.Email))
                 throw new HiringBellException("Email id is a mandatory field.");
@@ -126,8 +127,8 @@ namespace ServiceLayer.Code
                     new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
                     new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
                     new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
-                    new DbParam(employee.AllocatedClientId, typeof(long), "_AllocatedClientId"),
-                    new DbParam(employee.AllocatedClientName, typeof(string), "_AllocatedClientName"),
+                    new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
+                    new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
                     new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
                     new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
                     new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
@@ -135,18 +136,23 @@ namespace ServiceLayer.Code
                 };
 
                 var employeeId = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
-                if(string.IsNullOrEmpty(status))
+                if(string.IsNullOrEmpty(employeeId))
                 {
                     throw new HiringBellException("Fail to insert or update record. Contact to admin.");
                 }
 
-                var files = fileCollection.Select(x => new Files
+                if (fileCollection.Count > 0)
                 {
-                    FileName = x.FileName,
-                    Email = employee.Email,
-                    FileExtension = string.Empty
-                }).ToList<Files>();
-                _fileService.SaveFile(Path.Combine(_fileLocationDetail.UserFolder, employee.Email), files, fileCollection, employeeId);
+                    var files = fileCollection.Select(x => new Files
+                    {
+                        FileName = x.FileName,
+                        Email = employee.Email,
+                        FileExtension = string.Empty
+                    }).ToList<Files>();
+                    _fileService.SaveFile(Path.Combine(_fileLocationDetail.UserFolder, employee.Email), files, fileCollection, employeeId);
+                }
+
+                status = "Record inserted/Update successfully";
                 return status;
             });
         }

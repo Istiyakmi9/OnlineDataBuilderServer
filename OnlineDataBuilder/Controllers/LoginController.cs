@@ -7,6 +7,7 @@ using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -76,13 +77,13 @@ namespace OnlineDataBuilder.Controllers
             StringValues UserInfoData = default(string);
             StringValues Clients = default(string);
             _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
-            _httpContext.Request.Form.TryGetValue("allocatedClients", out UserInfoData);
+            _httpContext.Request.Form.TryGetValue("allocatedClients", out Clients);
             if (UserInfoData.Count > 0)
             {
                 Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
-                Organization organization = JsonConvert.DeserializeObject<Organization>(Clients);
+                List<AssignedClients> assignedClients = JsonConvert.DeserializeObject<List<AssignedClients>>(Clients);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                this.responseMessage = await this.loginService.RegisterEmployee(employee, organization, files);
+                this.responseMessage = await this.loginService.RegisterEmployee(employee, assignedClients, files);
             }
             else
             {

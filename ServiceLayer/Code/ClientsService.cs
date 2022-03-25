@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -79,14 +80,13 @@ namespace ServiceLayer.Code
             });
         }
 
-        public List<Organization> DeactivateClient(Employee employee)
+        public DataSet DeactivateClient(Employee employee)
         {
             if (employee == null || employee.EmployeeUid <= 0)
             {
                 throw new HiringBellException("Invalid client detail submitted.");
             }
 
-            List<Organization> client = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(employee.EmployeeMappedClientsUid, typeof(long), "_ClientMappedId"),
@@ -94,12 +94,7 @@ namespace ServiceLayer.Code
             };
 
             var resultSet = _db.GetDataset("sp_deactivateOrganization_delandgetall", param);
-            if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
-            {
-                client = Converter.ToList<Organization>(resultSet.Tables[0]);
-            }
-
-            return client;
+            return resultSet;
         }
     }
 }
