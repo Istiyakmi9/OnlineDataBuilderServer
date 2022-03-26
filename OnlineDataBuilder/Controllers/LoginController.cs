@@ -2,9 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Net;
@@ -19,13 +17,11 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly ILoginService loginService;
         private readonly IAuthenticationService _authenticationService;
-        private readonly HttpContext _httpContext;
 
-        public LoginController(ILoginService loginService, IAuthenticationService authenticationService, IHttpContextAccessor httpContext)
+        public LoginController(ILoginService loginService, IAuthenticationService authenticationService)
         {
             this.loginService = loginService;
             _authenticationService = authenticationService;
-            _httpContext = httpContext.HttpContext;
         }
 
         [HttpGet]
@@ -68,28 +64,6 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = await loginService.SignUpUser(userDetail);
             return BuildResponse(result, HttpStatusCode.OK);
-        }
-
-        [HttpPost("employeeregistration")]
-        public async Task<ApiResponse> EmployeeRegistration()
-        {
-            StringValues UserInfoData = default(string);
-            StringValues Clients = default(string);
-            _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
-            _httpContext.Request.Form.TryGetValue("allocatedClients", out UserInfoData);
-            if (UserInfoData.Count > 0)
-            {
-                Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
-                Organization organization = JsonConvert.DeserializeObject<Organization>(Clients);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                this.responseMessage = await this.loginService.RegisterEmployee(employee, organization, files);
-            }
-            else
-            {
-                return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
-            }
-
-            return BuildResponse(this.responseMessage);
         }
     }
 }

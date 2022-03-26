@@ -1,8 +1,8 @@
-﻿using ModalLayer.Modal;
-using System;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Data;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -13,5 +13,6 @@ namespace ServiceLayer.Interface
         DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, bool IsActive);
         string DeleteEmployeeById(int EmployeeId, bool IsActive);
+        Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection);
     }
 }

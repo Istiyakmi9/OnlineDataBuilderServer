@@ -1,7 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using DocMaker.ExcelMaker;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -9,7 +8,6 @@ using SocialMediaServices;
 using SocialMediaServices.Modal;
 using System;
 using System.Data;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -23,25 +21,19 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IAuthenticationService _authenticationService;
         private readonly ExcelWriter _excelWriter;
-        private readonly IFileService _fileService;
-        private readonly FileLocationDetail _fileLocationDetail;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             CurrentSession currentSession,
             IMediaService mediaService,
             IAuthenticationService authenticationService,
-            IFileService fileService,
-            ExcelWriter excelWriter,
-            FileLocationDetail fileLocationDetail)
+            ExcelWriter excelWriter)
         {
             this.db = db;
-            _fileService = fileService;
             _jwtSetting = options.Value;
             _currentSession = currentSession;
             _mediaService = mediaService;
             _authenticationService = authenticationService;
             _excelWriter = excelWriter;
-            _fileLocationDetail = fileLocationDetail;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -89,66 +81,6 @@ namespace ServiceLayer.Code
                     loginResponse = FetchUserDetail(userDetail, "sp_Userlogin_Auth");
             }
             return loginResponse;
-        }
-
-        public async Task<string> RegisterEmployee(Employee employee, Organization organization, IFormFileCollection fileCollection)
-        {
-            if (string.IsNullOrEmpty(employee.Email))
-                throw new HiringBellException("Email id is a mandatory field.");
-
-            return await Task.Run(() =>
-            {
-                string status = string.Empty;
-                DbParam[] param = new DbParam[]
-                {
-                    new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
-                    new DbParam(employee.FirstName, typeof(string), "_FirstName"),
-                    new DbParam(employee.LastName, typeof(string), "_LastName"),
-                    new DbParam(employee.Mobile, typeof(string), "_Mobile"),
-                    new DbParam(employee.Email, typeof(string), "_Email"),
-                    new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
-                    new DbParam(employee.FatherName, typeof(string), "_FatherName"),
-                    new DbParam(employee.MotherName, typeof(string), "_MotherName"),
-                    new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
-                    new DbParam(employee.Gender, typeof(bool), "_Gender"),
-                    new DbParam(employee.State, typeof(string), "_State"),
-                    new DbParam(employee.City, typeof(string), "_City"),
-                    new DbParam(employee.Pincode, typeof(int), "_Pincode"),
-                    new DbParam(employee.Address, typeof(string), "_Address"),
-                    new DbParam(employee.PANNo, typeof(string), "_PANNo"),
-                    new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
-                    new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
-                    new DbParam(employee.BankName, typeof(string), "_BankName"),
-                    new DbParam(employee.BranchName, typeof(string), "_BranchName"),
-                    new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
-                    new DbParam(employee.Domain, typeof(string), "_Domain"),
-                    new DbParam(employee.Specification, typeof(string), "_Specification"),
-                    new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
-                    new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
-                    new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
-                    new DbParam(employee.AllocatedClientId, typeof(long), "_AllocatedClientId"),
-                    new DbParam(employee.AllocatedClientName, typeof(string), "_AllocatedClientName"),
-                    new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
-                    new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
-                    new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
-                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                };
-
-                var employeeId = this.db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
-                if(string.IsNullOrEmpty(status))
-                {
-                    throw new HiringBellException("Fail to insert or update record. Contact to admin.");
-                }
-
-                var files = fileCollection.Select(x => new Files
-                {
-                    FileName = x.FileName,
-                    Email = employee.Email,
-                    FileExtension = string.Empty
-                }).ToList<Files>();
-                _fileService.SaveFile(Path.Combine(_fileLocationDetail.UserFolder, employee.Email), files, fileCollection, employeeId);
-                return status;
-            });
         }
 
         public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)

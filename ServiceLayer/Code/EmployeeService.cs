@@ -1,10 +1,13 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -13,12 +16,20 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CommonFilterService _commonFilterService;
         private readonly CurrentSession _currentSession;
+        private readonly IFileService _fileService;
+        private readonly FileLocationDetail _fileLocationDetail;
 
-        public EmployeeService(IDb db, CommonFilterService commonFilterService, CurrentSession currentSession)
+        public EmployeeService(IDb db,
+            CommonFilterService commonFilterService,
+            CurrentSession currentSession,
+            IFileService fileService,
+            FileLocationDetail fileLocationDetail)
         {
             _db = db;
             _commonFilterService = commonFilterService;
             _currentSession = currentSession;
+            _fileService = fileService;
+            _fileLocationDetail = fileLocationDetail;
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
@@ -33,20 +44,31 @@ namespace ServiceLayer.Code
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 3)
+            if (resultset.Tables.Count == 4)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "Clients";
                 resultset.Tables[2].TableName = "AllocatedClients";
+                resultset.Tables[3].TableName = "FileDetail";
             }
             return resultset;
         }
 
         public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
         {
-            if(employee == null || employee.EmployeeUid <= 0)
+            if (employee == null)
             {
                 throw new HiringBellException("Invalid employee/client detail found. Please contact to admin.");
+            }
+
+            if (IsUpdating && !(employee.EmployeeUid > 0 && employee.ClientUid > 0 && employee.EmployeeMappedClientsUid > 0))
+            {
+                throw new HiringBellException("EmployeeId and Client is not allocated.");
+            } 
+
+            if (employee.EmployeeUid == 0)
+            {
+                throw new HiringBellException("Invalid EmployeeId submitted");
             }
 
             DbParam[] param = new DbParam[]
@@ -57,8 +79,7 @@ namespace ServiceLayer.Code
                 new DbParam(employee.FinalPackage, typeof(float), "_finalPackage"),
                 new DbParam(employee.ActualPackage, typeof(float), "_actualPackage"),
                 new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
-                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
-                new DbParam(IsUpdating, typeof(bool), "_isUpdate"),
+                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent")
             };
             var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
             return resultset;
@@ -95,6 +116,94 @@ namespace ServiceLayer.Code
 
             status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
             return status;
+        }
+
+        public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection)
+        {
+            if (string.IsNullOrEmpty(employee.Email))
+                throw new HiringBellException("Email id is a mandatory field.");
+
+            return await Task.Run(() =>
+            {
+                DataSet ResultSet = null;
+                DbParam[] param = new DbParam[]
+                {
+                    new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
+                    new DbParam(employee.FirstName, typeof(string), "_FirstName"),
+                    new DbParam(employee.LastName, typeof(string), "_LastName"),
+                    new DbParam(employee.Mobile, typeof(string), "_Mobile"),
+                    new DbParam(employee.Email, typeof(string), "_Email"),
+                    new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
+                    new DbParam(employee.FatherName, typeof(string), "_FatherName"),
+                    new DbParam(employee.MotherName, typeof(string), "_MotherName"),
+                    new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
+                    new DbParam(employee.Gender, typeof(bool), "_Gender"),
+                    new DbParam(employee.State, typeof(string), "_State"),
+                    new DbParam(employee.City, typeof(string), "_City"),
+                    new DbParam(employee.Pincode, typeof(int), "_Pincode"),
+                    new DbParam(employee.Address, typeof(string), "_Address"),
+                    new DbParam(employee.PANNo, typeof(string), "_PANNo"),
+                    new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
+                    new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
+                    new DbParam(employee.BankName, typeof(string), "_BankName"),
+                    new DbParam(employee.BranchName, typeof(string), "_BranchName"),
+                    new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
+                    new DbParam(employee.Domain, typeof(string), "_Domain"),
+                    new DbParam(employee.Specification, typeof(string), "_Specification"),
+                    new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
+                    new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
+                    new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
+                    new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
+                    new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
+                    new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
+                    new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
+                    new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
+                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
+                };
+
+                var employeeId = _db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
+                if (string.IsNullOrEmpty(employeeId))
+                {
+                    throw new HiringBellException("Fail to insert or update record. Contact to admin.");
+                }
+
+                long currentEmployeeId = Convert.ToInt64(employeeId);
+                if (fileCollection.Count > 0)
+                {
+                    var files = fileCollection.Select(x => new Files
+                    {
+                        FileUid = employee.FileId,
+                        FileName = ApplicationConstants.ProfileImage,
+                        Email = employee.Email,
+                        FileExtension = string.Empty
+                    }).ToList<Files>();
+                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, employeeId);
+
+                    var fileInfo = (from n in files
+                                    select new
+                                    {
+                                        FileId = n.FileUid,
+                                        FileOwnerId = currentEmployeeId,
+                                        FileName = n.FileName,
+                                        FilePath = n.FilePath,
+                                        ParentFolder = n.ParentFolder,
+                                        FileExtension = n.FileExtension,
+                                        StatusId = 0,
+                                        UserTypeId = (int)UserType.Employee,
+                                        AdminId = _currentSession.CurrentUserDetail.UserId
+                                    });
+
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    var dataSet = new DataSet();
+                    dataSet.Tables.Add(table);
+                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                    int insertedCount = _db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                    _db.Commit();
+                }
+
+                ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
+                return ResultSet;
+            });
         }
     }
 }

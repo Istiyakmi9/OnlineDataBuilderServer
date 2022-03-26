@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModalLayer.Modal
+﻿namespace ModalLayer.Modal
 {
-    public class Employee
+    public class Employee : AssignedClients
     {
         public string FirstName { set; get; }
         public string LastName { set; get; }
@@ -29,18 +25,21 @@ namespace ModalLayer.Modal
         public string Specification { set; get; }
         public float ExprienceInYear { set; get; }
         public string LastCompanyName { set; get; }
-        public bool IsPermanent { set; get; }
-        public long AllocatedClientId { set; get; }
-        public string AllocatedClientName { set; get; }
-        public float ActualPackage { set; get; }
-        public float FinalPackage { set; get; }
-        public float TakeHomeByCandidate { set; get; }
-        public long EmployeeUid { set; get; }
         public int Index { set; get; }
         public bool IsActive { set; get; }
         public int Total { set; get; }
+    }
+
+    public class AssignedClients
+    {
+        public long EmployeeUid { set; get; }
         public long EmployeeMappedClientsUid { get; set; }
-        public long ClientUid { get; set; }
-        public string ClientName { get; set; }
+        public long ClientUid { set; get; }
+        public string ClientName { set; get; }
+        public float ActualPackage { set; get; }
+        public float FinalPackage { set; get; }
+        public float TakeHomeByCandidate { set; get; }
+        public bool IsPermanent { set; get; }
+        public long FileId { set; get; }
     }
 }
