@@ -58,8 +58,15 @@ namespace CoreServiceLayer.Implementation
                         var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
                         Email = currentFile.Email.Replace("@", "_").Replace(".", "_");
 
-                        if (currentFile.FilePath.IndexOf(Email) == -1 && FolderPath.IndexOf(Email) == -1)
+                        if (currentFile.FilePath != null)
+                        {
+                            if (currentFile.FilePath.IndexOf(Email) == -1 && FolderPath.IndexOf(Email) == -1)
+                                FolderPath = Path.Combine(FolderPath, Email);
+                        }
+                        else
+                        {
                             FolderPath = Path.Combine(FolderPath, Email);
+                        }
 
                         if (!string.IsNullOrEmpty(currentFile.FilePath))
                             ActualPath = Path.Combine(FolderPath, currentFile.FilePath);

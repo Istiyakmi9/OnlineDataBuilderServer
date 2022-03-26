@@ -1,7 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using ModalLayer.Modal;
+﻿using ModalLayer.Modal;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
@@ -13,6 +11,5 @@ namespace ServiceLayer.Interface
         Boolean RemoveUserDetailService(string Token);
         UserDetail GetUserDetail(AuthUser authUser);
         Task<LoginResponse> SignUpUser(UserDetail userDetail);
-        Task<string> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection files);
     }
 }

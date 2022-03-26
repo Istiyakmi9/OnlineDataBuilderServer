@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
@@ -8,6 +9,7 @@ using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -17,9 +19,12 @@ namespace OnlineDataBuilder.Controllers
     public class EmployeeController : BaseController
     {
         private readonly IEmployeeService _employeeService;
-        public EmployeeController(IEmployeeService employeeService)
+        private readonly HttpContext _httpContext;
+
+        public EmployeeController(IEmployeeService employeeService, IHttpContextAccessor httpContext)
         {
             _employeeService = employeeService;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpPost]
@@ -58,6 +63,27 @@ namespace OnlineDataBuilder.Controllers
         {
             var Result = _employeeService.DeleteEmployeeById(EmployeeId, IsActive);
             return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("employeeregistration")]
+        public async Task<ApiResponse> EmployeeRegistration()
+        {
+            StringValues UserInfoData = default(string);
+            StringValues Clients = default(string);
+            _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
+            _httpContext.Request.Form.TryGetValue("allocatedClients", out Clients);
+            if (UserInfoData.Count > 0)
+            {
+                Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
+                List<AssignedClients> assignedClients = JsonConvert.DeserializeObject<List<AssignedClients>>(Clients);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var resetSet = await _employeeService.RegisterEmployee(employee, assignedClients, files);
+                return BuildResponse(resetSet);
+            }
+            else
+            {
+                return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+            }
         }
     }
 }

@@ -25,7 +25,6 @@
         public string Specification { set; get; }
         public float ExprienceInYear { set; get; }
         public string LastCompanyName { set; get; }
-        public bool IsPermanent { set; get; }
         public int Index { set; get; }
         public bool IsActive { set; get; }
         public int Total { set; get; }
@@ -41,5 +40,6 @@
         public float FinalPackage { set; get; }
         public float TakeHomeByCandidate { set; get; }
         public bool IsPermanent { set; get; }
+        public long FileId { set; get; }
     }
 }
