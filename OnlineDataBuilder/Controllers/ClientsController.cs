@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -18,9 +17,11 @@ namespace OnlineDataBuilder.Controllers
     public class ClientsController : BaseController
     {
         private readonly IClientsService _clientsService;
-        public ClientsController(IClientsService clientsService)
+        private readonly HttpContext _httpContext;
+        public ClientsController(IClientsService clientsService, IHttpContextAccessor httpContext)
         {
             _clientsService = clientsService;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpGet("GetClientById/{ClientId}/{IsActive}")]
@@ -31,10 +32,23 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("RegisterClient/{IsUpdating}")]
-        public async Task<ApiResponse> RegisterClient(Organization client, bool isUpdating)
+        public async Task<ApiResponse> RegisterClient(bool isUpdating)
         {
-            var Result = await _clientsService.RegisterClient(client, isUpdating);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            //    var Result = await _clientsService.RegisterClient(client, isUpdating);
+            //    return BuildResponse(Result, HttpStatusCode.OK);
+            StringValues Client = default(string);
+            _httpContext.Request.Form.TryGetValue("clientDetail", out Client);
+            if (Client.Count > 0 )
+            {
+                Organization client = JsonConvert.DeserializeObject<Organization>(Client);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var Result = await _clientsService.RegisterClient(client, files, isUpdating);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            else
+            {
+                return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+            }
         }
 
         [HttpPost("GetClients")]
