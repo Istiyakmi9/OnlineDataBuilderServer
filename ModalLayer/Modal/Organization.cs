@@ -32,5 +32,6 @@ namespace ModalLayer.Modal
         public long AdminId { set; get; }
         public bool IsActive { set; get; }
         public int Total { get; set; }
+        public long FileId { set; get; }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -14,11 +16,15 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CommonFilterService _commonFilterService;
         private readonly CurrentSession _currentSession;
-        public ClientsService(IDb db, CommonFilterService commonFilterService, CurrentSession currentSession)
+        private readonly IFileService _fileService;
+        private readonly FileLocationDetail _fileLocationDetail;
+        public ClientsService(IDb db, CommonFilterService commonFilterService, CurrentSession currentSession, IFileService fileService, FileLocationDetail fileLocationDetail)
         {
             _db = db;
             _commonFilterService = commonFilterService;
             _currentSession = currentSession;
+            _fileService = fileService;
+            _fileLocationDetail = fileLocationDetail;
         }
         public List<Organization> GetClients(FilterModel filterModel)
         {
@@ -48,7 +54,7 @@ namespace ServiceLayer.Code
             return client;
         }
 
-        public async Task<Organization> RegisterClient(Organization client, bool isUpdating)
+        public async Task<Organization> RegisterClient(Organization client, IFormFileCollection fileCollection, bool isUpdating)
         {
             if (isUpdating == true)
             {
@@ -87,6 +93,38 @@ namespace ServiceLayer.Code
 
                 var status = string.Empty;
                 var resultSet = _db.GetDataset("SP_Client_IntUpd", param, true, ref status);
+                if (fileCollection.Count > 0)
+                {
+                    var files = fileCollection.Select(x => new Files
+                    {
+                        FileName = ApplicationConstants.ProfileImage,
+                        Email = client.Email,
+                        FileExtension = string.Empty
+                    }).ToList<Files>();
+                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (client.ClientId).ToString());
+
+                    var fileInfo = (from n in files
+                                    select new
+                                    {
+                                        FileId = n.FileUid,
+                                        FileOwnerId = client.ClientId,
+                                        FileName = n.FileName,
+                                        FilePath = n.FilePath,
+                                        ParentFolder = n.ParentFolder,
+                                        FileExtension = n.FileExtension,
+                                        StatusId = 0,
+                                        UserTypeId = (int)UserType.Employee,
+                                        AdminId = _currentSession.CurrentUserDetail.UserId
+                                    });
+
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    var dataSet = new DataSet();
+                    dataSet.Tables.Add(table);
+                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                    int insertedCount = _db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                    _db.Commit();
+                }
+
                 if (resultSet != null && resultSet.Tables.Count > 0)
                 {
                     organization = Converter.ToType<Organization>(resultSet.Tables[0]);
