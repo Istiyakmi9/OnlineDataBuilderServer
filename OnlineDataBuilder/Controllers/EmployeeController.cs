@@ -65,8 +65,8 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpPost("employeeregistration")]
-        public async Task<ApiResponse> EmployeeRegistration()
+        [HttpPost("employeeregistration/{IsUpdating}")]
+        public async Task<ApiResponse> EmployeeRegistration(bool IsUpdating)
         {
             StringValues UserInfoData = default(string);
             StringValues Clients = default(string);
@@ -77,7 +77,7 @@ namespace OnlineDataBuilder.Controllers
                 Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
                 List<AssignedClients> assignedClients = JsonConvert.DeserializeObject<List<AssignedClients>>(Clients);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var resetSet = await _employeeService.RegisterEmployee(employee, assignedClients, files);
+                var resetSet = await _employeeService.RegisterEmployee(employee, assignedClients, files, IsUpdating);
                 return BuildResponse(resetSet);
             }
             else

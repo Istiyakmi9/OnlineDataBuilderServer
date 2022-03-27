@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
 {
     public interface IClientsService
     {
-        Task<string> RegisterClient(Organization client);
+        Task<Organization> RegisterClient(Organization client, bool isUpdating);
         Organization GetClientDetailById(long ClientId, bool IsActive);
         List<Organization> GetClients(FilterModel filterModel);
         DataSet DeactivateClient(Employee employee);
