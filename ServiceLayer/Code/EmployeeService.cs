@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -56,20 +57,19 @@ namespace ServiceLayer.Code
 
         public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
         {
-            if (employee == null)
+            if (employee.EmployeeUid <= 0)
+                throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
+
+            if (employee.ClientUid <= 0)
+                throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employee.ClientUid), FieldValue = employee.ClientUid.ToString() };
+
+            if (IsUpdating == true)
             {
-                throw new HiringBellException("Invalid employee/client detail found. Please contact to admin.");
+                if (employee.EmployeeMappedClientsUid <= 0)
+                    throw new HiringBellException { UserMessage = "EmployeeMappedClientId is invalid.", FieldName = nameof(employee.EmployeeMappedClientsUid), FieldValue = employee.EmployeeMappedClientsUid.ToString() };
             }
 
-            if (IsUpdating && !(employee.EmployeeUid > 0 && employee.ClientUid > 0 && employee.EmployeeMappedClientsUid > 0))
-            {
-                throw new HiringBellException("EmployeeId and Client is not allocated.");
-            } 
-
-            if (employee.EmployeeUid == 0)
-            {
-                throw new HiringBellException("Invalid EmployeeId submitted");
-            }
+            this.ValidateEmployeeDetails(employee);
 
             DbParam[] param = new DbParam[]
             {
@@ -118,10 +118,22 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection)
+        public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating)
         {
             if (string.IsNullOrEmpty(employee.Email))
-                throw new HiringBellException("Email id is a mandatory field.");
+                throw new HiringBellException { UserMessage = "Email id is a mandatory field.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
+
+            if(IsUpdating == true)
+            {
+                if (employee.EmployeeUid <= 0)
+                    throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
+            }
+
+            this.ValidateEmployeeDetails(employee);
+
+            //TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+            //employee.DOB = TimeZoneInfo.ConvertTimeFromUtc(employee.DOB, istTimeZome);
+            //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
 
             return await Task.Run(() =>
             {
@@ -156,6 +168,8 @@ namespace ServiceLayer.Code
                     new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
                     new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
                     new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
+                    //new DbParam(employee.DOB, typeof(float), ""),
+                    //new DbParam(employee.DateOfJoining, typeof(float), ""),
                     new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
                     new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
@@ -204,6 +218,25 @@ namespace ServiceLayer.Code
                 ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
                 return ResultSet;
             });
+        }
+
+        private void ValidateEmployeeDetails(Employee employee)
+        {
+
+            if (employee.ActualPackage < 0)
+                throw new HiringBellException { UserMessage = "Invalid Actual Package.", FieldName = nameof(employee.ActualPackage), FieldValue = employee.ActualPackage.ToString() };
+
+            if (employee.FinalPackage < 0)
+                throw new HiringBellException { UserMessage = "Invalid Final Package.", FieldName = nameof(employee.FinalPackage), FieldValue = employee.FinalPackage.ToString() };
+
+            if (employee.TakeHomeByCandidate < 0)
+                throw new HiringBellException { UserMessage = "Invalid TakeHome By Candidate.", FieldName = nameof(employee.TakeHomeByCandidate), FieldValue = employee.TakeHomeByCandidate.ToString() };
+
+            if (employee.FinalPackage < employee.ActualPackage)
+                throw new HiringBellException { UserMessage = "Final package must be greater that or equal to Actual package.", FieldName = nameof(employee.FinalPackage), FieldValue = employee.FinalPackage.ToString() };
+            
+            if (employee.ActualPackage < employee.TakeHomeByCandidate)
+                throw new HiringBellException { UserMessage = "Actual package must be greater that or equal to TakeHome package.", FieldName = nameof(employee.ActualPackage), FieldValue = employee.ActualPackage.ToString() };
         }
     }
 }

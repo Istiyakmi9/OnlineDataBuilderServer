@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -27,6 +28,9 @@ namespace ServiceLayer.Code
 
         public Organization GetClientDetailById(long ClientId, bool IsActive)
         {
+            if (ClientId <= 0)
+                throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(ClientId), FieldValue = ClientId.ToString() };
+
             Organization client = default;
             DbParam[] param = new DbParam[]
             {
@@ -44,11 +48,17 @@ namespace ServiceLayer.Code
             return client;
         }
 
-        public async Task<string> RegisterClient(Organization client)
+        public async Task<Organization> RegisterClient(Organization client, bool isUpdating)
         {
+            if (isUpdating == true)
+            {
+                if (client.ClientId <= 0)
+                    throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(client.ClientId), FieldValue = client.ClientId.ToString() };
+            }
+
             return await Task.Run(() =>
             {
-                string status = "expired";
+                Organization organization = null;
                 DbParam[] param = new DbParam[]
                 {
                     new DbParam(client.ClientId, typeof(long), "_ClientId"),
@@ -75,8 +85,14 @@ namespace ServiceLayer.Code
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 
-                status = _db.ExecuteNonQuery("SP_Client_IntUpd", param, true);
-                return status;
+                var status = string.Empty;
+                var resultSet = _db.GetDataset("SP_Client_IntUpd", param, true, ref status);
+                if (resultSet != null && resultSet.Tables.Count > 0)
+                {
+                    organization = Converter.ToType<Organization>(resultSet.Tables[0]);
+                }
+
+                return organization;
             });
         }
 

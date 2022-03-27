@@ -30,10 +30,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpPost("RegisterClient")]
-        public async Task<ApiResponse> RegisterClient(Organization client)
+        [HttpPost("RegisterClient/{IsUpdating}")]
+        public async Task<ApiResponse> RegisterClient(Organization client, bool isUpdating)
         {
-            var Result = await _clientsService.RegisterClient(client);
+            var Result = await _clientsService.RegisterClient(client, isUpdating);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 

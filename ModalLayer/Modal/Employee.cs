@@ -1,4 +1,6 @@
-﻿namespace ModalLayer.Modal
+﻿using System;
+
+namespace ModalLayer.Modal
 {
     public class Employee : AssignedClients
     {
@@ -28,6 +30,8 @@
         public int Index { set; get; }
         public bool IsActive { set; get; }
         public int Total { set; get; }
+        public DateTime? DOB { get; set; }
+        public DateTime? DateOfJoining { get; set; }
     }
 
     public class AssignedClients
