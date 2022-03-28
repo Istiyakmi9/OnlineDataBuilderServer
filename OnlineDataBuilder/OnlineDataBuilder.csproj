@@ -35,4 +35,16 @@
     <ProjectReference Include="..\MultiTypeDocumentConverter\MultiTypeDocumentConverter.csproj" />
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="documents\htmltemplates\billing\staffingBill.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="documents\logos\logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="documents\logos\stamp.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
