@@ -95,7 +95,6 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
-            services.Configure<FileLocationDetail>(o => Configuration.GetSection("BillingFolders").Bind(o));
 
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>();
@@ -118,11 +117,8 @@ namespace OnlineDataBuilder
             services.AddScoped<ExcelWriter>();
             services.AddSingleton<FileLocationDetail>(service =>
             {
-                services.Configure<FileLocationDetail>(o => Configuration.GetSection("BillingFolders").Bind(o));
-
                 var fileLocationDetail = Configuration.GetSection("BillingFolders").Get<FileLocationDetail>();
-
-                return new FileLocationDetail
+                var locationDetail = new FileLocationDetail
                 {
                     BillsPath = fileLocationDetail.BillsPath,
                     Location = fileLocationDetail.Location,
@@ -132,6 +128,8 @@ namespace OnlineDataBuilder
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
                     BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath)
                 };
+
+                return locationDetail;
             });
 
             services.AddCors(options =>

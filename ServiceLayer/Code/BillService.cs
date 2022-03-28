@@ -10,10 +10,8 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using TimeZoneConverter;
 
 namespace ServiceLayer.Code
@@ -30,14 +28,14 @@ namespace ServiceLayer.Code
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
-            IOptions<FileLocationDetail> options,
+            FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             IFileMaker fileMaker)
         {
             this.db = db;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
-            _fileLocationDetail = options.Value;
+            _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
             _fileMaker = fileMaker;
@@ -477,7 +475,7 @@ namespace ServiceLayer.Code
 
             if (fileDetail.Count > 0)
             {
-                string FolderPath = Path.Combine("documents", $"GSTFile_{createPageModel.Billno}");
+                string FolderPath = Path.Combine(_fileLocationDetail.Location, $"GSTFile_{createPageModel.Billno}");
                 List<Files> files = fileService.SaveFile(FolderPath, fileDetail, FileCollection, "0");
                 if (files != null && files.Count > 0)
                 {

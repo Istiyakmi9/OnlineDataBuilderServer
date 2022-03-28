@@ -24,6 +24,7 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly CurrentSession _currentSession;
         private readonly IBillService _billService;
+        private readonly FileLocationDetail _fileLocationDetail;
 
         public OnlineDocumentService(IDb db, IFileService fileService,
             IFileMaker iFileMaker,
@@ -31,6 +32,7 @@ namespace ServiceLayer.Code
             IAuthenticationService authenticationService,
             CurrentSession currentSession,
             ICommonService commonService,
+            FileLocationDetail fileLocationDetail,
             IBillService billService)
         {
             this.db = db;
@@ -41,6 +43,7 @@ namespace ServiceLayer.Code
             _authenticationService = authenticationService;
             _iFileMaker = iFileMaker;
             _billService = billService;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -475,7 +478,7 @@ namespace ServiceLayer.Code
             {
                 if (FileCollection.Count > 0 && fileDetail.Count > 0)
                 {
-                    string FolderPath = Path.Combine("documents",
+                    string FolderPath = Path.Combine(_fileLocationDetail.Location,
                         createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
                     List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
                     if (files != null && files.Count > 0)
@@ -550,14 +553,14 @@ namespace ServiceLayer.Code
                             }
                             else
                             {
-                                item.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), item.ParentFolder);
-                                item.ParentFolder = item.ParentFolder.ToLower();
+                                item.ParentFolder = Path.Combine(Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User), item.ParentFolder);
+                                item.ParentFolder = item.ParentFolder;
                                 item.Email = userEmail;
                             }
                         });
 
 
-                        string FolderPath = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                        string FolderPath = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User);
                         List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
                         if (files != null && files.Count > 0)
                         {

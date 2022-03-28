@@ -15,10 +15,12 @@ namespace CoreServiceLayer.Implementation
     public class FileService : IFileService
     {
         private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly FileLocationDetail _fileLocationDetail;
         private readonly IDb _db;
-        public FileService(IHostingEnvironment hostingEnvironment, IDb db)
+        public FileService(IHostingEnvironment hostingEnvironment, IDb db, FileLocationDetail fileLocationDetail)
         {
             _hostingEnvironment = hostingEnvironment;
+            _fileLocationDetail = fileLocationDetail;
             _db = db;
         }
 
@@ -73,7 +75,6 @@ namespace CoreServiceLayer.Implementation
                         else
                             ActualPath = FolderPath;
 
-                        ActualPath = ActualPath.ToLower();
                         currentFile.FilePath = ActualPath;
                         if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath)))
                             Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath));
@@ -138,13 +139,13 @@ namespace CoreServiceLayer.Implementation
             DataSet dataSet = null;
             if (fileDetail != null)
             {
-                fileDetail.FilePath = fileDetail.FilePath.ToLower();
+                fileDetail.FilePath = fileDetail.FilePath;
                 if (string.IsNullOrEmpty(fileDetail.ParentFolder))
-                    fileDetail.ParentFolder = Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                    fileDetail.ParentFolder = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User);
                 else
-                    fileDetail.ParentFolder = Path.Combine(Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User), fileDetail.ParentFolder);
+                    fileDetail.ParentFolder = Path.Combine(Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User), fileDetail.ParentFolder);
 
-                fileDetail.ParentFolder = fileDetail.ParentFolder.ToLower();
+                fileDetail.ParentFolder = fileDetail.ParentFolder;
                 if (!string.IsNullOrEmpty(fileDetail.FilePath))
                 {
                     switch (fileDetail.SystemFileType)
@@ -153,13 +154,13 @@ namespace CoreServiceLayer.Implementation
                             isLocationFound = true;
                             fileDetail.FilePath = Path.Combine(
                                     Path.Combine(
-                                        ApplicationConstants.DocumentRootPath,
-                                        ApplicationConstants.User
+                                        _fileLocationDetail.Location,
+                                        _fileLocationDetail.User
                                         ),
                                     fileDetail.FilePath
                                 );
 
-                            fileDetail.FilePath = fileDetail.FilePath.ToLower();
+                            fileDetail.FilePath = fileDetail.FilePath;
                             actualFolderPath = Path.Combine(
                                         _hostingEnvironment.ContentRootPath,
                                         fileDetail.FilePath
