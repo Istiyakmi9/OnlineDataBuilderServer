@@ -429,6 +429,10 @@ namespace ServiceLayer.Code
 
                         _billService.CreateFiles(_buildPdfTable, pdfModal, organization);
                     }
+                    else
+                    {
+                        throw HiringBellException("Unable to get file detail.");
+                    }
                 }
 
                 return fileDetail;
