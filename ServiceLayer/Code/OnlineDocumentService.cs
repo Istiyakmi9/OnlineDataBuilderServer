@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using DocMaker.PdfService;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -25,9 +26,11 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IBillService _billService;
         private readonly FileLocationDetail _fileLocationDetail;
+        private readonly ILogger<OnlineDocumentService> _logger;
 
         public OnlineDocumentService(IDb db, IFileService fileService,
             IFileMaker iFileMaker,
+            ILogger<OnlineDocumentService> logger,
             CommonFilterService commonFilterService,
             IAuthenticationService authenticationService,
             CurrentSession currentSession,
@@ -36,6 +39,7 @@ namespace ServiceLayer.Code
             IBillService billService)
         {
             this.db = db;
+            _logger = logger;
             _commonService = commonService;
             _currentSession = currentSession;
             _fileService = fileService;
@@ -345,6 +349,7 @@ namespace ServiceLayer.Code
             }
 
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, $"{fileDetail.FileName}.{Extension}");
+            _logger.LogDebug($"FilePath: {filePath}");
             if (!File.Exists(filePath))
             {
                 DbParam[] dbParams = new DbParam[]
