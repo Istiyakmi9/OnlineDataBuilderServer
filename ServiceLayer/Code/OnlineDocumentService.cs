@@ -349,7 +349,7 @@ namespace ServiceLayer.Code
             }
 
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, $"{fileDetail.FileName}.{Extension}");
-            _logger.LogDebug($"FilePath: {filePath}");
+            _logger.LogInformation($"FilePath: {filePath}");
             if (!File.Exists(filePath))
             {
                 DbParam[] dbParams = new DbParam[]
