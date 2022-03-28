@@ -61,5 +61,6 @@ namespace ModalLayer.Modal
         public string User { set; get; }
         public string BillsPath { set; get; }
         public string StaffingBillTemplate { set; get; }
+        public string LogoPath { set; get; }
     }
 }

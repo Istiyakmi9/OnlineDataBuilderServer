@@ -4,6 +4,7 @@ using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -25,14 +26,17 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
         private readonly IFileMaker _fileMaker;
+        private readonly ILogger<BillService> _logger;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
             FileLocationDetail fileLocationDetail,
+            ILogger<BillService> logger,
             CurrentSession currentSession,
             IFileMaker fileMaker)
         {
             this.db = db;
+            _logger = logger;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
             _fileLocationDetail = fileLocationDetail;
@@ -51,7 +55,7 @@ namespace ServiceLayer.Code
                 _fileLocationDetail.StaffingBillTemplate
             );
 
-            string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
+            string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
             if (File.Exists(templatePath) && File.Exists(headerLogo))
             {
                 fileDetail.LogoPath = headerLogo;

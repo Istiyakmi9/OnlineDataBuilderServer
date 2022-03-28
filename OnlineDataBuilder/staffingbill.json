@@ -379,6 +379,7 @@
     "Location": "Documents",
     "User": "User",
     "HtmlTemplaePath": [ "htmltemplates", "billing" ],
+    "LogoPath": "logos",
     "BillsPath": "Bills",
     "StaffingBillTemplate": "staffingBill.html"
   }
