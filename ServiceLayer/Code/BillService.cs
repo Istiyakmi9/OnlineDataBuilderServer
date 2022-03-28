@@ -10,10 +10,8 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using TimeZoneConverter;
 
 namespace ServiceLayer.Code
@@ -477,7 +475,7 @@ namespace ServiceLayer.Code
 
             if (fileDetail.Count > 0)
             {
-                string FolderPath = Path.Combine("documents", $"GSTFile_{createPageModel.Billno}");
+                string FolderPath = Path.Combine(_fileLocationDetail.Location, $"GSTFile_{createPageModel.Billno}");
                 List<Files> files = fileService.SaveFile(FolderPath, fileDetail, FileCollection, "0");
                 if (files != null && files.Count > 0)
                 {
