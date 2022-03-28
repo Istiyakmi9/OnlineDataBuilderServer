@@ -7,8 +7,8 @@ public class ApplicationConstants
     public static int NotGenerated = 4;
     public static int Rejected = 5;
 
-    public const string DocumentRootPath = "Documents";
-    public const string User = "User";
+    public const string DocumentRootPath = "documents";
+    public const string User = "user";
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
     public const string deleteUserFile = "sp_document_filedetail_delete";

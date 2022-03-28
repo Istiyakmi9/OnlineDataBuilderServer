@@ -10,7 +10,7 @@ bin
 obj
 packages
 **/.vs/*
-**/Documents/*
+**/documents/*
 **/appsettings.json
 
 # User-specific files
