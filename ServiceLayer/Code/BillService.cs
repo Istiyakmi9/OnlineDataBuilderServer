@@ -52,8 +52,10 @@ namespace ServiceLayer.Code
             );
 
             string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
+            _logger.LogInformation($"[ReGenerate File]: Check logo exists.");
             if (File.Exists(templatePath) && File.Exists(headerLogo))
             {
+                _logger.LogInformation($"[ReGenerate File]: Logo and template exists.");
                 fileDetail.LogoPath = headerLogo;
                 using (FileStream stream = File.Open(templatePath, FileMode.Open))
                 {

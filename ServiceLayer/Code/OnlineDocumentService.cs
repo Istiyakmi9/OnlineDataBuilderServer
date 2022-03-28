@@ -364,7 +364,7 @@ namespace ServiceLayer.Code
                     };
 
                     var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
-
+                    _logger.LogInformation($"[ReGenerate File]: Result = {Result.Tables.Count}");
                     if (Result.Tables.Count == 4)
                     {
                         BillDetail billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
@@ -427,11 +427,13 @@ namespace ServiceLayer.Code
                             Notes = null
                         };
 
+                        _logger.LogInformation($"[ReGenerate File]: Staring pdf generation.");
                         _billService.CreateFiles(_buildPdfTable, pdfModal, organization);
+                        _logger.LogInformation($"[ReGenerate File]: Generation.");
                     }
                     else
                     {
-                        throw HiringBellException("Unable to get file detail.");
+                        throw new HiringBellException("Unable to get file detail.");
                     }
                 }
 
