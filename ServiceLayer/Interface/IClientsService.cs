@@ -9,7 +9,7 @@ namespace ServiceLayer.Interface
     public interface IClientsService
     {
         Task<Organization> RegisterClient(Organization client, IFormFileCollection fileCollection, bool isUpdating);
-        Organization GetClientDetailById(long ClientId, bool IsActive);
+        DataSet GetClientDetailById(long ClientId, bool IsActive, int UserTypeId);
         List<Organization> GetClients(FilterModel filterModel);
         DataSet DeactivateClient(Employee employee);
     }

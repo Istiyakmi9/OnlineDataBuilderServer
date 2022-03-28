@@ -24,10 +24,10 @@ namespace OnlineDataBuilder.Controllers
             _httpContext = httpContext.HttpContext;
         }
 
-        [HttpGet("GetClientById/{ClientId}/{IsActive}")]
-        public ApiResponse GetClientById(long ClientId, bool IsActive)
+        [HttpGet("GetClientById/{ClientId}/{IsActive}/{UserTypeId}")]
+        public ApiResponse GetClientById(long ClientId, bool IsActive, int UserTypeId)
         {
-            var Result = _clientsService.GetClientDetailById(ClientId, IsActive);
+            var Result = _clientsService.GetClientDetailById(ClientId, IsActive, UserTypeId);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
@@ -37,6 +37,7 @@ namespace OnlineDataBuilder.Controllers
             //    var Result = await _clientsService.RegisterClient(client, isUpdating);
             //    return BuildResponse(Result, HttpStatusCode.OK);
             StringValues Client = default(string);
+            
             _httpContext.Request.Form.TryGetValue("clientDetail", out Client);
             if (Client.Count > 0 )
             {
