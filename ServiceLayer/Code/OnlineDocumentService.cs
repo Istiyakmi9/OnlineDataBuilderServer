@@ -475,7 +475,7 @@ namespace ServiceLayer.Code
             {
                 if (FileCollection.Count > 0 && fileDetail.Count > 0)
                 {
-                    string FolderPath = Path.Combine("Documents",
+                    string FolderPath = Path.Combine("documents",
                         createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
                     List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
                     if (files != null && files.Count > 0)

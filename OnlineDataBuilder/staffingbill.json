@@ -376,10 +376,10 @@
     }
   },
   "BillingFolders": {
-    "Location": "Documents",
-    "User": "User",
-    "HtmlTemplaePath": [ "HtmlTemplates", "Billing" ],
-    "BillsPath": "Bills",
+    "Location": "documents",
+    "User": "user",
+    "HtmlTemplaePath": [ "htmltemplates", "billing" ],
+    "BillsPath": "bills",
     "StaffingBillTemplate": "staffingBill.html"
   }
 }
