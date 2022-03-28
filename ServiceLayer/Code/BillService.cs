@@ -190,7 +190,7 @@ namespace ServiceLayer.Code
                         _fileLocationDetail.StaffingBillTemplate
                     );
 
-                    string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
+                    string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
                     if (File.Exists(templatePath) && File.Exists(headerLogo))
                     {
                         this.CleanOldFiles(fileDetail);
@@ -299,10 +299,12 @@ namespace ServiceLayer.Code
             }
             catch (HiringBellException e)
             {
+                _logger.LogError(e.Message);
                 throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 throw new HiringBellException(ex.Message, ex);
             }
 
