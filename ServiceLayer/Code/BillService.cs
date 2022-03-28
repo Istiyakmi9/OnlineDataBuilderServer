@@ -477,7 +477,7 @@ namespace ServiceLayer.Code
 
             if (fileDetail.Count > 0)
             {
-                string FolderPath = Path.Combine("Documents", $"GSTFile_{createPageModel.Billno}");
+                string FolderPath = Path.Combine("documents", $"GSTFile_{createPageModel.Billno}");
                 List<Files> files = fileService.SaveFile(FolderPath, fileDetail, FileCollection, "0");
                 if (files != null && files.Count > 0)
                 {
