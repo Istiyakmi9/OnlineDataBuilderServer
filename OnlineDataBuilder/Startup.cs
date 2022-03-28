@@ -126,7 +126,8 @@ namespace OnlineDataBuilder
                     StaffingBillTemplate = fileLocationDetail.StaffingBillTemplate,
                     DocumentFolder = fileLocationDetail.Location,
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
-                    BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath)
+                    BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath),
+                    LogoPath = Path.Combine(fileLocationDetail.Location, fileLocationDetail.LogoPath)
                 };
 
                 return locationDetail;

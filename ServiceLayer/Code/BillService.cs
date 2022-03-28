@@ -55,8 +55,8 @@ namespace ServiceLayer.Code
                 _fileLocationDetail.StaffingBillTemplate
             );
 
-            string headerLogo = Path.Combine(rootPath, _fileLocationDetail.Location, "Logos", "logo.png");
-            _logger.LogInformation($"[ReGenerate File]: Check logo exists.");
+            string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
+            _logger.LogInformation($"[ReGenerate File]: Check logo exists. Path: {headerLogo}");
             if (File.Exists(templatePath) && File.Exists(headerLogo))
             {
                 _logger.LogInformation($"[ReGenerate File]: Logo and template exists.");
