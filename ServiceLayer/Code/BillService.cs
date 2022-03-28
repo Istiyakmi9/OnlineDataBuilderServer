@@ -28,14 +28,14 @@ namespace ServiceLayer.Code
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
-            IOptions<FileLocationDetail> options,
+            FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             IFileMaker fileMaker)
         {
             this.db = db;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
-            _fileLocationDetail = options.Value;
+            _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
             _fileMaker = fileMaker;
