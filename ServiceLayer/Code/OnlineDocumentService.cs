@@ -351,10 +351,8 @@ namespace ServiceLayer.Code
                 }
 
                 string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, $"{fileDetail.FileName}.{Extension}");
-                _logger.LogInformation($"FilePath: {filePath}");
                 if (!File.Exists(filePath))
                 {
-                    _logger.LogInformation($"FilePath: Not Found");
                     DbParam[] dbParams = new DbParam[]
                     {
                         new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
@@ -364,7 +362,6 @@ namespace ServiceLayer.Code
                     };
 
                     var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
-                    _logger.LogInformation($"[ReGenerate File]: Result = {Result.Tables.Count}");
                     if (Result.Tables.Count == 4)
                     {
                         BillDetail billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
@@ -427,9 +424,7 @@ namespace ServiceLayer.Code
                             Notes = null
                         };
 
-                        _logger.LogInformation($"[ReGenerate File]: Staring pdf generation.");
                         _billService.CreateFiles(_buildPdfTable, pdfModal, organization);
-                        _logger.LogInformation($"[ReGenerate File]: Generation.");
                     }
                     else
                     {
