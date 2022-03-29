@@ -568,14 +568,14 @@ namespace ServiceLayer.Code
                             }
                             else
                             {
-                                item.ParentFolder = Path.Combine(Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User), item.ParentFolder);
+                                item.ParentFolder = Path.Combine(_fileLocationDetail.Location, item.ParentFolder);
                                 item.ParentFolder = item.ParentFolder;
                                 item.Email = userEmail;
                             }
                         });
 
 
-                        string FolderPath = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User);
+                        string FolderPath = _fileLocationDetail.UserFolder;
                         List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
                         if (files != null && files.Count > 0)
                         {
