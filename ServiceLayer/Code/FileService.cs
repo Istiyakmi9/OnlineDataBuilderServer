@@ -81,8 +81,10 @@ namespace CoreServiceLayer.Implementation
 
                         Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
                         currentFile.FileName = file.Name;
-                        NewFileName = file.Name + "." + Extension;
-
+                        if (!file.Name.Contains("."))
+                            NewFileName = file.Name + "." + Extension;
+                        else
+                            NewFileName = file.Name;
 
                         if (currentFile != null)
                         {
@@ -141,9 +143,9 @@ namespace CoreServiceLayer.Implementation
             {
                 fileDetail.FilePath = fileDetail.FilePath;
                 if (string.IsNullOrEmpty(fileDetail.ParentFolder))
-                    fileDetail.ParentFolder = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User);
+                    fileDetail.ParentFolder = _fileLocationDetail.UserFolder;
                 else
-                    fileDetail.ParentFolder = Path.Combine(Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User), fileDetail.ParentFolder);
+                    fileDetail.ParentFolder = Path.Combine(_fileLocationDetail.UserFolder, fileDetail.ParentFolder);
 
                 fileDetail.ParentFolder = fileDetail.ParentFolder;
                 if (!string.IsNullOrEmpty(fileDetail.FilePath))
@@ -153,10 +155,7 @@ namespace CoreServiceLayer.Implementation
                         case FileSystemType.User:
                             isLocationFound = true;
                             fileDetail.FilePath = Path.Combine(
-                                    Path.Combine(
-                                        _fileLocationDetail.Location,
-                                        _fileLocationDetail.User
-                                        ),
+                                    _fileLocationDetail.UserFolder,
                                     fileDetail.FilePath
                                 );
 
