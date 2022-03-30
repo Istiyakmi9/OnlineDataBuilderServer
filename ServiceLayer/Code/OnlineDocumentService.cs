@@ -568,7 +568,7 @@ namespace ServiceLayer.Code
                             }
                             else
                             {
-                                item.ParentFolder = Path.Combine(Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User), item.ParentFolder);
+                                item.ParentFolder = Path.Combine(_fileLocationDetail.Location, item.ParentFolder);
                                 item.ParentFolder = item.ParentFolder;
                                 item.Email = userEmail;
                             }

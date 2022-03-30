@@ -32,26 +32,34 @@ namespace ServiceLayer.Code
             return client;
         }
 
-        public Organization GetClientDetailById(long ClientId, bool IsActive)
+        public DataSet GetClientDetailById(long ClientId, bool IsActive, int UserTypeId)
         {
             if (ClientId <= 0)
                 throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(ClientId), FieldValue = ClientId.ToString() };
 
-            Organization client = default;
+            //Organization client = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(ClientId, typeof(long), "_ClientId"),
-                new DbParam(IsActive, typeof(bool), "_IsActive")
+                new DbParam(IsActive, typeof(bool), "_IsActive"),
+                new DbParam(UserTypeId, typeof(int), "_UserTypeId")
             };
 
             var resultSet = _db.GetDataset("SP_Client_ById", param);
-            if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
+            if (resultSet.Tables.Count == 2)
             {
-                var emps = Converter.ToList<Organization>(resultSet.Tables[0]);
-                if (emps != null && emps.Count > 0)
-                    client = emps[0];
+                resultSet.Tables[0].TableName = "client";
+                resultSet.Tables[1].TableName = "file";
             }
-            return client;
+            //if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
+            //{
+            //    var emps = Converter.ToList<Organization>(resultSet.Tables[0]);
+            //    if (emps != null && emps.Count > 0)
+            //        client = emps[0];
+            //}
+            return resultSet;
+
+            //return client;
         }
 
         public async Task<Organization> RegisterClient(Organization client, IFormFileCollection fileCollection, bool isUpdating)
@@ -97,6 +105,7 @@ namespace ServiceLayer.Code
                 {
                     var files = fileCollection.Select(x => new Files
                     {
+                        FileUid = client.FileId,
                         FileName = ApplicationConstants.ProfileImage,
                         Email = client.Email,
                         FileExtension = string.Empty
@@ -113,7 +122,7 @@ namespace ServiceLayer.Code
                                         ParentFolder = n.ParentFolder,
                                         FileExtension = n.FileExtension,
                                         StatusId = 0,
-                                        UserTypeId = (int)UserType.Employee,
+                                        UserTypeId = (int)UserType.Client,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     });
 
