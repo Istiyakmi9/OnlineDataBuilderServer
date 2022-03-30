@@ -23,7 +23,8 @@ namespace DocMaker.HtmlToDocx
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[DOCXToHTMLConverter] Error message {ex.Message}. Inner exception: {ex.InnerException.Message}");
+                //_logger.LogError($"[DOCXToHTMLConverter] Error message {ex.Message}. Inner exception: {ex.InnerException.Message}");
+                _logger.LogError(ex.Message);
                 throw ex;
             }
 
