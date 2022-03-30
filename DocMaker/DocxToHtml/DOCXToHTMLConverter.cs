@@ -1,12 +1,13 @@
 ﻿using HtmlService;
+using Microsoft.Extensions.Logging;
 using System;
-using System.IO;
 
 namespace DocMaker.HtmlToDocx
 {
     public class DOCXToHTMLConverter : IDOCXToHTMLConverter
     {
         private readonly HtmlConverterService _htmlConverterService;
+        private readonly ILogger<DOCXToHTMLConverter> _logger;
 
         public DOCXToHTMLConverter(HtmlConverterService htmlConverterService)
         {
@@ -22,6 +23,7 @@ namespace DocMaker.HtmlToDocx
             }
             catch (Exception ex)
             {
+                _logger.LogError($"[DOCXToHTMLConverter] Error message {ex.Message}. Inner exception: {ex.InnerException.Message}");
                 throw ex;
             }
 

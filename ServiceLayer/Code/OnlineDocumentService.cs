@@ -575,7 +575,7 @@ namespace ServiceLayer.Code
                         });
 
 
-                        string FolderPath = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.User);
+                        string FolderPath = _fileLocationDetail.UserFolder;
                         List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
                         if (files != null && files.Count > 0)
                         {
