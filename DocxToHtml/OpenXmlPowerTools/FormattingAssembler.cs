@@ -1390,11 +1390,11 @@ namespace OpenXmlPowerTools
                     return inside1;
             }
 
-            if ((int)inside1.Attribute(W.sz) > (int)sideToReplace.Attribute(W.sz))
-                return inside1;
+            //if ((int)inside1.Attribute(W.sz) > (int)sideToReplace.Attribute(W.sz))
+            //    return inside1;
 
-            if ((int)sideToReplace.Attribute(W.sz) > (int)inside1.Attribute(W.sz))
-                return sideToReplace;
+            //if ((int)sideToReplace.Attribute(W.sz) > (int)inside1.Attribute(W.sz))
+            //    return sideToReplace;
 
             if (BorderTypePriority.ContainsKey(inside1Val) &&
                 BorderTypePriority.ContainsKey(sideToReplaceVal))
@@ -1407,11 +1407,11 @@ namespace OpenXmlPowerTools
                     return sideToReplace;
             }
 
-            if ((int)inside1.Attribute(W.sz) > (int)sideToReplace.Attribute(W.sz))
-                return inside1;
+            //if ((int)inside1.Attribute(W.sz) > (int)sideToReplace.Attribute(W.sz))
+            //    return inside1;
 
-            if ((int)sideToReplace.Attribute(W.sz) > (int)inside1.Attribute(W.sz))
-                return sideToReplace;
+            //if ((int)sideToReplace.Attribute(W.sz) > (int)inside1.Attribute(W.sz))
+            //    return sideToReplace;
 
             var color1str = (string)inside1.Attribute(W.color);
             if (color1str == "auto")

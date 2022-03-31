@@ -53,5 +53,12 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
+
+        [HttpGet("GenerateResume/{userId}")]
+        public IResponse<ApiResponse> GenerateResume(long userId)
+        {
+            var result = _userService.GenerateResume(userId);
+            return BuildResponse(result);
+        }
     }
 }
