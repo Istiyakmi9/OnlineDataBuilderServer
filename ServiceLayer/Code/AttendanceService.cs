@@ -1,10 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using TimeZoneConverter;
@@ -20,102 +20,108 @@ namespace ServiceLayer.Code
             _db = db;
         }
 
-        public DataSet GetAttendanceByUserId(AttendenceDetail attendenceDetail)
+        public AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail)
         {
+            List<AttendenceDetail> attendenceDetails = null;
+            AssignedClients client = null;
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-            attendenceDetail.AttendenceFromDay = TimeZoneInfo.ConvertTimeFromUtc((DateTime)attendenceDetail.AttendenceFromDay, istTimeZome);
-            attendenceDetail.AttendenceToDay = TimeZoneInfo.ConvertTimeFromUtc((DateTime)attendenceDetail.AttendenceToDay, istTimeZome);
+            if (attendenceDetail.AttendenceFromDay != null)
+                attendenceDetail.AttendenceFromDay = TimeZoneInfo.ConvertTimeFromUtc((DateTime)attendenceDetail.AttendenceFromDay, istTimeZome);
+
+            if (attendenceDetail.AttendenceToDay != null)
+                attendenceDetail.AttendenceToDay = TimeZoneInfo.ConvertTimeFromUtc((DateTime)attendenceDetail.AttendenceToDay, istTimeZome);
+
+            if (attendenceDetail.AttendenceForMonth != null)
+                attendenceDetail.AttendenceForMonth = TimeZoneInfo.ConvertTimeFromUtc((DateTime)attendenceDetail.AttendenceForMonth, istTimeZome);
 
             DbParam[] dbParams = new DbParam[]
             {
-                new DbParam(attendenceDetail.UserId, typeof(int), "_userId"),
-                new DbParam(attendenceDetail.UserTypeId, typeof(int), "_userTypeId"),
-                new DbParam(attendenceDetail.AttendenceFromDay, typeof(DateTime), "_attendanceFromDay"),
-                new DbParam(attendenceDetail.AttendenceToDay, typeof(DateTime), "_attendanceToDay"),
+                new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_EmployeeId"),
+                new DbParam(attendenceDetail.ClientId, typeof(int), "_ClientId"),
+                new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(attendenceDetail.AttendenceForMonth, typeof(DateTime), "_ForTime")
             };
 
             var Result = _db.GetDataset("sp_attendance_get", dbParams);
-            if (Result != null && Result.Tables.Count == 1)
+            if (Result.Tables.Count == 2 && Result.Tables[0].Rows.Count > 0)
             {
-                Result.Tables[0].TableName = "Attendance";
-                return Result;
+                var data = Result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
+                var attendanceId = Convert.ToInt64(Result.Tables[0].Rows[0]["AttendanceId"]);
+                var attendanceData = JsonConvert.DeserializeObject<List<AttendenceDetail>>(data);
+                client = Converter.ToType<AssignedClients>(Result.Tables[1]);
+
+                attendenceDetails = new List<AttendenceDetail>();
+                Parallel.ForEach(attendanceData, x =>
+                {
+                    if (TimeZoneInfo.ConvertTimeFromUtc((DateTime)x.AttendanceDay, istTimeZome) >= attendenceDetail.AttendenceFromDay
+                            && TimeZoneInfo.ConvertTimeFromUtc((DateTime)x.AttendanceDay, istTimeZome) <= attendenceDetail.AttendenceToDay)
+                    {
+                        x.AttendanceId = attendanceId;
+                        attendenceDetails.Add(x);
+                    }
+                });
             }
 
-            return null;
+            return new AttendanceWithClientDetail { Client = client, AttendacneDetails = attendenceDetails };
         }
 
         public string InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
         {
+            string result = string.Empty;
             var firstItem = attendenceDetail.FirstOrDefault();
-            DateTime firstDate = firstItem.AttendanceDay;
+            if (firstItem == null)
+            {
+                throw new HiringBellException("Invalid AttendanceDetail submitted.");
+            }
+
+            DateTime firstDate = firstItem.AttendanceDay.AddMonths(1).AddDays(-1);
             DateTime lastDate = attendenceDetail.LastOrDefault().AttendanceDay;
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+            double TotalHours = 0;
+            double ExpectedHours = 0;
             attendenceDetail.ForEach(x =>
             {
-                if ((x.AttendanceDay - firstDate).TotalDays <= 0)
-                {
-                    firstDate = x.AttendanceDay;
-                }
-
-                if ((x.AttendanceDay - lastDate).TotalDays >= 0)
-                {
-                    lastDate = x.AttendanceDay;
-                }
-
                 x.AttendanceDay = TimeZoneInfo.ConvertTimeFromUtc(x.AttendanceDay, istTimeZome);
+                TotalHours += x.Hours;
+                ExpectedHours += 8;
             });
 
 
             List<AttendenceDetail> finalAttendanceSet = new List<AttendenceDetail>();
-            var attendanceSet = this.GetAttendanceByUserId(new AttendenceDetail { UserId = firstItem.UserId, UserTypeId = firstItem.UserTypeId, AttendenceFromDay = firstDate, AttendenceToDay = lastDate });
-            if (attendanceSet != null && attendanceSet.Tables.Count > 0)
+            var resultSet = this.GetAttendanceByUserId(new AttendenceDetail { UserId = firstItem.UserId, UserTypeId = firstItem.UserTypeId, AttendenceForMonth = firstDate });
+
+            List<AttendenceDetail> attendaceList = resultSet.AttendacneDetails;
+            if (attendaceList != null)
             {
-                if (attendanceSet.Tables[0].Rows.Count != 0)
+                attendaceList.ForEach(x =>
                 {
-                    var attendaceList = Converter.ToList<AttendenceDetail>(attendanceSet.Tables[0]);
-                    attendaceList.ForEach(x =>
+                    var item = attendenceDetail.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
+                    if (item != null)
                     {
-                        var item = attendenceDetail.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
-                        if (item != null)
+                        item.AttendanceId = x.AttendanceId;
+                        if (finalAttendanceSet.Count == 0 || finalAttendanceSet.FirstOrDefault(p => p.AttendanceId == item.AttendanceId) == null)
                         {
-                            item.AttendanceId = x.AttendanceId;
-                            if (finalAttendanceSet.Count == 0 || finalAttendanceSet.FirstOrDefault(p => p.AttendanceId == item.AttendanceId) == null)
-                            {
-                                finalAttendanceSet.Add(item);
-                            }
+                            finalAttendanceSet.Add(item);
                         }
-                    });
-                }
-                else
-                {
-                    finalAttendanceSet = attendenceDetail;
-                }
-
-                var fileInfo = (from n in finalAttendanceSet.AsEnumerable()
-                                select new
-                                {
-                                    AttendanceId = n.AttendanceId,
-                                    UserId = n.UserId,
-                                    UserTypeId = n.UserTypeId,
-                                    AttendanceDay = n.AttendanceDay,
-                                    Hours = n.Hours,
-                                    IsHoliday = n.IsHoliday,
-                                    IsWeekEnd = n.IsWeekEnd,
-                                    AttendanceStatus = n.AttendenceStatus,
-                                    UserComments = n.UserComments,
-                                    SubmittedOn = DateTime.Now,
-                                    SubmitterUserId = n.UserId
-                                });
-
-                DataTable table = Converter.ToDataTable(fileInfo);
-                var dataSet = new DataSet();
-                dataSet.Tables.Add(table);
-                var result = _db.BatchInsert(ApplicationConstants.InserUpdateAttendance, dataSet, true);
-                if (result > 0)
-                    return "Insertd/Update successfully";
+                    }
+                });
             }
 
-            return "Fail to insert/update";
+
+            DbParam[] dbParams = new DbParam[]
+            {
+                    new DbParam(firstItem.AttendanceId, typeof(long), "_AttendanceId"),
+                    new DbParam(firstItem.EmployeeUid, typeof(long), "_EmployeeId"),
+                    new DbParam(firstItem.UserTypeId, typeof(int), "_UserTypeId"),
+                    new DbParam(JsonConvert.SerializeObject(finalAttendanceSet), typeof(string), "_AttendanceDetail"),
+                    new DbParam(TotalHours, typeof(float), "_TotalHoursBurend"),
+                    new DbParam(ExpectedHours, typeof(float), "_ExpectedHours"),
+                    new DbParam(firstItem.SubmittedOn, typeof(DateTime), "_AttendanceForMonth")
+            };
+
+            result = _db.ExecuteNonQuery("sp_attendance_insupd", dbParams, true);
+
+            return result;
         }
     }
 }

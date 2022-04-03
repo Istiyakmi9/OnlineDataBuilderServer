@@ -10,6 +10,7 @@ namespace ServiceLayer.Interface
     {
         List<Employee> GetEmployees(FilterModel filterModel);
         DataSet GetManageEmployeeDetailService(long EmployeeId);
+        DataSet GetManageClientService(long EmployeeId);
         DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, bool IsActive);
         string DeleteEmployeeById(int EmployeeId, bool IsActive);

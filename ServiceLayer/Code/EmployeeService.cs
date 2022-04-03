@@ -54,6 +54,20 @@ namespace ServiceLayer.Code
             return resultset;
         }
 
+        public DataSet GetManageClientService(long EmployeeId)
+        {
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(EmployeeId, typeof(long), "_employeeId")
+            };
+            var resultset = _db.GetDataset("SP_MappedClients_Get", param);
+            if (resultset.Tables.Count == 1)
+            {
+                resultset.Tables[0].TableName = "AllocatedClients";
+            }
+            return resultset;
+        }
+
         public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
         {
             if (employee.EmployeeUid <= 0)
@@ -78,7 +92,9 @@ namespace ServiceLayer.Code
                 new DbParam(employee.FinalPackage, typeof(float), "_finalPackage"),
                 new DbParam(employee.ActualPackage, typeof(float), "_actualPackage"),
                 new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
-                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent")
+                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
+                new DbParam(employee.BillingHours, typeof(int), "_BillingHours"),
+                new DbParam(employee.WorkingDaysPerWeek, typeof(int), "_DaysPerWeek")
             };
             var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
             return resultset;

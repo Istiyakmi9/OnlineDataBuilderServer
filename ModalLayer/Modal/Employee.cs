@@ -45,5 +45,7 @@ namespace ModalLayer.Modal
         public float TakeHomeByCandidate { set; get; }
         public bool IsPermanent { set; get; }
         public long FileId { set; get; }
+        public int BillingHours { set; get; } = 0;
+        public int WorkingDaysPerWeek { set; get; } = 0;
     }
 }

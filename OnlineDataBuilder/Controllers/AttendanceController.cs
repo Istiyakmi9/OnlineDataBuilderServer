@@ -35,5 +35,11 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.GetAttendanceByUserId(attendenceDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpGet("BuildMonthBlankAttadanceData")]
+        public IResponse<ApiResponse> BuildMonthBankAttadanceData()
+        {
+            return BuildResponse(null, HttpStatusCode.OK);
+        }
     }
 }

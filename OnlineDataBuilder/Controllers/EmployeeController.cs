@@ -42,6 +42,14 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [HttpGet]
+        [Route("GetManageClient/{EmployeeId}")]
+        public ApiResponse GetManageClient(long EmployeeId)
+        {
+            var Result = _employeeService.GetManageClientService(EmployeeId);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
         [HttpPost]
         [Route("UpdateEmployeeDetail/{IsUpdating}")]
         public ApiResponse UpdateEmployeeDetail([FromBody] Employee employee, bool IsUpdating)
