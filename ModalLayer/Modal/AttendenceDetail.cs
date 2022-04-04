@@ -24,6 +24,12 @@ namespace ModalLayer.Modal
         public string UserComments { get; set; }
         public long EmployeeUid { get; set; }
         public long ClientId { get; set; }
+        public bool FirstWeek { get; set; }
+        public bool SecondWeek { get; set; }
+        public bool ThirdWeek { get; set; }
+        public bool ForthWeek { get; set; }
+        public bool FifthWeek { get; set; }
+        public bool SixthWeek { get; set; }
     }
 
     public class AttendanceWithClientDetail
