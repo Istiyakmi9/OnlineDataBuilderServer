@@ -251,6 +251,7 @@ namespace ServiceLayer.Code
                         new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
                         new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
                         new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
+                        new DbParam(pdfModal.IsCustomBill, typeof(bool), "_isCustomBill"),
                         new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
                         new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                     };
@@ -384,9 +385,9 @@ namespace ServiceLayer.Code
                             cGST = billDetail.CGST,
                             sGST = billDetail.SGST,
                             iGST = billDetail.IGST,
-                            cGstAmount = Converter.TwoDecimalValue((billDetail.SGST * billDetail.PaidAmount) / 100),
-                            sGstAmount = Converter.TwoDecimalValue((billDetail.CGST * billDetail.PaidAmount) / 100),
-                            iGstAmount = Converter.TwoDecimalValue((billDetail.IGST * billDetail.PaidAmount) / 100),
+                            cGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.SGST * billDetail.PaidAmount) / 100),
+                            sGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.CGST * billDetail.PaidAmount) / 100),
+                            iGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.IGST * billDetail.PaidAmount) / 100),
                             workingDay = billDetail.NoOfDays - (int)billDetail.NoOfDaysAbsent,
                             packageAmount = billDetail.PaidAmount,
                             grandTotalAmount = Converter.TwoDecimalValue(billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100),

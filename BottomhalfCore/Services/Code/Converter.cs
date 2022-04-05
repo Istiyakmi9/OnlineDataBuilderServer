@@ -9,13 +9,13 @@ namespace BottomhalfCore.Services.Code
 {
     public static class Converter
     {
-        public static double TwoDecimalValue(double num)
+        public static decimal TwoDecimalValue(decimal num)
         {
             string strNum = num.ToString();
             if (strNum.IndexOf(".") == -1)
                 return num;
             else
-                return Math.Floor(num * 100) / 100;
+                return (decimal)Math.Floor(num * 100) / 100;
         }
 
         public static List<T> ToList<T>(this DataTable table) where T : new()
@@ -53,7 +53,7 @@ namespace BottomhalfCore.Services.Code
             DataColumnCollection columns = table.Columns;
             string name = null;
             int index = 0;
-            while(index < availableProperties.Count)
+            while (index < availableProperties.Count)
             {
                 name = availableProperties.ElementAt(index).Name;
                 if (columns.Contains(name))

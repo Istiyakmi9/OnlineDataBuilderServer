@@ -8,11 +8,11 @@ namespace ModalLayer.Modal
     {
         public string DeveloperName { set; get; }
         public long BillDetailUid { get; set; }
-        public double PaidAmount { get; set; }
+        public decimal PaidAmount { get; set; }
         public int BillForMonth { get; set; }
         public int BillYear { get; set; }
         public int NoOfDays { get; set; }
-        public double NoOfDaysAbsent { get; set; }
+        public decimal NoOfDaysAbsent { get; set; }
         public int IGST { get; set; }
         public int SGST { get; set; }
         public int CGST { get; set; }

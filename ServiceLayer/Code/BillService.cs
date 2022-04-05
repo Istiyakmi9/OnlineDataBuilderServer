@@ -271,6 +271,7 @@ namespace ServiceLayer.Code
                             new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
                             new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
                             new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
+                            new DbParam(pdfModal.IsCustomBill, typeof(bool), "_IsCustomBill"),
                             new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
                             new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                         };
@@ -299,7 +300,7 @@ namespace ServiceLayer.Code
             }
             catch (HiringBellException e)
             {
-                _logger.LogError(e.Message);
+                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
                 throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
             catch (Exception ex)
@@ -313,10 +314,10 @@ namespace ServiceLayer.Code
 
         private void ValidateBillModal(PdfModal pdfModal)
         {
-            double grandTotalAmount = 0.00;
-            double sGSTAmount = 0.00;
-            double cGSTAmount = 0.00;
-            double iGSTAmount = 0.00;
+            decimal grandTotalAmount = 0;
+            decimal sGSTAmount = 0;
+            decimal cGSTAmount = 0;
+            decimal iGSTAmount = 0;
             int days = DateTime.DaysInMonth(pdfModal.billingMonth.Year, pdfModal.billingMonth.Month);
 
             if (pdfModal.ClientId <= 0)
@@ -373,7 +374,7 @@ namespace ServiceLayer.Code
             if (pdfModal.cGstAmount != cGSTAmount)
                 throw new HiringBellException { UserMessage = "CGST Amount invalid calculation", FieldName = nameof(pdfModal.cGstAmount), FieldValue = pdfModal.cGstAmount.ToString() };
 
-            if (pdfModal.workingDay < 0 || pdfModal.workingDay > days)
+            if (!pdfModal.IsCustomBill && (pdfModal.workingDay < 0 || pdfModal.workingDay > days))
                 throw new HiringBellException { UserMessage = "Invalid Working days", FieldName = nameof(pdfModal.workingDay), FieldValue = pdfModal.workingDay.ToString() };
 
             if (pdfModal.billingMonth.Month < 0 || pdfModal.billingMonth.Month > 12)

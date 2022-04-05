@@ -21,11 +21,11 @@ namespace ModalLayer.Modal
             HttpStatusCode = httpStatusCode;
         }
 
-        public HiringBellException BuildBadRequest(string Message, string Filed = null, string Value = null)
+        public HiringBellException BuildBadRequest(string Message, string Field = null, string Value = null)
         {
             HttpStatusCode = HttpStatusCode.BadRequest;
-            UserMessage = Message;
-            FieldName = Filed;
+            UserMessage = $"{Message} Field: {Field}, Value: {Value}";
+            FieldName = Field;
             FieldValue = Value;
             return this;
         }

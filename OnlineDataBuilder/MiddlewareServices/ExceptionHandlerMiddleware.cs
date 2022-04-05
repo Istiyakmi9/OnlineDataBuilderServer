@@ -43,13 +43,13 @@ namespace SchoolInMindServer.MiddlewareServices
         private static Task HandleHiringBellExceptionMessageAsync(HttpContext context, HiringBellException e)
         {
             context.Response.ContentType = "application/json";
-            int statusCode = (int)HttpStatusCode.InternalServerError;
+            int statusCode = (int)e.HttpStatusCode;
             var result = JsonConvert.SerializeObject(new ApiResponse
             {
                 AuthenticationToken = string.Empty,
                 HttpStatusCode = e.HttpStatusCode,
                 HttpStatusMessage = e.UserMessage,
-                ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message }
+                ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message }
             });
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;

@@ -9,15 +9,15 @@ namespace ModalLayer.Modal
         public string billNo { get; set; }
         public long billId { get; set; }
         public DateTime dateOfBilling { get; set; }
-        public double cGST { get; set; }
-        public double sGST { get; set; }
-        public double iGST { get; set; }
-        public double cGstAmount { get; set; }
-        public double sGstAmount { get; set; }
-        public double iGstAmount { get; set; }
+        public decimal cGST { get; set; }
+        public decimal sGST { get; set; }
+        public decimal iGST { get; set; }
+        public decimal cGstAmount { get; set; }
+        public decimal sGstAmount { get; set; }
+        public decimal iGstAmount { get; set; }
         public int workingDay { get; set; }
-        public double packageAmount { get; set; }
-        public double grandTotalAmount { get; set; }
+        public decimal packageAmount { get; set; }
+        public decimal grandTotalAmount { get; set; }
         public string senderCompanyName { get; set; }
         public string receiverFirstAddress { get; set; }
         public long receiverCompanyId { get; set; }
@@ -27,7 +27,7 @@ namespace ModalLayer.Modal
         public string receiverSecondAddress { get; set; }
         public string receiverThirdAddress { set; get; }
         public string senderFirstAddress { get; set; }
-        public double daysAbsent { set; get; }
+        public decimal daysAbsent { set; get; }
         public string senderSecondAddress { get; set; }
         public string senderPrimaryContactNo { get; set; }
         public string senderEmail { get; set; }
@@ -36,5 +36,6 @@ namespace ModalLayer.Modal
         public string receiverPrimaryContactNo { get; set; }
         public string receiverEmail { get; set; }
         public int UpdateSeqNo { set; get; }
+        public bool IsCustomBill { set; get; } = false;
     }
 }
