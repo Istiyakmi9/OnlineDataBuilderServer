@@ -23,3 +23,10 @@ public enum FileSystemType
     User = 1,
     Bills = 2
 }
+
+public enum RolesName
+{
+    Admin = 1,
+    User = 2,
+    Other = 3
+}
