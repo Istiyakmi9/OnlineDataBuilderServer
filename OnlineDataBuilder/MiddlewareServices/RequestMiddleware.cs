@@ -55,6 +55,19 @@ namespace SchoolInMindServer.MiddlewareServices
 
                         var securityToken = handler.ReadToken(token) as JwtSecurityToken;
                         userId = securityToken.Claims.FirstOrDefault(x => x.Type == "unique_name").Value;
+                        var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
+                        switch (roleName)
+                        {
+                            case nameof(RolesName.Admin):
+                                currentSession.CurrentUserDetail.RoleId = (int)RolesName.Admin;
+                                break;
+                            case nameof(RolesName.User):
+                                currentSession.CurrentUserDetail.RoleId = (int)RolesName.User;
+                                break;
+                            default:
+                                currentSession.CurrentUserDetail.RoleId = (int)RolesName.Other;
+                                break;
+                        }
                         currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
                     }
                 }

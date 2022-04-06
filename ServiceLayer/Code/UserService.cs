@@ -1,6 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using DocMaker.PdfService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -21,15 +20,15 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IHostingEnvironment _hostingEnvironment;
-        private readonly IFileMaker _fileMaker;
+        private readonly CurrentSession _currentSession;
 
-        public UserService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment, IFileMaker fileMaker)
+        public UserService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment, CurrentSession currentSession)
         {
             _db = db;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
-            _fileMaker = fileMaker;
             _hostingEnvironment = hostingEnvironment;
+            _currentSession = currentSession;
         }
 
         public string UpdateProfile(ProfessionalUser professionalUser, int IsProfileImageRequest = 0)
@@ -101,6 +100,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Invalid User Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
 
             ProfileDetail profileDetail = new ProfileDetail();
+            if (_currentSession.CurrentUserDetail.RoleId == 1)
+            {
+                profileDetail.userDetail = new UserDetail();
+                profileDetail.RoleId = (int)RolesName.Admin;
+                return profileDetail;
+            }
+
             DbParam[] param = new DbParam[]
             {
                new DbParam(userId, typeof(long), "_UserId"),
