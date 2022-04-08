@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,9 +32,9 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public string UpdateProfile(ProfessionalUser professionalUser, int IsProfileImageRequest = 0)
+        public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int IsProfileImageRequest = 0)
         {
-            var result = string.Empty;
+            ProfileDetail profileDetail = new ProfileDetail();
             var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
             DbParam[] dbParams = new DbParam[]
             {
@@ -54,43 +55,89 @@ namespace ServiceLayer.Code
                 new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
             };
 
-            result = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
-            return result;
+            var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
+            profileDetail = this.GetUserDetail(professionalUser.UserId);
+            return profileDetail;
         }
 
         public string UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection)
         {
+            var result = string.Empty;
             if (string.IsNullOrEmpty(professionalUser.Email))
             {
                 throw new HiringBellException("Email id is required field.");
             }
 
             int IsProfileImageRequest = 0;
-            List<Files> files = new List<Files>();
+            // List<Files> files = new List<Files>();
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
-                IsProfileImageRequest = 1;
-                Parallel.ForEach(FileCollection, x =>
+                var files = FileCollection.Select(x => new Files
                 {
-                    files.Add(new Files
-                    {
-                        FileName = x.Name,
-                        FilePath = string.Empty,
-                        Email = professionalUser.Email
-                    });
-                });
-
+                    FileUid = professionalUser.FileId,
+                    FileName = ApplicationConstants.ProfileImage,
+                    Email = professionalUser.Email,
+                    FileExtension = string.Empty
+                }).ToList<Files>();
                 _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
-                file = files.Single();
+
+                var fileInfo = (from n in files
+                                select new
+                                {
+                                    FileId = n.FileUid,
+                                    DocumentId = professionalUser.UserId,
+                                    FileName = n.FileName,
+                                    FilePath = n.FilePath,
+                                    ParentFolder = n.ParentFolder,
+                                    FileExtension = n.FileExtension,
+                                    StatusId = 0,
+                                    UserTypeId = (int)UserType.Candidate,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
+                                });
+
+                DataTable table = Converter.ToDataTable(fileInfo);
+                var dataSet = new DataSet();
+                dataSet.Tables.Add(table);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                int insertedCount = _db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                _db.Commit();
             }
 
-            var result = this.UpdateProfile(professionalUser, IsProfileImageRequest);
-            if (string.IsNullOrEmpty(result))
-            {
-                _fileService.DeleteFiles(files);
-                throw new HiringBellException("Fail to update user info.");
-            }
+            //if (FileCollection.Count > 0)
+            //{
+            //    IsProfileImageRequest = 1;
+            //    Parallel.ForEach(FileCollection, x =>
+            //    {
+            //        files.Add(new Files
+            //        {
+            //            FileName = x.Name,
+            //            FilePath = string.Empty,
+            //            Email = professionalUser.Email,
+            //            FileUid = professionalUser.FileId
+            //        });
+            //    });
+
+            //    List<Files> filesList = _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
+            //    if (filesList != null && filesList.Count > 0)
+            //    {
+            //        DataSet fileDs = Converter.ToDataSet<Files>(filesList);
+            //        if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
+            //        {
+            //            DataTable table = fileDs.Tables[0];
+            //            table.TableName = "Files";
+            //            _db.InsertUpdateBatchRecord("sp_candidatefiledetail_InsUpd", table);
+            //            result = "Success";
+            //        }
+            //    }
+            //}
+
+            var value = this.UpdateProfile(professionalUser, IsProfileImageRequest);
+            //if (value == null)
+            //{
+            //    _fileService.DeleteFiles(files);
+            //    throw new HiringBellException("Fail to update user info.");
+            //}
             return result;
         }
 
