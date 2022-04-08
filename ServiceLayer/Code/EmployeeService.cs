@@ -94,7 +94,8 @@ namespace ServiceLayer.Code
                 new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
                 new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
                 new DbParam(employee.BillingHours, typeof(int), "_BillingHours"),
-                new DbParam(employee.WorkingDaysPerWeek, typeof(int), "_DaysPerWeek")
+                new DbParam(employee.WorkingDaysPerWeek, typeof(int), "_DaysPerWeek"),
+                new DbParam(employee.DOL, typeof(DateTime), "_DOL")
             };
             var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
             return resultset;

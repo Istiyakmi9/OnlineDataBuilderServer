@@ -31,6 +31,6 @@ namespace ModalLayer.Modal
         public bool IsActive { set; get; }
         public int Total { set; get; }
         public DateTime? DOB { get; set; }
-        public DateTime? DateOfJoining { get; set; }
+        public DateTime CreatedOn { get; set; }
     }
 }

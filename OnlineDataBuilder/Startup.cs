@@ -1,5 +1,7 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MySql.Code;
+using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -132,6 +134,7 @@ namespace OnlineDataBuilder
 
                 return locationDetail;
             });
+            services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
 
             services.AddCors(options =>
             {
