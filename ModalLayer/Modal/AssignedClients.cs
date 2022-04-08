@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ModalLayer.Modal
 {
@@ -17,5 +15,6 @@ namespace ModalLayer.Modal
         public long FileId { set; get; }
         public int BillingHours { set; get; } = 0;
         public int WorkingDaysPerWeek { set; get; } = 0;
+        public DateTime? DOL { set; get; }
     }
 }
