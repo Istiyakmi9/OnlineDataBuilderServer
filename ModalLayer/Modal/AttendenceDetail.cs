@@ -10,13 +10,15 @@ namespace ModalLayer.Modal
         public int UserTypeId { get; set; }
         public DateTime AttendanceDay { get; set; }
         public double BillingHours { get; set; }
-        public double Hours { get; set; }
-        public float IsHoliday { get; set; }
-        public float IsWeekEnd { get; set; }
+        public int TotalMinutes { get; set; }
+        public bool IsHoliday { get; set; }
+        public bool IsOnLeave { get; set; }
+        public long LeaveId { set; get; }
         public int AttendenceStatus { get; set; }
         public DateTime SubmittedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
-        public DateTime? AttendenceForMonth { get; set; }
+        public int ForYear { get; set; }
+        public int ForMonth { get; set; }
         public DateTime? AttendenceFromDay { get; set; }
         public DateTime? AttendenceToDay { get; set; }
         public long SubmittedBy { get; set; }
@@ -24,17 +26,14 @@ namespace ModalLayer.Modal
         public string UserComments { get; set; }
         public long EmployeeUid { get; set; }
         public long ClientId { get; set; }
-        public bool FirstWeek { get; set; }
-        public bool SecondWeek { get; set; }
-        public bool ThirdWeek { get; set; }
-        public bool ForthWeek { get; set; }
-        public bool FifthWeek { get; set; }
-        public bool SixthWeek { get; set; }
+        public int TotalDays { get; set; }
+        public int DaysPending { get; set; }
+        public bool IsActiveDay { get; set; }
     }
 
     public class AttendanceWithClientDetail
     {
         public List<AttendenceDetail> AttendacneDetails { set; get; }
-        public AssignedClients Client { set; get; }
+        public Employee EmployeeDetail { set; get; }
     }
 }

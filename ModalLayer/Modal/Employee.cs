@@ -31,7 +31,7 @@ namespace ModalLayer.Modal
         public bool IsActive { set; get; }
         public int Total { set; get; }
         public DateTime? DOB { get; set; }
-        public DateTime? DateOfJoining { get; set; }
+        public DateTime CreatedOn { get; set; }
     }
 
     public class AssignedClients
@@ -47,5 +47,7 @@ namespace ModalLayer.Modal
         public long FileId { set; get; }
         public int BillingHours { set; get; } = 0;
         public int WorkingDaysPerWeek { set; get; } = 0;
+        public DateTime DOJ { set; get; }
+        public DateTime? DOL { set; get; } = null;
     }
 }
