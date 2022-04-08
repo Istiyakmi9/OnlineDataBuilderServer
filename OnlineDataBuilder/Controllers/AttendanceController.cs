@@ -20,7 +20,6 @@ namespace OnlineDataBuilder.Controllers
         {
             _attendanceService = attendanceService;
         }
-        
 
         [HttpPost("InsertUpdateAttendance")]
         public IResponse<ApiResponse> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
@@ -40,6 +39,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> BuildMonthBankAttadanceData()
         {
             return BuildResponse(null, HttpStatusCode.OK);
+        }
+
+        [HttpGet("GetPendingAttendanceById/{EmployeeId}/{clientId}")]
+        public IResponse<ApiResponse> GetPendingAttendanceById(long employeeId, long clientId)
+        {
+            var result = _attendanceService.GetAllPendingAttendanceByUserIdService(employeeId, clientId);
+            return BuildResponse(result, HttpStatusCode.OK);
         }
     }
 }
