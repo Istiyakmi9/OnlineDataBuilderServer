@@ -1,4 +1,5 @@
 ﻿using ModalLayer.Modal;
+using System;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
@@ -7,6 +8,6 @@ namespace ServiceLayer.Interface
     {
         List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail);
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
-        AttendanceWithClientDetail GetAllPendingAttendanceByUserIdService(long employeeId, long clientId);
+        List<DateTime> GetAllPendingAttendanceByUserIdService(long employeeId);
     }
 }

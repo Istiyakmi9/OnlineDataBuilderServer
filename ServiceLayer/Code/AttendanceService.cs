@@ -104,22 +104,37 @@ namespace ServiceLayer.Code
             return new AttendanceWithClientDetail { EmployeeDetail = employee, AttendacneDetails = attendenceDetails };
         }
 
-        public AttendanceWithClientDetail GetAllPendingAttendanceByUserIdService(long employeeId, long clientId)
+        public List<DateTime> GetAllPendingAttendanceByUserIdService(long employeeId)
         {
+            List<DateTime> pendingDays = new List<DateTime>();
+            List<AttendenceDetail> attendanceSet = null;
             DateTime current = DateTime.UtcNow;
 
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(employeeId, typeof(int), "_EmployeeId"),
-                new DbParam(clientId, typeof(int), "_ClientId"),
                 new DbParam(_currentSession.CurrentUserDetail.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(current.Year, typeof(int), "_ForYear"),
                 new DbParam(current.Month, typeof(int), "_ForMonth")
             };
 
             var Result = _db.GetDataset("sp_attendance_getAll", dbParams);
+            if (Result.Tables.Count == 0 && Result.Tables[0].Rows.Count > 0)
+            {
+                var currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
+                attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
 
-            return new AttendanceWithClientDetail();
+                DateTime firstDay = new DateTime(current.Year, current.Month, 1);
+                while (firstDay.Subtract(current).TotalDays <= 0)
+                {
+                    var result = attendanceSet.Find(x => x.AttendanceDay.Subtract(firstDay).TotalDays == 0);
+                    if (result == null)
+                        pendingDays.Add(firstDay);
+                    firstDay = firstDay.AddDays(1);
+                }
+            }
+
+            return pendingDays;
         }
 
         public List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
