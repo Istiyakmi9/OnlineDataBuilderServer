@@ -69,14 +69,13 @@ namespace ServiceLayer.Code
             }
 
             int IsProfileImageRequest = 0;
-            // List<Files> files = new List<Files>();
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
                 var files = FileCollection.Select(x => new Files
                 {
                     FileUid = professionalUser.FileId,
-                    FileName = ApplicationConstants.ProfileImage,
+                    FileName = x.Name,
                     Email = professionalUser.Email,
                     FileExtension = string.Empty
                 }).ToList<Files>();
@@ -86,12 +85,10 @@ namespace ServiceLayer.Code
                                 select new
                                 {
                                     FileId = n.FileUid,
-                                    DocumentId = professionalUser.UserId,
+                                    FileOwnerId = professionalUser.UserId,
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
-                                    ParentFolder = n.ParentFolder,
                                     FileExtension = n.FileExtension,
-                                    StatusId = 0,
                                     UserTypeId = (int)UserType.Candidate,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 });
@@ -100,46 +97,59 @@ namespace ServiceLayer.Code
                 var dataSet = new DataSet();
                 dataSet.Tables.Add(table);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
                 _db.Commit();
             }
 
-            //if (FileCollection.Count > 0)
-            //{
-            //    IsProfileImageRequest = 1;
-            //    Parallel.ForEach(FileCollection, x =>
-            //    {
-            //        files.Add(new Files
-            //        {
-            //            FileName = x.Name,
-            //            FilePath = string.Empty,
-            //            Email = professionalUser.Email,
-            //            FileUid = professionalUser.FileId
-            //        });
-            //    });
-
-            //    List<Files> filesList = _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
-            //    if (filesList != null && filesList.Count > 0)
-            //    {
-            //        DataSet fileDs = Converter.ToDataSet<Files>(filesList);
-            //        if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
-            //        {
-            //            DataTable table = fileDs.Tables[0];
-            //            table.TableName = "Files";
-            //            _db.InsertUpdateBatchRecord("sp_candidatefiledetail_InsUpd", table);
-            //            result = "Success";
-            //        }
-            //    }
-            //}
-
             var value = this.UpdateProfile(professionalUser, IsProfileImageRequest);
-            //if (value == null)
-            //{
-            //    _fileService.DeleteFiles(files);
-            //    throw new HiringBellException("Fail to update user info.");
-            //}
             return result;
         }
+
+        public string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection)
+        {
+            var result = string.Empty;
+            if (Int32.Parse(userId) <= 0)
+            {
+                throw new HiringBellException("");
+            }
+            
+            Files file = new Files();
+            if (FileCollection.Count > 0)
+            {
+                var files = FileCollection.Select(x => new Files
+                {
+                    FileUid = professionalUser.FileId,
+                    FileName = x.Name,
+                    Email = professionalUser.Email,
+                    FileExtension = string.Empty
+                }).ToList<Files>();
+                _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
+
+                var fileInfo = (from n in files
+                                select new
+                                {
+                                    FileId = n.FileUid,
+                                    FileOwnerId = professionalUser.UserId,
+                                    FileName = n.FileName,
+                                    FilePath = n.FilePath,
+                                    FileExtension = n.FileExtension,
+                                    UserTypeId = (int)UserType.Candidate,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
+                                });
+
+                DataTable table = Converter.ToDataTable(fileInfo);
+                var dataSet = new DataSet();
+                dataSet.Tables.Add(table);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
+                _db.Commit();
+                if (insertedCount == 1)
+                    result = "Resume Uploaded Successfully.";
+            }
+
+            return result;
+        }
+
 
         public ProfileDetail GetUserDetail(long userId)
         {
@@ -169,7 +179,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                profileDetail.profileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
+                profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
                 string jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
                 if (!string.IsNullOrEmpty(jsonData))
                 {
@@ -205,7 +215,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                profileDetail.profileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
+                profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
                 string jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
                 if (!string.IsNullOrEmpty(jsonData))
                 {
