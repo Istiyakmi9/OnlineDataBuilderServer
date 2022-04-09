@@ -48,7 +48,22 @@ namespace OnlineDataBuilder.Controllers
             {
                 var userInfo = JsonConvert.DeserializeObject<ProfessionalUser>(UserInfoData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = this._userService.UploadUserInfo(userId, userInfo, files);
+                var Result = _userService.UploadUserInfo(userId, userInfo, files);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
+        }
+
+        [HttpPost("UploadResume/{userId}")]
+        public IResponse<ApiResponse> UploadResume(string userId)
+        {
+            StringValues UserInfoData = default(string);
+            _httpContext.Request.Form.TryGetValue("userInfo", out UserInfoData);
+            if (UserInfoData.Count > 0)
+            {
+                var userInfo = JsonConvert.DeserializeObject<ProfessionalUser>(UserInfoData);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var Result = _userService.UploadResume(userId, userInfo, files);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

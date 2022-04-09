@@ -9,5 +9,6 @@ namespace ServiceLayer.Interface
         ProfileDetail GetUserDetail(long userId);
         string GenerateResume(long userId);
         ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int IsProfileImageRequest = 0);
+        string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection);
     }
 }
