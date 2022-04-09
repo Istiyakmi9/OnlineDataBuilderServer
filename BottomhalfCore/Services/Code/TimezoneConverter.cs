@@ -17,6 +17,17 @@ namespace BottomhalfCore.Services.Code
             return TimeZoneInfo.ConvertTimeFromUtc(now, istTimeZome);
         }
 
+        public DateTime ZeroTime(DateTime now)
+        {
+            return new DateTime(now.Year, now.Month, now.Day);
+        }
+
+        public DateTime IstZeroTime(DateTime now)
+        {
+            TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(now, istTimeZome);
+        }
+
         public int GetWeekNumberOfMonth(DateTime date, bool IsLastDayOfWeek)
         {
             date = date.Date;

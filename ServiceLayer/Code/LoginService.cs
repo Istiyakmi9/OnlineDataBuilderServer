@@ -120,13 +120,12 @@ namespace ServiceLayer.Code
                 new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
                 new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
                 new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
+                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(authUser.Password, typeof(System.String), "_Password")
             };
             DataSet ds = db.GetDataset(ProcedureName, param);
             if (ds != null && ds.Tables.Count == 3)
             {
-                // _excelWriter.ToExcel(ds.Tables[2], @"E:\test.xlsx");
-
                 if (ds.Tables[0].Rows.Count > 0)
                 {
                     loginResponse = new LoginResponse();

@@ -153,6 +153,7 @@ namespace ServiceLayer.Code
 
         public ProfileDetail GetUserDetail(long userId)
         {
+            int userTypeId = 1;
             if (userId <= 0)
                 throw new HiringBellException { UserMessage = "Invalid User Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
 
@@ -171,23 +172,49 @@ namespace ServiceLayer.Code
                new DbParam(null, typeof(string), "_Email")
             };
 
-            var Result = _db.GetDataset("sp_professionaldetail_filter", param);
+            if(userTypeId == 3)
+            {
+                var Result = _db.GetDataset("sp_professionaldetail_filter", param);
 
-            if (Result.Tables.Count == 0)
-            {
-                throw new HiringBellException("Fail to get record.");
-            }
-            else
-            {
-                profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
-                string jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
-                if (!string.IsNullOrEmpty(jsonData))
+                if (Result.Tables.Count == 0)
                 {
-                    profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(jsonData);
+                    throw new HiringBellException("Fail to get record.");
                 }
                 else
                 {
+                    profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
+                    string jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
+                    if (!string.IsNullOrEmpty(jsonData))
+                    {
+                        profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(jsonData);
+                    }
+                    else
+                    {
+                        throw new HiringBellException("Fail to get record.");
+                    }
+                }
+            }
+            else
+            {
+                var Result = _db.GetDataset("sp_employee_profile", param);
+
+                if (Result.Tables.Count == 0)
+                {
                     throw new HiringBellException("Fail to get record.");
+                }
+                else
+                {
+                    profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
+
+                    var employeeProfessionDetail = Converter.ToType<EmployeeProfessionDetail>(Result.Tables[0]);
+                    if (!string.IsNullOrEmpty(employeeProfessionDetail.ProfessionalDetail_Json))
+                    {
+                        profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(employeeProfessionDetail.ProfessionalDetail_Json);
+                    }
+                    else
+                    {
+                        profileDetail.professionalUser = new ProfessionalUser();
+                    }
                 }
             }
             return profileDetail;

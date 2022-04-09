@@ -104,7 +104,7 @@ namespace ServiceLayer.Code
             return new AttendanceWithClientDetail { EmployeeDetail = employee, AttendacneDetails = attendenceDetails };
         }
 
-        public List<DateTime> GetAllPendingAttendanceByUserIdService(long employeeId)
+        public List<DateTime> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId)
         {
             List<DateTime> pendingDays = new List<DateTime>();
             List<AttendenceDetail> attendanceSet = null;
@@ -113,21 +113,24 @@ namespace ServiceLayer.Code
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(employeeId, typeof(int), "_EmployeeId"),
-                new DbParam(_currentSession.CurrentUserDetail.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(current.Year, typeof(int), "_ForYear"),
                 new DbParam(current.Month, typeof(int), "_ForMonth")
             };
 
-            var Result = _db.GetDataset("sp_attendance_getAll", dbParams);
-            if (Result.Tables.Count == 0 && Result.Tables[0].Rows.Count > 0)
+            var Result = _db.GetDataset("sp_attendance_getall_pending", dbParams);
+            if (Result.Tables.Count == 1 && Result.Tables[0].Rows.Count > 0)
             {
                 var currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
                 attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
 
-                DateTime firstDay = new DateTime(current.Year, current.Month, 1);
-                while (firstDay.Subtract(current).TotalDays <= 0)
+                var firstDay = new DateTime(current.Year, current.Month, 1);
+                int days = DateTime.DaysInMonth(current.Year, current.Month);
+                var lastDay = firstDay.AddDays(days);
+
+                while (firstDay.Subtract(lastDay).TotalDays <= 0)
                 {
-                    var result = attendanceSet.Find(x => x.AttendanceDay.Subtract(firstDay).TotalDays == 0);
+                    var result = attendanceSet.Find(x => _timezoneConverter.IstZeroTime(x.AttendanceDay).Subtract(firstDay).TotalDays == 0);
                     if (result == null)
                         pendingDays.Add(firstDay);
                     firstDay = firstDay.AddDays(1);
