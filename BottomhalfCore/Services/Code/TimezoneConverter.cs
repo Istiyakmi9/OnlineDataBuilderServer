@@ -84,5 +84,26 @@ namespace BottomhalfCore.Services.Code
 
             return calcBusinessDays;
         }
+
+        public DateTime GetUtcDateTime(int year, int month, int day)
+        {
+            DateTime now = new DateTime(year, month, day);
+            DateTime.SpecifyKind(now, DateTimeKind.Utc);
+            return now;
+        }
+
+        public DateTime GetUtcFirstDay(int year = 0, int month = 0)
+        {
+            DateTime utc = DateTime.UtcNow;
+            if (year == 0)
+                year = utc.Year;
+            if (month == 0)
+                month = utc.Month;
+
+            DateTime now = new DateTime(year, month, 1);
+            DateTime.SpecifyKind(now, DateTimeKind.Utc);
+            now = TimeZoneInfo.ConvertTimeToUtc(now);
+            return now;
+        }
     }
 }

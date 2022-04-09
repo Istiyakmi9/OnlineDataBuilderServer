@@ -41,10 +41,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(null, HttpStatusCode.OK);
         }
 
-        [HttpGet("GetPendingAttendanceById/{EmployeeId}/{UserTypeId}")]
-        public IResponse<ApiResponse> GetPendingAttendanceById(long employeeId, int UserTypeId)
+        [HttpGet("GetPendingAttendanceById/{EmployeeId}/{UserTypeId}/{clientId}")]
+        public IResponse<ApiResponse> GetPendingAttendanceById(long employeeId, int UserTypeId, long clientId)
         {
-            var result = _attendanceService.GetAllPendingAttendanceByUserIdService(employeeId, UserTypeId);
+            var result = _attendanceService.GetAllPendingAttendanceByUserIdService(employeeId, UserTypeId, clientId);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }
