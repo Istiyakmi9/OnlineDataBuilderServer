@@ -6,6 +6,8 @@ namespace BottomhalfCore.Services.Interface
     {
         DateTime ToUtcTime(DateTime now);
         DateTime ToIstTime(DateTime now);
+        DateTime ZeroTime(DateTime now);
+        DateTime IstZeroTime(DateTime now);
         int GetWeekNumberOfMonth(DateTime date, bool IsLastDayOfWeek);
         int MondaysInMonth(DateTime thisMonth);
         double GetBusinessDays(DateTime startD, DateTime endD);
