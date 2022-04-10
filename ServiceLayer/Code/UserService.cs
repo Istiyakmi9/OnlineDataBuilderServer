@@ -32,7 +32,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int IsProfileImageRequest = 0)
+        public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0)
         {
             ProfileDetail profileDetail = new ProfileDetail();
             var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
@@ -56,7 +56,7 @@ namespace ServiceLayer.Code
             };
 
             var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
-            profileDetail = this.GetUserDetail(professionalUser.UserId);
+            profileDetail = this.GetUserDetail(professionalUser.UserId, UserTypeId);
             return profileDetail;
         }
 
@@ -151,9 +151,11 @@ namespace ServiceLayer.Code
         }
 
 
-        public ProfileDetail GetUserDetail(long userId)
+        public ProfileDetail GetUserDetail(long userId, int UserTypeId)
         {
-            int userTypeId = 1;
+            if (UserTypeId <= 0)
+                throw new HiringBellException { UserMessage = "Invalid UserTypeId", FieldName = nameof(UserTypeId), FieldValue = UserTypeId.ToString() };
+
             if (userId <= 0)
                 throw new HiringBellException { UserMessage = "Invalid User Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
 
@@ -172,7 +174,7 @@ namespace ServiceLayer.Code
                new DbParam(null, typeof(string), "_Email")
             };
 
-            if(userTypeId == 3)
+            if(UserTypeId == 3)
             {
                 var Result = _db.GetDataset("sp_professionaldetail_filter", param);
 
@@ -214,6 +216,10 @@ namespace ServiceLayer.Code
                     else
                     {
                         profileDetail.professionalUser = new ProfessionalUser();
+                        profileDetail.professionalUser.Name = employeeProfessionDetail.FirstName +" "+ employeeProfessionDetail.LastName;
+                        profileDetail.professionalUser.Email = employeeProfessionDetail.Email;
+                        profileDetail.professionalUser.Mobile_Number = employeeProfessionDetail.Mobile;
+                        profileDetail.professionalUser.UserId = employeeProfessionDetail.EmployeeUid;
                     }
                 }
             }

@@ -7,7 +7,8 @@ namespace ModalLayer.Modal
         Employee = 1,
         Client = 2,
         Candidate = 3,
-        Other = 4
+        Other = 4,
+        Admin = 9
     }
 
     public class DocumentFile

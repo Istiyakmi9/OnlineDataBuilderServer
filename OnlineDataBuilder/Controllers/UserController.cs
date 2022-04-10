@@ -24,18 +24,18 @@ namespace OnlineDataBuilder.Controllers
             _userService = userService;
         }
 
-        [HttpPost("UpdateUserProfile")]
-        public IResponse<ApiResponse> UpdateUserProfile(ProfessionalUser professionalUser)
+        [HttpPost("UpdateUserProfile/{UserTypeId}")]
+        public IResponse<ApiResponse> UpdateUserProfile(ProfessionalUser professionalUser, int UserTypeId)
         {
-            var result = _userService.UpdateProfile(professionalUser);
+            var result = _userService.UpdateProfile(professionalUser, UserTypeId);
             return BuildResponse(result);
         }
 
       
-        [HttpGet("GetUserDetail/{userId}")]
-        public IResponse<ApiResponse> GetUserDetail(long userId)
+        [HttpGet("GetUserDetail/{userId}/{UserTypeId}")]
+        public IResponse<ApiResponse> GetUserDetail(long userId, int UserTypeId)
         {
-            var result = _userService.GetUserDetail(userId);
+            var result = _userService.GetUserDetail(userId, UserTypeId);
             return BuildResponse(result);
         }
 

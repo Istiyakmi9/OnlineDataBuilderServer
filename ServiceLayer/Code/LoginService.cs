@@ -141,7 +141,8 @@ namespace ServiceLayer.Code
                             Mobile = loginDetail.Mobile,
                             EmailId = loginDetail.EmailId,
                             UserId = loginDetail.UserId,
-                            CompanyName = loginDetail.CompanyName
+                            CompanyName = loginDetail.CompanyName,
+                            UserTypeId = loginDetail.UserTypeId
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail.UserId, loginDetail.RoleId);
