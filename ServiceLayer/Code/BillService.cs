@@ -203,9 +203,13 @@ namespace ServiceLayer.Code
                         string destinationFilePath = Path.Combine(
                             folderPath,
                             pdfModal.developerName.Replace(" ", "_") + "_" +
-                            pdfModal.billingMonth.ToString("dd_MMM_yyyy") + $".{ApplicationConstants.Excel}");
+                            pdfModal.billingMonth.ToString("MMM_yyyy") + $".{ApplicationConstants.Excel}");
+
+                        if (File.Exists(destinationFilePath))
+                            File.Delete(destinationFilePath);
 
                         var timesheetData = (from n in attendanceSet
+                                             orderby n.AttendanceDay ascending
                                              select new TimesheetModel
                                              {
                                                  Date = n.AttendanceDay.ToString("dd MMM yyyy"),
@@ -219,7 +223,7 @@ namespace ServiceLayer.Code
                         ).ToList<TimesheetModel>();
 
                         var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
-                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath);
+                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
                     }
 
                     string rootPath = _hostingEnvironment.ContentRootPath;
