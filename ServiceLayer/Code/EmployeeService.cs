@@ -120,8 +120,9 @@ namespace ServiceLayer.Code
             return employee;
         }
 
-        public string DeleteEmployeeById(int EmployeeId, bool IsActive)
+        public List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
+            List<Employee> employees = null;
             var status = string.Empty;
             DbParam[] param = new DbParam[]
             {
@@ -131,7 +132,17 @@ namespace ServiceLayer.Code
             };
 
             status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
-            return status;
+            if(!string.IsNullOrEmpty(status))
+            {
+                employees = this.GetEmployees(new FilterModel
+                {
+                    PageIndex = 1,
+                    PageSize = 10,
+                    SearchString = "1=1",
+                    SortBy = string.Empty,
+                });
+            }
+            return employees;
         }
 
         public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating)
