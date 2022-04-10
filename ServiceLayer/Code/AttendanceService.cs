@@ -33,7 +33,7 @@ namespace ServiceLayer.Code
 
             if (Convert.ToDateTime(attendenceDetail.AttendenceFromDay).Subtract(DateTime.UtcNow).TotalDays > 0)
             {
-                throw new HiringBellException("Selected date are blocked. Please contact to admin.");
+                throw new HiringBellException("Ohh!!!. Future dates are now allowed.");
             }
 
             DbParam[] dbParams = new DbParam[]
@@ -94,12 +94,12 @@ namespace ServiceLayer.Code
 
         public List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId)
         {
-            List<AttendenceDetail> attendanceSet = null;
+            List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
             DateTime current = DateTime.UtcNow;
 
             DbParam[] dbParams = new DbParam[]
             {
-                new DbParam(employeeId, typeof(int), "_EmployeeId"),
+                new DbParam(employeeId, typeof(long), "_EmployeeId"),
                 new DbParam(UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(current.Year, typeof(int), "_ForYear"),
                 new DbParam(current.Month, typeof(int), "_ForMonth")
@@ -143,7 +143,7 @@ namespace ServiceLayer.Code
                 j++;
             }
 
-            if (firstDate.Month != DateTime.UtcNow.Month)
+            if (lastDate.Month != DateTime.UtcNow.Month && firstDate.Month != DateTime.UtcNow.Month)
             {
                 throw new HiringBellException("Only present month attendance allowed.");
             }
