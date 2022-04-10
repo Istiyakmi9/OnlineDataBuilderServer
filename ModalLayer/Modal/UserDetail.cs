@@ -16,7 +16,6 @@ namespace ModalLayer.Modal
         public string Password { get; set; }
         public string MediaName { set; get; }
         public string AccessToken { set; get; }
-        public int UserTypeId { set; get; }
     }
 
     public class LoginDetail
@@ -29,6 +28,8 @@ namespace ModalLayer.Modal
         public string Address { set; get; }
         public string CompanyName { set; get; }
         public int RoleId { set; get; }
+        public int UserTypeId { set; get; }
+
     }
 
     public class LoginResponse
