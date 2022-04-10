@@ -10,7 +10,8 @@ bin
 obj
 packages
 **/.vs/*
-**/Documents/*
+**/Documents/Bills
+**/Documents/User
 OnlineDataBuilder/appsettings.json
 
 # User-specific files
