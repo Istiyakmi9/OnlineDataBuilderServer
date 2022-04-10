@@ -16,6 +16,7 @@ public class ApplicationConstants
     public const string ProfileImage = "profile";
     public const string Pdf = "pdf";
     public const string Docx = "docx";
+    public const string Excel = "xlsx";
 }
 
 public enum FileSystemType

@@ -27,24 +27,13 @@ namespace ServiceLayer.Code
         {
             List<AttendenceDetail> attendenceDetails = null;
             Employee employee = null;
-            if (attendenceDetail.AttendenceFromDay != null)
-                attendenceDetail.AttendenceFromDay = TimeZoneInfo.ConvertTimeToUtc((DateTime)attendenceDetail.AttendenceFromDay);
-
-            if (attendenceDetail.AttendenceToDay != null)
-                attendenceDetail.AttendenceToDay = TimeZoneInfo.ConvertTimeToUtc((DateTime)attendenceDetail.AttendenceToDay);
 
             if (attendenceDetail.ForMonth <= 0)
                 throw new HiringBellException("Invalid month num. passed.", nameof(attendenceDetail.ForMonth), attendenceDetail.ForMonth.ToString());
 
             if (Convert.ToDateTime(attendenceDetail.AttendenceFromDay).Subtract(DateTime.UtcNow).TotalDays > 0)
             {
-                throw new HiringBellException("Selected date are blocked. Please contact to admin.");
-            }
-
-            if (Convert.ToDateTime(attendenceDetail.AttendenceFromDay).Month != DateTime.UtcNow.Month &&
-                Convert.ToDateTime(attendenceDetail.AttendenceToDay).Month != DateTime.UtcNow.Month)
-            {
-                throw new HiringBellException("Selected date are blocked. Please contact to admin.");
+                throw new HiringBellException("Ohh!!!. Future dates are now allowed.");
             }
 
             DbParam[] dbParams = new DbParam[]
@@ -77,10 +66,9 @@ namespace ServiceLayer.Code
                     attendenceDetails = new List<AttendenceDetail>();
                     attendanceData.ForEach(x =>
                     {
-                        if (employee.CreatedOn.Subtract(TimeZoneInfo.ConvertTimeToUtc(x.AttendanceDay)).TotalDays <= 0)
+                        if (employee.CreatedOn.Subtract(x.AttendanceDay).TotalDays <= 0)
                         {
-                            if (x.AttendanceDay >= TimeZoneInfo.ConvertTimeToUtc((DateTime)attendenceDetail.AttendenceFromDay)
-                                    && x.AttendanceDay <= TimeZoneInfo.ConvertTimeToUtc((DateTime)attendenceDetail.AttendenceToDay))
+                            if (x.AttendanceDay >= attendenceDetail.AttendenceFromDay && x.AttendanceDay <= attendenceDetail.AttendenceToDay)
                             {
                                 x.AttendanceId = attendanceId;
                                 x.IsActiveDay = true;
@@ -104,40 +92,27 @@ namespace ServiceLayer.Code
             return new AttendanceWithClientDetail { EmployeeDetail = employee, AttendacneDetails = attendenceDetails };
         }
 
-        public List<DateTime> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId)
+        public List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId)
         {
-            List<DateTime> pendingDays = new List<DateTime>();
-            List<AttendenceDetail> attendanceSet = null;
+            List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
             DateTime current = DateTime.UtcNow;
 
             DbParam[] dbParams = new DbParam[]
             {
-                new DbParam(employeeId, typeof(int), "_EmployeeId"),
+                new DbParam(employeeId, typeof(long), "_EmployeeId"),
                 new DbParam(UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(current.Year, typeof(int), "_ForYear"),
                 new DbParam(current.Month, typeof(int), "_ForMonth")
             };
 
-            var Result = _db.GetDataset("sp_attendance_getall_pending", dbParams);
+            var Result = _db.GetDataset("sp_attendance_detall_pending", dbParams);
             if (Result.Tables.Count == 1 && Result.Tables[0].Rows.Count > 0)
             {
                 var currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
                 attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
-
-                var firstDay = new DateTime(current.Year, current.Month, 1);
-                int days = DateTime.DaysInMonth(current.Year, current.Month);
-                var lastDay = firstDay.AddDays(days);
-
-                while (firstDay.Subtract(lastDay).TotalDays <= 0)
-                {
-                    var result = attendanceSet.Find(x => _timezoneConverter.IstZeroTime(x.AttendanceDay).Subtract(firstDay).TotalDays == 0);
-                    if (result == null)
-                        pendingDays.Add(firstDay);
-                    firstDay = firstDay.AddDays(1);
-                }
             }
 
-            return pendingDays;
+            return attendanceSet;
         }
 
         public List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
@@ -159,7 +134,6 @@ namespace ServiceLayer.Code
             while (j < attendenceDetail.Count)
             {
                 var x = attendenceDetail.ElementAt(j);
-                x.AttendanceDay = TimeZoneInfo.ConvertTimeToUtc(x.AttendanceDay);
                 if ((x.AttendanceDay - firstDate).TotalDays < 0)
                     firstDate = x.AttendanceDay;
 
@@ -167,6 +141,11 @@ namespace ServiceLayer.Code
                     lastDate = x.AttendanceDay;
 
                 j++;
+            }
+
+            if (lastDate.Month != DateTime.UtcNow.Month && firstDate.Month != DateTime.UtcNow.Month)
+            {
+                throw new HiringBellException("Only present month attendance allowed.");
             }
 
             DbParam[] dbParams = new DbParam[]
@@ -206,8 +185,9 @@ namespace ServiceLayer.Code
                     AttendanceDetail = "[]",
                     UserTypeId = (int)UserType.Employee,
                     TotalDays = totalDays,
-                    TotalWeekDays = (int)_timezoneConverter.GetBusinessDays(new DateTime(currentMonthDateTime.Year, currentMonthDateTime.Month, 1),
-                                        new DateTime(currentMonthDateTime.Year, currentMonthDateTime.Month, totalDays)),
+                    TotalWeekDays = (int)_timezoneConverter.GetBusinessDays(
+                                        _timezoneConverter.GetUtcFirstDay(currentMonthDateTime.Year, currentMonthDateTime.Month),
+                                        _timezoneConverter.GetUtcDateTime(currentMonthDateTime.Year, currentMonthDateTime.Month, totalDays)),
                     DaysPending = totalDays,
                     ForMonth = currentMonthDateTime.Month
                 };
@@ -232,11 +212,9 @@ namespace ServiceLayer.Code
             while (i < attendenceDetail.Count)
             {
                 var x = attendenceDetail.ElementAt(i);
-                x.AttendanceDay = TimeZoneInfo.ConvertTimeToUtc(x.AttendanceDay);
-                if (employee.CreatedOn.Subtract(TimeZoneInfo.ConvertTimeToUtc(x.AttendanceDay)).TotalDays <= 0)
+                if (employee.CreatedOn.Subtract(x.AttendanceDay).TotalDays <= 0)
                 {
-                    var item = finalAttendanceSet.Find(i => (TimeZoneInfo.ConvertTimeToUtc(i.AttendanceDay))
-                                                            .Subtract(TimeZoneInfo.ConvertTimeToUtc(x.AttendanceDay)).TotalDays == 0);
+                    var item = finalAttendanceSet.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
                     if (item != null)
                     {
                         item.TotalMinutes = x.TotalMinutes;
@@ -327,8 +305,8 @@ namespace ServiceLayer.Code
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
-            var startDate = TimeZoneInfo.ConvertTimeToUtc(Convert.ToDateTime(attendenceDetail.AttendenceFromDay));
-            var endDate = TimeZoneInfo.ConvertTimeToUtc(Convert.ToDateTime(attendenceDetail.AttendenceToDay));
+            var startDate = (DateTime)attendenceDetail.AttendenceFromDay;
+            var endDate = (DateTime)attendenceDetail.AttendenceToDay;
             var days = endDate.Subtract(startDate);
 
             if (days.TotalDays > 0)

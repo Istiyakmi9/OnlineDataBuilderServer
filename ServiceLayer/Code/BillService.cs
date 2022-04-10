@@ -1,12 +1,13 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -27,12 +28,14 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IFileMaker _fileMaker;
         private readonly ILogger<BillService> _logger;
+        private readonly ExcelWriter _excelWriter;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
             CurrentSession currentSession,
+            ExcelWriter excelWriter,
             IFileMaker fileMaker)
         {
             this.db = db;
@@ -43,6 +46,7 @@ namespace ServiceLayer.Code
             _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
             _fileMaker = fileMaker;
+            _excelWriter = excelWriter;
         }
 
         public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization organization)
@@ -157,19 +161,24 @@ namespace ServiceLayer.Code
                 DataSet ds = new DataSet();
                 DbParam[] dbParams = new DbParam[]
                 {
-                            new DbParam(pdfModal.ClientId, typeof(long), "_receiver"),
-                            new DbParam(pdfModal.senderClientId, typeof(long), "_sender"),
-                            new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
-                            new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId")
+                    new DbParam(pdfModal.ClientId, typeof(long), "_receiver"),
+                    new DbParam(pdfModal.senderClientId, typeof(long), "_sender"),
+                    new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
+                    new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
+                    new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
+                    new DbParam(pdfModal.billingMonth.Month, typeof(long), "_forMonth"),
+                    new DbParam(pdfModal.billingMonth.Year, typeof(long), "_forYear")
                 };
 
                 ds = this.db.GetDataset("sp_Billing_detail", dbParams);
-                if (ds.Tables.Count == 4)
+                if (ds.Tables.Count == 5)
                 {
                     List<Organization> SenderDetails = Converter.ToList<Organization>(ds.Tables[0]);
                     List<Organization> ReceiverDetails = Converter.ToList<Organization>(ds.Tables[1]);
                     List<Employee> EmployeeMappedClient = Converter.ToList<Employee>(ds.Tables[2]);
                     fileDetail = Converter.ToList<FileDetail>(ds.Tables[3]).FirstOrDefault();
+                    var currentAttendance = Converter.ToType<Attendance>(ds.Tables[4]);
+                    List<AttendenceDetail> attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
 
                     if (fileDetail == null)
                     {
@@ -182,6 +191,36 @@ namespace ServiceLayer.Code
                     sender = SenderDetails.Single();
                     receiver = ReceiverDetails.Single();
                     employeeMappedClient = EmployeeMappedClient.Single();
+
+                    if (attendanceSet.Count > 0)
+                    {
+                        string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
+                        string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
+                        string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+                        if (!Directory.Exists(folderPath))
+                            Directory.CreateDirectory(folderPath);
+
+                        string destinationFilePath = Path.Combine(
+                            folderPath,
+                            pdfModal.developerName.Replace(" ", "_") + "_" +
+                            pdfModal.billingMonth.ToString("dd_MMM_yyyy") + $".{ApplicationConstants.Excel}");
+
+                        var timesheetData = (from n in attendanceSet
+                                             select new TimesheetModel
+                                             {
+                                                 Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                                 ResourceName = pdfModal.developerName,
+                                                 StartTime = "10:00 AM",
+                                                 EndTime = "06:00 PM",
+                                                 TotalHrs = 9,
+                                                 Comments = n.UserComments,
+                                                 Status = "Approved"
+                                             }
+                        ).ToList<TimesheetModel>();
+
+                        var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
+                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath);
+                    }
 
                     string rootPath = _hostingEnvironment.ContentRootPath;
                     string templatePath = Path.Combine(rootPath,

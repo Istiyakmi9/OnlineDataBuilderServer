@@ -11,5 +11,7 @@ namespace BottomhalfCore.Services.Interface
         int GetWeekNumberOfMonth(DateTime date, bool IsLastDayOfWeek);
         int MondaysInMonth(DateTime thisMonth);
         double GetBusinessDays(DateTime startD, DateTime endD);
+        DateTime GetUtcDateTime(int year, int month, int day);
+        DateTime GetUtcFirstDay(int year = 0, int month = 0);
     }
 }
