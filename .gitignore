@@ -11,7 +11,7 @@ obj
 packages
 **/.vs/*
 **/Documents/*
-**/appsettings.json
+OnlineDataBuilder/appsettings.json
 
 # User-specific files
 *.rsuser
