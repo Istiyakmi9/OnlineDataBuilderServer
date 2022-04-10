@@ -13,7 +13,7 @@ namespace ServiceLayer.Interface
         DataSet GetManageClientService(long EmployeeId);
         DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, bool IsActive);
-        string DeleteEmployeeById(int EmployeeId, bool IsActive);
+        List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive);
         Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating);
     }
 }

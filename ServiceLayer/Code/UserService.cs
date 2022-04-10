@@ -101,7 +101,7 @@ namespace ServiceLayer.Code
                 _db.Commit();
             }
 
-            var value = this.UpdateProfile(professionalUser, IsProfileImageRequest);
+            var value = this.UpdateProfile(professionalUser, (int)UserType.Candidate, IsProfileImageRequest);
             return result;
         }
 
