@@ -142,7 +142,7 @@ namespace ServiceLayer.Code
                             EmailId = loginDetail.EmailId,
                             UserId = loginDetail.UserId,
                             CompanyName = loginDetail.CompanyName,
-                            UserTypeId = (int)UserType.Candidate
+                            UserTypeId = loginDetail.UserTypeId
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail.UserId, loginDetail.RoleId);
