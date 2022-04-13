@@ -11,7 +11,7 @@ namespace DocMaker.ExcelMaker
 {
     public class ExcelWriter
     {
-        public void ToExcel(DataTable table, string filepath)
+        public void ToExcel(DataTable table, string filepath, string sheetName = null)
         {
             // Create a spreadsheet document by supplying the filepath.
             // By default, AutoSave = true, Editable = true, and Type = xlsx.
@@ -37,7 +37,7 @@ namespace DocMaker.ExcelMaker
                 Id = spreadsheetDocument.WorkbookPart.
                 GetIdOfPart(worksheetPart),
                 SheetId = 1,
-                Name = "mySheet"
+                Name = sheetName == null ? "mySheet" : sheetName
             };
             sheets.Append(sheet);
 
