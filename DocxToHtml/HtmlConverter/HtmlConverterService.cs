@@ -204,16 +204,16 @@ namespace HtmlService
                             if (imageFormat == null)
                                 return null;
 
-                            //string imageFileName = imageDirectoryName + "/image" +
-                            //    imageCounter.ToString() + "." + extension;
-                            //try
-                            //{
-                            //    imageInfo.Bitmap.Save(imageFileName, imageFormat);
-                            //}
-                            //catch (System.Runtime.InteropServices.ExternalException)
-                            //{
-                            //    return null;
-                            //}
+                            string imageFileName = imageDirectoryName + "/image" +
+                                imageCounter.ToString() + "." + extension;
+                            try
+                            {
+                                imageInfo.Bitmap.Save(imageFileName, imageFormat);
+                            }
+                            catch (System.Runtime.InteropServices.ExternalException)
+                            {
+                                return null;
+                            }
                             string imageSource = localDirInfo.Name + "/image" +
                                 imageCounter.ToString() + "." + extension;
 

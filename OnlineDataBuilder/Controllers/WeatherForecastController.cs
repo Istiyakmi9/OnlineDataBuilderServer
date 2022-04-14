@@ -1,9 +1,7 @@
-﻿using DocMaker.ExcelMaker;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,21 +14,17 @@ namespace OnlineDataBuilder.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        //private readonly IEMailManager _eMailManager;
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
+        //private readonly IEMailManager _eMailManager;
         private readonly ILogger<WeatherForecastController> _logger;
-        private readonly IBillService _billService;
-        private readonly ExcelWriter _excelWriter;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, IBillService billService, ExcelWriter excelWriter)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger)
         {
             _logger = logger;
-            _billService = billService;
-            _excelWriter = excelWriter;
         }
 
         [HttpGet]
