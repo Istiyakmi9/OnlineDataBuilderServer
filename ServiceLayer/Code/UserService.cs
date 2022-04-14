@@ -167,6 +167,7 @@ namespace ServiceLayer.Code
             //    return profileDetail;
             //}
 
+
             DbParam[] param = new DbParam[]
             {
                new DbParam(userId, typeof(long), "_UserId"),
