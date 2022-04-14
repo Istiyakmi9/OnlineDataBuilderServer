@@ -160,12 +160,12 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Invalid User Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
 
             ProfileDetail profileDetail = new ProfileDetail();
-            if (_currentSession.CurrentUserDetail.RoleId == 1)
-            {
-                profileDetail.userDetail = new UserDetail();
-                profileDetail.RoleId = (int)RolesName.Admin;
-                return profileDetail;
-            }
+            //if (_currentSession.CurrentUserDetail.RoleId == 1)
+            //{
+            //    profileDetail.userDetail = new UserDetail();
+            //    profileDetail.RoleId = (int)RolesName.Admin;
+            //    return profileDetail;
+            //}
 
             DbParam[] param = new DbParam[]
             {
