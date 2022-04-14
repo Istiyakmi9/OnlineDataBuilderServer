@@ -283,6 +283,9 @@ namespace ServiceLayer.Code
 
                             destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
                             this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
+
+                            // destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
+                            // _fileMaker.GeneratePdfUsingHtml(html, destinationFilePath);
                         }
 
                         GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
