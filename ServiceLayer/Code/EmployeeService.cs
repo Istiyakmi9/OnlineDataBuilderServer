@@ -101,13 +101,29 @@ namespace ServiceLayer.Code
             return resultset;
         }
 
-        public Employee GetEmployeeByIdService(int EmployeeId, bool IsActive)
+        public Employee GetEmployeeByIdService(int EmployeeId, bool? IsActive)
         {
+            int statusValue = 0;
+            switch (IsActive)
+            {
+                case true:
+                    statusValue = 1;
+                    break;
+                case false:
+                    statusValue = 0;
+                    break;
+                defaul:
+                    statusValue = -1;
+                    break;
+            }
+
             Employee employee = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmployeeId, typeof(int), "_EmployeeId"),
-                new DbParam(IsActive ? 1 : 0, typeof(int), "_IsActive")
+                new DbParam(statusValue, typeof(int), "_IsActive")
+                //new DbParam(IsActive ? 1 : 0, typeof(int), "_IsActive")
+
             };
 
             var resultSet = _db.GetDataset("SP_Employees_ById", param);
@@ -227,9 +243,7 @@ namespace ServiceLayer.Code
                                         FileOwnerId = currentEmployeeId,
                                         FileName = n.FileName,
                                         FilePath = n.FilePath,
-                                        ParentFolder = n.ParentFolder,
                                         FileExtension = n.FileExtension,
-                                        StatusId = 0,
                                         UserTypeId = (int)UserType.Employee,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     });
@@ -238,7 +252,7 @@ namespace ServiceLayer.Code
                     var dataSet = new DataSet();
                     dataSet.Tables.Add(table);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                    int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
                     _db.Commit();
                 }
 
