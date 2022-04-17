@@ -323,7 +323,7 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public DataSet EditEmployeeBillDetailService(FileDetail fileDetail)
+        public DataSet EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
         {
             DbParam[] dbParams = new DbParam[]
             {
@@ -344,8 +344,18 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, FileDetail fileDetail)
+        public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, GenerateBillFileDetail generateBillFileDetail)
         {
+            FileDetail fileDetail = new FileDetail
+            {
+                ClientId = generateBillFileDetail.ClientId,
+                EmployeeId = generateBillFileDetail.EmployeeId,
+                FileExtension = generateBillFileDetail.FileExtension,
+                FileId = generateBillFileDetail.FileId,
+                FileName = generateBillFileDetail.FileName,
+                FilePath = generateBillFileDetail.FilePath
+            };
+
             try
             {
                 string Extension = Utility.GetExtension(fileDetail.FileExtension, "pdf");

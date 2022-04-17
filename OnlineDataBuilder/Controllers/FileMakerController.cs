@@ -54,7 +54,7 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Route("EditEmployeeBillDetail")]
-        public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] FileDetail fileDetail)
+        public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] GenerateBillFileDetail fileDetail)
         {
             var result = _onlineDocumentService.EditEmployeeBillDetailService(fileDetail);
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
@@ -62,7 +62,7 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Route("ReGenerateBill")]
-        public IResponse<ApiResponse> ReGenerateBill([FromBody] FileDetail fileDetail)
+        public IResponse<ApiResponse> ReGenerateBill([FromBody] GenerateBillFileDetail fileDetail)
         {
             var Result = _onlineDocumentService.ReGenerateService(_buildPdfTable, fileDetail);
             return BuildResponse(Result, System.Net.HttpStatusCode.OK);
