@@ -9,5 +9,6 @@ namespace ServiceLayer.Interface
         List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail);
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
+        dynamic GetAttendamceById(AttendenceDetail attendenceDetail);
     }
 }

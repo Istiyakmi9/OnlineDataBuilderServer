@@ -2,6 +2,8 @@
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Profile;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -103,7 +105,7 @@ namespace ServiceLayer.Code
 
         public Employee GetEmployeeByIdService(int EmployeeId, bool? IsActive)
         {
-            int statusValue = 0;
+            int statusValue = -1;
             switch (IsActive)
             {
                 case true:
@@ -177,6 +179,13 @@ namespace ServiceLayer.Code
             //TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
             //employee.DOB = TimeZoneInfo.ConvertTimeFromUtc(employee.DOB, istTimeZome);
             //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
+            int empId = Convert.ToInt32(employee.EmployeeUid);
+
+            Employee employeeDetail = this.GetEmployeeByIdService(empId, null);
+            if (string.IsNullOrEmpty(employeeDetail.ProfessionalDetail_Json))
+            {
+                employeeDetail.ProfessionalDetail_Json = string.Empty;
+            }
 
             return await Task.Run(() =>
             {
@@ -215,6 +224,7 @@ namespace ServiceLayer.Code
                     //new DbParam(employee.DateOfJoining, typeof(float), ""),
                     new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
                     new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
+                    new DbParam(employeeDetail.ProfessionalDetail_Json, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 
