@@ -468,7 +468,7 @@ namespace ServiceLayer.Code
                         var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
                         _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
 
-                        _billService.CreateFiles(_buildPdfTable, pdfModal, organization);
+                        _billService.CreateFiles(_buildPdfTable, pdfModal, organization, receiverOrganization);
                     }
                     else
                     {

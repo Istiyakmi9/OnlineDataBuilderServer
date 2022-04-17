@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using MultiTypeDocumentConverter.Service;
@@ -44,6 +45,7 @@ namespace OnlineDataBuilder
                 //AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: false, reloadOnChange: false);
 
                 this.Configuration = config.Build();
+                this.Env = env;
 
             }
             catch (Exception ex)
@@ -52,6 +54,7 @@ namespace OnlineDataBuilder
             }
         }
 
+        private IWebHostEnvironment Env { set; get; }
         public IConfiguration Configuration { get; }
         public string CorsPolicy = "BottomhalfCORS";
 
@@ -122,9 +125,11 @@ namespace OnlineDataBuilder
                 var fileLocationDetail = Configuration.GetSection("BillingFolders").Get<FileLocationDetail>();
                 var locationDetail = new FileLocationDetail
                 {
+                    RootPath = this.Env.ContentRootPath,
                     BillsPath = fileLocationDetail.BillsPath,
                     Location = fileLocationDetail.Location,
                     HtmlTemplaePath = fileLocationDetail.HtmlTemplaePath,
+                    StaffingBillPdfTemplate = fileLocationDetail.StaffingBillPdfTemplate,
                     StaffingBillTemplate = fileLocationDetail.StaffingBillTemplate,
                     DocumentFolder = fileLocationDetail.Location,
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
@@ -135,6 +140,8 @@ namespace OnlineDataBuilder
                 return locationDetail;
             });
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
+            services.AddScoped<IDocumentProcessing, DocumentProcessing>();
+            services.AddScoped<HtmlToPdfConverter>();
 
             services.AddCors(options =>
             {

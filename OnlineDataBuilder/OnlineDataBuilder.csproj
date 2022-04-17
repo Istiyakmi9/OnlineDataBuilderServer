@@ -37,6 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Documents\htmltemplates\billing\staffingBillPdfFormat.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Documents\htmltemplates\billing\staffingBill.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

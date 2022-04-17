@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.HtmlTagModel;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using TimeZoneConverter;
@@ -29,19 +31,25 @@ namespace ServiceLayer.Code
         private readonly IFileMaker _fileMaker;
         private readonly ILogger<BillService> _logger;
         private readonly ExcelWriter _excelWriter;
+        private readonly IDocumentProcessing _documentProcessing;
+        private readonly HtmlToPdfConverter _htmlToPdfConverter;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
+            IDocumentProcessing documentProcessing,
             CurrentSession currentSession,
             ExcelWriter excelWriter,
+            HtmlToPdfConverter htmlToPdfConverter,
             IFileMaker fileMaker)
         {
             this.db = db;
             _logger = logger;
+            _htmlToPdfConverter = htmlToPdfConverter;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
+            _documentProcessing = documentProcessing;
             _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
@@ -49,7 +57,7 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
         }
 
-        public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization organization)
+        public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
         {
             FileDetail fileDetail = new FileDetail();
             string rootPath = _hostingEnvironment.ContentRootPath;
@@ -59,58 +67,110 @@ namespace ServiceLayer.Code
                 _fileLocationDetail.StaffingBillTemplate
             );
 
+            string pdfTemplatePath = Path.Combine(rootPath,
+                _fileLocationDetail.Location,
+                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                _fileLocationDetail.StaffingBillPdfTemplate
+            );
+
             string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
-            if (File.Exists(templatePath) && File.Exists(headerLogo))
+            if (File.Exists(templatePath) && File.Exists(templatePath) && File.Exists(headerLogo))
             {
                 fileDetail.LogoPath = headerLogo;
-                using (FileStream stream = File.Open(templatePath, FileMode.Open))
-                {
-                    StreamReader reader = new StreamReader(stream);
-                    string html = reader.ReadToEnd();
+                string html = string.Empty;
 
-                    html = html.Replace("[[BILLNO]]", pdfModal.billNo).
-                    Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
-                    Replace("[[senderFirstAddress]]", organization.FirstAddress).
-                    Replace("[[senderCompanyName]]", organization.ClientName).
-                    Replace("[[senderGSTNo]]", organization.GSTNO).
-                    Replace("[[senderSecondAddress]]", organization.SecondAddress).
-                    Replace("[[senderPrimaryContactNo]]", organization.PrimaryPhoneNo).
-                    Replace("[[senderEmail]]", organization.Email).
-                    Replace("[[receiverCompanyName]]", pdfModal.receiverCompanyName).
-                    Replace("[[receiverGSTNo]]", pdfModal.receiverGSTNo).
-                    Replace("[[receiverFirstAddress]]", pdfModal.receiverFirstAddress).
-                    Replace("[[receiverSecondAddress]]", pdfModal.receiverSecondAddress).
-                    Replace("[[receiverPrimaryContactNo]]", pdfModal.receiverPrimaryContactNo).
-                    Replace("[[receiverEmail]]", pdfModal.receiverEmail).
-                    Replace("[[developerName]]", pdfModal.developerName).
-                    Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
-                    Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
-                    Replace("[[cGST]]", pdfModal.cGST.ToString()).
-                    Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
-                    Replace("[[sGST]]", pdfModal.sGST.ToString()).
-                    Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
-                    Replace("[[iGST]]", pdfModal.iGST.ToString()).
-                    Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
-                    Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
-                    Replace("[[bankName]]", organization.BankName).
-                    Replace("[[clientName]]", organization.ClientName).
-                    Replace("[[accountNumber]]", organization.AccountNo).
-                    Replace("[[iFSCCode]]", organization.IFSC).
-                    Replace("[[city]]", organization.City).
-                    Replace("[[state]]", organization.State);
-
-                    fileDetail.DiskFilePath = Path.Combine(rootPath, pdfModal.FilePath);
-                    if (!Directory.Exists(fileDetail.DiskFilePath)) Directory.CreateDirectory(fileDetail.DiskFilePath);
-                    fileDetail.FileName = pdfModal.FileName;
-                    string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
-                    this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
-                }
+                fileDetail.DiskFilePath = Path.Combine(rootPath, pdfModal.FilePath);
+                if (!Directory.Exists(fileDetail.DiskFilePath)) Directory.CreateDirectory(fileDetail.DiskFilePath);
+                fileDetail.FileName = pdfModal.FileName;
+                string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
+                html = this.GetHtmlString(templatePath, pdfModal, sender, receiver);
+                this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
 
                 _fileMaker._fileDetail = fileDetail;
-                _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, organization);
+                destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
+                html = this.GetHtmlString(pdfTemplatePath, pdfModal, sender, receiver, headerLogo);
+                _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
             }
 
             return fileDetail;
+        }
+
+        private string GetHtmlString(string templatePath, PdfModal pdfModal, Organization sender, Organization receiver, string logoPath = null)
+        {
+            string html = string.Empty;
+            using (FileStream stream = File.Open(templatePath, FileMode.Open))
+            {
+                StreamReader reader = new StreamReader(stream);
+                html = reader.ReadToEnd();
+
+                html = html.Replace("[[BILLNO]]", pdfModal.billNo).
+                Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
+                Replace("[[senderFirstAddress]]", sender.FirstAddress).
+                Replace("[[senderCompanyName]]", sender.ClientName).
+                Replace("[[senderGSTNo]]", sender.GSTNO).
+                Replace("[[senderSecondAddress]]", sender.SecondAddress).
+                Replace("[[senderPrimaryContactNo]]", sender.PrimaryPhoneNo).
+                Replace("[[senderEmail]]", sender.Email).
+                Replace("[[receiverCompanyName]]", receiver.ClientName).
+                Replace("[[receiverGSTNo]]", receiver.GSTNO).
+                Replace("[[receiverFirstAddress]]", receiver.FirstAddress).
+                Replace("[[receiverSecondAddress]]", receiver.SecondAddress).
+                Replace("[[receiverPrimaryContactNo]]", receiver.PrimaryPhoneNo).
+                Replace("[[receiverEmail]]", receiver.Email).
+                Replace("[[developerName]]", pdfModal.developerName).
+                Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
+                Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
+                Replace("[[cGST]]", pdfModal.cGST.ToString()).
+                Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
+                Replace("[[sGST]]", pdfModal.sGST.ToString()).
+                Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
+                Replace("[[iGST]]", pdfModal.iGST.ToString()).
+                Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
+                Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
+                Replace("[[bankName]]", sender.BankName).
+                Replace("[[clientName]]", sender.ClientName).
+                Replace("[[accountNumber]]", sender.AccountNo).
+                Replace("[[iFSCCode]]", sender.IFSC).
+                Replace("[[city]]", sender.City).
+                Replace("[[state]]", sender.State);
+            }
+
+            if (logoPath != null)
+            {
+                string extension = string.Empty;
+                int lastPosition = logoPath.LastIndexOf(".");
+                extension = logoPath.Substring(lastPosition + 1);
+                ImageFormat imageFormat = null;
+                if (extension == "png")
+                    imageFormat = ImageFormat.Png;
+                else if (extension == "gif")
+                    imageFormat = ImageFormat.Gif;
+                else if (extension == "bmp")
+                    imageFormat = ImageFormat.Bmp;
+                else if (extension == "jpeg")
+                    imageFormat = ImageFormat.Jpeg;
+                else if (extension == "tiff")
+                {
+                    // Convert tiff to gif.
+                    extension = "gif";
+                    imageFormat = ImageFormat.Gif;
+                }
+                else if (extension == "x-wmf")
+                {
+                    extension = "wmf";
+                    imageFormat = ImageFormat.Wmf;
+                }
+
+                string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
+                var fs = new FileStream(logoPath, FileMode.Open);
+                using (BinaryReader br = new BinaryReader(fs))
+                {
+                    Byte[] bytes = br.ReadBytes((Int32)fs.Length);
+                    string base64String = Convert.ToBase64String(bytes, 0, bytes.Length);
+                    html = html.Replace("[[COMPANYLOGO_PATH]]", $"{encodeStart}, {base64String}");
+                }
+            }
+            return html;
         }
 
         public FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
@@ -197,38 +257,6 @@ namespace ServiceLayer.Code
                         attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
                     }
 
-                    string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
-                    string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
-                    string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
-                    if (!Directory.Exists(folderPath))
-                        Directory.CreateDirectory(folderPath);
-
-                    string destinationFilePath = Path.Combine(
-                        folderPath,
-                        pdfModal.developerName.Replace(" ", "_") + "_" +
-                        pdfModal.billNo + "_" +
-                        pdfModal.billingMonth.ToString("MMM_yyyy") + $".{ApplicationConstants.Excel}");
-
-                    if (File.Exists(destinationFilePath))
-                        File.Delete(destinationFilePath);
-
-                    var timesheetData = (from n in attendanceSet
-                                         orderby n.AttendanceDay ascending
-                                         select new TimesheetModel
-                                         {
-                                             Date = n.AttendanceDay.ToString("dd MMM yyyy"),
-                                             ResourceName = pdfModal.developerName,
-                                             StartTime = "10:00 AM",
-                                             EndTime = "06:00 PM",
-                                             TotalHrs = 9,
-                                             Comments = n.UserComments,
-                                             Status = "Approved"
-                                         }
-                    ).ToList<TimesheetModel>();
-
-                    var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
-                    _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
-
                     string rootPath = _hostingEnvironment.ContentRootPath;
                     string templatePath = Path.Combine(rootPath,
                         _fileLocationDetail.Location,
@@ -236,61 +264,67 @@ namespace ServiceLayer.Code
                         _fileLocationDetail.StaffingBillTemplate
                     );
 
+                    string pdfTemplatePath = Path.Combine(rootPath,
+                        _fileLocationDetail.Location,
+                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        _fileLocationDetail.StaffingBillPdfTemplate
+                    );
+
                     string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
-                    if (File.Exists(templatePath) && File.Exists(headerLogo))
+                    if (File.Exists(templatePath) && File.Exists(pdfTemplatePath) && File.Exists(headerLogo))
                     {
                         this.CleanOldFiles(fileDetail);
                         pdfModal.UpdateSeqNo++;
                         fileDetail.FileExtension = string.Empty;
+
+                        string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
+                        string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
+                        string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+                        if (!Directory.Exists(folderPath))
+                            Directory.CreateDirectory(folderPath);
+
+                        string destinationFilePath = Path.Combine(
+                            folderPath,
+                            pdfModal.developerName.Replace(" ", "_") + "_" +
+                            pdfModal.billingMonth.ToString("MMM_yyyy") + "_" +
+                            pdfModal.billNo + "_" +
+                            pdfModal.UpdateSeqNo + $".{ApplicationConstants.Excel}");
+
+                        if (File.Exists(destinationFilePath))
+                            File.Delete(destinationFilePath);
+
+                        var timesheetData = (from n in attendanceSet
+                                             orderby n.AttendanceDay ascending
+                                             select new TimesheetModel
+                                             {
+                                                 Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                                 ResourceName = pdfModal.developerName,
+                                                 StartTime = "10:00 AM",
+                                                 EndTime = "06:00 PM",
+                                                 TotalHrs = 9,
+                                                 Comments = n.UserComments,
+                                                 Status = "Approved"
+                                             }
+                        ).ToList<TimesheetModel>();
+
+                        var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
+                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
+
                         GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
                         fileDetail.LogoPath = headerLogo;
-
-                        using (FileStream stream = File.Open(templatePath, FileMode.Open))
-                        {
-                            StreamReader reader = new StreamReader(stream);
-                            string html = reader.ReadToEnd();
-
-                            html = html.Replace("[[BILLNO]]", pdfModal.billNo).
-                            Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
-                            Replace("[[senderFirstAddress]]", sender.FirstAddress).
-                            Replace("[[senderCompanyName]]", sender.ClientName).
-                            Replace("[[senderGSTNo]]", sender.GSTNO).
-                            Replace("[[senderSecondAddress]]", sender.SecondAddress).
-                            Replace("[[senderPrimaryContactNo]]", sender.PrimaryPhoneNo).
-                            Replace("[[senderEmail]]", sender.Email).
-                            Replace("[[receiverCompanyName]]", receiver.ClientName).
-                            Replace("[[receiverGSTNo]]", receiver.GSTNO).
-                            Replace("[[receiverFirstAddress]]", receiver.FirstAddress).
-                            Replace("[[receiverSecondAddress]]", receiver.SecondAddress).
-                            Replace("[[receiverPrimaryContactNo]]", receiver.PrimaryPhoneNo).
-                            Replace("[[receiverEmail]]", receiver.Email).
-                            Replace("[[developerName]]", pdfModal.developerName).
-                            Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
-                            Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
-                            Replace("[[cGST]]", pdfModal.cGST.ToString()).
-                            Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
-                            Replace("[[sGST]]", pdfModal.sGST.ToString()).
-                            Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
-                            Replace("[[iGST]]", pdfModal.iGST.ToString()).
-                            Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
-                            Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
-                            Replace("[[bankName]]", sender.BankName).
-                            Replace("[[clientName]]", sender.ClientName).
-                            Replace("[[accountNumber]]", sender.AccountNo).
-                            Replace("[[iFSCCode]]", sender.IFSC).
-                            Replace("[[city]]", sender.City).
-                            Replace("[[state]]", sender.State);
-
-                            destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
-                            this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
-
-                            // destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
-                            // _fileMaker.GeneratePdfUsingHtml(html, destinationFilePath);
-                        }
+                        // Converting html context for docx conversion.
+                        string html = this.GetHtmlString(templatePath, pdfModal, sender, receiver);
+                        destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
+                        this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
 
                         GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
                         _fileMaker._fileDetail = fileDetail;
-                        _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
+                        // Converting html context for pdf conversion.
+                        html = this.GetHtmlString(pdfTemplatePath, pdfModal, sender, receiver, headerLogo);
+                        destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
+                        _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+
+                        // _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
 
                         int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
                         dbParams = new DbParam[]
