@@ -16,4 +16,5 @@ public class FileDetail
     public string GeneratedBillNo { set; get; }
     public DateTime UpdatedOn { set; get; }
     public string Notes { set; get; }
+    public long FileOwnerId { set; get; }
 }

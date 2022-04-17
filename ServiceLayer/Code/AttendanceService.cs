@@ -115,6 +115,41 @@ namespace ServiceLayer.Code
             return attendanceSet;
         }
 
+        public dynamic GetAttendamceById(AttendenceDetail attendenceDetail)
+        {
+            List<DateTime> missingDayList = new List<DateTime>();
+            var attendenceList = new List<AttendenceDetail>();
+
+             DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(attendenceDetail.EmployeeUid, typeof(long), "_EmployeeId"),
+                new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth"),
+                new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear")
+            };
+
+            var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
+            if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
+            {
+                var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
+                attendenceList = JsonConvert.DeserializeObject <List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
+                attendenceList.OrderBy(DateTime => DateTime);
+                int days = DateTime.DaysInMonth(currentAttendence.ForYear, currentAttendence.ForMonth);
+                int i = 1;
+                while(i <= days)
+                {
+                    var value = attendenceList.Where(x => x.AttendanceDay.Day == i).FirstOrDefault();
+                    if (value == null)
+                    {
+                        missingDayList.Add(new DateTime(currentAttendence.ForYear, currentAttendence.ForMonth, i));
+                    }
+                    i++;
+                }
+            }
+
+            return new { AttendanceDetail = attendenceList , MissingDate= missingDayList };
+        }
+
         public List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
         {
             string result = string.Empty;

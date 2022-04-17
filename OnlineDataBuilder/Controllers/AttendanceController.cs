@@ -47,5 +47,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.GetAllPendingAttendanceByUserIdService(employeeId, UserTypeId, clientId);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("GetAttendamceById")]
+        public IResponse<ApiResponse> GetAttendamceById(AttendenceDetail attendenceDetail)
+        {
+            var result = _attendanceService.GetAttendamceById(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }

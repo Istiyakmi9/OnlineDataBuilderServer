@@ -6,7 +6,7 @@ namespace ModalLayer.Modal.Profile
 {
     public class ProfileDetail
     {
-        public ProfessionalUser professionalUser { set; get; }
+        public ProfessionalUser professionalUser { set; get; } = new ProfessionalUser();
         public List<FileDetail> profileDetail { set; get; }
         public UserDetail userDetail { set; get; }
         public int RoleId { set; get; }

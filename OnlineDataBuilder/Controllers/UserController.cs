@@ -39,8 +39,8 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("UploadProfileDetailFile/{userId}")]
-        public IResponse<ApiResponse> UploadProfileDetailFile(string userId)
+        [HttpPost("UploadProfileDetailFile/{userId}/{UserTypeId}")]
+        public IResponse<ApiResponse> UploadProfileDetailFile(string userId, int UserTypeId)
         {
             StringValues UserInfoData = default(string);
             _httpContext.Request.Form.TryGetValue("userInfo", out UserInfoData);
@@ -48,14 +48,14 @@ namespace OnlineDataBuilder.Controllers
             {
                 var userInfo = JsonConvert.DeserializeObject<ProfessionalUser>(UserInfoData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = _userService.UploadUserInfo(userId, userInfo, files);
+                var Result = _userService.UploadUserInfo(userId, userInfo, files, UserTypeId);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
 
-        [HttpPost("UploadResume/{userId}")]
-        public IResponse<ApiResponse> UploadResume(string userId)
+        [HttpPost("UploadResume/{userId}/{UserTypeId}")]
+        public IResponse<ApiResponse> UploadResume(string userId, int UserTypeId)
         {
             StringValues UserInfoData = default(string);
             _httpContext.Request.Form.TryGetValue("userInfo", out UserInfoData);
@@ -63,7 +63,7 @@ namespace OnlineDataBuilder.Controllers
             {
                 var userInfo = JsonConvert.DeserializeObject<ProfessionalUser>(UserInfoData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = _userService.UploadResume(userId, userInfo, files);
+                var Result = _userService.UploadResume(userId, userInfo, files, UserTypeId);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

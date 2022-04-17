@@ -22,45 +22,90 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly CurrentSession _currentSession;
+        private readonly IEmployeeService _employeeService;
 
-        public UserService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment, CurrentSession currentSession)
+        public UserService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment, CurrentSession currentSession, IEmployeeService employeeService)
         {
             _db = db;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
+            _employeeService = employeeService;
         }
 
         public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0)
         {
             ProfileDetail profileDetail = new ProfileDetail();
             var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(professionalUser.UserId, typeof(long), "_UserId"),
-                new DbParam(professionalUser.FileId, typeof(long), "_FileId"),
-                new DbParam(professionalUser.Mobile_Number, typeof(string), "_Mobile"),
-                new DbParam(professionalUser.Email, typeof(string), "_Email"),
-                new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
-                new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
-                new DbParam(professionalUser.Date_Of_Application, typeof(DateTime), "_Date_Of_Application"),
-                new DbParam(professionalUser.Total_Experience_In_Months, typeof(int), "_Total_Experience_In_Months"),
-                new DbParam(professionalUser.Salary_Package, typeof(double), "_Salary_Package"),
-                new DbParam(professionalUser.Notice_Period, typeof(int), "_Notice_Period"),
-                new DbParam(professionalUser.Expeceted_CTC, typeof(double), "_Expeceted_CTC"),
-                new DbParam(professionalUser.Current_Location, typeof(string), "_Current_Location"),
-                new DbParam(JsonConvert.SerializeObject(professionalUser.Preferred_Locations), typeof(string), "_Preferred_Location"),
-                new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
-                new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
-            };
 
-            var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
+            if (UserTypeId == 3)
+            {
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(professionalUser.UserId, typeof(long), "_UserId"),
+                    new DbParam(professionalUser.FileId, typeof(long), "_FileId"),
+                    new DbParam(professionalUser.Mobile_Number, typeof(string), "_Mobile"),
+                    new DbParam(professionalUser.Email, typeof(string), "_Email"),
+                    new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
+                    new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
+                    new DbParam(professionalUser.Date_Of_Application, typeof(DateTime), "_Date_Of_Application"),
+                    new DbParam(professionalUser.Total_Experience_In_Months, typeof(int), "_Total_Experience_In_Months"),
+                    new DbParam(professionalUser.Salary_Package, typeof(double), "_Salary_Package"),
+                    new DbParam(professionalUser.Notice_Period, typeof(int), "_Notice_Period"),
+                    new DbParam(professionalUser.Expeceted_CTC, typeof(double), "_Expeceted_CTC"),
+                    new DbParam(professionalUser.Current_Location, typeof(string), "_Current_Location"),
+                    new DbParam(JsonConvert.SerializeObject(professionalUser.Preferred_Locations), typeof(string), "_Preferred_Location"),
+                    new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
+                    new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
+                };
+                var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
+            } else if (UserTypeId == 1)
+            {
+                int empId = Convert.ToInt32(professionalUser.UserId);
+                Employee employee = _employeeService.GetEmployeeByIdService(empId);
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
+                    new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
+                    new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
+                    new DbParam(employee.FatherName, typeof(string), "_FatherName"),
+                    new DbParam(professionalUser.Email, typeof(string), "_Email"),
+                    new DbParam(employee.MotherName, typeof(string), "_MotherName"),
+                    new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
+                    new DbParam(employee.Gender, typeof(bool), "_Gender"),
+                    new DbParam(employee.State, typeof(string), "_State"),
+                    new DbParam(employee.City, typeof(string), "_City"),
+                    new DbParam(employee.Pincode, typeof(int), "_Pincode"),
+                    new DbParam(employee.Address, typeof(string), "_Address"),
+                    new DbParam(professionalUser.Mobile_Number, typeof(string), "_Mobile"),
+                    new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
+                    new DbParam(employee.PANNo, typeof(string), "_PANNo"),
+                    new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
+                    new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
+                    new DbParam(employee.BankName, typeof(string), "_BankName"),
+                    new DbParam(employee.BranchName, typeof(string), "_BranchName"),
+                    new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
+                    new DbParam(employee.Domain, typeof(string), "_Domain"),
+                    new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
+                    new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
+                    new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
+                    new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
+                    new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
+                    new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
+                    new DbParam(employee.Specification, typeof(string), "_Specification"),
+                    new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
+                    new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
+                    new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
+                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
+                };
+                var msg = _db.ExecuteNonQuery("sp_Employees_InsUpdate", dbParams, true);
+            }
             profileDetail = this.GetUserDetail(professionalUser.UserId, UserTypeId);
             return profileDetail;
         }
 
-        public string UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection)
+        public string UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
             var result = string.Empty;
             if (string.IsNullOrEmpty(professionalUser.Email))
@@ -89,7 +134,7 @@ namespace ServiceLayer.Code
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
-                                    UserTypeId = (int)UserType.Candidate,
+                                    UserTypeId = UserTypeId,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 });
 
@@ -98,14 +143,15 @@ namespace ServiceLayer.Code
                 dataSet.Tables.Add(table);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
                 int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
+
                 _db.Commit();
             }
 
-            var value = this.UpdateProfile(professionalUser, (int)UserType.Candidate, IsProfileImageRequest);
+            var value = this.UpdateProfile(professionalUser, UserTypeId, IsProfileImageRequest);
             return result;
         }
 
-        public string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection)
+        public string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
             var result = string.Empty;
             if (Int32.Parse(userId) <= 0)
@@ -133,7 +179,7 @@ namespace ServiceLayer.Code
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
-                                    UserTypeId = (int)UserType.Candidate,
+                                    UserTypeId = UserTypeId,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 });
 
@@ -160,22 +206,23 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Invalid User Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
 
             ProfileDetail profileDetail = new ProfileDetail();
-            if (_currentSession.CurrentUserDetail.RoleId == 1)
-            {
-                profileDetail.userDetail = new UserDetail();
-                profileDetail.RoleId = (int)RolesName.Admin;
-                return profileDetail;
-            }
+            //if (_currentSession.CurrentUserDetail.RoleId == 1)
+            //{
+            //    profileDetail.userDetail = new UserDetail();
+            //    profileDetail.RoleId = (int)RolesName.Admin;
+            //    return profileDetail;
+            //}
 
-            DbParam[] param = new DbParam[]
-            {
-               new DbParam(userId, typeof(long), "_UserId"),
-               new DbParam(null, typeof(string), "_Mobile"),
-               new DbParam(null, typeof(string), "_Email")
-            };
+
 
             if(UserTypeId == 3)
             {
+                DbParam[] param = new DbParam[]
+                {
+                   new DbParam(userId, typeof(long), "_UserId"),
+                   new DbParam(null, typeof(string), "_Mobile"),
+                   new DbParam(null, typeof(string), "_Email")
+                };
                 var Result = _db.GetDataset("sp_professionaldetail_filter", param);
 
                 if (Result.Tables.Count == 0)
@@ -198,6 +245,13 @@ namespace ServiceLayer.Code
             }
             else
             {
+                DbParam[] param = new DbParam[]
+            {
+                   new DbParam(userId, typeof(long), "_UserId"),
+                   new DbParam(null, typeof(string), "_Mobile"),
+                   new DbParam(null, typeof(string), "_Email"),
+                   new DbParam(UserTypeId, typeof(int), "_UserTypeId")
+            };
                 var Result = _db.GetDataset("sp_employee_profile", param);
 
                 if (Result.Tables.Count == 0)
@@ -213,10 +267,11 @@ namespace ServiceLayer.Code
                     {
                         profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(employeeProfessionDetail.ProfessionalDetail_Json);
                     }
-                    else
+                    //profileDetail.professionalUser = new ProfessionalUser();
+                    if (string.IsNullOrEmpty(profileDetail.professionalUser.FirstName) && string.IsNullOrEmpty(profileDetail.professionalUser.LastName))
                     {
-                        profileDetail.professionalUser = new ProfessionalUser();
-                        profileDetail.professionalUser.Name = employeeProfessionDetail.FirstName +" "+ employeeProfessionDetail.LastName;
+                        profileDetail.professionalUser.FirstName = employeeProfessionDetail.FirstName;
+                        profileDetail.professionalUser.LastName = employeeProfessionDetail.LastName;
                         profileDetail.professionalUser.Email = employeeProfessionDetail.Email;
                         profileDetail.professionalUser.Mobile_Number = employeeProfessionDetail.Mobile;
                         profileDetail.professionalUser.UserId = employeeProfessionDetail.EmployeeUid;
