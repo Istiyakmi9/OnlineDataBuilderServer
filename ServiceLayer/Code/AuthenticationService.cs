@@ -70,10 +70,16 @@ namespace ServiceLayer.Code
                     role = Role.Admin;
                     break;
                 case 2:
-                    role = Role.User;
+                    role = Role.Employee;
+                    break;
+                case 3:
+                    role = Role.Candidate;
+                    break;
+                case 4:
+                    role = Role.Client;
                     break;
                 default:
-                    role = Role.Vendor;
+                    role = Role.Other;
                     break;
             }
             string generatedToken = GenerateAccessToken(userId.ToString(), role);

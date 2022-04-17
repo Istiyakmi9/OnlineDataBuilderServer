@@ -3,7 +3,9 @@
     public struct Role
     {
         public const string Admin = "Admin";
-        public const string User = "User";
-        public const string Vendor = "Vendor";
+        public const string Employee = "Employee";
+        public const string Candidate = "Candidate";
+        public const string Client = "Client";
+        public const string Other = "Other";
     }
 }
