@@ -12,6 +12,7 @@ packages
 **/.vs/*
 **/Documents/Bills
 **/Documents/User
+**/Templates
 OnlineDataBuilder/appsettings.json
 
 # User-specific files
