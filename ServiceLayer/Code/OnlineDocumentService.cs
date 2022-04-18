@@ -358,7 +358,40 @@ namespace ServiceLayer.Code
 
             try
             {
-                string Extension = Utility.GetExtension(fileDetail.FileExtension, "pdf");
+                BillDetail billDetail = null;
+                FileDetail currentFileDetail = null;
+                Organization receiverOrganization = null;
+                Organization organization = null;
+                List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
+                    new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
+                    new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                    new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                    new DbParam(UserType.Employee, typeof(int), "_UserTypeId")
+                };
+
+                var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
+                if (Result.Tables.Count == 5)
+                {
+                    billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
+                    currentFileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
+                    receiverOrganization = Converter.ToType<Organization>(Result.Tables[2]);
+                    organization = Converter.ToType<Organization>(Result.Tables[3]);
+
+                    if (Result.Tables[4].Rows.Count > 0)
+                    {
+                        var currentAttendance = Converter.ToType<Attendance>(Result.Tables[4]);
+                        attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
+                    }
+                }
+                else
+                {
+                    throw new HiringBellException("Unable to get file detail.");
+                }
+
+                string Extension = Utility.GetExtension(currentFileDetail.FileExtension, "pdf");
                 if (Extension == null)
                 {
                     fileDetail.FileExtension = "pdf,docx";
@@ -366,124 +399,95 @@ namespace ServiceLayer.Code
 
                 }
 
-                string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileDetail.FilePath, $"{fileDetail.FileName}.{Extension}");
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), currentFileDetail.FilePath, $"{currentFileDetail.FileName}.{Extension}");
                 if (!File.Exists(filePath))
                 {
-                    DbParam[] dbParams = new DbParam[]
+                    var billmonth = billDetail.BillYear.ToString() + billDetail.BillForMonth.ToString().PadLeft(2, '0') + billDetail.BillUpdatedOn.ToString("dd");
+                    DateTime billingForMonth = DateTime.ParseExact(billmonth, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+
+                    PdfModal pdfModal = new PdfModal
                     {
-                        new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
-                        new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
-                        new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                        new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                        new DbParam(UserType.Employee, typeof(int), "_UserTypeId")
+                        header = null,
+                        billingMonth = billingForMonth,
+                        billNo = billDetail.BillNo,
+                        billId = billDetail.BillDetailUid,
+                        dateOfBilling = billDetail.BillUpdatedOn,
+                        cGST = billDetail.CGST,
+                        sGST = billDetail.SGST,
+                        iGST = billDetail.IGST,
+                        cGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.SGST * billDetail.PaidAmount) / 100),
+                        sGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.CGST * billDetail.PaidAmount) / 100),
+                        iGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.IGST * billDetail.PaidAmount) / 100),
+                        workingDay = billDetail.NoOfDays - (int)billDetail.NoOfDaysAbsent,
+                        packageAmount = billDetail.PaidAmount,
+                        grandTotalAmount = Converter.TwoDecimalValue(billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100),
+                        senderCompanyName = organization.ClientName,
+                        receiverFirstAddress = receiverOrganization.FirstAddress,
+                        receiverCompanyId = receiverOrganization.ClientId,
+                        receiverCompanyName = receiverOrganization.ClientName,
+                        senderClientId = organization.ClientId,
+                        developerName = billDetail.DeveloperName,
+                        receiverSecondAddress = receiverOrganization.SecondAddress,
+                        receiverThirdAddress = receiverOrganization.ThirdAddress,
+                        senderFirstAddress = receiverOrganization.FirstAddress,
+                        daysAbsent = billDetail.NoOfDaysAbsent,
+                        senderSecondAddress = organization.SecondAddress,
+                        senderPrimaryContactNo = organization.PrimaryPhoneNo,
+                        senderEmail = organization.Email,
+                        senderGSTNo = organization.GSTNO,
+                        receiverGSTNo = receiverOrganization.GSTNO,
+                        receiverPrimaryContactNo = receiverOrganization.PrimaryPhoneNo,
+                        receiverEmail = receiverOrganization.Email,
+                        UpdateSeqNo = billDetail.UpdateSeqNo,
+                        ClientId = receiverOrganization.ClientId,
+                        EmployeeId = billDetail.EmployeeUid,
+                        FileId = currentFileDetail.FileId,
+                        FileName = currentFileDetail.FileName,
+                        FilePath = currentFileDetail.FilePath,
+                        LogoPath = currentFileDetail.LogoPath,
+                        DiskFilePath = currentFileDetail.DiskFilePath,
+                        FileExtension = currentFileDetail.FileExtension,
+                        StatusId = billDetail.BillStatusId,
+                        PaidOn = billDetail.PaidOn,
+                        Status = (int)currentFileDetail.StatusId,
+                        GeneratedBillNo = billDetail.BillNo,
+                        UpdatedOn = currentFileDetail.UpdatedOn,
+                        Notes = null
                     };
 
-                    var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
-                    if (Result.Tables.Count == 5)
-                    {
-                        BillDetail billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
-                        FileDetail currentFileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
-                        Organization receiverOrganization = Converter.ToType<Organization>(Result.Tables[2]);
-                        Organization organization = Converter.ToType<Organization>(Result.Tables[3]);
+                    string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
+                    string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
+                    string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+                    if (!Directory.Exists(folderPath))
+                        Directory.CreateDirectory(folderPath);
 
-                        var billmonth = billDetail.BillYear.ToString() + billDetail.BillForMonth.ToString().PadLeft(2, '0') + billDetail.BillUpdatedOn.ToString("dd");
-                        DateTime billingForMonth = DateTime.ParseExact(billmonth, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                    string destinationFilePath = Path.Combine(
+                        folderPath,
+                        pdfModal.developerName.Replace(" ", "_") + "_" +
+                        pdfModal.billNo + "_" +
+                        pdfModal.billingMonth.ToString("MMM_yyyy") + $".{ApplicationConstants.Excel}");
 
-                        PdfModal pdfModal = new PdfModal
-                        {
-                            header = null,
-                            billingMonth = billingForMonth,
-                            billNo = billDetail.BillNo,
-                            billId = billDetail.BillDetailUid,
-                            dateOfBilling = billDetail.BillUpdatedOn,
-                            cGST = billDetail.CGST,
-                            sGST = billDetail.SGST,
-                            iGST = billDetail.IGST,
-                            cGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.SGST * billDetail.PaidAmount) / 100),
-                            sGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.CGST * billDetail.PaidAmount) / 100),
-                            iGstAmount = Converter.TwoDecimalValue((decimal)(billDetail.IGST * billDetail.PaidAmount) / 100),
-                            workingDay = billDetail.NoOfDays - (int)billDetail.NoOfDaysAbsent,
-                            packageAmount = billDetail.PaidAmount,
-                            grandTotalAmount = Converter.TwoDecimalValue(billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100),
-                            senderCompanyName = organization.ClientName,
-                            receiverFirstAddress = receiverOrganization.FirstAddress,
-                            receiverCompanyId = receiverOrganization.ClientId,
-                            receiverCompanyName = receiverOrganization.ClientName,
-                            senderClientId = organization.ClientId,
-                            developerName = billDetail.DeveloperName,
-                            receiverSecondAddress = receiverOrganization.SecondAddress,
-                            receiverThirdAddress = receiverOrganization.ThirdAddress,
-                            senderFirstAddress = receiverOrganization.FirstAddress,
-                            daysAbsent = billDetail.NoOfDaysAbsent,
-                            senderSecondAddress = organization.SecondAddress,
-                            senderPrimaryContactNo = organization.PrimaryPhoneNo,
-                            senderEmail = organization.Email,
-                            senderGSTNo = organization.GSTNO,
-                            receiverGSTNo = receiverOrganization.GSTNO,
-                            receiverPrimaryContactNo = receiverOrganization.PrimaryPhoneNo,
-                            receiverEmail = receiverOrganization.Email,
-                            UpdateSeqNo = billDetail.UpdateSeqNo,
-                            ClientId = receiverOrganization.ClientId,
-                            EmployeeId = billDetail.EmployeeUid,
-                            FileId = currentFileDetail.FileId,
-                            FileName = currentFileDetail.FileName,
-                            FilePath = currentFileDetail.FilePath,
-                            LogoPath = currentFileDetail.LogoPath,
-                            DiskFilePath = currentFileDetail.DiskFilePath,
-                            FileExtension = currentFileDetail.FileExtension,
-                            StatusId = billDetail.BillStatusId,
-                            PaidOn = billDetail.PaidOn,
-                            Status = (int)currentFileDetail.StatusId,
-                            GeneratedBillNo = billDetail.BillNo,
-                            UpdatedOn = currentFileDetail.UpdatedOn,
-                            Notes = null
-                        };
+                    if (File.Exists(destinationFilePath))
+                        File.Delete(destinationFilePath);
 
-                        List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
-                        if (Result.Tables[4].Rows.Count > 0)
-                        {
-                            var currentAttendance = Converter.ToType<Attendance>(Result.Tables[4]);
-                            attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
-                        }
+                    var timesheetData = (from n in attendanceSet
+                                         orderby n.AttendanceDay ascending
+                                         select new TimesheetModel
+                                         {
+                                             Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                             ResourceName = pdfModal.developerName,
+                                             StartTime = "10:00 AM",
+                                             EndTime = "06:00 PM",
+                                             TotalHrs = 9,
+                                             Comments = n.UserComments,
+                                             Status = "Approved"
+                                         }
+                    ).ToList<TimesheetModel>();
 
-                        string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
-                        string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
-                        string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
-                        if (!Directory.Exists(folderPath))
-                            Directory.CreateDirectory(folderPath);
+                    var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
+                    _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
 
-                        string destinationFilePath = Path.Combine(
-                            folderPath,
-                            pdfModal.developerName.Replace(" ", "_") + "_" +
-                            pdfModal.billNo + "_" +
-                            pdfModal.billingMonth.ToString("MMM_yyyy") + $".{ApplicationConstants.Excel}");
-
-                        if (File.Exists(destinationFilePath))
-                            File.Delete(destinationFilePath);
-
-                        var timesheetData = (from n in attendanceSet
-                                             orderby n.AttendanceDay ascending
-                                             select new TimesheetModel
-                                             {
-                                                 Date = n.AttendanceDay.ToString("dd MMM yyyy"),
-                                                 ResourceName = pdfModal.developerName,
-                                                 StartTime = "10:00 AM",
-                                                 EndTime = "06:00 PM",
-                                                 TotalHrs = 9,
-                                                 Comments = n.UserComments,
-                                                 Status = "Approved"
-                                             }
-                        ).ToList<TimesheetModel>();
-
-                        var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
-                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
-
-                        _billService.CreateFiles(_buildPdfTable, pdfModal, organization, receiverOrganization);
-                    }
-                    else
-                    {
-                        throw new HiringBellException("Unable to get file detail.");
-                    }
+                    _billService.CreateFiles(_buildPdfTable, pdfModal, organization, receiverOrganization);
                 }
 
                 return fileDetail;
