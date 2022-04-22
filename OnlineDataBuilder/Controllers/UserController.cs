@@ -8,6 +8,7 @@ using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
@@ -82,11 +83,13 @@ namespace OnlineDataBuilder.Controllers
         {
             StringValues userDetail = default(string);
             _httpContext.Request.Form.TryGetValue("UserDetail", out userDetail);
+            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
             if (userDetail.Count > 0)
             {
                 var UserInfo = JsonConvert.DeserializeObject<UserDetail>(userDetail);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                var result = _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, files);
+                List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
+                var result = _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, fileDetail, files);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

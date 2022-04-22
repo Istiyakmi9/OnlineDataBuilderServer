@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
+using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
 {
@@ -11,6 +12,6 @@ namespace ServiceLayer.Interface
         string GenerateResume(long userId);
         ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0);
         string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId);
-        string UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection);
+        string UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection, List<Files> fileDetail);
     }
 }

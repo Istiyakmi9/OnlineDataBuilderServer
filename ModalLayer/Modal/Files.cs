@@ -11,6 +11,27 @@ namespace ModalLayer.Modal
         Admin = 9
     }
 
+    public enum DeclarationType
+    {
+        PPF = 1,
+        SeniorCitizenSavingScheme = 2,
+        HousingLoan = 3,
+        MutualFund = 4,
+        NationalSavingCerificate = 5,
+        UnitLinkInsurancePlan = 6,
+        LifeInsurancePolicy = 7,
+        EducationTuitionFees = 8,
+        ScheduleBankFD = 9,
+        PostOfficeTimeDeposit = 10,
+        DeferredAnnuity = 11,
+        SuperAnnuity = 12,
+        NABARDnotifiesbond = 13,
+        SukanyaSamriddhiYojna = 14,
+        Other = 15,
+        MutualFundPension = 16,
+        NPSEmployeeContribution = 17
+    }
+
     public class DocumentFile
     {
         public long FileUid { set; get; }
