@@ -196,6 +196,58 @@ namespace ServiceLayer.Code
             return result;
         }
 
+        public string UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection)
+        {
+            string result = string.Empty;
+            if (Int32.Parse(UserId) <= 0)
+            {
+                throw new HiringBellException("Invalid UserId");
+            }
+
+            if (UserTypeId <= 0)
+            {
+                throw new HiringBellException("Invalid UserTypeId");
+            }
+
+            Files file = new Files();
+            if (FileCollection.Count > 0)
+            {
+                var files = FileCollection.Select(x => new Files
+                {
+                    FileUid = 0,
+                    FileName = x.Name,
+                    Email = userDetail.EmailId,
+                    FileExtension = string.Empty
+                }).ToList<Files>();
+                List<Files> filesList = _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, UserId);
+                if (filesList .Count > 0)
+                {
+                    var fileInfo = (from n in files
+                                    select new
+                                    {
+                                        FileId = n.FileUid,
+                                        FileOwnerId = UserId,
+                                        FileName = n.FileName,
+                                        FilePath = n.FilePath,
+                                        FileExtension = n.FileExtension,
+                                        UserTypeId = UserTypeId,
+                                        AdminId = _currentSession.CurrentUserDetail.UserId
+                                    });
+
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    var dataSet = new DataSet();
+                    dataSet.Tables.Add(table);
+                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                    int insertedCount = _db.BatchInsert("", dataSet, true);
+                    _db.Commit();
+                    if (insertedCount == 1)
+                        result = "Declaration Uploaded Successfully.";
+                }
+            }
+            return result;
+        }
+
+
 
         public ProfileDetail GetUserDetail(long userId, int UserTypeId)
         {
