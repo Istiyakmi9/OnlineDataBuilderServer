@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
@@ -74,6 +75,21 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = _userService.GenerateResume(userId);
             return BuildResponse(result);
+        }
+
+        [HttpPost("UploadDeclaration/{UserId}/{UserTypeId}")]
+        public IResponse<ApiResponse> UploadDeclaration(string UserId, int UserTypeId)
+        {
+            StringValues userDetail = default(string);
+            _httpContext.Request.Form.TryGetValue("UserDetail", out userDetail);
+            if (userDetail.Count > 0)
+            {
+                var UserInfo = JsonConvert.DeserializeObject<UserDetail>(userDetail);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var result = _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, files);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
         }
     }
 }

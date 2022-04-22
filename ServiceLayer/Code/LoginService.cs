@@ -139,7 +139,7 @@ namespace ServiceLayer.Code
                             LastName = loginDetail.LastName,
                             Address = loginDetail.Address,
                             Mobile = loginDetail.Mobile,
-                            EmailId = loginDetail.EmailId,
+                            EmailId = loginDetail.Email,
                             UserId = loginDetail.UserId,
                             CompanyName = loginDetail.CompanyName,
                             UserTypeId = loginDetail.UserTypeId
