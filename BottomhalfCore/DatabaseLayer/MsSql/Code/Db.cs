@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace BottomhalfCore.DatabaseLayer.MsSql.Code
 {
@@ -623,6 +624,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
                 }
             }
             return cmd;
+        }
+
+        public Task<int> BatchInsertAsync(string ProcedureName, DataSet TableSet, bool IsOutparam)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

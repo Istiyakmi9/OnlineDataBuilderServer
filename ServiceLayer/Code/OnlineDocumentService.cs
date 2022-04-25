@@ -577,83 +577,82 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection FileCollection)
+        public async Task<DataSet> UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection FileCollection)
         {
             DataSet Result = null;
             Files file = fileDetail.FirstOrDefault();
             try
             {
-                if (FileCollection.Count > 0 && fileDetail.Count > 0)
+                await Task.Run(() =>
                 {
-                    string userEmail = null;
-                    if (file.UserTypeId == UserType.Employee)
+                    if (FileCollection.Count > 0 && fileDetail.Count > 0)
                     {
-                        DbParam[] dbParams = new DbParam[]
+                        string userEmail = null;
+                        if (file.UserTypeId == UserType.Employee)
                         {
-                        new DbParam(file.UserId, typeof(long), "_EmployeeId"),
-                        new DbParam(-1, typeof(int), "_IsActive")
-                        };
-
-                        DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
-                        if (ResultSet != null && ResultSet.Tables.Count == 1)
-                        {
-                            var employee = Converter.ToList<Employee>(ResultSet.Tables[0]).Single();
-                            userEmail = employee.Email;
-                        }
-                    }
-                    else if (file.UserTypeId == UserType.Client)
-                    {
-                        DbParam[] dbParams = new DbParam[]
-                        {
-                        new DbParam(file.UserId, typeof(string), "_userId"),
-                        };
-
-                        DataSet ResultSet = this.db.GetDataset("sp_UserDetail_ById", dbParams);
-                        if (ResultSet != null && ResultSet.Tables.Count == 1)
-                        {
-                            var userDetail = Converter.ToList<UserDetail>(ResultSet.Tables[0]).Single();
-                            userEmail = userDetail.EmailId;
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(userEmail))
-                    {
-                        fileDetail.ForEach(item =>
-                        {
-                            if (string.IsNullOrEmpty(item.ParentFolder))
+                            DbParam[] dbParams = new DbParam[]
                             {
-                                item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                            }
-                            else
+                            new DbParam(file.UserId, typeof(long), "_EmployeeId"),
+                            new DbParam(-1, typeof(int), "_IsActive")
+                            };
+
+                            DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
+                            if (ResultSet != null && ResultSet.Tables.Count == 1)
                             {
-                                item.ParentFolder = Path.Combine(_fileLocationDetail.Location, item.ParentFolder);
-                                item.ParentFolder = item.ParentFolder;
-                                item.Email = userEmail;
+                                var employee = Converter.ToList<Employee>(ResultSet.Tables[0]).Single();
+                                userEmail = employee.Email;
                             }
-                        });
-
-
-                        string FolderPath = _fileLocationDetail.UserFolder;
-                        List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
-                        if (files != null && files.Count > 0)
+                        }
+                        else if (file.UserTypeId == UserType.Client)
                         {
-                            db.StartTransaction(IsolationLevel.ReadUncommitted);
-                            var Data = InsertFileDetails(fileDetail);
-                            db.Commit();
-                            Result = GetDocumentResultById(file);
+                            DbParam[] dbParams = new DbParam[]
+                            {
+                            new DbParam(file.UserId, typeof(string), "_userId"),
+                            };
+
+                            DataSet ResultSet = this.db.GetDataset("sp_UserDetail_ById", dbParams);
+                            if (ResultSet != null && ResultSet.Tables.Count == 1)
+                            {
+                                var userDetail = Converter.ToList<UserDetail>(ResultSet.Tables[0]).Single();
+                                userEmail = userDetail.EmailId;
+                            }
                         }
 
-                    }
-                    else
-                    {
-                        throw new Exception("Invalid user detail.");
-                    }
+                        if (!string.IsNullOrEmpty(userEmail))
+                        {
+                            fileDetail.ForEach(item =>
+                            {
+                                if (string.IsNullOrEmpty(item.ParentFolder))
+                                {
+                                    item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                                }
+                                else
+                                {
+                                    item.ParentFolder = Path.Combine(_fileLocationDetail.Location, item.ParentFolder);
+                                    item.ParentFolder = item.ParentFolder;
+                                    item.Email = userEmail;
+                                }
+                            });
 
-                }
+
+                            string FolderPath = _fileLocationDetail.UserFolder;
+                            List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
+                            if (files != null && files.Count > 0)
+                            {
+                                var records = InsertFileDetails(fileDetail);
+                                //if (records != -1)
+                                //    Result = GetDocumentResultById(file);
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception("Invalid user detail.");
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
-                db.RollBack();
                 throw ex;
             }
 
@@ -693,11 +692,17 @@ namespace ServiceLayer.Code
                                 AdminId = 1
                             });
 
-            DataTable table = Converter.ToDataTable(fileInfo);
-            var dataSet = new DataSet();
-            dataSet.Tables.Add(table);
-            var result = this.db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
-            return result;
+            //DataTable table = Converter.ToDataTable(fileInfo);
+            //var dataSet = new DataSet();
+            //dataSet.Tables.Add(table);
+
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(JsonConvert.SerializeObject(fileInfo), typeof(string), "_InsertFileJsonData")
+            };
+
+            var result = this.db.GetDataset(ApplicationConstants.InserUserFileDetail, dbParams);
+            return 0;
         }
 
 

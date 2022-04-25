@@ -2,6 +2,7 @@
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -22,7 +23,7 @@ namespace ServiceLayer.Interface
         string UpdateRecord(FileDetail fileDetail, long Uid);
         string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
-        DataSet UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
+        Task<DataSet> UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
         DataSet GetDocumentResultById(Files fileDetail);
     }
 }
