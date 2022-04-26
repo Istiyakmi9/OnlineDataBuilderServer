@@ -10,6 +10,7 @@ using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
 using ServiceLayer.Code;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -145,7 +146,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UploadFile")]
-        public IResponse<ApiResponse> UploadProfessionalCandidatesFile()
+        public async Task<IResponse<ApiResponse>> UploadProfessionalCandidatesFile()
         {
             StringValues RegistrationData = default(string);
             StringValues FileData = default(string);
@@ -154,7 +155,7 @@ namespace OnlineDataBuilder.Controllers
             {
                 List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = this._ionlineDocumentService.UploadFilesOrDocuments(fileDetail, files);
+                var Result = await _ionlineDocumentService.UploadFilesOrDocuments(fileDetail, files);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

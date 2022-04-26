@@ -4,11 +4,11 @@ namespace ModalLayer.Modal
 {
     public enum UserType
     {
-        Employee = 1,
-        Client = 2,
+        Admin = 1,
+        Employee = 2,
         Candidate = 3,
-        Other = 4,
-        Admin = 9
+        Client = 4,
+        Other = 5
     }
 
     public enum DeclarationType
