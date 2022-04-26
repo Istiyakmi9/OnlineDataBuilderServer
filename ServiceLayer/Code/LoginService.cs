@@ -99,12 +99,19 @@ namespace ServiceLayer.Code
 
         public async Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser)
         {
+            string ProcedureName = string.Empty;
+            if (authUser.UserTypeId == (int)UserType.Admin)
+                ProcedureName = "sp_Userlogin_Auth";
+            else if (authUser.UserTypeId == (int)UserType.Employee)
+                ProcedureName = "sp_Employeelogin_Auth";
+            else
+                throw new HiringBellException("UserType is invalid. Only system user allowed");
             return await Task.Run(() =>
             {
                 LoginResponse loginResponse = default;
                 if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
                 {
-                    loginResponse = FetchUserDetail(authUser, "sp_Userlogin_Auth");
+                    loginResponse = FetchUserDetail(authUser, ProcedureName);
                 }
 
                 return loginResponse;

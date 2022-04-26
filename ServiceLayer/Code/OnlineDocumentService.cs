@@ -639,9 +639,7 @@ namespace ServiceLayer.Code
                             List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
                             if (files != null && files.Count > 0)
                             {
-                                var records = InsertFileDetails(fileDetail);
-                                //if (records != -1)
-                                //    Result = GetDocumentResultById(file);
+                                Result = InsertFileDetails(fileDetail);
                             }
                         }
                         else
@@ -676,7 +674,7 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public int InsertFileDetails(List<Files> fileDetail)
+        public DataSet InsertFileDetails(List<Files> fileDetail)
         {
             var fileInfo = (from n in fileDetail.AsEnumerable()
                             select new
@@ -701,10 +699,7 @@ namespace ServiceLayer.Code
                 new DbParam(JsonConvert.SerializeObject(fileInfo), typeof(string), "_InsertFileJsonData")
             };
 
-            var result = this.db.GetDataset(ApplicationConstants.InserUserFileDetail, dbParams);
-            return 0;
+            return this.db.GetDataset(ApplicationConstants.InserUserFileDetail, dbParams);
         }
-
-
     }
 }
