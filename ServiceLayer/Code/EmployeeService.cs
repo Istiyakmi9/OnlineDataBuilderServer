@@ -46,12 +46,13 @@ namespace ServiceLayer.Code
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 4)
+            if (resultset.Tables.Count == 5)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "Clients";
                 resultset.Tables[2].TableName = "AllocatedClients";
                 resultset.Tables[3].TableName = "FileDetail";
+                resultset.Tables[4].TableName = "EmployeesList";
             }
             return resultset;
         }
