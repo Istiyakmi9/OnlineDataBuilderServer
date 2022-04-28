@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
@@ -10,6 +11,7 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Table = BottomhalfCore.Services.Code.Table;
 
 namespace ServiceLayer.Code
 {
@@ -21,11 +23,13 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IAuthenticationService _authenticationService;
         private readonly ExcelWriter _excelWriter;
+        private readonly ICacheManager _cacheManager;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             CurrentSession currentSession,
             IMediaService mediaService,
             IAuthenticationService authenticationService,
+            ICacheManager cacheManager,
             ExcelWriter excelWriter)
         {
             this.db = db;
@@ -34,6 +38,7 @@ namespace ServiceLayer.Code
             _mediaService = mediaService;
             _authenticationService = authenticationService;
             _excelWriter = excelWriter;
+            _cacheManager = cacheManager;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -131,13 +136,18 @@ namespace ServiceLayer.Code
                 new DbParam(authUser.Password, typeof(System.String), "_Password")
             };
             DataSet ds = db.GetDataset(ProcedureName, param);
-            if (ds != null && ds.Tables.Count == 3)
+            if (ds != null && ds.Tables.Count == 5)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
                     loginResponse = new LoginResponse();
                     var LoginDetailList = Converter.ToList<LoginDetail>(ds.Tables[0]);
                     var loginDetail = LoginDetailList.FirstOrDefault();
+
+                    _cacheManager.Add(Table.User, ds.Tables[0]);
+                    _cacheManager.Add(Table.Employee, ds.Tables[3]);
+                    _cacheManager.Add(Table.Client, ds.Tables[4]);
+
                     if (loginDetail != null)
                     {
                         userDetail = new UserDetail

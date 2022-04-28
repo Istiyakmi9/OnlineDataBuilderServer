@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -23,10 +24,19 @@ namespace ServiceLayer.Code
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
+        private readonly ICacheManager _cacheManager;
 
-        public UserService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment, CurrentSession currentSession, IEmployeeService employeeService)
+        public UserService(
+            IDb db,
+            IFileService fileService,
+            FileLocationDetail fileLocationDetail,
+            IHostingEnvironment hostingEnvironment,
+            CurrentSession currentSession,
+            IEmployeeService employeeService,
+            ICacheManager cacheManager)
         {
             _db = db;
+            _cacheManager = cacheManager;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
@@ -60,7 +70,8 @@ namespace ServiceLayer.Code
                     new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
                 };
                 var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
-            } else if (UserTypeId == 1)
+            }
+            else if (UserTypeId == 1)
             {
                 int empId = Convert.ToInt32(professionalUser.UserId);
                 Employee employee = _employeeService.GetEmployeeByIdService(empId);
@@ -158,7 +169,7 @@ namespace ServiceLayer.Code
             {
                 throw new HiringBellException("");
             }
-            
+
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
@@ -209,7 +220,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid UserTypeId");
             }
 
-           // Files file = new Files();
+            // Files file = new Files();
             if (FileCollection.Count > 0)
             {
                 _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, UserId);
@@ -257,7 +268,7 @@ namespace ServiceLayer.Code
 
 
 
-            if(UserTypeId == 3)
+            if (UserTypeId == 3)
             {
                 DbParam[] param = new DbParam[]
                 {
@@ -363,8 +374,30 @@ namespace ServiceLayer.Code
                     _fileLocationDetail.resumeTemplate
                 );
             }
-                
+
             return value;
+        }
+
+        public async Task<DataSet> GetEmployeeAndChientListService()
+        {
+            DataSet ds = new DataSet();
+            if (!_cacheManager.IsEmpty())
+            {
+                await Task.Run(() =>
+                {
+                    var emps = _cacheManager.Get(BottomhalfCore.Services.Code.Table.Employee);
+                    emps.TableName = "Employees";
+                    var clients = _cacheManager.Get(BottomhalfCore.Services.Code.Table.Client);
+                    clients.TableName = "Clients";
+                    ds.Tables.Add(emps.Copy());
+                    ds.Tables.Add(clients.Copy());
+                });
+            }
+            else
+            {
+                throw new HiringBellException("Application data not found.", "ApplicationCache", null, System.Net.HttpStatusCode.Unauthorized);
+            }
+            return ds;
         }
     }
 }
