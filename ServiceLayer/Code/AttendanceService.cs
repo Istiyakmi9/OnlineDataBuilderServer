@@ -120,23 +120,23 @@ namespace ServiceLayer.Code
             List<DateTime> missingDayList = new List<DateTime>();
             var attendenceList = new List<AttendenceDetail>();
 
-             DbParam[] dbParams = new DbParam[]
-            {
+            DbParam[] dbParams = new DbParam[]
+           {
                 new DbParam(attendenceDetail.EmployeeUid, typeof(long), "_EmployeeId"),
                 new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth"),
                 new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear")
-            };
+           };
 
             var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
             if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
             {
                 var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
-                attendenceList = JsonConvert.DeserializeObject <List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
+                attendenceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
                 attendenceList.OrderBy(DateTime => DateTime);
                 int days = DateTime.DaysInMonth(currentAttendence.ForYear, currentAttendence.ForMonth);
                 int i = 1;
-                while(i <= days)
+                while (i <= days)
                 {
                     var value = attendenceList.Where(x => x.AttendanceDay.Day == i).FirstOrDefault();
                     if (value == null)
@@ -147,7 +147,7 @@ namespace ServiceLayer.Code
                 }
             }
 
-            return new { AttendanceDetail = attendenceList , MissingDate= missingDayList };
+            return new { AttendanceDetail = attendenceList, MissingDate = missingDayList };
         }
 
         public List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
@@ -210,7 +210,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                var currentMonthDateTime = firstDate.AddDays(10);
+                var currentMonthDateTime = _timezoneConverter.ToIstTime(DateTime.UtcNow);
                 int totalDays = DateTime.DaysInMonth(currentMonthDateTime.Year, currentMonthDateTime.Month);
                 currentAttendance = new Attendance
                 {

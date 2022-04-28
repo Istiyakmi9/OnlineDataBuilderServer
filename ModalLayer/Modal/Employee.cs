@@ -32,6 +32,7 @@ namespace ModalLayer.Modal
         public int Total { set; get; }
         public DateTime? DOB { get; set; }
         public DateTime CreatedOn { get; set; }
-        public string? ProfessionalDetail_Json { get; set; }
+        public string ProfessionalDetail_Json { get; set; }
+        public string ClientJson { set; get; }
     }
 }

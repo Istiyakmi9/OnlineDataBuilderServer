@@ -142,6 +142,7 @@ namespace OnlineDataBuilder
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
             services.AddScoped<HtmlToPdfConverter>();
+            services.AddSingleton<ICacheManager, CacheManager>();
 
             services.AddCors(options =>
             {

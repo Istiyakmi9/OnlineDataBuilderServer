@@ -10,6 +10,7 @@ using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -33,7 +34,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-      
+
         [HttpGet("GetUserDetail/{userId}/{UserTypeId}")]
         public IResponse<ApiResponse> GetUserDetail(long userId, int UserTypeId)
         {
@@ -93,6 +94,13 @@ namespace OnlineDataBuilder.Controllers
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
+        }
+
+        [HttpGet("GetEmployeeAndChients")]
+        public async Task<IResponse<ApiResponse>> GetEmployeeAndChients()
+        {
+            var result = await _userService.GetEmployeeAndChientListService();
+            return BuildResponse(result);
         }
     }
 }

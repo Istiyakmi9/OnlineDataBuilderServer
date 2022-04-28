@@ -2,11 +2,14 @@
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
     public interface IUserService
     {
+        Task<DataSet> GetEmployeeAndChientListService();
         string UploadUserInfo(string userId, ProfessionalUser userInfo, IFormFileCollection FileCollection, int UserTypeId);
         ProfileDetail GetUserDetail(long userId, int UserTypeId);
         string GenerateResume(long userId);
