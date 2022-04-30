@@ -30,10 +30,10 @@ namespace ModalLayer.Modal
         public int DaysPending { get; set; }
         public bool IsActiveDay { get; set; }
         public bool IsOpen { get; set; }
-        public List<ClientAttendace> ClientAttendaces { set; get; }
+        public List<TimeSheet> ClientTimeSheet { set; get; }
     }
 
-    public class ClientAttendace
+    public class TimeSheet
     {
         public long ClientId { set; get; }
         public string Comments { set; get; }

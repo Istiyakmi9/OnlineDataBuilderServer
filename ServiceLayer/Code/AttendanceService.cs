@@ -420,8 +420,7 @@ namespace ServiceLayer.Code
                                                                    UserComments = n.UserComments,
                                                                    AttendanceDay = n.AttendanceDay,
                                                                    AttendenceStatus = n.AttendenceStatus,
-                                                                  
-                                                                   ClientAttendaces = new List<ClientAttendace>()
+                                                                   ClientTimeSheet = new List<TimeSheet>()
                                                                }));
 
             double MonthsMinutes = 0;
