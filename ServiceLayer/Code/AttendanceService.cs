@@ -393,7 +393,7 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    var workingWeek = attendanceData.Where(x => x.AttendanceDay.Date.Subtract(From.Date).TotalDays == 0).FirstOrDefault()
+                    var workingWeek = attendanceData.Where(x => x.AttendanceDay.Date.Subtract(From.Date).TotalDays == 0).FirstOrDefault();
                     if (workingWeek == null)
                     {
                         throw new HiringBellException("Requested week is not allowed. For previous week please raise a permission to your manager or HR.");
