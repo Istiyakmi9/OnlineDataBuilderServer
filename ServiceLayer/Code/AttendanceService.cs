@@ -409,6 +409,7 @@ namespace ServiceLayer.Code
 
         private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
         {
+
             var AttendaceDetail = JsonConvert.SerializeObject((from n in finalAttendanceSet
                                                                select new
                                                                {
@@ -418,7 +419,9 @@ namespace ServiceLayer.Code
                                                                    AttendanceId = n.AttendanceId,
                                                                    UserComments = n.UserComments,
                                                                    AttendanceDay = n.AttendanceDay,
-                                                                   AttendenceStatus = n.AttendenceStatus
+                                                                   AttendenceStatus = n.AttendenceStatus,
+                                                                  
+                                                                   ClientAttendaces = new List<ClientAttendace>()
                                                                }));
 
             double MonthsMinutes = 0;
