@@ -98,7 +98,7 @@ namespace ServiceLayer.Code
                 new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
                 new DbParam(employee.BillingHours, typeof(int), "_BillingHours"),
                 new DbParam(employee.WorkingDaysPerWeek, typeof(int), "_DaysPerWeek"),
-                new DbParam(employee.DOL, typeof(DateTime), "_DOL")
+                new DbParam(employee.DateOfLeaving, typeof(DateTime), "_DateOfLeaving")
             };
             var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
             return resultset;
@@ -151,7 +151,7 @@ namespace ServiceLayer.Code
             };
 
             status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
-            if(!string.IsNullOrEmpty(status))
+            if (!string.IsNullOrEmpty(status))
             {
                 employees = this.GetEmployees(new FilterModel
                 {
@@ -169,7 +169,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(employee.Email))
                 throw new HiringBellException { UserMessage = "Email id is a mandatory field.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
 
-            if(IsUpdating == true)
+            if (IsUpdating == true)
             {
                 if (employee.EmployeeUid <= 0)
                     throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
@@ -286,7 +286,7 @@ namespace ServiceLayer.Code
 
             if (employee.FinalPackage < employee.ActualPackage)
                 throw new HiringBellException { UserMessage = "Final package must be greater that or equal to Actual package.", FieldName = nameof(employee.FinalPackage), FieldValue = employee.FinalPackage.ToString() };
-            
+
             if (employee.ActualPackage < employee.TakeHomeByCandidate)
                 throw new HiringBellException { UserMessage = "Actual package must be greater that or equal to TakeHome package.", FieldName = nameof(employee.ActualPackage), FieldValue = employee.ActualPackage.ToString() };
         }

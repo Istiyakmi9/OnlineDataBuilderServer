@@ -13,5 +13,9 @@ namespace BottomhalfCore.Services.Interface
         double GetBusinessDays(DateTime startD, DateTime endD);
         DateTime GetUtcDateTime(int year, int month, int day);
         DateTime GetUtcFirstDay(int year = 0, int month = 0);
+        DateTime LastDayOfWeekUTC(Nullable<DateTime> now = null);
+        DateTime FirstDayOfWeekUTC(Nullable<DateTime> now = null);
+        DateTime LastDayOfWeekIST(Nullable<DateTime> now = null);
+        DateTime FirstDayOfWeekIST(Nullable<DateTime> now = null);
     }
 }

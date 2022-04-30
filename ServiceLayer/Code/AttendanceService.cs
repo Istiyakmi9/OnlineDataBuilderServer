@@ -36,6 +36,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Ohh!!!. Future dates are now allowed.");
             }
 
+
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_EmployeeId"),
@@ -48,6 +49,7 @@ namespace ServiceLayer.Code
             var Result = _db.GetDataset("sp_attendance_get", dbParams);
             if (Result.Tables.Count == 2)
             {
+
                 if (Result.Tables[1].Rows.Count > 0)
                 {
                     employee = Converter.ToType<Employee>(Result.Tables[1]);
@@ -61,7 +63,8 @@ namespace ServiceLayer.Code
                 {
                     var data = Result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
                     var attendanceId = Convert.ToInt64(Result.Tables[0].Rows[0]["AttendanceId"]);
-                    var attendanceData = JsonConvert.DeserializeObject<List<AttendenceDetail>>(data);
+                    List<AttendenceDetail> attendanceData = JsonConvert.DeserializeObject<List<AttendenceDetail>>(data);
+                    this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, attendanceData);
 
                     attendenceDetails = new List<AttendenceDetail>();
                     attendanceData.ForEach(x =>
@@ -85,6 +88,7 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
+                    this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, null);
                     attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail);
                 }
             }
@@ -342,40 +346,65 @@ namespace ServiceLayer.Code
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             var startDate = (DateTime)attendenceDetail.AttendenceFromDay;
             var endDate = (DateTime)attendenceDetail.AttendenceToDay;
-            var days = endDate.Subtract(startDate);
 
-            if (days.TotalDays > 0)
+            while (startDate.Subtract(endDate).TotalDays <= 0)
             {
-                while (startDate.Subtract(endDate).TotalDays <= 0)
+                attendenceDetails.Add(new AttendenceDetail
                 {
-                    attendenceDetails.Add(new AttendenceDetail
-                    {
-                        IsActiveDay = false,
-                        TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
-                        AttendanceDay = startDate,
-                        AttendanceId = 0,
-                        AttendenceStatus = 4,
-                        BillingHours = 480,
-                        ClientId = attendenceDetail.ClientId,
-                        DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
-                        EmployeeUid = attendenceDetail.EmployeeUid,
-                        ForMonth = startDate.Month,
-                        ForYear = startDate.Year,
-                        TotalMinutes = 480,
-                        IsHoliday = (startDate.DayOfWeek == DayOfWeek.Saturday
-                                        ||
-                                    startDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
-                        IsOnLeave = false,
-                        LeaveId = 0,
-                        UserComments = string.Empty,
-                        UserTypeId = (int)UserType.Employee
-                    });
+                    IsActiveDay = false,
+                    TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
+                    AttendanceDay = startDate,
+                    AttendanceId = 0,
+                    AttendenceStatus = 4,
+                    BillingHours = 480,
+                    ClientId = attendenceDetail.ClientId,
+                    DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
+                    EmployeeUid = attendenceDetail.EmployeeUid,
+                    ForMonth = startDate.Month,
+                    ForYear = startDate.Year,
+                    TotalMinutes = 480,
+                    IsHoliday = (startDate.DayOfWeek == DayOfWeek.Saturday
+                                    ||
+                                startDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
+                    IsOnLeave = false,
+                    LeaveId = 0,
+                    UserComments = string.Empty,
+                    UserTypeId = (int)UserType.Employee
+                });
 
-                    startDate = startDate.AddDays(1);
-                }
+                startDate = startDate.AddDays(1);
             }
 
             return attendenceDetails;
+        }
+
+        private void IsGivenDateAllowed(DateTime From, DateTime To, List<AttendenceDetail> attendanceData)
+        {
+            var startDate = _timezoneConverter.ToIstTime(From);
+            var endDate = _timezoneConverter.ToIstTime(To);
+            var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
+            var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
+
+            if (startDate.Date.Subtract(weekFirstDate.Date).TotalDays != 0 || endDate.Date.Subtract(weekLastDate.Date).TotalDays != 0)
+            {
+                if (attendanceData == null)
+                {
+                    throw new HiringBellException("Only present week attendance is allowed. For previous week please raise a permission to your manager or HR.");
+                }
+                else
+                {
+                    var workingWeek = attendanceData.Where(x => x.AttendanceDay.Date.Subtract(From.Date).TotalDays == 0).FirstOrDefault()
+                    if (workingWeek == null)
+                    {
+                        throw new HiringBellException("Requested week is not allowed. For previous week please raise a permission to your manager or HR.");
+                    }
+
+                    if (!workingWeek.IsOpen)
+                    {
+                        throw new HiringBellException("Only present week attendance is allowed. For previous week please raise a permission to your manager or HR.");
+                    }
+                }
+            }
         }
 
         private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)

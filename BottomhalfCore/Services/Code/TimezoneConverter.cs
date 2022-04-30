@@ -92,6 +92,9 @@ namespace BottomhalfCore.Services.Code
             return now;
         }
 
+        /// <summary>
+        /// This method will return the first day of given month and year. If month and year is 0 then current year and month will be used.
+        /// </summary>
         public DateTime GetUtcFirstDay(int year = 0, int month = 0)
         {
             DateTime utc = DateTime.UtcNow;
@@ -104,6 +107,50 @@ namespace BottomhalfCore.Services.Code
             DateTime.SpecifyKind(now, DateTimeKind.Utc);
             now = TimeZoneInfo.ConvertTimeToUtc(now);
             return now;
+        }
+
+        /// <summary>
+        /// Get first day of the present week or specified date.
+        /// </summary>
+        public DateTime FirstDayOfWeekUTC(Nullable<DateTime> now = null)
+        {
+            DateTime workingDate = DateTime.UtcNow;
+            if (now != null)
+                workingDate = (DateTime)now;
+
+            return workingDate.AddDays(-(int)workingDate.DayOfWeek);
+        }
+
+        /// <summary>
+        /// Get first day of the present week or specified date.
+        /// </summary>
+        public DateTime LastDayOfWeekUTC(Nullable<DateTime> now = null)
+        {
+            DateTime workingDate = this.FirstDayOfWeekUTC(now);
+            return workingDate.AddDays(7).AddSeconds(-1);
+        }
+
+        /// <summary>
+        /// Get first day of the present week or specified date.
+        /// </summary>
+        public DateTime FirstDayOfWeekIST(Nullable<DateTime> now = null)
+        {
+            DateTime workingDate = DateTime.UtcNow;
+            if (now != null)
+                workingDate = (DateTime)now;
+
+            workingDate = ToIstTime(workingDate.AddDays(-(int)workingDate.DayOfWeek + 1));
+            return workingDate;
+        }
+
+        /// <summary>
+        /// Get first day of the present week or specified date.
+        /// </summary>
+        public DateTime LastDayOfWeekIST(Nullable<DateTime> now = null)
+        {
+            DateTime workingDate = this.FirstDayOfWeekIST(now);
+            workingDate = workingDate.AddDays(6).AddSeconds(-1);
+            return workingDate;
         }
     }
 }
