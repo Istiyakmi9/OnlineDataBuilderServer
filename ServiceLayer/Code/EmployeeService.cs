@@ -250,6 +250,7 @@ namespace ServiceLayer.Code
                     new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
                     new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
                     new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
+                    new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
                     new DbParam(employeeDetail.ProfessionalDetail_Json, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
