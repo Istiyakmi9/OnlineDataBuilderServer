@@ -138,8 +138,13 @@ namespace BottomhalfCore.Services.Code
             DateTime workingDate = DateTime.UtcNow;
             if (now != null)
                 workingDate = (DateTime)now;
-
-            workingDate = ToIstTime(workingDate.AddDays(-(int)workingDate.DayOfWeek + 1));
+            TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+            int day = (int)workingDate.DayOfWeek;
+            if (day == 0)
+                day = 7;
+            day--;
+            workingDate = workingDate.AddDays(-day);
+            workingDate = TimeZoneInfo.ConvertTimeFromUtc(workingDate, istTimeZome);
             return workingDate;
         }
 
