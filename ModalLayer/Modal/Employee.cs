@@ -34,5 +34,7 @@ namespace ModalLayer.Modal
         public DateTime CreatedOn { get; set; }
         public string ProfessionalDetail_Json { get; set; }
         public string ClientJson { set; get; }
+        public long EmpProfDetailUid { set; get; }
+        public decimal ExperienceInYear { set; get; }
     }
 }
