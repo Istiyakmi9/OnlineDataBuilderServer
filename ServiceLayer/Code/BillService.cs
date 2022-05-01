@@ -359,8 +359,8 @@ namespace ServiceLayer.Code
                             new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                         };
 
-                        var status = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                        if (string.IsNullOrEmpty(status))
+                        var fileId = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                        if (string.IsNullOrEmpty(fileId))
                         {
                             List<Files> files = new List<Files>();
                             files.Add(new Files
@@ -369,6 +369,11 @@ namespace ServiceLayer.Code
                                 FileName = fileDetail.FileName
                             });
                             this.fileService.DeleteFiles(files);
+                        }
+                        else
+                        {
+                            fileDetail.FileId = Convert.ToInt32(fileId);
+                            fileDetail.DiskFilePath = null;
                         }
                     }
                     else
