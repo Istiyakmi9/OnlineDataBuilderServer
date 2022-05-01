@@ -2,6 +2,7 @@
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Data;
+using BottomhalfCore.Services.Interface;
 
 namespace ServiceLayer.Code
 {
@@ -9,11 +10,13 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
+        private readonly ICacheManager _cacheManager;
 
-        public CommonService(IDb db, CurrentSession currentSession)
+        public CommonService(IDb db, CurrentSession currentSession, ICacheManager cacheManager)
         {
             _db = db;
             _currentSession = currentSession;
+            _cacheManager = cacheManager;
         }
 
         public DataSet LoadApplicationData()
@@ -31,6 +34,13 @@ namespace ServiceLayer.Code
                 Result.Tables[2].TableName = "allocatedClients";
             }
             return Result;
+        }
+
+        public DataTable LoadEmployeeData()
+        {
+            DataTable employeeTable = _cacheManager.Get(BottomhalfCore.Services.Code.Table.Employee);
+            employeeTable.TableName = "Employee";
+            return employeeTable;
         }
     }
 }

@@ -21,9 +21,9 @@ namespace ModalLayer.Modal
         public string BankName { get; set; }
         public string BranchName { get; set; }
         public string IFSCCode { get; set; }
-        public string Dpmain { get; set; }
+        public string Domain { get; set; }
         public string Specification { get; set; }
-        public float ExperienceInYear { get; set; }
+        public decimal ExperienceInYear { get; set; }
         public string LastCompanyName { get; set; }
         public long CreatedBy { get; set; }
         public long UpdatedBy { get; set; }

@@ -5,6 +5,7 @@ namespace ModalLayer.Modal
     public class AssignedClients
     {
         public long EmployeeUid { set; get; }
+        public long ReportingManagerId { set; get; }
         public long EmployeeMappedClientsUid { get; set; }
         public long ClientUid { set; get; }
         public string ClientName { set; get; }

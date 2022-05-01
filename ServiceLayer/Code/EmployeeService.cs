@@ -17,6 +17,7 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CommonFilterService _commonFilterService;
+        private readonly ICommonService _commonService;
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
@@ -25,6 +26,7 @@ namespace ServiceLayer.Code
             CommonFilterService commonFilterService,
             CurrentSession currentSession,
             IFileService fileService,
+            ICommonService commonService,
             FileLocationDetail fileLocationDetail)
         {
             _db = db;
@@ -32,10 +34,13 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
+            _commonService = commonService;
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
-            List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
+            var table = _commonService.LoadEmployeeData();
+            List<Employee> employees = Converter.ToList<Employee>(table);
+            // List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
             return employees;
         }
 
@@ -183,10 +188,29 @@ namespace ServiceLayer.Code
             int empId = Convert.ToInt32(employee.EmployeeUid);
 
             Employee employeeDetail = this.GetEmployeeByIdService(empId, null);
-            if (string.IsNullOrEmpty(employeeDetail.ProfessionalDetail_Json))
+            var professionalDetail = new EmployeeProfessionDetail
             {
-                employeeDetail.ProfessionalDetail_Json = string.Empty;
-            }
+                AadharNo = employee.AadharNo,
+                AccountNumber = employee.AccountNumber,
+                BankName = employee.BankName,
+                BranchName = employee.BranchName,
+                CreatedBy = employee.EmployeeUid,
+                CreatedOn = employee.CreatedOn,
+                Domain = employee.Domain,
+                Email = employee.Email,
+                EmployeeUid = employee.EmployeeUid,
+                EmpProfDetailUid = employeeDetail.EmpProfDetailUid >= 0 ? employeeDetail.EmpProfDetailUid : -1,
+                ExperienceInYear = employee.ExperienceInYear,
+                FirstName = employee.FirstName,
+                IFSCCode = employee.IFSCCode,
+                LastCompanyName = employee.LastCompanyName,
+                LastName = employee.LastName,
+                Mobile = employee.Mobile,
+                PANNo = employee.PANNo,
+                SecomdaryMobile = employee.SecondaryMobile,
+                Specification = employee.Specification,
+            };
+            employeeDetail.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
             return await Task.Run(() =>
             {
@@ -225,6 +249,7 @@ namespace ServiceLayer.Code
                     //new DbParam(employee.DateOfJoining, typeof(float), ""),
                     new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
                     new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
+                    new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
                     new DbParam(employeeDetail.ProfessionalDetail_Json, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
