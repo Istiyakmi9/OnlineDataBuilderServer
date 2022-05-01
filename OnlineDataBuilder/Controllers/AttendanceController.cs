@@ -61,5 +61,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.AddComment(commentDetails);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("EnablePermission")]
+        public IResponse<ApiResponse> EnablePermission(AttendenceDetail attendenceDetail)
+        {
+            var result = _attendanceService.EnablePermission(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
