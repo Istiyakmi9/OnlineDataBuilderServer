@@ -38,9 +38,9 @@ namespace ServiceLayer.Code
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
-            var table = _commonService.LoadEmployeeData();
-            List<Employee> employees = Converter.ToList<Employee>(table);
-            // List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
+            // var table = _commonService.LoadEmployeeData();
+            // List<Employee> employees = Converter.ToList<Employee>(table);
+            List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
             return employees;
         }
 
