@@ -125,12 +125,12 @@ namespace ServiceLayer.Code
             var attendenceList = new List<AttendenceDetail>();
 
             DbParam[] dbParams = new DbParam[]
-           {
+            {
                 new DbParam(attendenceDetail.EmployeeUid, typeof(long), "_EmployeeId"),
                 new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth"),
                 new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear")
-           };
+            };
 
             var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
             if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
@@ -341,6 +341,32 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
+        public string AddComment(AttendenceDetail commentDetails)
+        {
+            DateTime todayDate = DateTime.UtcNow.Date;
+            var value = todayDate.AddDays(-3);
+            if (commentDetails.AttendanceDay >= value)
+            {
+                var attendenceList = new List<AttendenceDetail>();
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId"),
+                    new DbParam(commentDetails.UserTypeId, typeof(int), "_UserTypeId"),
+                    new DbParam(commentDetails.AttendanceDay.Month, typeof(int), "_ForMonth"),
+                    new DbParam(commentDetails.AttendanceDay.Year, typeof(int), "_ForYear")
+                };
+
+                var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
+                if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
+                {
+                    var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
+                    attendenceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
+                    var attendanceOn = attendenceList.Where(x => x.AttendanceDay == commentDetails.AttendanceDay).ToList();
+                }
+
+            }
+            return null;
+        }
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
