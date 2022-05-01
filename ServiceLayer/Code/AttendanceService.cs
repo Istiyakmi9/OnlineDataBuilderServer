@@ -75,7 +75,7 @@ namespace ServiceLayer.Code
                             {
                                 x.AttendanceId = attendanceId;
                                 x.IsActiveDay = true;
-                                x.IsOpen = status == 0 ? true : false;
+                                x.IsOpen = status == 1 ? true : false;
                                 attendenceDetails.Add(x);
                             }
                         }
@@ -83,7 +83,7 @@ namespace ServiceLayer.Code
                         {
                             x.AttendanceId = attendanceId;
                             x.IsActiveDay = false;
-                            x.IsOpen = status == 0 ? true : false;
+                            x.IsOpen = status == 1 ? true : false;
                             attendenceDetails.Add(x);
                         }
                     });
@@ -205,25 +205,18 @@ namespace ServiceLayer.Code
             List<AttendenceDetail> otherMonthAttendanceDetail = new List<AttendenceDetail>();
             List<AttendenceDetail> finalAttendanceSet = new List<AttendenceDetail>();
 
-            int status = this.IsGivenDateAllowed(firstDate, lastDate, null);
-
-            if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
-            {
-                if (status == 1)
-                {
-                    throw new HiringBellException("Past and future week date's are not allowed to submit.");
-                }
-            }
-
+            int status = 1;
             Attendance currentAttendance = null;
             if (Result.Tables[0].Rows.Count > 0)
             {
                 currentAttendance = new Attendance();
                 currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
                 finalAttendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
+                status = this.IsGivenDateAllowed(firstDate, lastDate, finalAttendanceSet);
             }
             else
             {
+                status = 0;
                 var currentMonthDateTime = _timezoneConverter.ToIstTime(DateTime.UtcNow);
                 int totalDays = DateTime.DaysInMonth(currentMonthDateTime.Year, currentMonthDateTime.Month);
                 currentAttendance = new Attendance
@@ -244,6 +237,14 @@ namespace ServiceLayer.Code
                 firstItem.AttendenceFromDay = firstDate;
                 firstItem.AttendenceToDay = lastDate;
                 finalAttendanceSet = this.GenerateWeekAttendaceData(firstItem, status);
+            }
+
+            if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
+            {
+                if (status == 0)
+                {
+                    throw new HiringBellException("Past and future week date's are not allowed to submit.");
+                }
             }
 
             Employee employee = new Employee();
@@ -397,16 +398,16 @@ namespace ServiceLayer.Code
 
             if (startDate.Date.Subtract(weekFirstDate.Date).TotalDays == 0 && endDate.Date.Subtract(weekLastDate.Date).TotalDays == 0)
             {
-                return 0;
+                return 1;
             }
             else
             {
                 if (attendanceData == null)
-                    return 1;
+                    return 0;
 
                 var workingWeek = attendanceData.Where(x => x.AttendanceDay.Date.Subtract(From.Date).TotalDays == 0).FirstOrDefault();
                 if (workingWeek == null || !workingWeek.IsOpen)
-                    return 1;
+                    return 0;
 
                 // if (!workingWeek.IsOpen)
                 // {
