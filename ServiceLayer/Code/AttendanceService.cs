@@ -380,7 +380,7 @@ namespace ServiceLayer.Code
                     LeaveId = 0,
                     UserComments = string.Empty,
                     UserTypeId = (int)UserType.Employee,
-                    IsOpen = isOpen == 0 ? true : false
+                    IsOpen = isOpen == 1 ? true : false
                 });
 
                 startDate = startDate.AddDays(1);
