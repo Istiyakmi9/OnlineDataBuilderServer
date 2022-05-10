@@ -54,5 +54,19 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.GetAttendamceById(attendenceDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("AddComment")]
+        public IResponse<ApiResponse> AddComment(AttendenceDetail commentDetails)
+        {
+            var result = _attendanceService.AddComment(commentDetails);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("EnablePermission")]
+        public IResponse<ApiResponse> EnablePermission(AttendenceDetail attendenceDetail)
+        {
+            var result = _attendanceService.EnablePermission(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }

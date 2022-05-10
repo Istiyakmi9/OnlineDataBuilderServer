@@ -108,7 +108,6 @@ namespace ServiceLayer.Code
                     new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
                     new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
                     new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
-                    new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
                     new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
                 };

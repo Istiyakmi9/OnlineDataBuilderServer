@@ -11,4 +11,4 @@ services:
     ports:
       -  5000:80
     volumes:
-      -  /root/projects/hiringbell/Documents:/app/documents
+      -  /home/istiyak/projects/server/OnlineDataBuilderServer/Documents:/app/documents

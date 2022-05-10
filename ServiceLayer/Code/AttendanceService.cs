@@ -130,12 +130,12 @@ namespace ServiceLayer.Code
             var attendenceList = new List<AttendenceDetail>();
 
             DbParam[] dbParams = new DbParam[]
-           {
+            {
                 new DbParam(attendenceDetail.EmployeeUid, typeof(long), "_EmployeeId"),
                 new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth"),
                 new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear")
-           };
+            };
 
             var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
             if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
@@ -351,6 +351,56 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
+        public string AddComment(AttendenceDetail commentDetails)
+        {
+            DateTime todayDate = DateTime.UtcNow.Date;
+            var value = todayDate.AddDays(-3);
+            if (commentDetails.AttendanceDay >= value)
+            {
+                var attendenceList = new List<AttendenceDetail>();
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId"),
+                    new DbParam(commentDetails.UserTypeId, typeof(int), "_UserTypeId"),
+                    new DbParam(commentDetails.AttendanceDay.Month, typeof(int), "_ForMonth"),
+                    new DbParam(commentDetails.AttendanceDay.Year, typeof(int), "_ForYear")
+                };
+
+                var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
+                if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
+                {
+                    var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
+                    attendenceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
+                    var attendanceOn = attendenceList.Where(x => x.AttendanceDay == commentDetails.AttendanceDay).ToList();
+                }
+
+            }
+            return null;
+        }
+
+        public AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail)
+        {
+            if (attendenceDetail.ForMonth <= 0)
+                throw new HiringBellException("Invalid month num. passed.", nameof(attendenceDetail.ForMonth), attendenceDetail.ForMonth.ToString());
+
+            if (Convert.ToDateTime(attendenceDetail.AttendenceFromDay).Subtract(DateTime.UtcNow).TotalDays > 0)
+            {
+                throw new HiringBellException("Ohh!!!. Future dates are now allowed.");
+            }
+
+
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_EmployeeId"),
+                new DbParam(attendenceDetail.ClientId, typeof(int), "_ClientId"),
+                new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear"),
+                new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth")
+            };
+
+            var Result = _db.GetDataset("sp_attendance_get", dbParams);
+            return null;
+        }
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();

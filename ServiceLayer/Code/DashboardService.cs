@@ -27,11 +27,12 @@ namespace ServiceLayer.Code
             };
 
             var Result = _db.GetDataset("sp_dashboard_get", dbParams);
-            if (Result != null && Result.Tables.Count == 3)
+            if (Result != null && Result.Tables.Count == 4)
             {
                 Result.Tables[0].TableName = "BillDetail";
                 Result.Tables[1].TableName = "GSTDetail";
                 Result.Tables[2].TableName = "AttendaceDetail";
+                Result.Tables[3].TableName = "YearGrossIncome";
                 return Result;
             }
 
