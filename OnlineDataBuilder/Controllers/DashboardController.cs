@@ -18,10 +18,10 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [Authorize(Role.Admin)]
-        [HttpPost("GetEmployeeDeatils")]
-        public IResponse<ApiResponse> GetEmployeeDeatils(AttendenceDetail userDetail)
+        [HttpPost("GetSystemDashboard")]
+        public IResponse<ApiResponse> GetSystemDashboard(AttendenceDetail userDetail)
         {
-            var result = _dashboardService.GetEmployeeDeatils(userDetail);
+            var result = _dashboardService.GetSystemDashboardService(userDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

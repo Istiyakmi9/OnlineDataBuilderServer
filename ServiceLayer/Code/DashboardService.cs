@@ -16,28 +16,26 @@ namespace ServiceLayer.Code
             _db = db;
         }
 
-        public DataSet GetEmployeeDeatils(AttendenceDetail userDetails)
+        public DataSet GetSystemDashboardService(AttendenceDetail userDetails)
         {
-            TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-            userDetails.AttendenceFromDay = TimeZoneInfo.ConvertTimeFromUtc((DateTime)userDetails.AttendenceFromDay, istTimeZome);
-            userDetails.AttendenceToDay = TimeZoneInfo.ConvertTimeFromUtc((DateTime)userDetails.AttendenceToDay, istTimeZome);
-
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(userDetails.UserId, typeof(int), "_userId"),
-                new DbParam(userDetails.EmployeeUid, typeof(int), "_userTypeId"),
-                new DbParam(userDetails.AttendenceFromDay, typeof(DateTime), "_attendanceFromDay"),
-                new DbParam(userDetails.AttendenceToDay, typeof(DateTime), "_attendanceToDay"),
+                new DbParam(userDetails.EmployeeUid, typeof(int), "_employeeUid"),
+                new DbParam(userDetails.AttendenceFromDay, typeof(DateTime), "_fromDate"),
+                new DbParam(userDetails.AttendenceToDay, typeof(DateTime), "_toDate"),
             };
 
-            var Result = _db.GetDataset("sp_attendance_get", dbParams);
-            if (Result != null && Result.Tables.Count == 1)
+            var Result = _db.GetDataset("sp_dashboard_get", dbParams);
+            if (Result != null && Result.Tables.Count == 3)
             {
-                Result.Tables[0].TableName = "Attendance";
+                Result.Tables[0].TableName = "BillDetail";
+                Result.Tables[1].TableName = "GSTDetail";
+                Result.Tables[2].TableName = "AttendaceDetail";
                 return Result;
             }
 
-            return null;
+            return Result;
         }
 
         
