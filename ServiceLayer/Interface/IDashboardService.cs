@@ -8,6 +8,6 @@ namespace ServiceLayer.Interface
 {
     public interface IDashboardService
     {
-        DataSet GetEmployeeDeatils(AttendenceDetail userDetails);
+        DataSet GetSystemDashboardService(AttendenceDetail userDetails);
     }
 }

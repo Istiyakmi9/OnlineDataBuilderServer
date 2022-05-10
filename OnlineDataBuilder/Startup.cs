@@ -120,6 +120,7 @@ namespace OnlineDataBuilder
             services.AddScoped<HtmlConverterService>();
             services.AddScoped<IDOCXToHTMLConverter, DOCXToHTMLConverter>();
             services.AddScoped<ExcelWriter>();
+            services.AddScoped<IDashboardService, DashboardService>();
             services.AddSingleton<FileLocationDetail>(service =>
             {
                 var fileLocationDetail = Configuration.GetSection("BillingFolders").Get<FileLocationDetail>();
