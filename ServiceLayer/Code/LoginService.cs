@@ -186,19 +186,21 @@ namespace ServiceLayer.Code
                     new DbParam(authUser.UserTypeId, typeof(long), "_AdminId")
                 };
                 ds = db.GetDataset(ProcedureName, param);
-            } else
-            {
-                throw new HiringBellException("Unable to load application data");
-            }
-            if (ds.Tables.Count == 3)
-            {
-                _cacheManager.Add(Table.Employee, ds.Tables[0]);
-                _cacheManager.Add(Table.Client, ds.Tables[1]);
-            } else
-            {
-                throw new HiringBellException("Unable to load application data");
-            }
 
+                if (ds.Tables.Count == 3)
+                {
+                    _cacheManager.Add(Table.Employee, ds.Tables[0]);
+                    _cacheManager.Add(Table.Client, ds.Tables[1]);
+                }
+                else
+                {
+                    throw new HiringBellException("Unable to load application data");
+                }
+            }
+            else
+            {
+                throw new HiringBellException("Unable to load application data");
+            }
         }
     }
 }
