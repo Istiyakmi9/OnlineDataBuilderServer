@@ -197,10 +197,6 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to load application data");
                 }
             }
-            else
-            {
-                throw new HiringBellException("Unable to load application data");
-            }
         }
     }
 }
