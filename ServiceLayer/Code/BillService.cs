@@ -227,7 +227,7 @@ namespace ServiceLayer.Code
                     new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
                     new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
                     new DbParam(pdfModal.billingMonth.Month, typeof(long), "_forMonth"),
-                    new DbParam(pdfModal.billingMonth.Year, typeof(long), "_forYear")
+                    new DbParam(pdfModal.billYear, typeof(long), "_forYear")
                 };
 
                 ds = this.db.GetDataset("sp_Billing_detail", dbParams);
@@ -324,9 +324,6 @@ namespace ServiceLayer.Code
                         destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
                         _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
 
-                        // _fileMaker.BuildPdfBill(_buildPdfTable, pdfModal, sender);
-
-                        int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
                         dbParams = new DbParam[]
                         {
                             new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
@@ -341,7 +338,7 @@ namespace ServiceLayer.Code
                             new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
                             new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
                             new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                            new DbParam(Year, typeof(int), "_BillYear"),
+                            new DbParam(pdfModal.billYear, typeof(int), "_BillYear"),
                             new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
                             new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
                             new DbParam(pdfModal.iGST, typeof(float), "_IGST"),

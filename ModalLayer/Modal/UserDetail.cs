@@ -16,6 +16,7 @@ namespace ModalLayer.Modal
         public string Password { get; set; }
         public string MediaName { set; get; }
         public string AccessToken { set; get; }
+        public int AdminId { get; set; }
     }
 
     public class LoginDetail
@@ -37,6 +38,5 @@ namespace ModalLayer.Modal
     {
         public UserDetail UserDetail { set; get; }
         public DataTable Menu { set; get; }
-        public DataTable ReportColumnMapping { set; get; }
     }
 }

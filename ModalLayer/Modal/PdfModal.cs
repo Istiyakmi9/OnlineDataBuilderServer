@@ -6,6 +6,7 @@ namespace ModalLayer.Modal
     {
         public string header { get; set; }
         public DateTime billingMonth { get; set; }
+        public int billYear { get; set; }
         public string billNo { get; set; }
         public long billId { get; set; }
         public DateTime dateOfBilling { get; set; }
