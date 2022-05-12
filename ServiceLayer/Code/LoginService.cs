@@ -125,6 +125,7 @@ namespace ServiceLayer.Code
 
         private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
         {
+            this.BuildApplicationCache(authUser);
             LoginResponse loginResponse = default;
             UserDetail userDetail = default;
             DbParam[] param = new DbParam[]
@@ -136,17 +137,12 @@ namespace ServiceLayer.Code
                 new DbParam(authUser.Password, typeof(System.String), "_Password")
             };
             DataSet ds = db.GetDataset(ProcedureName, param);
-            if (ds != null && ds.Tables.Count == 5)
+            if (ds != null && ds.Tables.Count == 2)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
                     loginResponse = new LoginResponse();
-                    var LoginDetailList = Converter.ToList<LoginDetail>(ds.Tables[0]);
-                    var loginDetail = LoginDetailList.FirstOrDefault();
-
-                    _cacheManager.Add(Table.User, ds.Tables[0]);
-                    _cacheManager.Add(Table.Employee, ds.Tables[3]);
-                    _cacheManager.Add(Table.Client, ds.Tables[4]);
+                    var loginDetail = Converter.ToType<LoginDetail>(ds.Tables[0]);
 
                     if (loginDetail != null)
                     {
@@ -171,13 +167,36 @@ namespace ServiceLayer.Code
                         }
 
                         loginResponse.Menu = ds.Tables[1];
-                        loginResponse.ReportColumnMapping = ds.Tables[2];
                         loginResponse.UserDetail = userDetail;
                     }
                 }
             }
 
             return loginResponse;
+        }
+
+        private void BuildApplicationCache(UserDetail authUser)
+        {
+            DataSet ds = new DataSet();
+            string ProcedureName = "SP_ApplicationData_Get";
+            if (_cacheManager.IsEmpty())
+            {
+                DbParam[] param = new DbParam[]
+                {
+                    new DbParam(authUser.UserTypeId, typeof(long), "_AdminId")
+                };
+                ds = db.GetDataset(ProcedureName, param);
+
+                if (ds.Tables.Count == 3)
+                {
+                    _cacheManager.Add(Table.Employee, ds.Tables[0]);
+                    _cacheManager.Add(Table.Client, ds.Tables[1]);
+                }
+                else
+                {
+                    throw new HiringBellException("Unable to load application data");
+                }
+            }
         }
     }
 }
