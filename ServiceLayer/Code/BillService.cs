@@ -104,7 +104,7 @@ namespace ServiceLayer.Code
                 html = reader.ReadToEnd();
 
                 html = html.Replace("[[BILLNO]]", pdfModal.billNo).
-                Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd/MMM/yyyy")).
+                Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd MMM, yyyy")).
                 Replace("[[senderFirstAddress]]", sender.FirstAddress).
                 Replace("[[senderCompanyName]]", sender.ClientName).
                 Replace("[[senderGSTNo]]", sender.GSTNO).
