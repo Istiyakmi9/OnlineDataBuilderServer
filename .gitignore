@@ -13,7 +13,6 @@ packages
 **/Documents/Bills
 **/Documents/User
 **/Templates
-OnlineDataBuilder/appsettings.json
 
 # User-specific files
 *.rsuser
