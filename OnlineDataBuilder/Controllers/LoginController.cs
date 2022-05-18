@@ -67,9 +67,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("ResetEmployeePassword")]
-        public IResponse<ApiResponse> ResetEmployeePassword(UserDetail passwords)
+        public IResponse<ApiResponse> ResetEmployeePassword(UserDetail authUser)
         {
-            var result = this.loginService.ResetEmployeePassword(passwords);
+            var result = this.loginService.ResetEmployeePassword(authUser);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

@@ -248,9 +248,32 @@ namespace ServiceLayer.Code
             }
         }
 
-        public string ResetEmployeePassword(UserDetail passwords)
+        public string ResetEmployeePassword(UserDetail authUser)
         {
-            return null;
+            string Status = string.Empty;
+            var encryptedPassword = this.FetchPasswordByRoleType(authUser);
+            encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+            if (encryptedPassword != authUser.Password)
+                throw new HiringBellException("Incorrect old password");
+
+            string newEncryptedPassword = _authenticationService.Encrypt(authUser.NewPassword, _configuration.GetSection("EncryptSecret").Value);
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
+                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
+                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(newEncryptedPassword, typeof(System.String), "_NewPassword")
+            };
+            var result = db.ExecuteNonQuery("sp_Reset_Password", dbParams, true);
+            if (result == "Update")
+            {
+                Status = "Password changed successfully, Please logout and login again";
+            } else
+            {
+                throw new HiringBellException("Unable to update your password");
+            }
+
+            return Status;
         }
     }
 }
