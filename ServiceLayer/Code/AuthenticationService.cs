@@ -205,11 +205,11 @@ namespace ServiceLayer.Code
             return ba;
         }
 
-        public string Encrypt(string text, string pwd)
+        public string Encrypt(string textOrPassword, string secretKey)
         {
-            byte[] originalBytes = Encoding.UTF8.GetBytes(text);
+            byte[] originalBytes = Encoding.UTF8.GetBytes(textOrPassword);
             byte[] encryptedBytes = null;
-            byte[] passwordBytes = Encoding.UTF8.GetBytes(pwd);
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(secretKey);
 
             // Hash the password with SHA256  
             passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
@@ -234,10 +234,11 @@ namespace ServiceLayer.Code
 
             return Convert.ToBase64String(encryptedBytes);
         }
-        public string Decrypt(string decryptedText, string pwd)
+
+        public string Decrypt(string encryptedText, string secretKey)
         {
-            byte[] bytesToBeDecrypted = Convert.FromBase64String(decryptedText);
-            byte[] passwordBytes = Encoding.UTF8.GetBytes(pwd);
+            byte[] bytesToBeDecrypted = Convert.FromBase64String(encryptedText);
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(secretKey);
 
             // Hash the password with SHA256  
             passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
