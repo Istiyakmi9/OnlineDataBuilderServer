@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -24,15 +25,18 @@ namespace ServiceLayer.Code
         private readonly IAuthenticationService _authenticationService;
         private readonly ExcelWriter _excelWriter;
         private readonly ICacheManager _cacheManager;
+        private readonly IConfiguration _configuration;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             CurrentSession currentSession,
             IMediaService mediaService,
             IAuthenticationService authenticationService,
             ICacheManager cacheManager,
+            IConfiguration configuration,
             ExcelWriter excelWriter)
         {
             this.db = db;
+            _configuration = configuration;
             _jwtSetting = options.Value;
             _currentSession = currentSession;
             _mediaService = mediaService;
@@ -102,6 +106,30 @@ namespace ServiceLayer.Code
             });
         }
 
+        public string FetchPasswordByRoleType(UserDetail authUser)
+        {
+            string encryptedPassword = string.Empty;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
+                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
+                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
+                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
+            };
+
+            DataSet ds = db.GetDataset("sp_Password_GetByRole", param);
+            if(ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            {
+                encryptedPassword = ds.Tables[0].Rows[0]["Password"].ToString();
+            }
+            else
+            {
+                throw new HiringBellException("Incorrect user detail provided.");
+            }
+
+            return encryptedPassword;
+        }
+
         public async Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser)
         {
             string ProcedureName = string.Empty;
@@ -128,14 +156,22 @@ namespace ServiceLayer.Code
             this.BuildApplicationCache();
             LoginResponse loginResponse = default;
             UserDetail userDetail = default;
+
+            var encryptedPassword = this.FetchPasswordByRoleType(authUser);
+            encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+            if(encryptedPassword.CompareTo(authUser.Password) != 0)
+            {
+                throw new HiringBellException("Invalid userId or password.");
+            }
+
             DbParam[] param = new DbParam[]
             {
                 new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
                 new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
                 new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
-                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(authUser.Password, typeof(System.String), "_Password")
+                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId")
             };
+
             DataSet ds = db.GetDataset(ProcedureName, param);
             if (ds != null && ds.Tables.Count == 2)
             {
