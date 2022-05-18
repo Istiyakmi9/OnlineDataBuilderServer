@@ -209,20 +209,6 @@ namespace ServiceLayer.Code
 
         public List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
-            //var table = _commonService.LoadEmployeeData();
-            //List<Employee> employees = Converter.ToList<Employee>(table);
-            //Employee employee = employees.FirstOrDefault(x => x.EmployeeUid == EmployeeId);
-            //employee.IsActive = IsActive;
-
-            //if (IsActive == true)
-            //{
-            //    employees = employees.FindAll(x => x.IsActive == false);
-            //}
-            //else if (IsActive == false)
-            //{
-            //    employees = employees.FindAll(x => x.IsActive == true);
-            //}
-
             List<Employee> employees = null;
             var status = string.Empty;
             DbParam[] param = new DbParam[]
@@ -235,13 +221,26 @@ namespace ServiceLayer.Code
             status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
             if (!string.IsNullOrEmpty(status))
             {
-                employees = this.GetEmployees(new FilterModel
+                _loginService.BuildApplicationCache(true);
+                var table = _commonService.LoadEmployeeData();
+                employees = Converter.ToList<Employee>(table);
+                if (IsActive == true)
                 {
-                    PageIndex = 1,
-                    PageSize = 10,
-                    SearchString = "1=1",
-                    SortBy = string.Empty,
-                });
+                    employees = employees.FindAll(x => x.IsActive == false);
+                }
+                else if (IsActive == false)
+                {
+                    employees = employees.FindAll(x => x.IsActive == true);
+                }
+                int total = employees.Count;
+                Parallel.For(0, total, i => employees[i].Total = total);
+                //employees = this.GetEmployees(new FilterModel
+                //{
+                //    PageIndex = 1,
+                //    PageSize = 10,
+                //    SearchString = "1=1",
+                //    SortBy = string.Empty,
+                //});
             }
             return employees;
         }
