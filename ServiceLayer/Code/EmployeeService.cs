@@ -299,8 +299,8 @@ namespace ServiceLayer.Code
             return await Task.Run(() =>
             {
                 string EncreptedPassword = _authenticationService.Encrypt(
-                    _configuration.GetSection("EncryptSecret").Value,
-                    _configuration.GetSection("DefaultNewEmployeePassword").Value
+                    _configuration.GetSection("DefaultNewEmployeePassword").Value,
+                    _configuration.GetSection("EncryptSecret").Value
                 );
 
                 DataSet ResultSet = null;
