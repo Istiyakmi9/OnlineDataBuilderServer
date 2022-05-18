@@ -125,7 +125,7 @@ namespace ServiceLayer.Code
 
         private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
         {
-            this.BuildApplicationCache(authUser);
+            this.BuildApplicationCache();
             LoginResponse loginResponse = default;
             UserDetail userDetail = default;
             DbParam[] param = new DbParam[]
@@ -175,22 +175,35 @@ namespace ServiceLayer.Code
             return loginResponse;
         }
 
-        private void BuildApplicationCache(UserDetail authUser)
+        public void BuildApplicationCache(bool isRelead = false)
         {
             DataSet ds = new DataSet();
             string ProcedureName = "SP_ApplicationData_Get";
-            if (_cacheManager.IsEmpty())
+            if (_cacheManager.IsEmpty() || isRelead)
             {
                 DbParam[] param = new DbParam[]
                 {
-                    new DbParam(authUser.UserTypeId, typeof(long), "_AdminId")
+                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
                 ds = db.GetDataset(ProcedureName, param);
 
                 if (ds.Tables.Count == 3)
                 {
-                    _cacheManager.Add(Table.Employee, ds.Tables[0]);
-                    _cacheManager.Add(Table.Client, ds.Tables[1]);
+                    if (isRelead)
+                    {
+                        _cacheManager.Clean();
+                        _cacheManager.ReLoad(() =>
+                        {
+                            if (ds.Tables[0].Rows.Count <= 0)
+                                throw new HiringBellException("Unable to load application data.");
+                            return ds.Tables[0];
+                        }, Table.Employee);
+                    }
+                    else
+                    {
+                        _cacheManager.Add(Table.Employee, ds.Tables[0]);
+                        _cacheManager.Add(Table.Client, ds.Tables[1]);
+                    }
                 }
                 else
                 {
