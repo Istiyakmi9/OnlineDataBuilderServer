@@ -72,15 +72,20 @@ namespace BottomhalfCore.Services.Code
             _table.Clear();
         }
 
-        public void ReLoad(Func<DataSet> procFunc)
+        public void ReLoad(Func<DataTable> procFunc, Table tableName)
         {
-            DataSet result = procFunc.Invoke();
-            if (result != null && result.Tables.Count == 5)
+            DataTable result = procFunc.Invoke();
+            if (result != null)
             {
-                _table.Clear();
-                _table.TryAdd(Table.User, result.Tables[0]);
-                _table.TryAdd(Table.Employee, result.Tables[3]);
-                _table.TryAdd(Table.User, result.Tables[4]);
+                switch (tableName)
+                {
+                    case Table.User:
+                        break;
+                    case Table.Employee:
+                        _table.TryRemove(Table.Employee, out DataTable oldSet);
+                        _table.TryAdd(Table.Employee, result);
+                        break;
+                }
             }
         }
     }

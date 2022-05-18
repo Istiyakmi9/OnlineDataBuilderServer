@@ -1,8 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -21,15 +21,24 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
+        private readonly IConfiguration _configuration;
+        private readonly IAuthenticationService _authenticationService;
+        private readonly ILoginService _loginService;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
             CurrentSession currentSession,
             IFileService fileService,
             ICommonService commonService,
+            IConfiguration configuration,
+            ILoginService loginService,
+            IAuthenticationService authenticationService,
             FileLocationDetail fileLocationDetail)
         {
             _db = db;
+            _loginService = loginService;
+            _authenticationService = authenticationService;
+            _configuration = configuration;
             _commonFilterService = commonFilterService;
             _currentSession = currentSession;
             _fileService = fileService;
@@ -130,8 +139,6 @@ namespace ServiceLayer.Code
             {
                 new DbParam(EmployeeId, typeof(int), "_EmployeeId"),
                 new DbParam(statusValue, typeof(int), "_IsActive")
-                //new DbParam(IsActive ? 1 : 0, typeof(int), "_IsActive")
-
             };
 
             var resultSet = _db.GetDataset("SP_Employees_ById", param);
@@ -188,6 +195,14 @@ namespace ServiceLayer.Code
             int empId = Convert.ToInt32(employee.EmployeeUid);
 
             Employee employeeDetail = this.GetEmployeeByIdService(empId, null);
+            if(employeeDetail == null)
+            {
+                employeeDetail = new Employee
+                {
+                    EmpProfDetailUid = -1
+                };
+            }
+
             var professionalDetail = new EmployeeProfessionDetail
             {
                 AadharNo = employee.AadharNo,
@@ -199,7 +214,7 @@ namespace ServiceLayer.Code
                 Domain = employee.Domain,
                 Email = employee.Email,
                 EmployeeUid = employee.EmployeeUid,
-                EmpProfDetailUid = employeeDetail.EmpProfDetailUid >= 0 ? employeeDetail.EmpProfDetailUid : -1,
+                EmpProfDetailUid = employeeDetail.EmpProfDetailUid,
                 ExperienceInYear = employee.ExperienceInYear,
                 FirstName = employee.FirstName,
                 IFSCCode = employee.IFSCCode,
@@ -214,6 +229,11 @@ namespace ServiceLayer.Code
 
             return await Task.Run(() =>
             {
+                string EncreptedPassword = _authenticationService.Encrypt(
+                    _configuration.GetSection("EncryptSecret").Value,
+                    _configuration.GetSection("DefaultNewEmployeePassword").Value
+                );
+
                 DataSet ResultSet = null;
                 DbParam[] param = new DbParam[]
                 {
@@ -245,12 +265,12 @@ namespace ServiceLayer.Code
                     new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
                     new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
                     new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
-                    //new DbParam(employee.DOB, typeof(float), ""),
-                    //new DbParam(employee.DateOfJoining, typeof(float), ""),
                     new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
                     new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
                     new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
+                    new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
                     new DbParam(employeeDetail.ProfessionalDetail_Json, typeof(string), "_ProfessionalDetail_Json"),
+                    new DbParam(EncreptedPassword, typeof(string), "_Password"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 
@@ -260,6 +280,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Fail to insert or update record. Contact to admin.");
                 }
 
+                _loginService.BuildApplicationCache(true);
                 long currentEmployeeId = Convert.ToInt64(employeeId);
                 if (fileCollection.Count > 0)
                 {

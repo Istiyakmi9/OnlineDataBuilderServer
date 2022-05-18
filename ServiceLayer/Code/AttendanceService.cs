@@ -187,6 +187,8 @@ namespace ServiceLayer.Code
                 j++;
             }
 
+            ValidateDateOfAttendanceSubmission(firstDate, lastDate);
+
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(firstItem.EmployeeUid, typeof(int), "_EmployeeId"),
@@ -237,14 +239,6 @@ namespace ServiceLayer.Code
                 firstItem.AttendenceFromDay = firstDate;
                 firstItem.AttendenceToDay = lastDate;
                 finalAttendanceSet = this.GenerateWeekAttendaceData(firstItem, status);
-            }
-
-            if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
-            {
-                if (status == 0)
-                {
-                    throw new HiringBellException("Past and future week date's are not allowed to submit.");
-                }
             }
 
             Employee employee = new Employee();
@@ -401,6 +395,7 @@ namespace ServiceLayer.Code
             var Result = _db.GetDataset("sp_attendance_get", dbParams);
             return null;
         }
+
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
@@ -468,6 +463,57 @@ namespace ServiceLayer.Code
             return 0;
         }
 
+        //public void GenerateCurrentMonthAttendaceSheet()
+        //{
+        //    DbParam[] dbParams = new DbParam[]
+        //    {
+        //        new DbParam("1=1", typeof(int), "_searchString"),
+        //        new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_sortBy"),
+        //        new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_pageIndex"),
+        //        new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_pageSize")
+        //    };
+
+        //    var Result = _db.GetDataset("SP_Employees_Get", dbParams);
+
+        //    List<AttendenceDetail> finalAttendanceSet = new List<AttendenceDetail>();
+        //    DateTime firstDay = _timezoneConverter.GetUtcFirstDay(DateTime.Now.Year, DateTime.Now.Month);
+        //    int days = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+        //    int i = 0;
+        //    while (i < days)
+        //    {
+        //        finalAttendanceSet.Add(new AttendenceDetail
+        //        {
+        //            TotalMinutes = 0,
+        //            UserTypeId = 0,
+        //            EmployeeUid = 0,
+        //            IsHoliday = false,
+        //            IsOnLeave = false,
+        //            AttendanceId = 0,
+        //            UserComments = "NA",
+        //            AttendanceDay = DateTime.Now.AddDays(i + 1),
+        //            AttendenceStatus = 1,
+        //            ClientId = 0
+        //        });
+
+        //        i++;
+        //    }
+
+        //    Attendance attendance = new Attendance
+        //    {
+        //        AttendanceDetail = null,
+        //        AttendanceId = 0,
+        //        EmployeeId = 0,
+        //        UserTypeId = (int)UserType.Employee,
+        //        TotalDays = 0,
+        //        TotalWeekDays = 0,
+        //        DaysPending = 0,
+        //        ForYear = 0,
+        //        ForMonth = 0
+        //    };
+
+        //    this.UpdateOrInsertAttendanceDetail(finalAttendanceSet, attendance, ApplicationConstants.InserUpdateAttendance);
+        //}
+
         private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
         {
             var firstAttn = finalAttendanceSet.FirstOrDefault();
@@ -519,6 +565,26 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 return null;
             return result;
+        }
+
+        private void ValidateDateOfAttendanceSubmission(DateTime firstDate, DateTime lastDate)
+        {
+            DateTime now = DateTime.Now;
+            DateTime presentDate = _timezoneConverter.GetUtcDateTime(now.Year, now.Month, now.Day);
+
+            // handling future date
+            if (presentDate.Subtract(lastDate).TotalDays > 0)
+            {
+                throw new HiringBellException("Future date's are not allowed.");
+            }
+            // handling past date
+            else if (presentDate.Subtract(firstDate).TotalDays < 0)
+            {
+                if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
+                {
+                    throw new HiringBellException("Past week's are not allowed.");
+                }
+            }
         }
     }
 }
