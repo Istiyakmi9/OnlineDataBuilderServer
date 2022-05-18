@@ -202,40 +202,40 @@ namespace ServiceLayer.Code
 
         public List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
-            var table = _commonService.LoadEmployeeData();
-            List<Employee> employees = Converter.ToList<Employee>(table);
-            Employee employee = employees.FirstOrDefault(x => x.EmployeeUid == EmployeeId);
-            employee.IsActive = IsActive;
-            
-            if (IsActive == true)
-            {
-                employees = employees.FindAll(x => x.IsActive == false);
-            }
-            else if (IsActive == false)
-            {
-                employees = employees.FindAll(x => x.IsActive == true);
-            }
+            //var table = _commonService.LoadEmployeeData();
+            //List<Employee> employees = Converter.ToList<Employee>(table);
+            //Employee employee = employees.FirstOrDefault(x => x.EmployeeUid == EmployeeId);
+            //employee.IsActive = IsActive;
 
-            //List<Employee> employees = null;
-            //var status = string.Empty;
-            //DbParam[] param = new DbParam[]
+            //if (IsActive == true)
             //{
-            //    new DbParam(EmployeeId, typeof(int), "_employeeId"),
-            //    new DbParam(IsActive, typeof(bool), "_active"),
-            //    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_adminId")
-            //};
-
-            //status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
-            //if (!string.IsNullOrEmpty(status))
-            //{
-            //    employees = this.GetEmployees(new FilterModel
-            //    {
-            //        PageIndex = 1,
-            //        PageSize = 10,
-            //        SearchString = "1=1",
-            //        SortBy = string.Empty,
-            //    });
+            //    employees = employees.FindAll(x => x.IsActive == false);
             //}
+            //else if (IsActive == false)
+            //{
+            //    employees = employees.FindAll(x => x.IsActive == true);
+            //}
+
+            List<Employee> employees = null;
+            var status = string.Empty;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(EmployeeId, typeof(int), "_employeeId"),
+                new DbParam(IsActive, typeof(bool), "_active"),
+                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_adminId")
+            };
+
+            status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
+            if (!string.IsNullOrEmpty(status))
+            {
+                employees = this.GetEmployees(new FilterModel
+                {
+                    PageIndex = 1,
+                    PageSize = 10,
+                    SearchString = "1=1",
+                    SortBy = string.Empty,
+                });
+            }
             return employees;
         }
 
