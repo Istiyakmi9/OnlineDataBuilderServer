@@ -32,9 +32,9 @@ namespace BottomhalfCore.Services.Code
             return _cache.Get(key);
         }
 
-        public void ReLoad(Func<DataSet> procFunc)
+        public void ReLoad(Func<DataTable> procFunc, Table tableName)
         {
-            _cache.ReLoad(procFunc);
+            _cache.ReLoad(procFunc, tableName);
         }
     }
 }

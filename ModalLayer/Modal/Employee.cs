@@ -36,5 +36,6 @@ namespace ModalLayer.Modal
         public string ClientJson { set; get; }
         public long EmpProfDetailUid { set; get; }
         public decimal ExperienceInYear { set; get; }
+        public int DesignationId { set; get; }
     }
 }

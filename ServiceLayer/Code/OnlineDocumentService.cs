@@ -469,7 +469,7 @@ namespace ServiceLayer.Code
                     string destinationFilePath = Path.Combine(
                         folderPath,
                         pdfModal.developerName.Replace(" ", "_") + "_" +
-                        pdfModal.billingMonth.ToString("MMMM_yyyy") + "_" +
+                        pdfModal.billingMonth.ToString("MMM_yyyy") + "_" +
                         pdfModal.billNo + $".{ApplicationConstants.Excel}");
 
                     if (File.Exists(destinationFilePath))
