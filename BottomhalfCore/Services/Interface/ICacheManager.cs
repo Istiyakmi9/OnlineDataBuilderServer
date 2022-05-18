@@ -10,6 +10,6 @@ namespace BottomhalfCore.Services.Interface
         DataTable Get(Table key);
         void Add(Table key, DataTable value);
         void Clean();
-        void ReLoad(Func<DataSet> procFunc);
+        void ReLoad(Func<DataTable> procFunc, Table tableName);
     }
 }

@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using OnlineDataBuilder.MiddlewareServices.Src;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace OnlineDataBuilder
+namespace Scheduler
 {
     public class Program
     {
@@ -18,6 +22,5 @@ namespace OnlineDataBuilder
                 {
                     webBuilder.UseStartup<Startup>();
                 });
-                //.ConfigureServices(x => x.AddHostedService<SchedulerJob>());
     }
 }
