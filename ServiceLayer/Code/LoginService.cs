@@ -211,5 +211,10 @@ namespace ServiceLayer.Code
                 }
             }
         }
+
+        public string ResetEmployeePassword(UserDetail passwords)
+        {
+            return null;
+        }
     }
 }
