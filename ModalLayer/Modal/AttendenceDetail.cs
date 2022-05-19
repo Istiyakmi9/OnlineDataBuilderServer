@@ -12,6 +12,7 @@ namespace ModalLayer.Modal
         public double BillingHours { get; set; }
         public int TotalMinutes { get; set; }
         public bool IsHoliday { get; set; }
+        public int PresentDayStatus { get; set; }
         public bool IsOnLeave { get; set; }
         public long LeaveId { set; get; }
         public int AttendenceStatus { get; set; }

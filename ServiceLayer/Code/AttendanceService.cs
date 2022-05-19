@@ -69,23 +69,10 @@ namespace ServiceLayer.Code
                     attendenceDetails = new List<AttendenceDetail>();
                     attendanceData.ForEach(x =>
                     {
-                        if (employee.CreatedOn.Subtract(x.AttendanceDay).TotalDays <= 0)
-                        {
-                            if (x.AttendanceDay >= attendenceDetail.AttendenceFromDay && x.AttendanceDay <= attendenceDetail.AttendenceToDay)
-                            {
-                                x.AttendanceId = attendanceId;
-                                x.IsActiveDay = true;
-                                x.IsOpen = status == 1 ? true : false;
-                                attendenceDetails.Add(x);
-                            }
-                        }
-                        else
-                        {
-                            x.AttendanceId = attendanceId;
-                            x.IsActiveDay = false;
-                            x.IsOpen = status == 1 ? true : false;
-                            attendenceDetails.Add(x);
-                        }
+                        x.AttendanceId = attendanceId;
+                        x.IsActiveDay = false;
+                        x.IsOpen = status == 1 ? true : false;
+                        attendenceDetails.Add(x);
                     });
 
                     if (attendenceDetails.Count == 0)
@@ -95,6 +82,11 @@ namespace ServiceLayer.Code
                 {
                     int status = this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, null);
                     attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail, status);
+                }
+
+                if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+                {
+                    attendenceDetails = attendenceDetails.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
                 }
             }
 
@@ -246,6 +238,10 @@ namespace ServiceLayer.Code
             {
                 employee = Converter.ToType<Employee>(Result.Tables[1]);
             }
+            else
+            {
+                throw new HiringBellException("User detail not found.");
+            }
 
             if (finalAttendanceSet == null)
             {
@@ -253,18 +249,28 @@ namespace ServiceLayer.Code
             }
 
             int i = 0;
+            DayStatus dayStatus = DayStatus.WorkFromOffice;
             while (i < attendenceDetail.Count)
             {
                 var x = attendenceDetail.ElementAt(i);
+                switch (x.AttendanceDay.DayOfWeek)
+                {
+                    case DayOfWeek.Sunday:
+                    case DayOfWeek.Saturday:
+                        dayStatus = DayStatus.Weekend;
+                        break;
+                    default:
+                        dayStatus = DayStatus.Empty;
+                        break;
+                }
+
                 var item = finalAttendanceSet.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
                 if (item != null)
                 {
                     item.TotalMinutes = x.TotalMinutes;
                     item.UserTypeId = x.UserTypeId;
                     item.EmployeeUid = x.EmployeeUid;
-                    item.IsHoliday = (x.AttendanceDay.DayOfWeek == DayOfWeek.Saturday
-                                        ||
-                                        x.AttendanceDay.DayOfWeek == DayOfWeek.Sunday) ? true : false;
+                    item.PresentDayStatus = (int)dayStatus;
                     item.IsOnLeave = false;
                     item.AttendanceId = firstItem.AttendanceId;
                     item.UserComments = x.UserComments;
@@ -279,10 +285,9 @@ namespace ServiceLayer.Code
                         x.AttendanceId = -1;
                         x.ForMonth = x.AttendanceDay.Month;
                         x.ForYear = x.AttendanceDay.Year;
-                        x.IsHoliday = (x.AttendanceDay.DayOfWeek == DayOfWeek.Saturday
-                                        ||
-                                        x.AttendanceDay.DayOfWeek == DayOfWeek.Sunday) ? true : false;
+                        x.PresentDayStatus = (int)dayStatus;
                         x.IsOnLeave = false;
+                        x.PresentDayStatus = 1;
                         otherMonthAttendanceDetail.Add(x);
                     }
                     else
@@ -292,9 +297,7 @@ namespace ServiceLayer.Code
                             TotalMinutes = x.TotalMinutes,
                             UserTypeId = x.UserTypeId,
                             EmployeeUid = x.EmployeeUid,
-                            IsHoliday = (x.AttendanceDay.DayOfWeek == DayOfWeek.Saturday
-                                                ||
-                                                x.AttendanceDay.DayOfWeek == DayOfWeek.Sunday) ? true : false,
+                            PresentDayStatus = (int)dayStatus,
                             IsOnLeave = false,
                             AttendanceId = firstItem.AttendanceId,
                             UserComments = x.UserComments,
@@ -306,6 +309,11 @@ namespace ServiceLayer.Code
                 }
 
                 i++;
+            }
+
+            if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+            {
+                finalAttendanceSet = finalAttendanceSet.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
             }
 
             result = this.UpdateOrInsertAttendanceDetail(finalAttendanceSet, currentAttendance, ApplicationConstants.InserUpdateAttendance);
@@ -327,6 +335,12 @@ namespace ServiceLayer.Code
             {
                 currentAttendance.ForMonth = otherMonthAttendanceDetail.First().ForMonth;
                 currentAttendance.ForYear = otherMonthAttendanceDetail.First().ForYear;
+
+                if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+                {
+                    otherMonthAttendanceDetail = otherMonthAttendanceDetail.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
+                }
+
                 result = this.UpdateOrInsertAttendanceDetail(otherMonthAttendanceDetail, currentAttendance, "sp_attendance_insupd_by_monthandyear");
                 if (string.IsNullOrEmpty(result))
                 {
@@ -434,6 +448,19 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
+        private int IsRegisteredOnPresentWeek(DateTime RegistratedOn)
+        {
+            var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
+            var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
+
+            if (RegistratedOn.Date.Subtract(weekFirstDate.Date).TotalDays >= 0 && RegistratedOn.Date.Subtract(weekLastDate.Date).TotalDays <= 0)
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+
         private int IsGivenDateAllowed(DateTime From, DateTime To, List<AttendenceDetail> attendanceData)
         {
             var startDate = _timezoneConverter.ToIstTime(From);
@@ -529,6 +556,7 @@ namespace ServiceLayer.Code
                                                                {
                                                                    TotalMinutes = n.TotalMinutes,
                                                                    UserTypeId = n.UserTypeId,
+                                                                   PresentDayStatus = n.PresentDayStatus,
                                                                    EmployeeUid = n.EmployeeUid,
                                                                    AttendanceId = n.AttendanceId,
                                                                    UserComments = n.UserComments,
