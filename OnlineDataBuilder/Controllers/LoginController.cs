@@ -65,5 +65,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await loginService.SignUpUser(userDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("ResetEmployeePassword")]
+        public IResponse<ApiResponse> ResetEmployeePassword(UserDetail authUser)
+        {
+            var result = this.loginService.ResetEmployeePassword(authUser);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
