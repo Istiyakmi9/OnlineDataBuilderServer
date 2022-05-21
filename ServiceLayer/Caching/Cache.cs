@@ -2,13 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Data;
 
-namespace BottomhalfCore.Services.Code
+namespace ServiceLayer.Caching
 {
     public enum Table
     {
-        User = 1,
-        Employee = 2,
-        Client = 3
+        Employee = 1,
+        Client =2,
+        MappedOrganization = 3
     }
 
     public class Cache
@@ -79,7 +79,8 @@ namespace BottomhalfCore.Services.Code
             {
                 switch (tableName)
                 {
-                    case Table.User:
+                    case Table.MappedOrganization:
+                        _table.TryRemove(Table.MappedOrganization, out DataTable oldOrganizationSet);
                         break;
                     case Table.Employee:
                         _table.TryRemove(Table.Employee, out DataTable oldSet);

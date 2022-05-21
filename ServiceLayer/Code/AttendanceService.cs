@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -15,10 +16,12 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly ICacheManager _cacheManager;
 
-        public AttendanceService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        public AttendanceService(IDb db, ICacheManager cacheManager, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
+            _cacheManager = cacheManager;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
         }
@@ -63,20 +66,35 @@ namespace ServiceLayer.Code
                 {
                     var data = Result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
                     var attendanceId = Convert.ToInt64(Result.Tables[0].Rows[0]["AttendanceId"]);
-                    List<AttendenceDetail> attendanceData = JsonConvert.DeserializeObject<List<AttendenceDetail>>(data);
-                    int status = this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, attendanceData);
+                    attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(data);
+                    int status = this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, attendenceDetails);
 
-                    attendenceDetails = new List<AttendenceDetail>();
-                    attendanceData.ForEach(x =>
+                    attendenceDetails.ForEach(x =>
                     {
                         x.AttendanceId = attendanceId;
                         x.IsActiveDay = false;
                         x.IsOpen = status == 1 ? true : false;
-                        attendenceDetails.Add(x);
                     });
 
-                    if (attendenceDetails.Count == 0)
-                        attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail, status);
+                    int i = 0;
+                    var generatedAttendance = this.GenerateWeekAttendaceData(attendenceDetail, status);
+                    AttendenceDetail attrDetail = null;
+                    foreach (var item in attendenceDetails)
+                    {
+                        i = 0;
+                        while (i < generatedAttendance.Count)
+                        {
+                            attrDetail = generatedAttendance.ElementAt(i);
+                            if (attrDetail.AttendanceDay.Date.Subtract(item.AttendanceDay.Date).TotalDays == 0)
+                            {
+                                generatedAttendance[i] = item;
+                                break;
+                            }
+                            i++;
+                        }
+                    }
+
+                    attendenceDetails = generatedAttendance;
                 }
                 else
                 {
@@ -249,28 +267,28 @@ namespace ServiceLayer.Code
             }
 
             int i = 0;
-            DayStatus dayStatus = DayStatus.WorkFromOffice;
+            int dayStatus = (int)DayStatus.Empty;
             while (i < attendenceDetail.Count)
             {
                 var x = attendenceDetail.ElementAt(i);
-                switch (x.AttendanceDay.DayOfWeek)
-                {
-                    case DayOfWeek.Sunday:
-                    case DayOfWeek.Saturday:
-                        dayStatus = DayStatus.Weekend;
-                        break;
-                    default:
-                        dayStatus = DayStatus.Empty;
-                        break;
-                }
 
                 var item = finalAttendanceSet.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
                 if (item != null)
                 {
+                    switch (x.AttendanceDay.DayOfWeek)
+                    {
+                        case DayOfWeek.Sunday:
+                        case DayOfWeek.Saturday:
+                            dayStatus = (int)DayStatus.Weekend;
+                            break;
+                        default:
+                            dayStatus = item.PresentDayStatus;
+                            break;
+                    }
                     item.TotalMinutes = x.TotalMinutes;
                     item.UserTypeId = x.UserTypeId;
                     item.EmployeeUid = x.EmployeeUid;
-                    item.PresentDayStatus = (int)dayStatus;
+                    item.PresentDayStatus = dayStatus;
                     item.IsOnLeave = false;
                     item.AttendanceId = firstItem.AttendanceId;
                     item.UserComments = x.UserComments;
@@ -285,7 +303,7 @@ namespace ServiceLayer.Code
                         x.AttendanceId = -1;
                         x.ForMonth = x.AttendanceDay.Month;
                         x.ForYear = x.AttendanceDay.Year;
-                        x.PresentDayStatus = (int)dayStatus;
+                        x.PresentDayStatus = dayStatus;
                         x.IsOnLeave = false;
                         x.PresentDayStatus = 1;
                         otherMonthAttendanceDetail.Add(x);
@@ -297,7 +315,7 @@ namespace ServiceLayer.Code
                             TotalMinutes = x.TotalMinutes,
                             UserTypeId = x.UserTypeId,
                             EmployeeUid = x.EmployeeUid,
-                            PresentDayStatus = (int)dayStatus,
+                            PresentDayStatus = dayStatus,
                             IsOnLeave = false,
                             AttendanceId = firstItem.AttendanceId,
                             UserComments = x.UserComments,
@@ -359,13 +377,16 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
-        public string AddComment(AttendenceDetail commentDetails)
+        public string SubmitAttendanceService(AttendenceDetail commentDetails)
         {
+            string Result = string.Empty;
+            bool flag = false;
             DateTime todayDate = DateTime.UtcNow.Date;
             var value = todayDate.AddDays(-3);
             if (commentDetails.AttendanceDay >= value)
             {
-                var attendenceList = new List<AttendenceDetail>();
+                DateTime requestedDate = _timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceFromDay);
+                var attendanceList = new List<AttendenceDetail>();
                 DbParam[] dbParams = new DbParam[]
                 {
                     new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId"),
@@ -378,12 +399,73 @@ namespace ServiceLayer.Code
                 if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
                 {
                     var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
-                    attendenceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
-                    var attendanceOn = attendenceList.Where(x => x.AttendanceDay == commentDetails.AttendanceDay).ToList();
-                }
+                    attendanceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
 
+                    if (attendanceList.Count == 0)
+                    {
+                        flag = true;
+                        int status = this.IsGivenDateAllowed((DateTime)commentDetails.AttendenceFromDay, (DateTime)commentDetails.AttendenceToDay, attendanceList);
+                        DateTime now = (DateTime)commentDetails.AttendenceToDay;
+                        commentDetails.AttendenceFromDay = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
+                        attendanceList = this.GenerateWeekAttendaceData(commentDetails, status);
+
+                        var empData = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
+                        List<Employee> employees = Converter.ToList<Employee>(empData);
+                        if (employees == null || employees.Count == 0)
+                        {
+                            throw new HiringBellException("No employee found. Please login again.");
+                        }
+
+                        var employee = employees.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
+                        if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+                        {
+                            attendanceList = attendanceList.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
+                        }
+                    }
+
+                    AttendenceDetail attendanceOn = null;
+                    while (requestedDate.Date.Subtract(_timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceToDay).Date).TotalDays < 0)
+                    {
+                        attendanceOn = attendanceList.Find(x => x.AttendanceDay.Date.Subtract(requestedDate.Date).TotalDays == 0);
+
+                        if (attendanceOn == null)
+                        {
+                            throw new HiringBellException("Not ablt to submit attendance.");
+                        }
+                        else
+                        {
+                            attendanceOn.PresentDayStatus = (int)DayStatus.WorkFromHome;
+                            attendanceOn.UserComments = commentDetails.UserComments;
+                        }
+
+                        if (flag) break;
+                        requestedDate = requestedDate.AddDays(1);
+                    }
+
+                    var AttendaceDetail = JsonConvert.SerializeObject((from n in attendanceList
+                                                                       select new
+                                                                       {
+                                                                           TotalMinutes = n.TotalMinutes,
+                                                                           UserTypeId = n.UserTypeId,
+                                                                           PresentDayStatus = n.PresentDayStatus,
+                                                                           EmployeeUid = n.EmployeeUid,
+                                                                           AttendanceId = n.AttendanceId,
+                                                                           UserComments = n.UserComments,
+                                                                           AttendanceDay = n.AttendanceDay,
+                                                                           AttendenceStatus = n.AttendenceStatus,
+                                                                           ClientTimeSheet = n.ClientTimeSheet
+                                                                       }));
+
+                    dbParams = new DbParam[]
+                    {
+                        new DbParam(currentAttendence.AttendanceId, typeof(long), "_AttendanceId"),
+                        new DbParam(AttendaceDetail, typeof(string), "_AttendanceDetail")
+                    };
+
+                    Result = _db.ExecuteNonQuery("sp_attendance_update_timesheet", dbParams, true);
+                }
             }
-            return null;
+            return Result;
         }
 
         public AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail)

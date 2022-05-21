@@ -69,6 +69,7 @@ namespace BottomhalfCore.Services.Code
         private static T CreateItemFromRow<T>(DataRow row, IList<PropertyInfo> properties) where T : new()
         {
             T item = new T();
+            DateTime? now = null;
             foreach (var property in properties)
             {
                 try

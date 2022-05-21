@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace ServiceLayer.Code
         private readonly CommonFilterService _commonFilterService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IFileMaker _iFileMaker;
-        private readonly ICommonService _commonService;
+        private readonly ICacheManager _cacheManager;
         private readonly CurrentSession _currentSession;
         private readonly IBillService _billService;
         private readonly FileLocationDetail _fileLocationDetail;
@@ -38,14 +39,14 @@ namespace ServiceLayer.Code
             CommonFilterService commonFilterService,
             IAuthenticationService authenticationService,
             CurrentSession currentSession,
-            ICommonService commonService,
+            ICacheManager cacheManager,
             FileLocationDetail fileLocationDetail,
             IBillService billService)
         {
             this.db = db;
             _excelWriter = excelWriter;
             _logger = logger;
-            _commonService = commonService;
+            _cacheManager = cacheManager;
             _currentSession = currentSession;
             _fileService = fileService;
             _commonFilterService = commonFilterService;
@@ -164,7 +165,7 @@ namespace ServiceLayer.Code
 
         public DataSet LoadApplicationData()
         {
-            return _commonService.LoadApplicationData();
+            return _cacheManager.LoadApplicationData();
         }
 
         public Bills GetBillData()

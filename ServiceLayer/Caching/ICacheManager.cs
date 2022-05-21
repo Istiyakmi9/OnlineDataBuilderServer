@@ -1,8 +1,7 @@
 using System;
 using System.Data;
-using BottomhalfCore.Services.Code;
 
-namespace BottomhalfCore.Services.Interface
+namespace ServiceLayer.Caching
 {
     public interface ICacheManager
     {
@@ -11,5 +10,6 @@ namespace BottomhalfCore.Services.Interface
         void Add(Table key, DataTable value);
         void Clean();
         void ReLoad(Func<DataTable> procFunc, Table tableName);
+        DataSet LoadApplicationData();
     }
 }
