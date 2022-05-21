@@ -31,3 +31,13 @@ public enum RolesName
     User = 2,
     Other = 3
 }
+
+public enum DayStatus
+{
+    WorkFromOffice = 1,
+    WorkFromHome = 2,
+    Weekend = 3,
+    Holiday = 4,
+    OnLeave = 5,
+    Empty = 6
+}

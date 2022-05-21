@@ -55,10 +55,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [HttpPost("AddComment")]
-        public IResponse<ApiResponse> AddComment(AttendenceDetail commentDetails)
+        [HttpPost("SubmitAttendance")]
+        public IResponse<ApiResponse> SubmitAttendance(AttendenceDetail commentDetails)
         {
-            var result = _attendanceService.AddComment(commentDetails);
+            var result = _attendanceService.SubmitAttendanceService(commentDetails);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

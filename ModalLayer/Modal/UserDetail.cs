@@ -17,6 +17,7 @@ namespace ModalLayer.Modal
         public string MediaName { set; get; }
         public string AccessToken { set; get; }
         public int AdminId { get; set; }
+        public string NewPassword { get; set; }
     }
 
     public class LoginDetail

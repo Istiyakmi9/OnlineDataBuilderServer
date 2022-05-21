@@ -1,10 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using SocialMediaServices;
 using SocialMediaServices.Modal;
@@ -12,7 +12,7 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using Table = BottomhalfCore.Services.Code.Table;
+using Table = ServiceLayer.Caching.Table;
 
 namespace ServiceLayer.Code
 {
@@ -118,7 +118,7 @@ namespace ServiceLayer.Code
             };
 
             DataSet ds = db.GetDataset("sp_Password_GetByRole", param);
-            if(ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
             {
                 encryptedPassword = ds.Tables[0].Rows[0]["Password"].ToString();
             }
@@ -159,7 +159,7 @@ namespace ServiceLayer.Code
 
             var encryptedPassword = this.FetchPasswordByRoleType(authUser);
             encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
-            if(encryptedPassword.CompareTo(authUser.Password) != 0)
+            if (encryptedPassword.CompareTo(authUser.Password) != 0)
             {
                 throw new HiringBellException("Invalid userId or password.");
             }
@@ -217,35 +217,58 @@ namespace ServiceLayer.Code
             string ProcedureName = "SP_ApplicationData_Get";
             if (_cacheManager.IsEmpty() || isRelead)
             {
-                DbParam[] param = new DbParam[]
-                {
-                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                };
-                ds = db.GetDataset(ProcedureName, param);
+                ds = db.GetDataset(ProcedureName, null);
 
                 if (ds.Tables.Count == 3)
                 {
                     if (isRelead)
                     {
                         _cacheManager.Clean();
-                        _cacheManager.ReLoad(() =>
-                        {
-                            if (ds.Tables[0].Rows.Count <= 0)
-                                throw new HiringBellException("Unable to load application data.");
-                            return ds.Tables[0];
-                        }, Table.Employee);
+                        //_cacheManager.ReLoad(() =>
+                        //{
+                        //    if (ds.Tables[0].Rows.Count <= 0)
+                        //        throw new HiringBellException("Unable to load application data.");
+                        //    return ds.Tables[0];
+                        //}, Table.Employee);
                     }
-                    else
-                    {
-                        _cacheManager.Add(Table.Employee, ds.Tables[0]);
-                        _cacheManager.Add(Table.Client, ds.Tables[1]);
-                    }
+                    _cacheManager.Add(Table.Employee, ds.Tables[1]);
+                    _cacheManager.Add(Table.Client, ds.Tables[0]);
+                    _cacheManager.Add(Table.MappedOrganization, ds.Tables[2]);
                 }
                 else
                 {
                     throw new HiringBellException("Unable to load application data");
                 }
             }
+        }
+
+        public string ResetEmployeePassword(UserDetail authUser)
+        {
+            string Status = string.Empty;
+            var encryptedPassword = this.FetchPasswordByRoleType(authUser);
+            encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+            if (encryptedPassword != authUser.Password)
+                throw new HiringBellException("Incorrect old password");
+
+            string newEncryptedPassword = _authenticationService.Encrypt(authUser.NewPassword, _configuration.GetSection("EncryptSecret").Value);
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
+                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
+                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(newEncryptedPassword, typeof(System.String), "_NewPassword")
+            };
+            var result = db.ExecuteNonQuery("sp_Reset_Password", dbParams, true);
+            if (result == "Update")
+            {
+                Status = "Password changed successfully, Please logout and login again";
+            }
+            else
+            {
+                throw new HiringBellException("Unable to update your password");
+            }
+
+            return Status;
         }
     }
 }
