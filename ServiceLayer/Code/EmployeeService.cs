@@ -71,11 +71,8 @@ namespace ServiceLayer.Code
                 }
             }
 
-            int total = employees.Count;
-            Parallel.For(0, total, i => employees[i].Total = total);
-
-            List<Employee> emp = null; 
-            if(filterModel.SortBy == "FirstName Asc")
+            List<Employee> emp = null;
+            if (filterModel.SortBy == "FirstName Asc")
                 emp = employees.OrderBy(x => x.FirstName).Skip(skipValue).Take(takeValue).ToList();
             else if (filterModel.SortBy == "FirstName Desc")
                 emp = employees.OrderByDescending(x => x.FirstName).Skip(skipValue).Take(takeValue).ToList();
@@ -87,30 +84,63 @@ namespace ServiceLayer.Code
                 emp = employees.OrderBy(x => x.Email).Skip(skipValue).Take(takeValue).ToList();
             else if (filterModel.SortBy == "Email Desc")
                 emp = employees.OrderByDescending(x => x.Email).Skip(skipValue).Take(takeValue).ToList();
+            if (emp == null)
+            {
+                int total = employees.Count;
+                Parallel.For(0, total, i => employees[i].Total = total);
+            }
             if (string.IsNullOrEmpty(filterModel.SortBy))
                 emp = employees.OrderBy(x => x.CreatedOn).Skip(skipValue).Take(takeValue).ToList();
 
-            if (filterModel.SearchString.Contains("FirstName"))
+            if (filterModel.SearchString.Contains("Global"))
             {
-                int lastIndex = filterModel.SearchString.Length - 16;
-                string serachValue = (filterModel.SearchString.Substring(16, lastIndex)).ToLower();
-                string value = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(serachValue);
-                emp = emp.FindAll(x => x.FirstName.Contains(value));
-            } else if (filterModel.SearchString.Contains("Email"))
-            {
-                int lastIndex = filterModel.SearchString.Length - 11;
-                string value = (filterModel.SearchString.Substring(11, lastIndex)).ToLower();
-                emp = emp.Where(x => x.Email.Contains(value)).ToList();
+                int lastIndex = filterModel.SearchString.Length - 13;
+                string value = (filterModel.SearchString.Substring(13, lastIndex)).ToLower();
+                var result = emp.FindAll(x => x.Email.Contains(value));
+                if (result.Count == 0)
+                {
+                    string saerchValue = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(value);
+                    result = emp.FindAll(x => x.FirstName.Contains(saerchValue));
+                }
+                if (result.Count == 0)
+                {
+                    result = emp.FindAll(x => x.Mobile.Contains(value));
+                }
+                emp = result;
+
+                int total = emp.Count;
+                Parallel.For(0, total, i => emp[i].Total = total);
             }
-            else if (filterModel.SearchString.Contains("Mobile"))
+            else
             {
-                int lastIndex = filterModel.SearchString.Length - 12;
-                string value = filterModel.SearchString.Substring(12, lastIndex);
-                emp = emp.FindAll(x => x.Mobile.Contains(value));
-            } else
-            {
-                emp = employees.OrderBy(x => x.CreatedOn).Skip(skipValue).Take(takeValue).ToList();
+                if (filterModel.SearchString.Contains("FirstName"))
+                {
+                    int lastIndex = filterModel.SearchString.Length - 16;
+                    string searchValue = (filterModel.SearchString.Substring(16, lastIndex)).ToLower();
+                    string value = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(searchValue);
+                    emp = emp.FindAll(x => x.FirstName.Contains(value));
+                    int total = emp.Count;
+                    Parallel.For(0, total, i => emp[i].Total = total);
+                }
+                else if (filterModel.SearchString.Contains("Email"))
+                {
+                    int lastIndex = filterModel.SearchString.Length - 11;
+                    string value = (filterModel.SearchString.Substring(11, lastIndex)).ToLower();
+                    emp = emp.FindAll(x => x.Email.Contains(value));
+                    int total = emp.Count;
+                    Parallel.For(0, total, i => emp[i].Total = total);
+                }
+                else if (filterModel.SearchString.Contains("Mobile"))
+                {
+                    int lastIndex = filterModel.SearchString.Length - 12;
+                    string value = filterModel.SearchString.Substring(12, lastIndex);
+                    emp = emp.FindAll(x => x.Mobile.Contains(value));
+                    int total = emp.Count;
+                    Parallel.For(0, total, i => emp[i].Total = total);
+                }
+
             }
+
             return emp;
         }
 
@@ -263,15 +293,12 @@ namespace ServiceLayer.Code
 
         public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating)
         {
-            if (string.IsNullOrEmpty(employee.Email))
-                throw new HiringBellException { UserMessage = "Email id is a mandatory field.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
-
             if (IsUpdating == true)
             {
                 if (employee.EmployeeUid <= 0)
                     throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
             }
-
+            this.ValidateEmployee(employee);
             this.ValidateEmployeeDetails(employee);
 
             //TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
@@ -280,7 +307,7 @@ namespace ServiceLayer.Code
             int empId = Convert.ToInt32(employee.EmployeeUid);
 
             Employee employeeDetail = this.GetEmployeeByIdService(empId, null);
-            if(employeeDetail == null)
+            if (employeeDetail == null)
             {
                 employeeDetail = new Employee
                 {
@@ -422,6 +449,35 @@ namespace ServiceLayer.Code
 
             if (employee.ActualPackage < employee.TakeHomeByCandidate)
                 throw new HiringBellException { UserMessage = "Actual package must be greater that or equal to TakeHome package.", FieldName = nameof(employee.ActualPackage), FieldValue = employee.ActualPackage.ToString() };
+        }
+
+        private void ValidateEmployee(Employee employee)
+        {
+            if (string.IsNullOrEmpty(employee.Email))
+                throw new HiringBellException { UserMessage = "Email id is a mandatory field.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
+
+            if (string.IsNullOrEmpty(employee.FirstName))
+                throw new HiringBellException { UserMessage = "First Name is a mandatory field.", FieldName = nameof(employee.FirstName), FieldValue = employee.FirstName.ToString() };
+
+            if (string.IsNullOrEmpty(employee.LastName))
+                throw new HiringBellException { UserMessage = "Last Name is a mandatory field.", FieldName = nameof(employee.LastName), FieldValue = employee.LastName.ToString() };
+
+            if (string.IsNullOrEmpty(employee.Mobile))
+                throw new HiringBellException { UserMessage = "Mobile number is a mandatory field.", FieldName = nameof(employee.Mobile), FieldValue = employee.Mobile.ToString() };
+
+            if (employee.DesignationId <= 0)
+                throw new HiringBellException { UserMessage = "Designation is a mandatory field.", FieldName = nameof(employee.DesignationId), FieldValue = employee.DesignationId.ToString() };
+
+            if (employee.ReportingManagerId <= 0)
+                throw new HiringBellException { UserMessage = "Reporting Manager is a mandatory field.", FieldName = nameof(employee.ReportingManagerId), FieldValue = employee.ReportingManagerId.ToString() };
+
+            if (employee.UserTypeId <= 0)
+                throw new HiringBellException { UserMessage = "User Type is a mandatory field.", FieldName = nameof(employee.UserTypeId), FieldValue = employee.UserTypeId.ToString() };
+
+            if (employee.AccessLevelId <= 0)
+                throw new HiringBellException { UserMessage = "Role is a mandatory field.", FieldName = nameof(employee.AccessLevelId), FieldValue = employee.AccessLevelId.ToString() };
+
+            
         }
     }
 }
