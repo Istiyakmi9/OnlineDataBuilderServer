@@ -37,5 +37,8 @@ namespace ModalLayer.Modal
         public long EmpProfDetailUid { set; get; }
         public decimal ExperienceInYear { set; get; }
         public int DesignationId { set; get; }
+        public int AccessLevelId { set; get; }
+        public int UserTypeId { set; get; }
+
     }
 }
