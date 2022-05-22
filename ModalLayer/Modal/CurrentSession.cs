@@ -1,4 +1,6 @@
-﻿namespace ModalLayer.Modal
+﻿using System;
+
+namespace ModalLayer.Modal
 {
     public class CurrentSession
     {
@@ -12,5 +14,6 @@
         public string RequestPath { set; get; }
         public string FileUploadFolderName { set; get; }
         public UserDetail CurrentUserDetail { set; get; }
+        public TimeZoneInfo TimeZone { set; get; }
     }
 }

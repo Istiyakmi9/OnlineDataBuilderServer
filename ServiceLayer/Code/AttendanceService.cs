@@ -108,7 +108,7 @@ namespace ServiceLayer.Code
                 }
             }
 
-            return new AttendanceWithClientDetail { EmployeeDetail = employee, AttendacneDetails = attendenceDetails };
+            return new AttendanceWithClientDetail { EmployeeDetail = employee, AttendacneDetails = attendenceDetails.OrderByDescending(x => x.AttendanceDay).ToList() };
         }
 
         public List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId)
@@ -377,13 +377,39 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
+        private DateTime GetPreviousThreeWorkingDaysBackDate()
+        {
+            int i = 4;
+            DateTime todayDate = DateTime.UtcNow.Date;
+            while (true)
+            {
+                todayDate = todayDate.AddDays(-1);
+                switch (todayDate.DayOfWeek)
+                {
+                    case DayOfWeek.Saturday:
+                    case DayOfWeek.Sunday:
+                        break;
+                    default:
+                        i--;
+                        break;
+                }
+
+                if (i == 0)
+                    break;
+            }
+
+            if (i > 0)
+                todayDate = todayDate.AddDays(-1 * i);
+
+            return todayDate;
+        }
+
         public string SubmitAttendanceService(AttendenceDetail commentDetails)
         {
             string Result = string.Empty;
             bool flag = false;
-            DateTime todayDate = DateTime.UtcNow.Date;
-            var value = todayDate.AddDays(-3);
-            if (commentDetails.AttendanceDay >= value)
+            DateTime barrierDate = this.GetPreviousThreeWorkingDaysBackDate();
+            if (commentDetails.AttendanceDay.Subtract(barrierDate).TotalDays >= 0)
             {
                 DateTime requestedDate = _timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceFromDay);
                 var attendanceList = new List<AttendenceDetail>();
@@ -459,12 +485,22 @@ namespace ServiceLayer.Code
                     dbParams = new DbParam[]
                     {
                         new DbParam(currentAttendence.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(AttendaceDetail, typeof(string), "_AttendanceDetail")
+                        new DbParam(AttendaceDetail, typeof(string), "_AttendanceDetail"),
+                        new DbParam(commentDetails.AttendenceFromDay, typeof(DateTime), "_FromDate"),
+                        new DbParam(commentDetails.AttendenceToDay, typeof(DateTime), "_ToDate"),
+                        new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
+                        new DbParam(commentDetails.UserComments, typeof(string), "_Message"),
+                        new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId")
                     };
 
                     Result = _db.ExecuteNonQuery("sp_attendance_update_timesheet", dbParams, true);
                 }
             }
+            else
+            {
+                Result = "Ops!!! You are not allow to submit this date attendace. Please raise a request to your direct manager.";
+            }
+
             return Result;
         }
 
