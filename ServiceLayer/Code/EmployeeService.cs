@@ -1,9 +1,11 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -23,12 +25,14 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
+        private readonly ICacheManager _cacheManager;
         private readonly IAuthenticationService _authenticationService;
         private readonly ILoginService _loginService;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
             CurrentSession currentSession,
+            ICacheManager cacheManager,
             IFileService fileService,
             ICommonService commonService,
             IConfiguration configuration,
@@ -37,6 +41,7 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail)
         {
             _db = db;
+            _cacheManager = cacheManager;
             _loginService = loginService;
             _authenticationService = authenticationService;
             _configuration = configuration;
@@ -141,20 +146,31 @@ namespace ServiceLayer.Code
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
         {
+            DataSet finalResultSet = new DataSet();
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 5)
+            if (resultset.Tables.Count == 4)
             {
                 resultset.Tables[0].TableName = "Employee";
-                resultset.Tables[1].TableName = "Clients";
-                resultset.Tables[2].TableName = "AllocatedClients";
-                resultset.Tables[3].TableName = "FileDetail";
-                resultset.Tables[4].TableName = "EmployeesList";
+                resultset.Tables[1].TableName = "AllocatedClients";
+                resultset.Tables[2].TableName = "FileDetail";                
+                resultset.Tables[3].TableName = "Roles";
+                
+                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Employee).Copy());
+                finalResultSet.Tables[0].TableName = "EmployeesList";
+
+                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Client).Copy());
+                finalResultSet.Tables[1].TableName = "Clients";
+
+                finalResultSet.Tables.Add(resultset.Tables[0].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[1].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[2].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[3].Copy());
             }
-            return resultset;
+            return finalResultSet;
         }
 
         public DataSet GetManageClientService(long EmployeeId)
@@ -367,6 +383,8 @@ namespace ServiceLayer.Code
                     new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
                     new DbParam(employeeDetail.ProfessionalDetail_Json, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(EncreptedPassword, typeof(string), "_Password"),
+                    new DbParam(employee.AccessLevelId, typeof(int), "_AccessLevelId"),
+                    new DbParam(employee.UserTypeId, typeof(int), "_UserTypeId"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 

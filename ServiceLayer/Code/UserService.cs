@@ -1,11 +1,11 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -386,9 +386,9 @@ namespace ServiceLayer.Code
             {
                 await Task.Run(() =>
                 {
-                    var emps = _cacheManager.Get(BottomhalfCore.Services.Code.Table.Employee);
+                    var emps = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
                     emps.TableName = "Employees";
-                    var clients = _cacheManager.Get(BottomhalfCore.Services.Code.Table.Client);
+                    var clients = _cacheManager.Get(ServiceLayer.Caching.Table.Client);
                     clients.TableName = "Clients";
                     ds.Tables.Add(emps.Copy());
                     ds.Tables.Add(clients.Copy());
