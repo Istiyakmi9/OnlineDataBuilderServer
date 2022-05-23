@@ -6,7 +6,7 @@ namespace ServiceLayer.Interface
 {
     public interface IAttendanceService
     {
-        List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail);
+        List<AttendenceDetail> InsertUpdateTimesheet(List<AttendenceDetail> attendenceDetail);
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
         string SubmitAttendanceService(AttendenceDetail commentDetails);

@@ -169,7 +169,7 @@ namespace ServiceLayer.Code
             return new { AttendanceDetail = attendenceList, MissingDate = missingDayList };
         }
 
-        public List<AttendenceDetail> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
+        public List<AttendenceDetail> InsertUpdateTimesheet(List<AttendenceDetail> attendenceDetail)
         {
             string result = string.Empty;
             var firstItem = attendenceDetail.FirstOrDefault();
@@ -268,6 +268,7 @@ namespace ServiceLayer.Code
 
             int i = 0;
             int dayStatus = (int)DayStatus.Empty;
+            DateTime clientKindDateTime = DateTime.Now;
             while (i < attendenceDetail.Count)
             {
                 var x = attendenceDetail.ElementAt(i);
@@ -275,7 +276,8 @@ namespace ServiceLayer.Code
                 var item = finalAttendanceSet.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
                 if (item != null)
                 {
-                    switch (x.AttendanceDay.DayOfWeek)
+                    clientKindDateTime = _timezoneConverter.ToIstTime(x.AttendanceDay);
+                    switch (clientKindDateTime.DayOfWeek)
                     {
                         case DayOfWeek.Sunday:
                         case DayOfWeek.Saturday:
