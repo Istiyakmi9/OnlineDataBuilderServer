@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace SchoolInMindServer.MiddlewareServices
 {
@@ -68,6 +69,8 @@ namespace SchoolInMindServer.MiddlewareServices
                                 currentSession.CurrentUserDetail.RoleId = (int)RolesName.Other;
                                 break;
                         }
+
+                        currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
                         currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
                     }
                 }

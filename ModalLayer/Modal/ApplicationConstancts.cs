@@ -34,10 +34,10 @@ public enum RolesName
 
 public enum DayStatus
 {
+    Empty = 0,
     WorkFromOffice = 1,
     WorkFromHome = 2,
     Weekend = 3,
     Holiday = 4,
-    OnLeave = 5,
-    Empty = 6
+    OnLeave = 5
 }
