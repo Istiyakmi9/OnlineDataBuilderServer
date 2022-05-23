@@ -67,7 +67,9 @@ namespace ServiceLayer.Code
                 }
                 else if (filterModel.IsActive == false)
                 {
-                    employees = employees.FindAll(x => x.IsActive == false);
+                    //employees = employees.FindAll(x => x.IsActive == false);
+                    DataSet data = _db.GetDataset("SP_DeActivatedEmployee_Get", null);
+                    employees = Converter.ToList<Employee>(data.Tables[0]);
                 }
             }
 
@@ -260,11 +262,13 @@ namespace ServiceLayer.Code
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmployeeId, typeof(int), "_employeeId"),
-                new DbParam(IsActive, typeof(bool), "_active"),
-                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_adminId")
             };
 
-            status = _db.ExecuteNonQuery("SP_Employee_ToggleDelete", param, false);
+            if (!IsActive)
+                status = _db.ExecuteNonQuery("sp_Employee_DeActivate", param, false);
+            else
+                status = _db.ExecuteNonQuery("sp_Employee_Activate", param, false);
+
             if (!string.IsNullOrEmpty(status))
             {
                 _loginService.BuildApplicationCache(true);
