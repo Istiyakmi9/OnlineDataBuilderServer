@@ -266,6 +266,8 @@ namespace ServiceLayer.Code
 
             if (!IsActive)
                 status = _db.ExecuteNonQuery("sp_Employee_DeActivate", param, false);
+            else
+                status = _db.ExecuteNonQuery("sp_Employee_Activate", param, false);
 
             if (!string.IsNullOrEmpty(status))
             {
