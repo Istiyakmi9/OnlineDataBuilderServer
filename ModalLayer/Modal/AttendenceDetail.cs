@@ -12,8 +12,8 @@ namespace ModalLayer.Modal
         public double BillingHours { get; set; }
         public int TotalMinutes { get; set; }
         public bool IsHoliday { get; set; }
-        public int PresentDayStatus { get; set; } = (int)DayStatus.WorkFromOffice;
-        public bool IsTimeAttendacneApproved { get; set; } = false;
+        public int PresentDayStatus { get; set; } = (int)DayStatus.Empty;
+        public int IsTimeAttendacneApproved { get; set; } = 0;
         public bool IsOnLeave { get; set; }
         public long LeaveId { set; get; }
         public int AttendenceStatus { get; set; }

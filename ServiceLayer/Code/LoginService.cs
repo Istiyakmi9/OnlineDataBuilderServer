@@ -92,19 +92,6 @@ namespace ServiceLayer.Code
             return loginResponse;
         }
 
-        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)
-        {
-            return await Task.Run(() =>
-            {
-                LoginResponse loginResponse = default;
-                if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
-                {
-                    loginResponse = FetchUserDetail(authUser, "sp_Candidatelogin_Auth");
-                }
-
-                return loginResponse;
-            });
-        }
 
         public string FetchPasswordByRoleType(UserDetail authUser)
         {
@@ -121,6 +108,12 @@ namespace ServiceLayer.Code
             if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
             {
                 encryptedPassword = ds.Tables[0].Rows[0]["Password"].ToString();
+                int userTypeId = Convert.ToInt32(ds.Tables[0].Rows[0]["UserTypeId"]);
+
+                if(userTypeId != authUser.UserTypeId)
+                {
+                    throw new HiringBellException("Incorrect user or role. Please contact to your admin.");
+                }
             }
             else
             {
@@ -128,6 +121,20 @@ namespace ServiceLayer.Code
             }
 
             return encryptedPassword;
+        }
+
+        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)
+        {
+            return await Task.Run(() =>
+            {
+                LoginResponse loginResponse = default;
+                if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
+                {
+                    loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
+                }
+
+                return loginResponse;
+            });
         }
 
         public async Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser)
