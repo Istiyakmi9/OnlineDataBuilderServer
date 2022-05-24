@@ -410,9 +410,34 @@ namespace ServiceLayer.Code
         {
             string Result = string.Empty;
             bool flag = false;
+            Employee employee = null;
+            var empData = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
+            List<Employee> employees = Converter.ToList<Employee>(empData);
+            if (employees == null || employees.Count == 0)
+            {
+                throw new HiringBellException("No employee found. Please login again.");
+            }
+
+            employee = employees.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
             DateTime barrierDate = this.GetPreviousThreeWorkingDaysBackDate();
             if (commentDetails.AttendanceDay.Subtract(barrierDate).TotalDays >= 0)
             {
+                int totalDays = DateTime.DaysInMonth(commentDetails.AttendanceDay.Year, commentDetails.AttendanceDay.Month);
+                var currentAttendence = new Attendance
+                {
+                    EmployeeId = commentDetails.EmployeeUid,
+                    AttendanceId = 0,
+                    ForYear = commentDetails.AttendanceDay.Year,
+                    AttendanceDetail = "[]",
+                    UserTypeId = (int)UserType.Employee,
+                    TotalDays = totalDays,
+                    TotalWeekDays = (int)_timezoneConverter.GetBusinessDays(
+                                        _timezoneConverter.GetUtcFirstDay(commentDetails.AttendanceDay.Year, commentDetails.AttendanceDay.Month),
+                                        _timezoneConverter.GetUtcDateTime(commentDetails.AttendanceDay.Year, commentDetails.AttendanceDay.Month, totalDays)),
+                    DaysPending = totalDays,
+                    ForMonth = commentDetails.AttendanceDay.Month
+                };
+
                 DateTime requestedDate = _timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceFromDay);
                 var attendanceList = new List<AttendenceDetail>();
                 DbParam[] dbParams = new DbParam[]
@@ -426,7 +451,7 @@ namespace ServiceLayer.Code
                 var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
                 if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
                 {
-                    var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
+                    currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
                     attendanceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
 
                     if (attendanceList.Count == 0)
@@ -437,66 +462,81 @@ namespace ServiceLayer.Code
                         commentDetails.AttendenceFromDay = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
                         attendanceList = this.GenerateWeekAttendaceData(commentDetails, status);
 
-                        var empData = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
-                        List<Employee> employees = Converter.ToList<Employee>(empData);
-                        if (employees == null || employees.Count == 0)
-                        {
-                            throw new HiringBellException("No employee found. Please login again.");
-                        }
-
-                        var employee = employees.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
                         if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
                         {
                             attendanceList = attendanceList.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
                         }
                     }
+                }
+                else
+                {
+                    int status = this.IsGivenDateAllowed((DateTime)commentDetails.AttendenceFromDay, (DateTime)commentDetails.AttendenceToDay, attendanceList);
+                    DateTime now = (DateTime)commentDetails.AttendenceToDay;
+                    commentDetails.AttendenceFromDay = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
+                    attendanceList = this.GenerateWeekAttendaceData(commentDetails, status);
+                }
 
-                    AttendenceDetail attendanceOn = null;
-                    while (requestedDate.Date.Subtract(_timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceToDay).Date).TotalDays < 0)
+                AttendenceDetail attendanceOn = null;
+                while (requestedDate.Date.Subtract(_timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceToDay).Date).TotalDays < 0)
+                {
+                    attendanceOn = attendanceList.Find(x => x.AttendanceDay.Date.Subtract(requestedDate.Date).TotalDays == 0);
+
+                    if (attendanceOn == null)
                     {
-                        attendanceOn = attendanceList.Find(x => x.AttendanceDay.Date.Subtract(requestedDate.Date).TotalDays == 0);
-
-                        if (attendanceOn == null)
-                        {
-                            throw new HiringBellException("Not ablt to submit attendance.");
-                        }
-                        else
-                        {
-                            attendanceOn.PresentDayStatus = (int)DayStatus.WorkFromHome;
-                            attendanceOn.UserComments = commentDetails.UserComments;
-                        }
-
-                        if (flag) break;
-                        requestedDate = requestedDate.AddDays(1);
+                        throw new HiringBellException("Not ablt to submit attendance.");
+                    }
+                    else
+                    {
+                        attendanceOn.PresentDayStatus = (int)DayStatus.WorkFromHome;
+                        attendanceOn.UserComments = commentDetails.UserComments;
                     }
 
-                    var AttendaceDetail = JsonConvert.SerializeObject((from n in attendanceList
-                                                                       select new
-                                                                       {
-                                                                           TotalMinutes = n.TotalMinutes,
-                                                                           UserTypeId = n.UserTypeId,
-                                                                           PresentDayStatus = n.PresentDayStatus,
-                                                                           EmployeeUid = n.EmployeeUid,
-                                                                           AttendanceId = n.AttendanceId,
-                                                                           UserComments = n.UserComments,
-                                                                           AttendanceDay = n.AttendanceDay,
-                                                                           AttendenceStatus = n.AttendenceStatus,
-                                                                           ClientTimeSheet = n.ClientTimeSheet
-                                                                       }));
+                    if (flag) break;
+                    requestedDate = requestedDate.AddDays(1);
+                }
 
-                    dbParams = new DbParam[]
-                    {
+                var AttendaceDetail = JsonConvert.SerializeObject((from n in attendanceList
+                                                                   select new
+                                                                   {
+                                                                       TotalMinutes = n.TotalMinutes,
+                                                                       UserTypeId = n.UserTypeId,
+                                                                       PresentDayStatus = n.PresentDayStatus,
+                                                                       EmployeeUid = n.EmployeeUid,
+                                                                       AttendanceId = n.AttendanceId,
+                                                                       UserComments = n.UserComments,
+                                                                       AttendanceDay = n.AttendanceDay,
+                                                                       AttendenceStatus = n.AttendenceStatus,
+                                                                       ClientTimeSheet = n.ClientTimeSheet
+                                                                   }));
+
+                double MonthsMinutes = 0;
+                currentAttendence.DaysPending = 0;
+                attendanceList.ForEach(x =>
+                {
+                    MonthsMinutes += x.TotalMinutes;
+                    if (x.AttendenceStatus == 8)
+                        currentAttendence.DaysPending++;
+                });
+
+                dbParams = new DbParam[]
+                {
                         new DbParam(currentAttendence.AttendanceId, typeof(long), "_AttendanceId"),
                         new DbParam(AttendaceDetail, typeof(string), "_AttendanceDetail"),
                         new DbParam(commentDetails.AttendenceFromDay, typeof(DateTime), "_FromDate"),
                         new DbParam(commentDetails.AttendenceToDay, typeof(DateTime), "_ToDate"),
                         new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
                         new DbParam(commentDetails.UserComments, typeof(string), "_Message"),
-                        new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId")
-                    };
+                        new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId"),
+                        new DbParam(currentAttendence.TotalDays, typeof(int), "_TotalDays"),
+                        new DbParam(currentAttendence.TotalWeekDays, typeof(int), "_TotalWeekDays"),
+                        new DbParam(currentAttendence.DaysPending, typeof(int), "_DaysPending"),
+                        new DbParam(MonthsMinutes, typeof(double), "_TotalBurnedMinutes"),
+                        new DbParam(currentAttendence.ForYear, typeof(int), "_ForYear"),
+                        new DbParam(currentAttendence.ForMonth, typeof(int), "_ForMonth"),
+                        new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_UserId")
+                };
 
-                    Result = _db.ExecuteNonQuery("sp_attendance_update_timesheet", dbParams, true);
-                }
+                Result = _db.ExecuteNonQuery("sp_attendance_update_timesheet", dbParams, true);
             }
             else
             {

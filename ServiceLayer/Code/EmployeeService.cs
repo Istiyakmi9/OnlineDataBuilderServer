@@ -427,12 +427,8 @@ namespace ServiceLayer.Code
                     var dataSet = new DataSet();
                     dataSet.Tables.Add(table);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
+                    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", dataSet, false);
                     _db.Commit();
-                }
-                else
-                {
-                    throw new HiringBellException("Fail to insert or update record. Contact to admin.");
                 }
 
                 ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);

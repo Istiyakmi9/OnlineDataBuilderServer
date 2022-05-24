@@ -35,8 +35,18 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet]
+        // [Authorize(Roles = Role.Employee)]
         [Route("GetManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetManageEmployeeDetail(long EmployeeId)
+        {
+            var Result = _employeeService.GetManageEmployeeDetailService(EmployeeId);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = Role.Admin)]
+        [Route("GetAllManageEmployeeDetail/{EmployeeId}")]
+        public ApiResponse GetAllManageEmployeeDetail(long EmployeeId)
         {
             var Result = _employeeService.GetManageEmployeeDetailService(EmployeeId);
             return BuildResponse(Result, HttpStatusCode.OK);
