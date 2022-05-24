@@ -21,10 +21,10 @@ namespace OnlineDataBuilder.Controllers
             _attendanceService = attendanceService;
         }
 
-        [HttpPost("InsertUpdateAttendance")]
-        public IResponse<ApiResponse> InsertUpdateAttendance(List<AttendenceDetail> attendenceDetail)
+        [HttpPost("InsertUpdateTimesheet")]
+        public IResponse<ApiResponse> InsertUpdateTimesheet(List<AttendenceDetail> attendenceDetail)
         {
-            var result = _attendanceService.InsertUpdateAttendance(attendenceDetail);
+            var result = _attendanceService.InsertUpdateTimesheet(attendenceDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

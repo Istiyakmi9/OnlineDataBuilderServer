@@ -262,7 +262,6 @@ namespace ServiceLayer.Code
             {
                 new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
                 new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
-                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(newEncryptedPassword, typeof(System.String), "_NewPassword")
             };
             var result = db.ExecuteNonQuery("sp_Reset_Password", dbParams, true);

@@ -394,7 +394,7 @@ namespace ServiceLayer.Code
                 };
 
                 var employeeId = _db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
-                if (string.IsNullOrEmpty(employeeId))
+                if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
                 {
                     throw new HiringBellException("Fail to insert or update record. Contact to admin.");
                 }
@@ -428,7 +428,7 @@ namespace ServiceLayer.Code
                     var dataSet = new DataSet();
                     dataSet.Tables.Add(table);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
+                    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", dataSet, false);
                     _db.Commit();
                 }
 
