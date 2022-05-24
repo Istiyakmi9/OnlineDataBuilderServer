@@ -311,7 +311,7 @@ namespace ServiceLayer.Code
             //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
             int empId = Convert.ToInt32(employee.EmployeeUid);
 
-            Employee employeeDetail = this.GetEmployeeByIdService(empId, null);
+            Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive);
             if (employeeDetail == null)
             {
                 employeeDetail = new Employee
