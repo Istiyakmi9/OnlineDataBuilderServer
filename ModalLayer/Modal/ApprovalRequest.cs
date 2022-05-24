@@ -19,5 +19,7 @@ namespace ModalLayer.Modal
         public long AssigneedId { get; set; }
         public long ProjectId { get; set; }
         public string ProjectName { get; set; }
+        public int RequestStatusId { set; get; }
+        public long AttendanceId { set; get; }
     }
 }
