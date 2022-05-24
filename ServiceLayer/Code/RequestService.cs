@@ -62,7 +62,7 @@ namespace ServiceLayer.Code
                     var attendenceDetail = attendenceDetails.Find(x => existingRecord.FromDate.Subtract((DateTime)x.AttendanceDay).TotalDays == 0);
                     if (attendenceDetail != null)
                     {
-                        attendenceDetail.PresentDayStatus = (int)ItemStatus.Approved;
+                        attendenceDetail.AttendenceStatus = (int)ItemStatus.Approved;
                         attendanceDetailString = JsonConvert.SerializeObject((from n in attendenceDetails
                                                                               select new
                                                                               {
@@ -103,7 +103,7 @@ namespace ServiceLayer.Code
                         new DbParam(existingRecord.Mobile, typeof(string), "_Mobile"),
                         new DbParam(existingRecord.FromDate, typeof(DateTime), "_FromDate"),
                         new DbParam(existingRecord.ToDate, typeof(DateTime), "_ToDate"),
-                        new DbParam(existingRecord.AssigneedId, typeof(long), "_AssigneeId"),
+                        new DbParam(existingRecord.AssigneeId, typeof(long), "_AssigneeId"),
                         new DbParam(existingRecord.ProjectId, typeof(long), "_ProjectId"),
                         new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
                         new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),

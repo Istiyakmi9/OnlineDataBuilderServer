@@ -584,7 +584,7 @@ namespace ServiceLayer.Code
                     TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
                     AttendanceDay = startDate,
                     AttendanceId = 0,
-                    AttendenceStatus = 4,
+                    AttendenceStatus = (int)ItemStatus.Pending,
                     BillingHours = 480,
                     ClientId = attendenceDetail.ClientId,
                     DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
