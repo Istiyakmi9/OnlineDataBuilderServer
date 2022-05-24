@@ -59,18 +59,20 @@ namespace ServiceLayer.Code
             List<Employee> employees = Converter.ToList<Employee>(table);
             // List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
 
-            if (filterModel.IsActive != null)
+            if (filterModel.IsActive == true)
             {
-                if (filterModel.IsActive == true)
-                {
-                    employees = employees.FindAll(x => x.IsActive == true);
-                }
-                else if (filterModel.IsActive == false)
-                {
-                    //employees = employees.FindAll(x => x.IsActive == false);
-                    DataSet data = _db.GetDataset("SP_DeActivatedEmployee_Get", null);
-                    employees = Converter.ToList<Employee>(data.Tables[0]);
-                }
+                employees = employees.FindAll(x => x.IsActive == true);
+            }
+            else if (filterModel.IsActive == false)
+            {
+                //employees = employees.FindAll(x => x.IsActive == false);
+                DataSet data = _db.GetDataset("SP_DeActivatedEmployee_Get", null);
+                employees = Converter.ToList<Employee>(data.Tables[0]);
+            }
+            else
+            {
+                DataSet data = _db.GetDataset("SP_Employee_GetAll", null);
+                employees = Converter.ToList<Employee>(data.Tables[0]);
             }
 
             List<Employee> emp = null;
@@ -86,11 +88,10 @@ namespace ServiceLayer.Code
                 emp = employees.OrderBy(x => x.Email).Skip(skipValue).Take(takeValue).ToList();
             else if (filterModel.SortBy == "Email Desc")
                 emp = employees.OrderByDescending(x => x.Email).Skip(skipValue).Take(takeValue).ToList();
-            if (emp == null)
-            {
-                int total = employees.Count;
-                Parallel.For(0, total, i => employees[i].Total = total);
-            }
+
+            int total = employees.Count;
+            Parallel.For(0, total, i => employees[i].Total = total);
+
             if (string.IsNullOrEmpty(filterModel.SortBy))
                 emp = employees.OrderBy(x => x.CreatedOn).Skip(skipValue).Take(takeValue).ToList();
 
@@ -110,7 +111,7 @@ namespace ServiceLayer.Code
                 }
                 emp = result;
 
-                int total = emp.Count;
+                total = emp.Count;
                 Parallel.For(0, total, i => emp[i].Total = total);
             }
             else
@@ -121,7 +122,7 @@ namespace ServiceLayer.Code
                     string searchValue = (filterModel.SearchString.Substring(16, lastIndex)).ToLower();
                     string value = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(searchValue);
                     emp = emp.FindAll(x => x.FirstName.Contains(value));
-                    int total = emp.Count;
+                    total = emp.Count;
                     Parallel.For(0, total, i => emp[i].Total = total);
                 }
                 else if (filterModel.SearchString.Contains("Email"))
@@ -129,7 +130,7 @@ namespace ServiceLayer.Code
                     int lastIndex = filterModel.SearchString.Length - 11;
                     string value = (filterModel.SearchString.Substring(11, lastIndex)).ToLower();
                     emp = emp.FindAll(x => x.Email.Contains(value));
-                    int total = emp.Count;
+                    total = emp.Count;
                     Parallel.For(0, total, i => emp[i].Total = total);
                 }
                 else if (filterModel.SearchString.Contains("Mobile"))
@@ -137,7 +138,7 @@ namespace ServiceLayer.Code
                     int lastIndex = filterModel.SearchString.Length - 12;
                     string value = filterModel.SearchString.Substring(12, lastIndex);
                     emp = emp.FindAll(x => x.Mobile.Contains(value));
-                    int total = emp.Count;
+                    total = emp.Count;
                     Parallel.For(0, total, i => emp[i].Total = total);
                 }
 
@@ -158,9 +159,9 @@ namespace ServiceLayer.Code
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
-                resultset.Tables[2].TableName = "FileDetail";                
+                resultset.Tables[2].TableName = "FileDetail";
                 resultset.Tables[3].TableName = "Roles";
-                
+
                 finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Employee).Copy());
                 finalResultSet.Tables[0].TableName = "EmployeesList";
 
@@ -310,7 +311,7 @@ namespace ServiceLayer.Code
             //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
             int empId = Convert.ToInt32(employee.EmployeeUid);
 
-            Employee employeeDetail = this.GetEmployeeByIdService(empId, null);
+            Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive);
             if (employeeDetail == null)
             {
                 employeeDetail = new Employee
@@ -481,7 +482,7 @@ namespace ServiceLayer.Code
             if (employee.AccessLevelId <= 0)
                 throw new HiringBellException { UserMessage = "Role is a mandatory field.", FieldName = nameof(employee.AccessLevelId), FieldValue = employee.AccessLevelId.ToString() };
 
-            
+
         }
     }
 }
