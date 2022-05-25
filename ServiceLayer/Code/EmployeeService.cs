@@ -92,8 +92,8 @@ namespace ServiceLayer.Code
             int total = employees.Count;
             Parallel.For(0, total, i => employees[i].Total = total);
 
-            if (string.IsNullOrEmpty(filterModel.SortBy))
-                emp = employees.OrderBy(x => x.CreatedOn).Skip(skipValue).Take(takeValue).ToList();
+            if (emp == null)
+                emp = employees;
 
             if (filterModel.SearchString.Contains("Global"))
             {
@@ -143,6 +143,9 @@ namespace ServiceLayer.Code
                 }
 
             }
+
+            if (string.IsNullOrEmpty(filterModel.SortBy))
+                emp = emp.OrderBy(x => x.CreatedOn).Skip(skipValue).Take(takeValue).ToList();
 
             return emp;
         }
