@@ -16,7 +16,7 @@ namespace ModalLayer.Modal
         public string Mobile { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
-        public long AssigneedId { get; set; }
+        public long AssigneeId { get; set; }
         public long ProjectId { get; set; }
         public string ProjectName { get; set; }
         public int RequestStatusId { set; get; }
