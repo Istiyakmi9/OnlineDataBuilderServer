@@ -96,6 +96,10 @@ namespace ServiceLayer.Code
         public string FetchPasswordByRoleType(UserDetail authUser)
         {
             string encryptedPassword = string.Empty;
+
+            if (!string.IsNullOrEmpty(authUser.EmailId))
+                authUser.EmailId = authUser.EmailId.Trim().ToLower();
+
             DbParam[] param = new DbParam[]
             {
                 new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),

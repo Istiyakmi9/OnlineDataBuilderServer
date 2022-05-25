@@ -42,7 +42,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public string ApprovalActionService(ApprovalRequest approvalRequest)
+        public string ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status)
         {
             string message = string.Empty;
             DbParam[] param = new DbParam[]
@@ -62,7 +62,7 @@ namespace ServiceLayer.Code
                     var attendenceDetail = attendenceDetails.Find(x => existingRecord.FromDate.Subtract((DateTime)x.AttendanceDay).TotalDays == 0);
                     if (attendenceDetail != null)
                     {
-                        attendenceDetail.AttendenceStatus = (int)ItemStatus.Approved;
+                        attendenceDetail.AttendenceStatus = (int)status;
                         attendanceDetailString = JsonConvert.SerializeObject((from n in attendenceDetails
                                                                               select new
                                                                               {
