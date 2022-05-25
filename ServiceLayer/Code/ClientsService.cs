@@ -119,9 +119,7 @@ namespace ServiceLayer.Code
                                         FileOwnerId = client.ClientId,
                                         FileName = n.FileName,
                                         FilePath = n.FilePath,
-                                        ParentFolder = n.ParentFolder,
                                         FileExtension = n.FileExtension,
-                                        StatusId = 0,
                                         UserTypeId = (int)UserType.Client,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     });
@@ -130,7 +128,7 @@ namespace ServiceLayer.Code
                     var dataSet = new DataSet();
                     dataSet.Tables.Add(table);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", dataSet, false);
                     _db.Commit();
                 }
 
