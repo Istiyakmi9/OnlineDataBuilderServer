@@ -46,6 +46,7 @@ namespace ServiceLayer.Code
 
         public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0)
         {
+            long employeeId = 0;
             ProfileDetail profileDetail = new ProfileDetail();
             var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
 
@@ -70,10 +71,11 @@ namespace ServiceLayer.Code
                     new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
                 };
                 var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
+                employeeId = Convert.ToInt64(msg);
             }
             else if (UserTypeId == 1)
             {
-                int empId = Convert.ToInt32(professionalUser.UserId);
+                int empId = Convert.ToInt32(_currentSession.CurrentUserDetail.UserId);
                 Employee employee = _employeeService.GetEmployeeByIdService(empId);
                 DbParam[] dbParams = new DbParam[]
                 {
@@ -89,7 +91,7 @@ namespace ServiceLayer.Code
                     new DbParam(employee.City, typeof(string), "_City"),
                     new DbParam(employee.Pincode, typeof(int), "_Pincode"),
                     new DbParam(employee.Address, typeof(string), "_Address"),
-                    new DbParam(professionalUser.Mobile_Number, typeof(string), "_Mobile"),
+                    new DbParam(employee.Mobile, typeof(string), "_Mobile"),
                     new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
                     new DbParam(employee.PANNo, typeof(string), "_PANNo"),
                     new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
@@ -108,12 +110,18 @@ namespace ServiceLayer.Code
                     new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
                     new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
                     new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
+                    new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
+                    new DbParam(null, typeof(long), "_Password"),
+                    new DbParam(employee.AccessLevelId, typeof(int), "_AccessLevelId"),
+                    new DbParam(employee.UserTypeId, typeof(int), "_UserTypeId"),
                     new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
                 };
+
                 var msg = _db.ExecuteNonQuery("sp_Employees_InsUpdate", dbParams, true);
+                employeeId = Convert.ToInt64(msg);
             }
-            profileDetail = this.GetUserDetail(professionalUser.UserId, UserTypeId);
+            profileDetail = this.GetUserDetail(employeeId, UserTypeId);
             return profileDetail;
         }
 
@@ -257,17 +265,9 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Invalid UserTypeId", FieldName = nameof(UserTypeId), FieldValue = UserTypeId.ToString() };
 
             if (userId <= 0)
-                throw new HiringBellException { UserMessage = "Invalid User Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
+                throw new HiringBellException { UserMessage = "Invalid Employee Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
 
             ProfileDetail profileDetail = new ProfileDetail();
-            //if (_currentSession.CurrentUserDetail.RoleId == 1)
-            //{
-            //    profileDetail.userDetail = new UserDetail();
-            //    profileDetail.RoleId = (int)RolesName.Admin;
-            //    return profileDetail;
-            //}
-
-
 
             if (UserTypeId == 3)
             {
@@ -300,12 +300,12 @@ namespace ServiceLayer.Code
             else
             {
                 DbParam[] param = new DbParam[]
-            {
+                {
                    new DbParam(userId, typeof(long), "_UserId"),
                    new DbParam(null, typeof(string), "_Mobile"),
                    new DbParam(null, typeof(string), "_Email"),
                    new DbParam(UserTypeId, typeof(int), "_UserTypeId")
-            };
+                };
                 var Result = _db.GetDataset("sp_employee_profile", param);
 
                 if (Result.Tables.Count == 0)

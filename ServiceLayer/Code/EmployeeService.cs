@@ -237,9 +237,6 @@ namespace ServiceLayer.Code
                 case false:
                     statusValue = 0;
                     break;
-                defaul:
-                    statusValue = -1;
-                    break;
             }
 
             Employee employee = default;
