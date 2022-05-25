@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
     public interface IRequestService
     {
         List<ApprovalRequest> FetchPendingRequestService(int employeeId, int requestTypeId);
-        string ApprovalActionService(ApprovalRequest approvalRequest);
+        string ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status);
         string ReAssigneToOtherManagerService(ApprovalRequest approvalRequest);
     }
 }
