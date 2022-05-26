@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
@@ -627,6 +628,26 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         }
 
         public Task<int> BatchInsertAsync(string ProcedureName, DataSet TableSet, bool IsOutparam)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Execute<T>(string ProcedureName, T instance, bool OutParam)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T Get<T>(string ProcedureName, T instance, bool OutParam) where T : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public T Get<T>(string ProcedureName, bool OutParam = false) where T : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new()
         {
             throw new NotImplementedException();
         }

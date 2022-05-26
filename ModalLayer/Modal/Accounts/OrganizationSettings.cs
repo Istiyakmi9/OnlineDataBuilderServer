@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ModalLayer.Modal
+namespace ModalLayer.Modal.Accounts
 {
-    class OrganizationExpenses
+    public class OrganizationSettings
     {
     }
 }

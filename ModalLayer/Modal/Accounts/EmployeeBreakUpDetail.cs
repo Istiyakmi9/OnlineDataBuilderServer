@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ModalLayer.Modal
+namespace ModalLayer.Modal.Accounts
 {
     public class EmployeeBreakUpDetail
     {

@@ -145,6 +145,7 @@ namespace OnlineDataBuilder
             services.AddScoped<HtmlToPdfConverter>();
             services.AddSingleton<ICacheManager, CacheManager>();
             services.AddScoped<IRequestService, RequestService>();
+            services.AddScoped<ISettingService, SettingService>();
 
             services.AddCors(options =>
             {

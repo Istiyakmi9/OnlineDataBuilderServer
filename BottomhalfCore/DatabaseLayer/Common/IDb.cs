@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
@@ -24,5 +25,12 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         void StartTransaction(IsolationLevel isolationLevel);
         void Commit();
         void RollBack();
+
+        /*=========================================  Generic type =====================================*/
+
+        string Execute<T>(string ProcedureName, T instance, bool OutParam);
+        T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new();
+        T Get<T>(string ProcedureName, bool OutParam = false) where T : new();
+        List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new();
     }
 }
