@@ -1,8 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -12,9 +17,11 @@ namespace OnlineDataBuilder.Controllers
     public class SettingsController : BaseController
     {
         private readonly ISettingService _settingService;
-        public SettingsController(ISettingService settingService)
+        private readonly HttpContext _httpContext;
+        public SettingsController(ISettingService settingService, IHttpContextAccessor httpContext)
         {
             _settingService = settingService;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpGet("GetSalaryComponents")]
@@ -22,6 +29,27 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = _settingService.GetSalaryComponentService();
             return BuildResponse(result);
+        }
+
+        [HttpPost("PfEsiSetting")]
+        public IResponse<ApiResponse> PfEsiSetting()
+        {
+            StringValues pfSetting = default(string);
+            StringValues esiSetting = default(string);
+            StringValues pfesiSetting = default(string);
+            _httpContext.Request.Form.TryGetValue("PFSetting", out pfSetting);
+            _httpContext.Request.Form.TryGetValue("ESISetting", out esiSetting);
+            _httpContext.Request.Form.TryGetValue("PFESISetting", out pfesiSetting);
+
+            if (pfSetting.Count > 0 && esiSetting.Count > 0 && pfesiSetting.Count > 0)
+            {
+                var PfSetting = JsonConvert.DeserializeObject<SalaryComponents>(pfSetting);
+                var EsiSetting = JsonConvert.DeserializeObject<SalaryComponents>(esiSetting);
+                var PfesiSetting = JsonConvert.DeserializeObject<PfEsiSetting>(pfesiSetting);
+                var result = _settingService.PfEsiSetting(PfSetting, EsiSetting, PfesiSetting);
+                return BuildResponse(result);
+            }
+            return (null);
         }
     }
 }
