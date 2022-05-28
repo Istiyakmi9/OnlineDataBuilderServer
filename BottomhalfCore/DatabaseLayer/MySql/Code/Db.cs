@@ -199,7 +199,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             T data = new T();
             var result = this.GetList<T>(ProcedureName, OutParam);
             if (result != null)
-                data = (T)result.FirstOrDefault();
+            {
+                if (result.Count > 0)
+                    data = (T)result.FirstOrDefault();
+                else
+                    data = new T();
+            }
             return data;
         }
 
