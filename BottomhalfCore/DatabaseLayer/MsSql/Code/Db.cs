@@ -652,6 +652,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public T Get<T>(string ProcedureName, dynamic Parameters, bool OutParam = false) where T : new()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }

@@ -31,6 +31,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPost("InsertUpdateCompanyDetail")]
+        public IResponse<ApiResponse> InsertUpdateCompanyDetail(OrganizationSettings organizationSettings)
+        {
+            OrganizationSettings org = _settingService.InsertUpdateCompanyDetailService(organizationSettings);
+            return BuildResponse(org);
+        }
+
         [HttpPost("PfEsiSetting")]
         public IResponse<ApiResponse> PfEsiSetting()
         {
@@ -49,7 +56,7 @@ namespace OnlineDataBuilder.Controllers
                 var result = _settingService.PfEsiSetting(PfSetting, EsiSetting, PfesiSetting);
                 return BuildResponse(result);
             }
-            return (null);
+            return BuildResponse(null);
         }
     }
 }

@@ -8,6 +8,7 @@ namespace ServiceLayer.Interface
     {
         string AddUpdateComponentService(SalaryComponents salaryComponents);
         dynamic GetSalaryComponentService();
+        OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings);
         string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting);
     }
 }
