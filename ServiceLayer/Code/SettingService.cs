@@ -92,6 +92,7 @@ namespace ServiceLayer.Code
                 new DbParam (PfesiSetting.ESI_Restrict_Statutory, typeof(bool), "_ESI_Restrict_Statutory"),
                 new DbParam (PfesiSetting.ESI_IncludeBonuses_OTP_inGross_Eligibility, typeof(bool), "_ESI_IncludeBonuses_OTP_inGross_Eligibility"),
                 new DbParam (PfesiSetting.ESI_IncludeBonuses_OTP_inGross_Calculation, typeof(bool), "_ESI_IncludeBonuses_OTP_inGross_Calculation"),
+                new DbParam (PfesiSetting.PF_IsEmployerPFLimit, typeof(bool), "_PF_IsEmployerPFLimit"),
                 new DbParam (_currentSession.CurrentUserDetail.UserId, typeof(long), "_Admin")
             };
             value = _db.ExecuteNonQuery("sp_pf_esi_setting_insupd", param, true);

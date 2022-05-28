@@ -19,6 +19,7 @@ namespace ModalLayer.Modal.Accounts
 		public bool ESI_Restrict_Statutory  {get; set;}
 		public bool ESI_IncludeBonuses_OTP_inGross_Eligibility { get; set; }
 		public bool ESI_IncludeBonuses_OTP_inGross_Calculation { get; set; }
+		public bool PF_IsEmployerPFLimit { get; set; }
 
 	}
 }
