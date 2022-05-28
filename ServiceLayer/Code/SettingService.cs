@@ -33,6 +33,46 @@ namespace ServiceLayer.Code
             return value;
         }
 
+        public OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings)
+        {
+            int organizationId = 0;
+            OrganizationSettings org = null;
+            if (organizationSettings.OrganizationId > 0)
+                organizationId = organizationSettings.OrganizationId;
+
+            org = _db.Get<OrganizationSettings>("sp_organization_setting_get", new { organizationSettings.OrganizationId, organizationSettings.OrganizationName });
+
+            if (org == null)
+                org = organizationSettings;
+            else
+            {
+                org.City = organizationSettings.City;
+                org.Contry = organizationSettings.Contry;
+                org.FullAddress = organizationSettings.FullAddress;
+                org.GSTINNumber = organizationSettings.GSTINNumber;
+                org.InCorporationDate = organizationSettings.InCorporationDate;
+                org.LegalDocumentPath = organizationSettings.LegalDocumentPath;
+                org.LegalEntity = organizationSettings.LegalEntity;
+                org.LegalNameOfCompany = organizationSettings.LegalNameOfCompany;
+                org.OrganizationId = organizationSettings.OrganizationId;
+                org.OrganizationName = organizationSettings.LegalNameOfCompany;
+                org.PANNumber = organizationSettings.PANNumber;
+                org.SectorType = organizationSettings.SectorType;
+                org.State = organizationSettings.State;
+                org.TradeLicenseNumber = organizationSettings.TradeLicenseNumber;
+                org.TypeOfBusiness = organizationSettings.TypeOfBusiness;
+            }
+
+
+            var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd", org, true);
+            if (status != "inserted" || status != "updated")
+            {
+                throw new HiringBellException("Fail to insert or update.");
+            }
+
+            return org;
+        }
+
         public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
         {
             string value = string.Empty;

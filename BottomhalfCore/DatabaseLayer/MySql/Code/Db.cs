@@ -90,18 +90,17 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         }
 
 
-        private void BuildCommandParameter<T>(T instance)
+        private void BuildCommandParameter(object instance, List<PropertyInfo> properties)
         {
 
             if (instance != null)
             {
                 this.cmd.Parameters.Clear();
-                List<PropertyInfo> properties = GetProperties<T>();
 
                 dynamic fieldValue = null;
                 foreach (PropertyInfo p in properties)
                 {
-                    fieldValue = typeof(T).GetField(p.Name);
+                    fieldValue = instance.GetType().GetProperty(p.Name).GetValue(instance, null);
                     if (fieldValue != null)
                     {
                         if (p.PropertyType == typeof(System.DateTime))
@@ -130,7 +129,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
-                this.BuildCommandParameter<T>(instance);
+                List<PropertyInfo> properties = GetProperties<T>();
+                this.BuildCommandParameter(instance, properties);
 
                 if (OutParam)
                 {
@@ -161,12 +161,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             List<T> result = null;
             try
             {
-                List<PropertyInfo> properties = GetProperties<T>();
-
                 ds = null;
                 cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
+
+                List<PropertyInfo> props = GetProperties<T>();
                 con.Open();
 
                 if (OutParam)
@@ -175,7 +175,49 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 }
 
                 reader = cmd.ExecuteReader();
-                result = this.ReadAndConvertToType<T>(reader);
+                result = this.ReadAndConvertToType<T>(reader, props);
+            }
+            catch (MySqlException MySqlException)
+            {
+                throw MySqlException;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
+            }
+
+            return result;
+        }
+
+        public List<T> GetList<T>(string ProcedureName, List<PropertyInfo> properties, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            List<T> result = null;
+            try
+            {
+                ds = null;
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = ProcedureName;
+
+                if (Parameters != null)
+                {
+                    BuildCommandParameter(Parameters, properties);
+                }
+
+                con.Open();
+
+                if (OutParam)
+                {
+                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                }
+
+                reader = cmd.ExecuteReader();
+                result = this.ReadAndConvertToType<T>(reader, properties);
             }
             catch (MySqlException MySqlException)
             {
@@ -205,7 +247,26 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 else
                     data = new T();
             }
-            return data;
+
+            return default(T);
+        }
+
+        public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            T data = new T();
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
+
+            var result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
+            if (result != null)
+            {
+                if (result.Count > 0)
+                    data = (T)result.FirstOrDefault();
+                else
+                    data = new T();
+            }
+
+            return default(T);
         }
 
         public T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new()
@@ -222,14 +283,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 cmd.CommandText = ProcedureName;
 
                 var props = this.GetProperties<T>();
-                this.BuildCommandParameter<T>(instance);
+                this.BuildCommandParameter(instance, props);
                 if (OutParam)
                 {
                     cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
                 }
 
                 reader = cmd.ExecuteReader();
-                var resultData = this.ReadAndConvertToType<T>(reader);
+                var resultData = this.ReadAndConvertToType<T>(reader, props);
                 t = resultData.FirstOrDefault();
             }
             catch (MySqlException MySqlException)
@@ -249,12 +310,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return t;
         }
 
-        public List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader) where T : new()
+        private List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader, List<PropertyInfo> props) where T : new()
         {
             List<T> items = new List<T>();
             try
             {
-                var props = this.GetProperties<T>();
                 if (dataReader.HasRows)
                 {
                     while (dataReader.Read())
@@ -298,7 +358,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
             return items;
         }
-
 
         public DataSet GetDataset(string ProcedureName, DbParam[] param)
         {
