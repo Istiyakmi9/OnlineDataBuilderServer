@@ -185,6 +185,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             {
                 throw ex;
             }
+            finally
+            {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
+            }
 
             return result;
         }
@@ -229,6 +234,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             catch (Exception ex)
             {
                 throw ex;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
             }
 
             return t;
@@ -279,6 +289,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             {
                 throw ex;
             }
+
 
             return items;
         }
