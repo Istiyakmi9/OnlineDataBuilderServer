@@ -11,7 +11,7 @@ namespace ModalLayer.Modal.Accounts
         public string PayPeriodEnd { get; set; }
         public string PayDayinMonth { get; set; }
         public string PayDayPeriod { get; set; }
-        public string IsExcludeWeekly { get; set; }
-        public string IsExcludeHoliday { get; set; }
+        public bool IsExcludeWeekly { get; set; }
+        public bool IsExcludeHoliday { get; set; }
     }
 }
