@@ -10,5 +10,6 @@ namespace ServiceLayer.Interface
         dynamic GetSalaryComponentService();
         OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings);
         string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting);
+        List<OrganizationSettings> GetOrganizationInfo();
     }
 }
