@@ -31,6 +31,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpGet("GetOrganizationInfo")]
+        public IResponse<ApiResponse> GetOrganizationInfo()
+        {
+            var result = _settingService.GetOrganizationInfo();
+            return BuildResponse(result);
+        }
+
         [HttpPost("InsertUpdateCompanyDetail")]
         public IResponse<ApiResponse> InsertUpdateCompanyDetail(OrganizationSettings organizationSettings)
         {

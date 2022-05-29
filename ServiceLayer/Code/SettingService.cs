@@ -39,8 +39,10 @@ namespace ServiceLayer.Code
             OrganizationSettings org = null;
             if (organizationSettings.OrganizationId > 0)
                 organizationId = organizationSettings.OrganizationId;
+            if (organizationSettings.OrganizationName == null)
+                throw new HiringBellException("Invalid Orgznization Name");
 
-            org = _db.Get<OrganizationSettings>("sp_organization_setting_get", new { organizationSettings.OrganizationId, organizationSettings.OrganizationName });
+            org = _db.Get<OrganizationSettings>("sp_organization_setting_getById", new { organizationSettings.OrganizationId, organizationSettings.OrganizationName });
 
             if (org == null)
                 org = organizationSettings;
@@ -65,7 +67,7 @@ namespace ServiceLayer.Code
 
 
             var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd", org, true);
-            if (status != "inserted" || status != "updated")
+            if (string.IsNullOrEmpty(status))
             {
                 throw new HiringBellException("Fail to insert or update.");
             }
@@ -139,6 +141,12 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
             return value;
+        }
+
+        public List<OrganizationSettings> GetOrganizationInfo()
+        {
+            List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get");
+            return organizations;
         }
     }
 }

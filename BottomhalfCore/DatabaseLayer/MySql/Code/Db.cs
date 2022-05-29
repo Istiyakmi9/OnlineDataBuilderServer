@@ -217,7 +217,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 }
 
                 reader = cmd.ExecuteReader();
-                result = this.ReadAndConvertToType<T>(reader, properties);
+                List<PropertyInfo> getProperties = typeof(T).GetProperties().ToList();
+                result = this.ReadAndConvertToType<T>(reader, getProperties);
             }
             catch (MySqlException MySqlException)
             {
@@ -257,11 +258,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             object userType = Parameters;
             var properties = userType.GetType().GetProperties().ToList();
 
-            var result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
+            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
             if (result != null)
             {
                 if (result.Count > 0)
-                    data = (T)result.FirstOrDefault();
+                    data = result.FirstOrDefault();
                 else
                     data = new T();
             }
