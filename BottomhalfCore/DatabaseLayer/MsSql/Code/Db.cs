@@ -632,7 +632,7 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        public string Execute<T>(string ProcedureName, T instance, bool OutParam)
+        public string Execute<T>(string ProcedureName, dynamic instance, bool OutParam)
         {
             throw new NotImplementedException();
         }

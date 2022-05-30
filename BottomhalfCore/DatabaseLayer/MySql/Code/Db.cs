@@ -121,7 +121,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
-        public string Execute<T>(string ProcedureName, T instance, bool OutParam)
+        public string Execute<T>(string ProcedureName, dynamic instance, bool OutParam)
         {
             string state = "";
             try

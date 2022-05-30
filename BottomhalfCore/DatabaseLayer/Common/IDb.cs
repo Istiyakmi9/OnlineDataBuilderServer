@@ -28,7 +28,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
 
         /*=========================================  Generic type =====================================*/
 
-        string Execute<T>(string ProcedureName, T instance, bool OutParam);
+        string Execute<T>(string ProcedureName, dynamic instance, bool OutParam);
         T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new();
         T Get<T>(string ProcedureName, bool OutParam = false) where T : new();
         List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new();
