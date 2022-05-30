@@ -35,10 +35,10 @@ namespace ServiceLayer.Code
 
         public OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings)
         {
-            int organizationId = 0;
             OrganizationSettings org = null;
-            if (organizationSettings.OrganizationId > 0)
-                organizationId = organizationSettings.OrganizationId;
+            if (organizationSettings.OrganizationId <= 0)
+                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+
             if (organizationSettings.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
 
@@ -80,33 +80,33 @@ namespace ServiceLayer.Code
             var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd",
                 new
                 {
-                    org.OrganizationName ,
-                    org.FirstAddress ,
-                    org.SecondAddress ,
-                    org.ThirdAddress ,
-                    org.FourthAddress ,
-                    org.Email ,
-                    org.PrimaryPhoneNo ,
-                    org.SecondaryPhoneNo ,
-                    org.Fax ,
-                    org.Pincode ,
-                    org.FileId ,
-                    org.MobileNo ,
-                    org.City ,
-                    org.Contry ,
-                    org.FullAddress ,
-                    org.GSTINNumber ,
-                    org.InCorporationDate ,
-                    org.LegalDocumentPath ,
-                    org.LegalEntity ,
-                    org.LegalNameOfCompany ,
-                    org.OrganizationId ,
-                    org.PANNumber ,
-                    org.SectorType ,
-                    org.State ,
-                    org.TradeLicenseNumber ,
-                    org.TypeOfBusiness 
-        },
+                    org.OrganizationName,
+                    org.FirstAddress,
+                    org.SecondAddress,
+                    org.ThirdAddress,
+                    org.FourthAddress,
+                    org.Email,
+                    org.PrimaryPhoneNo,
+                    org.SecondaryPhoneNo,
+                    org.Fax,
+                    org.Pincode,
+                    org.FileId,
+                    org.MobileNo,
+                    org.City,
+                    org.Contry,
+                    org.FullAddress,
+                    org.GSTINNumber,
+                    org.InCorporationDate,
+                    org.LegalDocumentPath,
+                    org.LegalEntity,
+                    org.LegalNameOfCompany,
+                    org.OrganizationId,
+                    org.PANNumber,
+                    org.SectorType,
+                    org.State,
+                    org.TradeLicenseNumber,
+                    org.TypeOfBusiness
+                },
                 true
             );
 

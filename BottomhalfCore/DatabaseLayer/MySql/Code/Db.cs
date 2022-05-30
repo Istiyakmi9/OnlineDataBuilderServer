@@ -98,24 +98,29 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 this.cmd.Parameters.Clear();
 
                 dynamic fieldValue = null;
+                PropertyInfo prop = null;
                 foreach (PropertyInfo p in properties)
                 {
-                    fieldValue = instance.GetType().GetProperty(p.Name).GetValue(instance, null);
-                    if (fieldValue != null)
+                    prop = instance.GetType().GetProperty(p.Name);
+                    if(prop != null)
                     {
-                        if (p.PropertyType == typeof(System.DateTime))
+                        fieldValue = instance.GetType().GetProperty(p.Name).GetValue(instance, null);
+                        if (fieldValue != null)
                         {
-                            if (Convert.ToDateTime(fieldValue).Year == 1)
-                                cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = Convert.ToDateTime("1/1/1976");
+                            if (p.PropertyType == typeof(System.DateTime))
+                            {
+                                if (Convert.ToDateTime(fieldValue).Year == 1)
+                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = Convert.ToDateTime("1/1/1976");
+                                else
+                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = fieldValue;
+                            }
                             else
-                                cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = fieldValue;
+                                cmd.Parameters.Add($"_{p.Name}", MySqlDbType.VarChar).Value = fieldValue;
                         }
                         else
-                            cmd.Parameters.Add($"_{p.Name}", MySqlDbType.VarChar).Value = fieldValue;
-                    }
-                    else
-                    {
-                        cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
+                        {
+                            cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
+                        }
                     }
                 }
             }
