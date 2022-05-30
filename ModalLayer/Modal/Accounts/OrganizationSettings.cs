@@ -20,5 +20,16 @@ namespace ModalLayer.Modal.Accounts
         public string TypeOfBusiness { set; get; }
         public DateTime InCorporationDate { set; get; }
         public DateTime UpdatedOn { set; get; }
+        public string MobileNo { get; set; }
+        public string Email { get; set; }
+        public string PrimaryPhoneNo { get; set; }
+        public string SecondaryPhoneNo { get; set; }
+        public string Fax { get; set; }
+        public string FirstAddress { get; set; }
+        public string SecondAddress { get; set; }
+        public string ThirdAddress { get; set; }
+        public string FourthAddress { get; set; }
+        public int Pincode { get; set; }
+        public long FileId { set; get; }
     }
 }
