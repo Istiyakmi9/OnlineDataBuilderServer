@@ -254,7 +254,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
-            T data = new T();
+            T data = default(T);
             object userType = Parameters;
             var properties = userType.GetType().GetProperties().ToList();
 
@@ -263,11 +263,9 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             {
                 if (result.Count > 0)
                     data = result.FirstOrDefault();
-                else
-                    data = new T();
             }
 
-            return default(T);
+            return data;
         }
 
         public T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new()
