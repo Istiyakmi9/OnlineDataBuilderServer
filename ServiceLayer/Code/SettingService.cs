@@ -48,6 +48,18 @@ namespace ServiceLayer.Code
                 org = organizationSettings;
             else
             {
+                org.OrganizationName = organizationSettings.OrganizationName;
+                org.FirstAddress = organizationSettings.FirstAddress;
+                org.SecondAddress = organizationSettings.SecondAddress;
+                org.ThirdAddress = organizationSettings.ThirdAddress;
+                org.FourthAddress = organizationSettings.FourthAddress;
+                org.Email = organizationSettings.Email;
+                org.PrimaryPhoneNo = organizationSettings.PrimaryPhoneNo;
+                org.SecondaryPhoneNo = organizationSettings.SecondaryPhoneNo;
+                org.Fax = organizationSettings.Fax;
+                org.Pincode = organizationSettings.Pincode;
+                org.FileId = organizationSettings.FileId;
+                org.MobileNo = organizationSettings.MobileNo;
                 org.City = organizationSettings.City;
                 org.Contry = organizationSettings.Contry;
                 org.FullAddress = organizationSettings.FullAddress;
@@ -57,7 +69,6 @@ namespace ServiceLayer.Code
                 org.LegalEntity = organizationSettings.LegalEntity;
                 org.LegalNameOfCompany = organizationSettings.LegalNameOfCompany;
                 org.OrganizationId = organizationSettings.OrganizationId;
-                org.OrganizationName = organizationSettings.LegalNameOfCompany;
                 org.PANNumber = organizationSettings.PANNumber;
                 org.SectorType = organizationSettings.SectorType;
                 org.State = organizationSettings.State;
@@ -69,12 +80,33 @@ namespace ServiceLayer.Code
             var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd",
                 new
                 {
-                    org.City,
-                    org.Contry,
-                    org.OrganizationId,
-                    org.OrganizationName,
-                    org.SectorType
-                },
+                    org.OrganizationName ,
+                    org.FirstAddress ,
+                    org.SecondAddress ,
+                    org.ThirdAddress ,
+                    org.FourthAddress ,
+                    org.Email ,
+                    org.PrimaryPhoneNo ,
+                    org.SecondaryPhoneNo ,
+                    org.Fax ,
+                    org.Pincode ,
+                    org.FileId ,
+                    org.MobileNo ,
+                    org.City ,
+                    org.Contry ,
+                    org.FullAddress ,
+                    org.GSTINNumber ,
+                    org.InCorporationDate ,
+                    org.LegalDocumentPath ,
+                    org.LegalEntity ,
+                    org.LegalNameOfCompany ,
+                    org.OrganizationId ,
+                    org.PANNumber ,
+                    org.SectorType ,
+                    org.State ,
+                    org.TradeLicenseNumber ,
+                    org.TypeOfBusiness 
+        },
                 true
             );
 
