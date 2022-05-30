@@ -66,7 +66,18 @@ namespace ServiceLayer.Code
             }
 
 
-            var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd", org, true);
+            var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd",
+                new
+                {
+                    org.City,
+                    org.Contry,
+                    org.OrganizationId,
+                    org.OrganizationName,
+                    org.SectorType
+                },
+                true
+            );
+
             if (string.IsNullOrEmpty(status))
             {
                 throw new HiringBellException("Fail to insert or update.");
