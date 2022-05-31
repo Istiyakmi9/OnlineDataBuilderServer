@@ -68,7 +68,6 @@ namespace ServiceLayer.Code
                 org.LegalDocumentPath = organizationSettings.LegalDocumentPath;
                 org.LegalEntity = organizationSettings.LegalEntity;
                 org.LegalNameOfCompany = organizationSettings.LegalNameOfCompany;
-                org.OrganizationId = organizationSettings.OrganizationId;
                 org.PANNumber = organizationSettings.PANNumber;
                 org.SectorType = organizationSettings.SectorType;
                 org.State = organizationSettings.State;
