@@ -61,14 +61,13 @@ namespace ServiceLayer.Code
                 org.FileId = organizationSettings.FileId;
                 org.MobileNo = organizationSettings.MobileNo;
                 org.City = organizationSettings.City;
-                org.Contry = organizationSettings.Contry;
+                org.Country = organizationSettings.Country;
                 org.FullAddress = organizationSettings.FullAddress;
                 org.GSTINNumber = organizationSettings.GSTINNumber;
                 org.InCorporationDate = organizationSettings.InCorporationDate;
                 org.LegalDocumentPath = organizationSettings.LegalDocumentPath;
                 org.LegalEntity = organizationSettings.LegalEntity;
                 org.LegalNameOfCompany = organizationSettings.LegalNameOfCompany;
-                org.OrganizationId = organizationSettings.OrganizationId;
                 org.PANNumber = organizationSettings.PANNumber;
                 org.SectorType = organizationSettings.SectorType;
                 org.State = organizationSettings.State;
@@ -93,7 +92,7 @@ namespace ServiceLayer.Code
                     org.FileId,
                     org.MobileNo,
                     org.City,
-                    org.Contry,
+                    org.Country,
                     org.FullAddress,
                     org.GSTINNumber,
                     org.InCorporationDate,

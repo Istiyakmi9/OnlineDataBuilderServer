@@ -7,7 +7,7 @@ namespace ModalLayer.Modal.Accounts
         public int OrganizationId { set; get; }
         public string OrganizationName { set; get; }
         public int SectorType { set; get; }
-        public string Contry { set; get; }
+        public string Country { set; get; }
         public string State { set; get; }
         public string City { set; get; }
         public string FullAddress { set; get; }
