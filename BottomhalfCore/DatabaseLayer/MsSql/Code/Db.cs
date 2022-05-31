@@ -657,6 +657,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public DataSet Get(string ProcedureName, object Parameters, bool OutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }

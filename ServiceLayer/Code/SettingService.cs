@@ -117,6 +117,44 @@ namespace ServiceLayer.Code
             return org;
         }
 
+        public BankDetail UpdateCompanyAccountsService(BankDetail bankDetail)
+        {
+            BankDetail bank = null;
+
+            if (bankDetail.OrganizationId <= 0)
+                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+
+
+            bank = _db.Get<BankDetail>("sp_back_accounts_get_by_orgId", new { bankDetail.OrganizationId });
+
+            if (bank == null)
+                bank = bankDetail;
+            else
+            {
+                bank.AccountNumber = bankDetail.AccountNumber;
+                bank.BankName = bankDetail.BankName;
+                bank.Branch = bankDetail.Branch;
+                bank.IFSCCode = bankDetail.IFSCCode;
+                bank.IsUser = bankDetail.IsUser;
+                bank.OpeningDate = bankDetail.OpeningDate;
+                bank.BranchCode = bankDetail.BranchCode;
+                bank.UserId = bankDetail.UserId;
+
+            }
+
+            var status = _db.Execute<BankDetail>("sp_back_accounts_intupd",
+                bank,
+                true
+            );
+
+            if (string.IsNullOrEmpty(status))
+            {
+                throw new HiringBellException("Fail to insert or update.");
+            }
+
+            return bank;
+        }
+
         public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
         {
             string value = string.Empty;
@@ -189,6 +227,12 @@ namespace ServiceLayer.Code
         {
             List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get");
             return organizations;
+        }
+
+        public DataSet GetOrganizationBankDetailInfoService()
+        {
+            var result = _db.Get("sp_organization_setting_get", null);
+            return result;
         }
     }
 }
