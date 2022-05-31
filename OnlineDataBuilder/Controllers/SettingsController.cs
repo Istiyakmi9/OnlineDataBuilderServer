@@ -38,10 +38,24 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpGet("GetOrganizationAccountsInfo")]
+        public IResponse<ApiResponse> GetOrganizationBankDetailInfo()
+        {
+            var result = _settingService.GetOrganizationBankDetailInfoService();
+            return BuildResponse(result);
+        }
+
         [HttpPost("InsertUpdateCompanyDetail")]
         public IResponse<ApiResponse> InsertUpdateCompanyDetail(OrganizationSettings organizationSettings)
         {
             OrganizationSettings org = _settingService.InsertUpdateCompanyDetailService(organizationSettings);
+            return BuildResponse(org);
+        }
+
+        [HttpPut("UpdateCompanyAccounts")]
+        public IResponse<ApiResponse> UpdateCompanyAccounts(BankDetail bankDetail)
+        {
+            BankDetail org = _settingService.UpdateCompanyAccountsService(bankDetail);
             return BuildResponse(org);
         }
 
