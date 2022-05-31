@@ -38,10 +38,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetOrganizationAccountsInfo")]
-        public IResponse<ApiResponse> GetOrganizationBankDetailInfo()
+        [HttpGet("GetOrganizationAccountsInfo/{OrganizationId}")]
+        public IResponse<ApiResponse> GetOrganizationBankDetailInfo(int organizationId)
         {
-            var result = _settingService.GetOrganizationBankDetailInfoService();
+            var result = _settingService.GetOrganizationBankDetailInfoService(organizationId);
             return BuildResponse(result);
         }
 
