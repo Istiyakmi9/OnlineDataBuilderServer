@@ -125,7 +125,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid organization detail submitted. Please login again.");
 
 
-            bank = _db.Get<BankDetail>("sp_back_accounts_get_by_orgId", new { bankDetail.OrganizationId });
+            bank = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { bankDetail.OrganizationId });
 
             if (bank == null)
                 bank = bankDetail;
@@ -139,10 +139,13 @@ namespace ServiceLayer.Code
                 bank.OpeningDate = bankDetail.OpeningDate;
                 bank.BranchCode = bankDetail.BranchCode;
                 bank.UserId = bankDetail.UserId;
-
+                bank.OrganizationId = bankDetail.OrganizationId;
+                bank.PANNumber = bankDetail.PANNumber;
+                bank.GSTINNumber= bankDetail.GSTINNumber;
+                bank.TradeLiecenceNumber = bankDetail.TradeLiecenceNumber;
             }
 
-            var status = _db.Execute<BankDetail>("sp_back_accounts_intupd",
+            var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd",
                 bank,
                 true
             );
@@ -229,9 +232,9 @@ namespace ServiceLayer.Code
             return organizations;
         }
 
-        public DataSet GetOrganizationBankDetailInfoService()
+        public BankDetail GetOrganizationBankDetailInfoService(int OrganizationId)
         {
-            var result = _db.Get("sp_organization_setting_get", null);
+            BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { OrganizationId});
             return result;
         }
     }

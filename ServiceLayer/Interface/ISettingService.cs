@@ -13,6 +13,6 @@ namespace ServiceLayer.Interface
         BankDetail UpdateCompanyAccountsService(BankDetail bankDetail);
         string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting);
         List<OrganizationSettings> GetOrganizationInfo();
-        DataSet GetOrganizationBankDetailInfoService();
+        BankDetail GetOrganizationBankDetailInfoService(int organizationId);
     }
 }
