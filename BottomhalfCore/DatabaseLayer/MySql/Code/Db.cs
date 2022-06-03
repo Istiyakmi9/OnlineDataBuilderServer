@@ -293,18 +293,16 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public T Get<T>(string ProcedureName, bool OutParam = false) where T : new()
         {
-            T data = new T();
+            T data = default(T);
             var result = this.GetList<T>(ProcedureName, OutParam);
             if (result != null)
             {
                 if (result.Count > 0)
-                    data = (T)result.FirstOrDefault();
-                else
-                    data = new T();
+                    data = (T)result.FirstOrDefault();               
             }
 
-            return default(T);
-        }
+            return data;
+         }
 
         public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {

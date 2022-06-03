@@ -14,5 +14,7 @@ namespace ServiceLayer.Interface
         string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting);
         List<OrganizationSettings> GetOrganizationInfo();
         BankDetail GetOrganizationBankDetailInfoService(int organizationId);
+        Payroll InsertUpdatePayrollSetting(Payroll payroll);
+        string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure);
     }
 }
