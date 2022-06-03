@@ -1,10 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 
 namespace ServiceLayer.Code
@@ -13,10 +15,12 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        public SettingService(IDb db, CurrentSession currentSession)
+        private readonly FileLocationDetail _fileLocationDetail;
+        public SettingService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail)
         {
             _db = db;
             _currentSession = currentSession;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -33,7 +37,7 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings)
+        public OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings, IFormFileCollection fileCollection)
         {
             OrganizationSettings org = null;
             if (organizationSettings.OrganizationId <= 0)
@@ -74,7 +78,36 @@ namespace ServiceLayer.Code
                 org.TradeLicenseNumber = organizationSettings.TradeLicenseNumber;
                 org.TypeOfBusiness = organizationSettings.TypeOfBusiness;
             }
+            int i = 0;
+            string signatureWithStamp = String.Empty;
+            string signatureWithoutStamp = String.Empty;
 
+            while (i < fileCollection.Count)
+            {
+                if (fileCollection[i].Name == "signwithStamp")
+                {
+                    signatureWithStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
+                } else
+                {
+                    signatureWithoutStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
+                }
+
+                i++;
+            }
+            
+            if (File.Exists(signatureWithStamp))
+            {
+                File.Delete(signatureWithoutStamp);
+                File.Delete(signatureWithStamp);
+            }
+            else
+            {
+                FileDetail fileDetailWSig = new FileDetail();
+                fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
+
+                FileDetail fileDetailWOSig = new FileDetail();
+                fileDetailWOSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
+            }
 
             var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd",
                 new
@@ -111,7 +144,42 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(status))
             {
+                File.Delete(signatureWithoutStamp);
+                File.Delete(signatureWithStamp);
                 throw new HiringBellException("Fail to insert or update.");
+            }
+            else
+            {
+                //if (fileCollection.Count > 0)
+                //{
+                //    var files = fileCollection.Select(x => new Files
+                //    {
+                //        FileUid = employee.FileId,
+                //        FileName = ApplicationConstants.ProfileImage,
+                //        Email = employee.Email,
+                //        FileExtension = string.Empty
+                //    }).ToList<Files>();
+                //    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, employeeId);
+
+                //    var fileInfo = (from n in files
+                //                    select new
+                //                    {
+                //                        FileId = n.FileUid,
+                //                        FileOwnerId = currentEmployeeId,
+                //                        FileName = n.FileName,
+                //                        FilePath = n.FilePath,
+                //                        FileExtension = n.FileExtension,
+                //                        UserTypeId = (int)UserType.Employee,
+                //                        AdminId = _currentSession.CurrentUserDetail.UserId
+                //                    });
+
+                //    DataTable table = Converter.ToDataTable(fileInfo);
+                //    var dataSet = new DataSet();
+                //    dataSet.Tables.Add(table);
+                //    _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                //    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", dataSet, false);
+                //    _db.Commit();
+                //}
             }
 
             return org;
@@ -141,7 +209,7 @@ namespace ServiceLayer.Code
                 bank.UserId = bankDetail.UserId;
                 bank.OrganizationId = bankDetail.OrganizationId;
                 bank.PANNumber = bankDetail.PANNumber;
-                bank.GSTINNumber= bankDetail.GSTINNumber;
+                bank.GSTINNumber = bankDetail.GSTINNumber;
                 bank.TradeLiecenceNumber = bankDetail.TradeLiecenceNumber;
             }
 
@@ -234,7 +302,7 @@ namespace ServiceLayer.Code
 
         public BankDetail GetOrganizationBankDetailInfoService(int OrganizationId)
         {
-            BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { OrganizationId});
+            BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { OrganizationId });
             return result;
         }
 
