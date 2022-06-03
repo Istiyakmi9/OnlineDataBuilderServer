@@ -79,5 +79,19 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse(null);
         }
+
+        [HttpPost("InsertUpdatePayrollSetting")]
+        public IResponse<ApiResponse> InsertUpdatePayrollSetting(Payroll payroll)
+        {
+            var result = _settingService.InsertUpdatePayrollSetting(payroll);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("InsertUpdateSalaryStructure")]
+        public IResponse<ApiResponse> InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)
+        {
+            var result = _settingService.InsertUpdateSalaryStructure(salaryStructure);
+            return BuildResponse(result);
+        }
     }
 }

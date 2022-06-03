@@ -237,5 +237,42 @@ namespace ServiceLayer.Code
             BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { OrganizationId});
             return result;
         }
+
+        public Payroll InsertUpdatePayrollSetting(Payroll payroll)
+        {
+            Payroll result = null;
+            result = _db.Get<Payroll>("sp_bank_accounts_get_by_orgId", null);
+
+            if (result == null)
+                result = payroll;
+            else
+            {
+                payroll.PayDayPeriod = result.PayDayPeriod;
+                payroll.PayPeriodEnd = result.PayPeriodEnd;
+                payroll.PayDayinMonth = result.PayDayinMonth;
+                payroll.PayCycleMonth = result.PayCycleMonth;
+                payroll.PayFrequency = result.PayFrequency;
+            }
+
+            var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd",
+                result,
+                true
+            );
+
+            if (string.IsNullOrEmpty(status))
+            {
+                throw new HiringBellException("Fail to insert or update.");
+            }
+
+
+            return result;
+        }
+
+        public string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)
+        {
+            var status = string.Empty;
+
+            return status;
+        }
     }
 }
