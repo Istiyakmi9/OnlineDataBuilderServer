@@ -24,8 +24,7 @@ namespace ServiceLayer.Code
     {
         private readonly IDb db;
         private readonly IFileService fileService;
-        private readonly IHTMLConverter iHTMLConverter;
-        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IHTMLConverter iHTMLConverter;//
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
         private readonly IFileMaker _fileMaker;
@@ -51,7 +50,6 @@ namespace ServiceLayer.Code
             this.iHTMLConverter = iHTMLConverter;
             _documentProcessing = documentProcessing;
             _fileLocationDetail = fileLocationDetail;
-            _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
             _fileMaker = fileMaker;
             _excelWriter = excelWriter;
@@ -60,26 +58,25 @@ namespace ServiceLayer.Code
         public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
         {
             FileDetail fileDetail = new FileDetail();
-            string rootPath = _hostingEnvironment.ContentRootPath;
-            string templatePath = Path.Combine(rootPath,
+            string templatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
                 Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
                 _fileLocationDetail.StaffingBillTemplate
             );
 
-            string pdfTemplatePath = Path.Combine(rootPath,
+            string pdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
                 Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
                 _fileLocationDetail.StaffingBillPdfTemplate
             );
 
-            string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
+            string headerLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, "logo.png");
             if (File.Exists(templatePath) && File.Exists(templatePath) && File.Exists(headerLogo))
             {
                 fileDetail.LogoPath = headerLogo;
                 string html = string.Empty;
 
-                fileDetail.DiskFilePath = Path.Combine(rootPath, pdfModal.FilePath);
+                fileDetail.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, pdfModal.FilePath);
                 if (!Directory.Exists(fileDetail.DiskFilePath)) Directory.CreateDirectory(fileDetail.DiskFilePath);
                 fileDetail.FileName = pdfModal.FileName;
                 string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
@@ -257,20 +254,19 @@ namespace ServiceLayer.Code
                         attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
                     }
 
-                    string rootPath = _hostingEnvironment.ContentRootPath;
-                    string templatePath = Path.Combine(rootPath,
+                    string templatePath = Path.Combine(_fileLocationDetail.RootPath,
                         _fileLocationDetail.Location,
                         Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
                         _fileLocationDetail.StaffingBillTemplate
                     );
 
-                    string pdfTemplatePath = Path.Combine(rootPath,
+                    string pdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                         _fileLocationDetail.Location,
                         Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
                         _fileLocationDetail.StaffingBillPdfTemplate
                     );
 
-                    string headerLogo = Path.Combine(rootPath, _fileLocationDetail.LogoPath, "logo.png");
+                    string headerLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, "logo.png");
                     if (File.Exists(templatePath) && File.Exists(pdfTemplatePath) && File.Exists(headerLogo))
                     {
                         this.CleanOldFiles(fileDetail);

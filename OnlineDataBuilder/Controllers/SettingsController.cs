@@ -46,9 +46,17 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("InsertUpdateCompanyDetail")]
-        public IResponse<ApiResponse> InsertUpdateCompanyDetail(OrganizationSettings organizationSettings)
+        public IResponse<ApiResponse> InsertUpdateCompanyDetail()
         {
-            OrganizationSettings org = _settingService.InsertUpdateCompanyDetailService(organizationSettings);
+            StringValues compnyinfo = default(string);
+            OrganizationSettings org = null;
+            _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
+            if (compnyinfo.Count > 0)
+            {
+                OrganizationSettings organizationSettings = JsonConvert.DeserializeObject<OrganizationSettings>(compnyinfo);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                org = _settingService.InsertUpdateCompanyDetailService(organizationSettings, files);
+            }
             return BuildResponse(org);
         }
 
