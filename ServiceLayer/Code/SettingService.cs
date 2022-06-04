@@ -87,15 +87,19 @@ namespace ServiceLayer.Code
             int i = 0;
             string signatureWithStamp = String.Empty;
             string signatureWithoutStamp = String.Empty;
+            string companyLogo = String.Empty;
 
             while (i < fileCollection.Count)
             {
                 if (fileCollection[i].Name == "signwithStamp")
                 {
                     signatureWithStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                } else
+                } else if (fileCollection[i].Name == "signwithoutStamp")
                 {
                     signatureWithoutStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
+                } else
+                {
+                    companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
                 }
 
                 i++;
@@ -105,6 +109,8 @@ namespace ServiceLayer.Code
             {
                 File.Delete(signatureWithoutStamp);
                 File.Delete(signatureWithStamp);
+                File.Delete(companyLogo);
+
             }
             else
             {
@@ -152,6 +158,7 @@ namespace ServiceLayer.Code
             {
                 File.Delete(signatureWithoutStamp);
                 File.Delete(signatureWithStamp);
+                File.Delete(companyLogo);
                 throw new HiringBellException("Fail to insert or update.");
             }
             else
