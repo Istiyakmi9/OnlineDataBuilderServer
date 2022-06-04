@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetSalaryComponentService()
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_fixed_salary_component_percent_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_percent_get");
             PfEsiSetting pfEsiSettings = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get");
             var value = new { SalaryComponent = salaryComponents, PfEsiSettings = pfEsiSettings };
             return value;
@@ -45,6 +45,9 @@ namespace ServiceLayer.Code
             OrganizationSettings org = null;
             if (organizationSettings.OrganizationId <= 0)
                 throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+
+            if (string.IsNullOrEmpty(organizationSettings.Email))
+                throw new HiringBellException("Invalid organization email.");
 
             if (organizationSettings.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
@@ -159,7 +162,7 @@ namespace ServiceLayer.Code
                     {
                         FileUid = organizationSettings.FileId,
                         FileName = x.Name,
-                        Email = "info@bottomhalf.com",
+                        Email = organizationSettings.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
                     _fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (organizationSettings.OrganizationId).ToString());
@@ -237,7 +240,7 @@ namespace ServiceLayer.Code
         public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
         {
             string value = string.Empty;
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_fixed_salary_component_percent_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_percent_get");
             var pfsetting = salaryComponents.Find(x => x.ComponentId == PfSetting.ComponentId);
             var esisetting = salaryComponents.Find(x => x.ComponentId == EsiSetting.ComponentId);
             DbParam[] param = new DbParam[]
@@ -255,7 +258,7 @@ namespace ServiceLayer.Code
                 new DbParam (pfsetting.PercentageValue, typeof(decimal), "_PercentageValue"),
                 new DbParam (_currentSession.CurrentUserDetail.UserId, typeof(long), "_Admin")
             };
-            value = _db.ExecuteNonQuery("sp_fixed_salary_component_percent_insupd", param, true);
+            value = _db.ExecuteNonQuery("sp_salary_components_percent_insupd", param, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
 
@@ -274,7 +277,7 @@ namespace ServiceLayer.Code
                 new DbParam (esisetting.PercentageValue, typeof(decimal), "_PercentageValue"),
                 new DbParam (_currentSession.CurrentUserDetail.UserId, typeof(long), "_Admin")
             };
-            value = _db.ExecuteNonQuery("sp_fixed_salary_component_percent_insupd", param, true);
+            value = _db.ExecuteNonQuery("sp_salary_components_percent_insupd", param, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
 
