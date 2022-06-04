@@ -51,10 +51,12 @@ namespace CoreServiceLayer.Implementation
             string Email = string.Empty;
             string NewFileName = string.Empty;
             string ActualPath = string.Empty;
+            string _folderPath = String.Empty;
             if (!string.IsNullOrEmpty(FolderPath))
             {
                 foreach (var file in formFiles)
                 {
+                    _folderPath = FolderPath;
                     if (!string.IsNullOrEmpty(file.Name))
                     {
                         var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
@@ -62,18 +64,18 @@ namespace CoreServiceLayer.Implementation
 
                         if (currentFile.FilePath != null)
                         {
-                            if (currentFile.FilePath.IndexOf(Email) == -1 && FolderPath.IndexOf(Email) == -1)
-                                FolderPath = Path.Combine(FolderPath, Email);
+                            if (currentFile.FilePath.IndexOf(Email) == -1 && _folderPath.IndexOf(Email) == -1)
+                                _folderPath = Path.Combine(_folderPath, Email);
                         }
                         else
                         {
-                            FolderPath = Path.Combine(FolderPath, Email);
+                            _folderPath = Path.Combine(_folderPath, Email);
                         }
 
                         if (!string.IsNullOrEmpty(currentFile.FilePath))
-                            ActualPath = Path.Combine(FolderPath, currentFile.FilePath);
+                            ActualPath = Path.Combine(_folderPath, currentFile.FilePath);
                         else
-                            ActualPath = FolderPath;
+                            ActualPath = _folderPath;
 
                         currentFile.FilePath = ActualPath;
                         if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath)))

@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -16,11 +17,13 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly FileLocationDetail _fileLocationDetail;
-        public SettingService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail)
+        private readonly IFileService _fileService;
+        public SettingService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IFileService fileService)
         {
             _db = db;
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
+            _fileService = fileService;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -150,36 +153,41 @@ namespace ServiceLayer.Code
             }
             else
             {
-                //if (fileCollection.Count > 0)
-                //{
-                //    var files = fileCollection.Select(x => new Files
-                //    {
-                //        FileUid = employee.FileId,
-                //        FileName = ApplicationConstants.ProfileImage,
-                //        Email = employee.Email,
-                //        FileExtension = string.Empty
-                //    }).ToList<Files>();
-                //    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, employeeId);
+                if (fileCollection.Count > 0)
+                {
+                    var files = fileCollection.Select(x => new Files
+                    {
+                        FileUid = organizationSettings.FileId,
+                        FileName = x.Name,
+                        Email = "info@bottomhalf.com",
+                        FileExtension = string.Empty
+                    }).ToList<Files>();
+                    _fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (organizationSettings.OrganizationId).ToString());
 
-                //    var fileInfo = (from n in files
-                //                    select new
-                //                    {
-                //                        FileId = n.FileUid,
-                //                        FileOwnerId = currentEmployeeId,
-                //                        FileName = n.FileName,
-                //                        FilePath = n.FilePath,
-                //                        FileExtension = n.FileExtension,
-                //                        UserTypeId = (int)UserType.Employee,
-                //                        AdminId = _currentSession.CurrentUserDetail.UserId
-                //                    });
+                    var fileInfo = (from n in files
+                                    select new
+                                    {
+                                        FileId = n.FileUid,
+                                        FileOwnerId = (organizationSettings.OrganizationId),
+                                        FilePath = n.FilePath,
+                                        FileName = n.FileName,
+                                        FileExtension = n.FileExtension,
+                                        ItemStatusId = 0,
+                                        PaidOn = DateTime.Now,
+                                        UserTypeId = (int)UserType.Admin,
+                                        CreatedBy = _currentSession.CurrentUserDetail.UserId,
+                                        UpdatedBy = _currentSession.CurrentUserDetail.UserId,
+                                        CreatedOn = DateTime.Now,
+                                        UpdatedOn = DateTime.Now
+                                    }); ;
 
-                //    DataTable table = Converter.ToDataTable(fileInfo);
-                //    var dataSet = new DataSet();
-                //    dataSet.Tables.Add(table);
-                //    _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                //    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", dataSet, false);
-                //    _db.Commit();
-                //}
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    var dataSet = new DataSet();
+                    dataSet.Tables.Add(table);
+                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                    int insertedCount = _db.BatchInsert("sp_Files_InsUpd", dataSet, false);
+                    _db.Commit();
+                }
             }
 
             return org;
