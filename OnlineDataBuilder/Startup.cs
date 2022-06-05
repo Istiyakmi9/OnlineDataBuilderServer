@@ -146,6 +146,7 @@ namespace OnlineDataBuilder
             services.AddSingleton<ICacheManager, CacheManager>();
             services.AddScoped<IRequestService, RequestService>();
             services.AddScoped<ISettingService, SettingService>();
+            services.AddScoped<ISalaryComponentService, SalaryComponentService>();
 
             services.AddCors(options =>
             {
