@@ -101,5 +101,7 @@ namespace OnlineDataBuilder.Controllers
             var result = _settingService.InsertUpdateSalaryStructure(salaryStructure);
             return BuildResponse(result);
         }
+
+
     }
 }
