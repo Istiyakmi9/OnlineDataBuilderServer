@@ -19,5 +19,6 @@
         public bool CalculateInPercentage { set; get; }
         public bool IsComponentEnabled { set; get; }
         public decimal MaxLimit { set; get; }
+        public string Formula { set; get; }
     }
 }

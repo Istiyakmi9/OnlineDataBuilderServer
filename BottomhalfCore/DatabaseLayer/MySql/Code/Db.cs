@@ -298,11 +298,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             if (result != null)
             {
                 if (result.Count > 0)
-                    data = (T)result.FirstOrDefault();               
+                    data = (T)result.FirstOrDefault();
             }
 
             return data;
-         }
+        }
 
         public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
@@ -336,7 +336,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
                 if (OutParam)
                     cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                
+
                 reader = cmd.ExecuteReader();
                 var resultData = this.ReadAndConvertToType<T>(reader);
                 t = resultData.FirstOrDefault();
@@ -366,27 +366,32 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 List<PropertyInfo> props = typeof(T).GetProperties().ToList();
                 if (dataReader.HasRows)
                 {
+                    var fieldNames = Enumerable.Range(0, dataReader.FieldCount).Select(i => dataReader.GetName(i)).ToArray();
                     while (dataReader.Read())
                     {
                         T t = new T();
                         Parallel.ForEach(props, x =>
                         {
-                            if (reader[x.Name] != DBNull.Value)
+                            if (fieldNames.Contains(x.Name))
                             {
-                                if (x.PropertyType.Name == typeof(bool).Name)
+                                if (reader[x.Name] != DBNull.Value)
                                 {
                                     try
                                     {
-                                        x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
+                                        switch (x.PropertyType.Name)
+                                        {
+                                            case nameof(Boolean):
+                                                x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
+                                                break;
+                                            default:
+                                                x.SetValue(t, reader[x.Name]);
+                                                break;
+                                        }
                                     }
                                     catch (Exception)
                                     {
-                                        throw;
+                                        x.SetValue(t, default(bool));
                                     }
-                                }
-                                else
-                                {
-                                    x.SetValue(t, reader[x.Name]);
                                 }
                             }
                         });
