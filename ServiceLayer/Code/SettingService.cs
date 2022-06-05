@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetSalaryComponentService()
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_percent_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
             PfEsiSetting pfEsiSettings = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get");
             var value = new { SalaryComponent = salaryComponents, PfEsiSettings = pfEsiSettings };
             return value;
@@ -255,8 +255,9 @@ namespace ServiceLayer.Code
                 new DbParam (PfSetting.ComponentId, typeof(string), "_ComponentId"),
                 new DbParam (PfSetting.CalculateInPercentage, typeof(bool), "_CalculateInPercentage"),
                 new DbParam (pfsetting.EmployeeContribution, typeof(decimal), "_EmployeeContribution"),
-                new DbParam (PfSetting.IsDeductions, typeof(bool), "_IsDeductions"),
                 new DbParam (PfSetting.IsActive, typeof(bool), "_IsActive"),
+                new DbParam (PfSetting.TaxExempt, typeof(string), "_TaxExempt"),
+                new DbParam (PfSetting.SubComponentTypeId, typeof(int), "_SubComponentTypeId"),
                 new DbParam (PfSetting.IncludeInPayslip, typeof(bool), "_IncludeInPayslip"),
                 new DbParam (pfsetting.ComponentDescription, typeof(string), "_ComponentDescription"),
                 new DbParam (pfsetting.Amount, typeof(decimal), "_Amount"),
@@ -274,8 +275,9 @@ namespace ServiceLayer.Code
                 new DbParam (EsiSetting.ComponentId, typeof(string), "_ComponentId"),
                 new DbParam (esisetting.CalculateInPercentage, typeof(bool), "_CalculateInPercentage"),
                 new DbParam (EsiSetting.EmployeeContribution, typeof(decimal), "_EmployeeContribution"),
-                new DbParam (EsiSetting.IsDeductions, typeof(bool), "_IsDeductions"),
                 new DbParam (EsiSetting.IsActive, typeof(bool), "_IsActive"),
+                new DbParam (EsiSetting.TaxExempt, typeof(string), "_TaxExempt"),
+                new DbParam (EsiSetting.SubComponentTypeId, typeof(int), "_SubComponentTypeId"),
                 new DbParam (EsiSetting.IncludeInPayslip, typeof(bool), "_IncludeInPayslip"),
                 new DbParam (esisetting.ComponentDescription, typeof(string), "_ComponentDescription"),
                 new DbParam (EsiSetting.Amount, typeof(decimal), "_Amount"),
