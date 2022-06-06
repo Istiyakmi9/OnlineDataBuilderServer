@@ -7,5 +7,7 @@ namespace ServiceLayer.Interface
     {
         SalaryComponents GetSalaryComponentByIdService();
         List<SalaryComponents> GetSalaryComponentsDetailService();
+        List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents);
+        List<SalaryGroup> GetSalaryGroupService();
     }
 }

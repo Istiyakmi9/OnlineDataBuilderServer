@@ -584,9 +584,7 @@ namespace ServiceLayer.Code
                                         });
 
                         DataTable table = Converter.ToDataTable(fileInfo);
-                        var dataSet = new DataSet();
-                        dataSet.Tables.Add(table);
-                        this.db.BatchInsert(ApplicationConstants.InserUserFileDetail, dataSet, true);
+                        this.db.BatchInsert(ApplicationConstants.InserUserFileDetail, table, true);
                     }
                 }
             }

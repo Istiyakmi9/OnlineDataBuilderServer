@@ -328,12 +328,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             return Status;
         }
 
-        public int BatchInsert(string ProcedureName, DataSet TableSet, Boolean IsOutparam)
+        public int BatchInsert(string ProcedureName, DataTable dt, Boolean IsOutparam)
         {
             int state = -1;
             try
             {
-                DataTable dt = TableSet.Tables[0];
                 cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;

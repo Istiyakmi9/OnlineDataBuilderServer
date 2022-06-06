@@ -12,7 +12,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         /*===========================================  GetDataSet =============================================================*/
         DataSet GetDataset(string ProcedureName, DbParam[] param);
         DataSet GetDataset(string ProcedureName);
-        int BatchInsert(string ProcedureName, DataSet TableSet, Boolean IsOutparam);
+        int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam);
         Task<int> BatchInsertAsync(string ProcedureName, DataSet TableSet, Boolean IsOutparam);
         DataSet GetDataset(string ProcedureName, DbParam[] param, bool OutParam, ref string ProcessingStatus);
         Object ExecuteSingle(string ProcedureName, DbParam[] param, bool OutParam);

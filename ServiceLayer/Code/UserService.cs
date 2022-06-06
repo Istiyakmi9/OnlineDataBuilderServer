@@ -159,10 +159,8 @@ namespace ServiceLayer.Code
                                 });
 
                 DataTable table = Converter.ToDataTable(fileInfo);
-                var dataSet = new DataSet();
-                dataSet.Tables.Add(table);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
+                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", table, true);
 
                 _db.Commit();
             }
@@ -204,10 +202,8 @@ namespace ServiceLayer.Code
                                 });
 
                 DataTable table = Converter.ToDataTable(fileInfo);
-                var dataSet = new DataSet();
-                dataSet.Tables.Add(table);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", dataSet, true);
+                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", table, true);
                 _db.Commit();
                 if (insertedCount == 1)
                     result = "Resume Uploaded Successfully.";
@@ -246,10 +242,8 @@ namespace ServiceLayer.Code
                                 });
 
                 DataTable table = Converter.ToDataTable(fileInfo);
-                var dataSet = new DataSet();
-                dataSet.Tables.Add(table);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("", dataSet, true);
+                int insertedCount = _db.BatchInsert("", table, true);
                 _db.Commit();
                 if (insertedCount == 1)
                     result = "Declaration Uploaded Successfully.";
