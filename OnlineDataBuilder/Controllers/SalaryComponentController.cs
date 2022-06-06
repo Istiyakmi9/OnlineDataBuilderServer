@@ -4,6 +4,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -24,6 +25,20 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetSalaryComponentsDetail()
         {
             var result = _salaryComponentService.GetSalaryComponentsDetailService();
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetSalaryGroups")]
+        public IResponse<ApiResponse> GetSalaryGroups()
+        {
+            var result = _salaryComponentService.GetSalaryGroupService();
+            return BuildResponse(result);
+        }
+
+        [HttpPost("UpdateSalaryComponents")]
+        public IResponse<ApiResponse> UpdateSalaryComponents(List<SalaryComponents> salaryComponents)
+        {
+            var result = _salaryComponentService.UpdateSalaryComponentService(salaryComponents);
             return BuildResponse(result);
         }
 

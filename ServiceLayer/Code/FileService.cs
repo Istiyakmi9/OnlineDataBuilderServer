@@ -212,9 +212,7 @@ namespace CoreServiceLayer.Implementation
                             });
 
             DataTable table = Converter.ToDataTable(fileInfo);
-            var dataSet = new DataSet();
-            dataSet.Tables.Add(table);
-            var result = _db.BatchInsert(procedure, dataSet, true);
+            var result = _db.BatchInsert(procedure, table, true);
             return new Tuple<string, bool>("Total " + result + " inserted/updated.", true);
         }
 

@@ -4,6 +4,8 @@ using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace ServiceLayer.Code
 {
@@ -23,6 +25,55 @@ namespace ServiceLayer.Code
         public List<SalaryComponents> GetSalaryComponentsDetailService()
         {
             List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            return salaryComponents;
+        }
+
+        public List<SalaryGroup> GetSalaryGroupService()
+        {
+            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
+            return salaryComponents;
+        }
+
+        public List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents)
+        {
+            if (salaryComponents.Count > 0)
+            {
+                List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get");
+                Parallel.ForEach(result, x =>
+                {
+                    var item = salaryComponents.Find(i => i.ComponentId == x.ComponentId);
+                    if (item != null)
+                    {
+                        x.IsActive = item.IsActive;
+                        x.Formula = item.Formula;
+                        x.CalculateInPercentage = item.CalculateInPercentage;
+                    }
+                });
+
+
+                var itemOfRows = (from n in result
+                                  select new
+                                  {
+                                      n.ComponentId,
+                                      n.ComponentDescription,
+                                      n.CalculateInPercentage,
+                                      n.TaxExempt,
+                                      n.SubComponentTypeId,
+                                      n.PercentageValue,
+                                      n.MaxLimit,
+                                      n.Formula,
+                                      n.EmployeeContribution,
+                                      n.EmployerContribution,
+                                      n.IncludeInPayslip,
+                                      n.IsOpted,
+                                      n.IsActive,
+                                      Admin = n.CreatedBy,
+                                  }).ToList();
+
+                var table = BottomhalfCore.Services.Code.Converter.ToDataTable(itemOfRows);
+                _db.BatchInsert("sp_salary_components_insupd", table, true);
+            }
+
             return salaryComponents;
         }
 

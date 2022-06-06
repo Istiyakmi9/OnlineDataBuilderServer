@@ -27,7 +27,7 @@ namespace ServiceLayer.Code
                                   }).ToList<RoleAccessibilityMapping>();
 
             DataSet ds = Converter.ToDataSet<RoleAccessibilityMapping>(permissionMenu);
-            result = _db.BatchInsert("sp_role_accessibility_mapping_InsUpd", ds, false);
+            result = _db.BatchInsert("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
             if (permissionMenu.Count <= 0)
             {
                 return "Fail to inserted or updated";

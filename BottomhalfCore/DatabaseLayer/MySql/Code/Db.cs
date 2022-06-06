@@ -614,12 +614,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return Status;
         }
 
-        public int BatchInsert(string ProcedureName, DataSet TableSet, Boolean IsOutparam)
+        public int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam)
         {
             int state = -1;
             try
             {
-                DataTable dt = TableSet.Tables[0];
                 cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
@@ -629,9 +628,9 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 Type ColumnType = null;
                 string ColumnValue = string.Empty;
                 cmd.Parameters.Clear();
-                foreach (DataColumn column in dt.Columns)
+                foreach (DataColumn column in table.Columns)
                 {
-                    ColumnType = dt.Rows[Initial][column].GetType();
+                    ColumnType = table.Rows[Initial][column].GetType();
                     if (ColumnType == typeof(System.String))
                         cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
                     else if (ColumnType == typeof(System.Int16))
@@ -660,7 +659,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 da.UpdateBatchSize = 4;
                 if (!this.IsTransactionStarted)
                     con.Open();
-                state = da.Update(dt);
+                state = da.Update(table);
             }
             catch (Exception ex)
             {
