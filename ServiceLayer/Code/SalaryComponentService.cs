@@ -77,19 +77,23 @@ namespace ServiceLayer.Code
             return salaryComponents;
         }
 
-        public SalaryComponents AddorUpdateSalaryGroup(SalaryComponents salaryGroup)
+        public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
         {
-            SalaryComponents salaryGrp = _db.Get<SalaryComponents>("sp_salary_group_getById", new {salaryGroup.ComponentId});
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new {salaryGroup.SalaryGroupId});
             if (salaryGrp == null)
+            {
                 salaryGrp = salaryGroup;
+                salaryGrp.CreatedBy = 1;
+            }
+
             else
                 throw new HiringBellException("Salary Group already exist.");
 
-            var result = _db.Execute<SalaryComponents>("sp_salary_group_insupd", salaryGrp, true);
+            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-
-            return salaryGrp;
+            List<SalaryGroup> value = this.GetSalaryGroupService();
+            return value;
         }
     }
 }

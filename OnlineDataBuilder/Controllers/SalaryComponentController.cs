@@ -42,10 +42,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("AddorUpdateSalaryGroup")]
-        public IResponse<ApiResponse> AddorUpdateSalaryGroup(SalaryComponents salaryGroup)
+        [HttpPost("AddSalaryGroup")]
+        public IResponse<ApiResponse> AddSalaryGroup(SalaryGroup salaryGroup)
         {
-            var result = _salaryComponentService.AddorUpdateSalaryGroup(salaryGroup);
+            var result = _salaryComponentService.AddSalaryGroup(salaryGroup);
             return BuildResponse(result);
         }
     }
