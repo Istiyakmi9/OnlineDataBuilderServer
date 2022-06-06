@@ -192,10 +192,8 @@ namespace ServiceLayer.Code
                                     }); ;
 
                     DataTable table = Converter.ToDataTable(fileInfo);
-                    var dataSet = new DataSet();
-                    dataSet.Tables.Add(table);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_Files_InsUpd", dataSet, false);
+                    int insertedCount = _db.BatchInsert("sp_Files_InsUpd", table, false);
                     _db.Commit();
                 }
             }
