@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 
@@ -23,6 +24,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetSalaryComponentsDetail()
         {
             var result = _salaryComponentService.GetSalaryComponentsDetailService();
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AddorUpdateSalaryGroup")]
+        public IResponse<ApiResponse> AddorUpdateSalaryGroup(SalaryComponents salaryGroup)
+        {
+            var result = _salaryComponentService.AddorUpdateSalaryGroup(salaryGroup);
             return BuildResponse(result);
         }
     }

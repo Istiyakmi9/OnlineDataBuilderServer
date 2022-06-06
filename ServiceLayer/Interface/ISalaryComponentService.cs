@@ -7,5 +7,6 @@ namespace ServiceLayer.Interface
     {
         SalaryComponents GetSalaryComponentByIdService();
         List<SalaryComponents> GetSalaryComponentsDetailService();
+        SalaryComponents AddorUpdateSalaryGroup(SalaryComponents salaryGroup)
     }
 }
