@@ -14,5 +14,7 @@ namespace ModalLayer.Modal.Accounts
         public bool IsComponentEnable { get; set; }
         public bool IsAllowtoOverride { get; set; }
         public string Section { get; set; }
+        public decimal SectionMaxLimit { get; set; }
+        public bool IsAffectinGross { get; set; }
     }
 }

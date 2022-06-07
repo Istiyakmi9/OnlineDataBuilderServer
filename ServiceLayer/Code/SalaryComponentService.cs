@@ -83,7 +83,6 @@ namespace ServiceLayer.Code
             if (salaryGrp == null)
             {
                 salaryGrp = salaryGroup;
-                salaryGrp.CreatedBy = 1;
             }
 
             else
@@ -94,6 +93,12 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
             List<SalaryGroup> value = this.GetSalaryGroupService();
             return value;
+        }
+
+        public List<SalaryStructure> AddRecurringComponents(SalaryStructure salaryStructure)
+        {
+            List<SalaryStructure> salaryStructures = null;
+            return salaryStructures;
         }
     }
 }
