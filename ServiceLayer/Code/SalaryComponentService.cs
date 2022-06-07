@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
@@ -74,6 +75,30 @@ namespace ServiceLayer.Code
             }
 
             return salaryComponents;
+        }
+
+        public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
+        {
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new {salaryGroup.SalaryGroupId});
+            if (salaryGrp == null)
+            {
+                salaryGrp = salaryGroup;
+            }
+
+            else
+                throw new HiringBellException("Salary Group already exist.");
+
+            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update.");
+            List<SalaryGroup> value = this.GetSalaryGroupService();
+            return value;
+        }
+
+        public List<SalaryStructure> AddRecurringComponents(SalaryStructure salaryStructure)
+        {
+            List<SalaryStructure> salaryStructures = null;
+            return salaryStructures;
         }
     }
 }
