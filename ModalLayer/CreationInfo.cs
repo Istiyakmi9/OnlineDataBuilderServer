@@ -8,5 +8,6 @@ namespace ModalLayer
         public long? UpdatedBy { set; get; }
         public DateTime CreatedOn { set; get; }
         public DateTime? UpdatedOn { set; get; }
+        public long AdminId { get; set; }
     }
 }
