@@ -95,6 +95,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpGet("GetPayrollSetting/{companyId}")]
+        public IResponse<ApiResponse> GetPayrollSetting(int companyId)
+        {
+            var result = _settingService.GetPayrollSetting(companyId);
+            return BuildResponse(result);
+        }
+
         [HttpPost("InsertUpdateSalaryStructure")]
         public IResponse<ApiResponse> InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)
         {

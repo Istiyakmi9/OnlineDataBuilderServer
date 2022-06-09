@@ -94,17 +94,19 @@ namespace ServiceLayer.Code
                 if (fileCollection[i].Name == "signwithStamp")
                 {
                     signatureWithStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                } else if (fileCollection[i].Name == "signwithoutStamp")
+                }
+                else if (fileCollection[i].Name == "signwithoutStamp")
                 {
                     signatureWithoutStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                } else
+                }
+                else
                 {
                     companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
                 }
 
                 i++;
             }
-            
+
             if (File.Exists(signatureWithStamp))
             {
                 File.Delete(signatureWithoutStamp);
@@ -341,24 +343,32 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public Payroll InsertUpdatePayrollSetting(Payroll payroll)
+        public Payroll GetPayrollSetting(int companyId)
         {
-            Payroll result = null;
-            result = _db.Get<Payroll>("sp_bank_accounts_get_by_orgId", null);
+            var result = _db.Get<Payroll>("sp_payroll_cycle_setting_getById", new { CompanyId = companyId });
 
             if (result == null)
-                result = payroll;
-            else
-            {
-                payroll.PayDayPeriod = result.PayDayPeriod;
-                payroll.PayPeriodEnd = result.PayPeriodEnd;
-                payroll.PayDayinMonth = result.PayDayinMonth;
-                payroll.PayCycleMonth = result.PayCycleMonth;
-                payroll.PayFrequency = result.PayFrequency;
-            }
+                throw new HiringBellException("No record found for given company.");
 
-            var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd",
-                result,
+            return result;
+        }
+
+        public string InsertUpdatePayrollSetting(Payroll payroll)
+        {
+            var status = _db.Execute<Payroll>("sp_payroll_cycle_setting_intupd",
+                new
+                {
+                    PayrollCycleSettingId = payroll.PayrollCycleSettingId,
+                    CompanyId = payroll.CompanyId,
+                    OrganizationId = payroll.OrganizationId,
+                    PayFrequency = payroll.PayFrequency,
+                    PayCycleMonth = payroll.PayCycleMonth,
+                    PayCycleDayOfMonth = payroll.PayCycleDayOfMonth,
+                    PayCalculationId = payroll.PayCalculationId,
+                    IsExcludeWeeklyOffs = payroll.IsExcludeWeeklyOffs,
+                    IsExcludeHolidays = payroll.IsExcludeHolidays,
+                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                },
                 true
             );
 
@@ -367,8 +377,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
             }
 
-
-            return result;
+            return status;
         }
 
         public string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)

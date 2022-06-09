@@ -6,12 +6,14 @@ namespace ModalLayer.Modal.Accounts
 {
     public class Payroll: CreationInfo
     {
+        public int CompanyId { set; get; }
+        public int PayrollCycleSettingId { set; get; }
+        public long OrganizationId { set; get; }
         public string PayFrequency { get; set; }
-        public string PayCycleMonth { get; set; }
-        public string PayPeriodEnd { get; set; }
-        public string PayDayinMonth { get; set; }
-        public string PayDayPeriod { get; set; }
-        public bool IsExcludeWeekly { get; set; }
-        public bool IsExcludeHoliday { get; set; }
+        public int PayCycleMonth { get; set; }
+        public int PayCycleDayOfMonth { get; set; }
+        public int PayCalculationId { get; set; }
+        public bool IsExcludeWeeklyOffs { get; set; }
+        public bool IsExcludeHolidays { get; set; }
     }
 }
