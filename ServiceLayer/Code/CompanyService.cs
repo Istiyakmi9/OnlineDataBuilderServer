@@ -158,7 +158,7 @@ namespace ServiceLayer.Code
                     company.State,
                     company.City,
                     company.FirstAddress,
-                    company.SecondAddress,
+                    company.SecondAddress, 
                     company.ThirdAddress,
                     company.FourthAddress,
                     company.FullAddress,
