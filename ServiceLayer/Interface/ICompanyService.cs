@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ServiceLayer.Interface
 {
@@ -11,6 +8,7 @@ namespace ServiceLayer.Interface
     {
         List<OrganizationSettings> GetAllCompany();
         List<OrganizationSettings> AddCompanyGroup(OrganizationSettings companyGroup);
+        List<OrganizationSettings> UpdateCompanyGroup(OrganizationSettings companyGroup, int companyId);
         OrganizationSettings GetCompanyById(int companyId);
         OrganizationSettings UpdateCompanyDetails(OrganizationSettings companyInfo, IFormFileCollection fileCollection);
 

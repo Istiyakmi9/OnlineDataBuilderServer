@@ -36,6 +36,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPut("UpdateCompanyGroup/{companyId}")]
+        public IResponse<ApiResponse> UpdateCompanyGroup([FromRoute] int companyId, [FromBody]OrganizationSettings companyGroup)
+        {
+            var result = _companyService.UpdateCompanyGroup(companyGroup, companyId);
+            return BuildResponse(result);
+        }
+
         [HttpPost("UpdateCompanyDetails")]
         public IResponse<ApiResponse> UpdateCompanyDetails()
         {
