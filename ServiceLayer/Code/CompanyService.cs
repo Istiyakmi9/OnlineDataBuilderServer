@@ -32,6 +32,29 @@ namespace ServiceLayer.Code
             return result;
         }
 
+        public List<OrganizationSettings> UpdateCompanyGroup(OrganizationSettings companyGroup, int companyId)
+        {
+            if (companyId <= 0)
+            {
+                throw new HiringBellException("Invalid compnay id. Unable to update detail.");
+            }
+
+            OrganizationSettings companyGrp = _db.Get<OrganizationSettings>("sp_company_getById", new { CompanyId = companyId });
+            if (companyGrp == null)
+                throw new HiringBellException("Compnay detail not found");
+
+            companyGrp.Email = companyGroup.Email;
+            companyGrp.InCorporationDate = companyGroup.InCorporationDate;
+            companyGrp.CompanyDetail = companyGroup.CompanyDetail;
+
+
+            var value = _db.Execute<OrganizationSettings>("sp_company_intupd", companyGrp, true);
+            if (string.IsNullOrEmpty(value))
+                throw new HiringBellException("Fail to insert company group.");
+
+            return this.GetAllCompany();
+        }
+
         public List<OrganizationSettings> AddCompanyGroup(OrganizationSettings companyGroup)
         {
             List<OrganizationSettings> companyGrp = null;
@@ -40,7 +63,8 @@ namespace ServiceLayer.Code
             if (result != null)
             {
                 throw new HiringBellException("Company Already exist.");
-            } else
+            }
+            else
             {
                 result = companyGroup;
             }
@@ -53,7 +77,7 @@ namespace ServiceLayer.Code
             return companyGrp;
         }
 
-        
+
 
         public OrganizationSettings GetCompanyById(int CompanyId)
         {
@@ -73,7 +97,7 @@ namespace ServiceLayer.Code
             if (companyInfo.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
 
-            company = _db.Get<OrganizationSettings>("sp_company_getById", new { companyInfo.CompanyId});
+            company = _db.Get<OrganizationSettings>("sp_company_getById", new { companyInfo.CompanyId });
 
             if (company == null)
                 throw new HiringBellException("Company doesn't exist.");
@@ -158,7 +182,7 @@ namespace ServiceLayer.Code
                     company.State,
                     company.City,
                     company.FirstAddress,
-                    company.SecondAddress, 
+                    company.SecondAddress,
                     company.ThirdAddress,
                     company.FourthAddress,
                     company.FullAddress,
