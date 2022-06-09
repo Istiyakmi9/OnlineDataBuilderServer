@@ -54,6 +54,27 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = _salaryComponentService.AddRecurringComponents(salaryStructure);
             return BuildResponse(result);
+         }
+
+        [HttpPost("AddAdhocComponents")]
+        public IResponse<ApiResponse> AddAdhocComponents(SalaryStructure salaryStructure)
+        {
+            var result = _salaryComponentService.AddAdhocComponents(salaryStructure);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AddDeductionComponents")]
+        public IResponse<ApiResponse> AddDeductionComponents(SalaryStructure salaryStructure)
+        {
+            var result = _salaryComponentService.AddDeductionComponents(salaryStructure);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AddBonusComponents")]
+        public IResponse<ApiResponse> AddBonusComponents(SalaryStructure salaryStructure)
+        {
+            var result = _salaryComponentService.AddBonusComponents(salaryStructure);
+            return BuildResponse(result);
         }
     }
 }

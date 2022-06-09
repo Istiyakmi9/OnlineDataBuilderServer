@@ -12,9 +12,11 @@ namespace ServiceLayer.Code
     public class SalaryComponentService : ISalaryComponentService
     {
         private readonly IDb _db;
-        public SalaryComponentService(IDb db)
+        private readonly CurrentSession _currentSession;
+        public SalaryComponentService(IDb db, CurrentSession currentSession)
         {
             _db = db;
+            _currentSession = currentSession;
         }
 
         public SalaryComponents GetSalaryComponentByIdService()
@@ -83,6 +85,8 @@ namespace ServiceLayer.Code
             if (salaryGrp == null)
             {
                 salaryGrp = salaryGroup;
+                salaryGrp.ComponentId = "[]";
+                salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
             else
@@ -95,10 +99,32 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public List<SalaryStructure> AddRecurringComponents(SalaryStructure salaryStructure)
+        public List<SalaryStructure> AddRecurringComponents(SalaryStructure recurringComponent)
         {
-            List<SalaryStructure> salaryStructures = null;
-            return salaryStructures;
+            List<SalaryStructure> recurringComponents = null;
+
+            return recurringComponents;
+        }
+
+        public List<SalaryStructure> AddAdhocComponents(SalaryStructure adhocComponent)
+        {
+            List<SalaryStructure> adhocComponents = null;
+
+            return adhocComponents;
+        }
+
+        public List<SalaryStructure> AddDeductionComponents(SalaryStructure deductionComponent)
+        {
+            List<SalaryStructure> deductionComponents = null;
+
+            return deductionComponents;
+        }
+
+        public List<SalaryStructure> AddBonusComponents(SalaryStructure bonusComponent)
+        {
+            List<SalaryStructure> bonusComponents = null;
+
+            return bonusComponents;
         }
     }
 }

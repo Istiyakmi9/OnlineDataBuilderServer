@@ -3,7 +3,6 @@
     public class SalaryComponents : SalaryCommon
     {
         public string ComponentId { set; get; }
-        public string ComponentDescription { set; get; }
         public string TaxExempt { get; set; }
         public int SubComponentTypeId { get; set; }
         public decimal PercentageValue { set; get; }
@@ -17,6 +16,7 @@
     public class SalaryCommon : CreationInfo
     {
         public bool CalculateInPercentage { set; get; }
+        public string ComponentDescription { set; get; }
         public bool IsComponentEnabled { set; get; }
         public decimal MaxLimit { set; get; }
         public string Formula { set; get; }
