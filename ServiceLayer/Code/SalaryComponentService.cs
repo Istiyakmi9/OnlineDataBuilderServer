@@ -60,7 +60,7 @@ namespace ServiceLayer.Code
                                       n.ComponentDescription,
                                       n.CalculateInPercentage,
                                       n.TaxExempt,
-                                      n.SubComponentTypeId,
+                                      n.ComponentTypeId,
                                       n.PercentageValue,
                                       n.MaxLimit,
                                       n.Formula,
