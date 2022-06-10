@@ -320,6 +320,22 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return data;
         }
 
+        public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            List<T> data = new List<T>();
+            object userType = Parameters;
+            var properties = typeof(T).GetProperties().ToList();
+
+            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
+            if (result != null)
+            {
+                if (result.Count > 0)
+                    data = result;
+            }
+
+            return data;
+        }
+
         public T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new()
         {
             T t = new T();

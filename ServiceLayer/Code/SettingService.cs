@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetSalaryComponentService()
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
             PfEsiSetting pfEsiSettings = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get");
             var value = new { SalaryComponent = salaryComponents, PfEsiSettings = pfEsiSettings };
             return value;
@@ -247,7 +247,7 @@ namespace ServiceLayer.Code
         public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
         {
             string value = string.Empty;
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
             var pfsetting = salaryComponents.Find(x => x.ComponentId == PfSetting.ComponentId);
             var esisetting = salaryComponents.Find(x => x.ComponentId == EsiSetting.ComponentId);
 
@@ -333,7 +333,7 @@ namespace ServiceLayer.Code
 
         public List<OrganizationSettings> GetOrganizationInfo()
         {
-            List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get");
+            List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get", false);
             return organizations;
         }
 

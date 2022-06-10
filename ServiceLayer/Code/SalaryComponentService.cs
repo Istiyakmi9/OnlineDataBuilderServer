@@ -26,13 +26,13 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryComponentsDetailService()
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
             return salaryComponents;
         }
 
         public List<SalaryGroup> GetSalaryGroupService()
         {
-            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
+            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
             return salaryComponents;
         }
 
@@ -40,7 +40,7 @@ namespace ServiceLayer.Code
         {
             if (salaryComponents.Count > 0)
             {
-                List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get");
+                List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
                 Parallel.ForEach(result, x =>
                 {
                     var item = salaryComponents.Find(i => i.ComponentId == x.ComponentId);
@@ -101,7 +101,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> AddRecurringComponents(SalaryStructure recurringComponent)
         {
-            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
             var value = components.Find(x => x.ComponentId == recurringComponent.ComponentName);
             if (value == null)
             {
