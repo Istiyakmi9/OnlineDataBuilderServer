@@ -8,7 +8,8 @@ namespace ModalLayer.Modal
         Employee = 2,
         Candidate = 3,
         Client = 4,
-        Other = 5
+        Other = 5,
+        Compnay = 6
     }
 
     public enum DeclarationType
@@ -43,6 +44,7 @@ namespace ModalLayer.Modal
     public class Files : DocumentFile
     {
         public string FilePath { set; get; }
+        public long FileOwnerId { set; get; }
         public string FileName { set; get; }
         public string FileExtension { set; get; }
         public string Status { set; get; }

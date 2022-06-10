@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetSalaryComponentService()
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
             PfEsiSetting pfEsiSettings = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get");
             var value = new { SalaryComponent = salaryComponents, PfEsiSettings = pfEsiSettings };
             return value;
@@ -247,7 +247,7 @@ namespace ServiceLayer.Code
         public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
         {
             string value = string.Empty;
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
             var pfsetting = salaryComponents.Find(x => x.ComponentId == PfSetting.ComponentId);
             var esisetting = salaryComponents.Find(x => x.ComponentId == EsiSetting.ComponentId);
 
@@ -255,59 +255,63 @@ namespace ServiceLayer.Code
                 pfsetting = PfSetting;
             if (esisetting == null)
                 esisetting = EsiSetting;
-            DbParam[] param = new DbParam[]
+
+            value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
             {
-                new DbParam (PfSetting.ComponentId, typeof(string), "_ComponentId"),
-                new DbParam (PfSetting.CalculateInPercentage, typeof(bool), "_CalculateInPercentage"),
-                new DbParam (pfsetting.EmployeeContribution, typeof(decimal), "_EmployeeContribution"),
-                new DbParam (PfSetting.IsActive, typeof(bool), "_IsActive"),
-                new DbParam (PfSetting.TaxExempt, typeof(string), "_TaxExempt"),
-                new DbParam (PfSetting.ComponentTypeId, typeof(int), "_ComponentTypeId"),
-                new DbParam (PfSetting.IncludeInPayslip, typeof(bool), "_IncludeInPayslip"),
-                new DbParam (pfsetting.ComponentDescription, typeof(string), "_ComponentDescription"),
-                new DbParam (pfsetting.MaxLimit, typeof(decimal), "_MaxLimit"),
-                new DbParam (PfSetting.EmployerContribution, typeof(decimal), "_EmployerContribution"),
-                new DbParam (pfsetting.IsOpted, typeof(bool), "_IsOpted"),
-                new DbParam (pfsetting.PercentageValue, typeof(decimal), "_PercentageValue"),
-                new DbParam (pfsetting.Formula, typeof(string), "_Formula"),
-                new DbParam (pfsetting.IsAdHoc, typeof(bool), "_IsAdHoc"),
-                new DbParam (pfsetting.AdHocId, typeof(int), "_AdHocId"),
-                new DbParam (pfsetting.SectionMaxLimit, typeof(decimal), "_SectionMaxLimit"),
-                new DbParam (pfsetting.IsAffectInGross, typeof(bool), "_IsAffectInGross"),
-                new DbParam (pfsetting.RequireDocs, typeof(bool), "_RequireDocs"),
-                new DbParam (_currentSession.CurrentUserDetail.UserId, typeof(long), "_Admin")
-            };
-            value = _db.ExecuteNonQuery("sp_salary_components_insupd", param, true);
+                PfSetting.ComponentId,
+                PfSetting.CalculateInPercentage,
+                pfsetting.EmployeeContribution,
+                PfSetting.IsActive,
+                PfSetting.TaxExempt,
+                PfSetting.ComponentTypeId,
+                PfSetting.IncludeInPayslip,
+                pfsetting.ComponentDescription,
+                pfsetting.MaxLimit,
+                PfSetting.EmployerContribution,
+                pfsetting.IsOpted,
+                pfsetting.PercentageValue,
+                pfsetting.Formula,
+                pfsetting.IsAdHoc,
+                pfsetting.AdHocId,
+                pfsetting.Section,
+                pfsetting.SectionMaxLimit,
+                pfsetting.IsAffectInGross,
+                pfsetting.RequireDocs,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
 
-            param = new DbParam[]
+
+            value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
             {
-                new DbParam (EsiSetting.ComponentId, typeof(string), "_ComponentId"),
-                new DbParam (esisetting.CalculateInPercentage, typeof(bool), "_CalculateInPercentage"),
-                new DbParam (EsiSetting.EmployeeContribution, typeof(decimal), "_EmployeeContribution"),
-                new DbParam (EsiSetting.IsActive, typeof(bool), "_IsActive"),
-                new DbParam (EsiSetting.TaxExempt, typeof(string), "_TaxExempt"),
-                new DbParam (EsiSetting.ComponentTypeId, typeof(int), "_ComponentTypeId"),
-                new DbParam (EsiSetting.IncludeInPayslip, typeof(bool), "_IncludeInPayslip"),
-                new DbParam (esisetting.ComponentDescription, typeof(string), "_ComponentDescription"),
-                new DbParam (EsiSetting.MaxLimit, typeof(decimal), "_MaxLimit"),
-                new DbParam (EsiSetting.EmployerContribution, typeof(decimal), "_EmployerContribution"),
-                new DbParam (esisetting.IsOpted, typeof(bool), "_IsOpted"),
-                new DbParam (esisetting.PercentageValue, typeof(decimal), "_PercentageValue"),
-                new DbParam (esisetting.Formula, typeof(string), "_Formula"),
-                new DbParam (esisetting.IsAdHoc, typeof(bool), "_IsAdHoc"),
-                new DbParam (esisetting.AdHocId, typeof(int), "_AdHocId"),
-                new DbParam (esisetting.SectionMaxLimit, typeof(decimal), "_SectionMaxLimit"),
-                new DbParam (esisetting.IsAffectInGross, typeof(bool), "_IsAffectInGross"),
-                new DbParam (esisetting.RequireDocs, typeof(bool), "_RequireDocs"),
-                new DbParam (_currentSession.CurrentUserDetail.UserId, typeof(long), "_Admin")
-            };
-            value = _db.ExecuteNonQuery("sp_salary_components_insupd", param, true);
+                EsiSetting.ComponentId,
+                EsiSetting.CalculateInPercentage,
+                esisetting.EmployeeContribution,
+                EsiSetting.IsActive,
+                EsiSetting.TaxExempt,
+                EsiSetting.ComponentTypeId,
+                EsiSetting.IncludeInPayslip,
+                esisetting.ComponentDescription,
+                esisetting.MaxLimit,
+                EsiSetting.EmployerContribution,
+                esisetting.IsOpted,
+                esisetting.PercentageValue,
+                esisetting.Formula,
+                esisetting.IsAdHoc,
+                esisetting.AdHocId,
+                esisetting.Section,
+                esisetting.SectionMaxLimit,
+                esisetting.IsAffectInGross,
+                esisetting.RequireDocs,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
 
-            param = new DbParam[]
+            var param = new DbParam[]
             {
                 new DbParam (PfesiSetting.PfEsi_setting_Id, typeof(int), "_PfEsi_setting_Id"),
                 new DbParam (PfesiSetting.IsPF_Limit_Amount_Statutory, typeof(bool), "_IsPF_Limit_Amount_Statutory"),
@@ -333,7 +337,7 @@ namespace ServiceLayer.Code
 
         public List<OrganizationSettings> GetOrganizationInfo()
         {
-            List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get");
+            List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get", false);
             return organizations;
         }
 

@@ -28,7 +28,7 @@ namespace ServiceLayer.Code
         }
         public List<OrganizationSettings> GetAllCompany()
         {
-            var result = _db.GetList<OrganizationSettings>("sp_company_get");
+            var result = _db.GetList<OrganizationSettings>("sp_company_get", false);
             return result;
         }
 
@@ -58,7 +58,7 @@ namespace ServiceLayer.Code
         public List<OrganizationSettings> AddCompanyGroup(OrganizationSettings companyGroup)
         {
             List<OrganizationSettings> companyGrp = null;
-            companyGrp = _db.GetList<OrganizationSettings>("sp_company_get");
+            companyGrp = _db.GetList<OrganizationSettings>("sp_company_get", false);
             OrganizationSettings result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
             if (result != null)
             {
@@ -79,10 +79,11 @@ namespace ServiceLayer.Code
 
 
 
-        public OrganizationSettings GetCompanyById(int CompanyId)
+        public dynamic GetCompanyById(int CompanyId)
         {
             OrganizationSettings result = _db.Get<OrganizationSettings>("sp_company_getById", new { CompanyId });
-            return result;
+            List<Files> files = _db.GetList<Files>("sp_Files_GetBy_OwnerId", new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
+            return new { OrganizationDetail = result, Files = files };
         }
 
         public OrganizationSettings UpdateCompanyDetails(OrganizationSettings companyInfo, IFormFileCollection fileCollection)
@@ -105,6 +106,7 @@ namespace ServiceLayer.Code
             {
                 company.OrganizationName = companyInfo.OrganizationName;
                 company.CompanyName = companyInfo.CompanyName;
+                company.CompanyId = companyInfo.CompanyId;
                 company.CompanyDetail = companyInfo.CompanyDetail;
                 company.FirstAddress = companyInfo.FirstAddress;
                 company.SecondAddress = companyInfo.SecondAddress;
@@ -229,13 +231,13 @@ namespace ServiceLayer.Code
                                     select new
                                     {
                                         FileId = n.FileUid,
-                                        FileOwnerId = (companyInfo.OrganizationId),
+                                        FileOwnerId = companyInfo.CompanyId,
                                         FilePath = n.FilePath,
                                         FileName = n.FileName,
                                         FileExtension = n.FileExtension,
                                         ItemStatusId = 0,
                                         PaidOn = DateTime.Now,
-                                        UserTypeId = (int)UserType.Admin,
+                                        UserTypeId = (int)UserType.Compnay,
                                         CreatedBy = _currentSession.CurrentUserDetail.UserId,
                                         UpdatedBy = _currentSession.CurrentUserDetail.UserId,
                                         CreatedOn = DateTime.Now,
