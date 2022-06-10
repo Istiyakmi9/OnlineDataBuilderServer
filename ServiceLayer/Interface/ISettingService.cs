@@ -18,6 +18,6 @@ namespace ServiceLayer.Interface
         string InsertUpdatePayrollSetting(Payroll payroll);
         Payroll GetPayrollSetting(int companyId);
         string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure);
-        string UpdateSalaryComponentDetailService(long componentId, SalaryComponents component);
+        string UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
     }
 }
