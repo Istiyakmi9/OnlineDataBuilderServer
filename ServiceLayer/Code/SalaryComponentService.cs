@@ -99,9 +99,14 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public List<SalaryComponents> AddRecurringComponents(SalaryStructure recurringComponent)
+        public List<SalaryComponents> AddUpdateRecurringComponents(SalaryStructure recurringComponent)
         {
-            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
+            if (string.IsNullOrEmpty(recurringComponent.ComponentName))
+                throw new HiringBellException("Invalid component name.");
+            if (string.IsNullOrEmpty(recurringComponent.Type))
+                throw new HiringBellException("Invalid component type.");
+
+            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get");
             var value = components.Find(x => x.ComponentId == recurringComponent.ComponentName);
             if (value == null)
             {
@@ -111,11 +116,22 @@ namespace ServiceLayer.Code
                 value.MaxLimit = recurringComponent.MaxLimit;
                 value.TaxExempt = recurringComponent.TaxExempt;
                 value.Section = recurringComponent.Section;
+                value.ComponentTypeId = Convert.ToInt32(recurringComponent.Type);
                 value.SectionMaxLimit = recurringComponent.SectionMaxLimit;
+                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
             else
-                throw new HiringBellException("Component already exist.");
-            var result = _db.Execute<SalaryStructure>("sp_salary_components_insupd", value, true);
+            {
+                value.ComponentId = recurringComponent.ComponentName;
+                value.ComponentDescription = recurringComponent.ComponentDescription;
+                value.MaxLimit= recurringComponent.MaxLimit;
+                value.ComponentTypeId = Convert.ToInt32(recurringComponent.Type);
+                value.TaxExempt = recurringComponent.TaxExempt;
+                value.Section = recurringComponent.Section;
+                value.SectionMaxLimit = recurringComponent.SectionMaxLimit;
+                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail insert salary component.");
 
@@ -136,11 +152,31 @@ namespace ServiceLayer.Code
             return deductionComponents;
         }
 
-        public List<SalaryStructure> AddBonusComponents(SalaryStructure bonusComponent)
+        public List<SalaryComponents> AddBonusComponents(SalaryStructure bonusComponent)
         {
-            List<SalaryStructure> bonusComponents = null;
+            if (string.IsNullOrEmpty(bonusComponent.ComponentName))
+                throw new HiringBellException("Invalid component name.");
 
-            return bonusComponents;
+            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentName);
+            if (value == null)
+            {
+                value = new SalaryComponents();
+                value.ComponentId = bonusComponent.ComponentName;
+                value.ComponentDescription = bonusComponent.ComponentDescription;
+                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+            else
+            {
+                value.ComponentId = bonusComponent.ComponentName;
+                value.ComponentDescription = bonusComponent.ComponentDescription;
+                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail insert salary component.");
+
+            return this.GetSalaryComponentsDetailService();
         }
     }
 }
