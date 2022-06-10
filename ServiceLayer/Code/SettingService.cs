@@ -441,7 +441,7 @@ namespace ServiceLayer.Code
                     salaryComponent.AdminId
                 }, true);
 
-                if (ApplicationConstants.IsExecuted(!result))
+                if (!ApplicationConstants.IsExecuted(result))
                     throw new HiringBellException("Fail to update the record.");
             }
             else
