@@ -99,11 +99,27 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public List<SalaryStructure> AddRecurringComponents(SalaryStructure recurringComponent)
+        public List<SalaryComponents> AddRecurringComponents(SalaryStructure recurringComponent)
         {
-            List<SalaryStructure> recurringComponents = null;
+            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            var value = components.Find(x => x.ComponentId == recurringComponent.ComponentName);
+            if (value == null)
+            {
+                value = new SalaryComponents();
+                value.ComponentId = recurringComponent.ComponentName;
+                value.ComponentDescription = recurringComponent.ComponentDescription;
+                value.MaxLimit = recurringComponent.MaxLimit;
+                value.TaxExempt = recurringComponent.TaxExempt;
+                value.Section = recurringComponent.Section;
+                value.SectionMaxLimit = recurringComponent.SectionMaxLimit;
+            }
+            else
+                throw new HiringBellException("Component already exist.");
+            var result = _db.Execute<SalaryStructure>("sp_salary_components_insupd", value, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail insert salary component.");
 
-            return recurringComponents;
+            return this.GetSalaryComponentsDetailService();
         }
 
         public List<SalaryStructure> AddAdhocComponents(SalaryStructure adhocComponent)

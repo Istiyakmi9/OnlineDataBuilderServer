@@ -10,7 +10,7 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents);
         List<SalaryGroup> GetSalaryGroupService();
         List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup);
-        List<SalaryStructure> AddRecurringComponents(SalaryStructure salaryStructure);
+        List<SalaryComponents> AddRecurringComponents(SalaryStructure salaryStructure);
         List<SalaryStructure> AddAdhocComponents(SalaryStructure salaryStructure);
         List<SalaryStructure> AddBonusComponents(SalaryStructure salaryStructure);
         List<SalaryStructure> AddDeductionComponents(SalaryStructure salaryStructure);

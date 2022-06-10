@@ -64,5 +64,19 @@ namespace OnlineDataBuilder.Controllers
             var result = _companyService.GetCompanyById(companyId);
             return BuildResponse(result);
         }
+
+        [HttpPost("InsertUpdateCompanyAccounts")]
+        public IResponse<ApiResponse> InsertUpdateCompanyAccounts(BankDetail bankDetail)
+        {
+            BankDetail org = _companyService.InsertUpdateCompanyAccounts(bankDetail);
+            return BuildResponse(org);
+        }
+
+        [HttpGet("GetCompanyBankDetail/{OrganizationId}/{CompanyId}")]
+        public IResponse<ApiResponse> GetCompanyBankDetail(int OrganizationId, int CompanyId)
+        {
+            BankDetail bankDetail = _companyService.GetCompanyBankDetail(OrganizationId, CompanyId);
+            return BuildResponse(bankDetail);
+        }
     }
 }
