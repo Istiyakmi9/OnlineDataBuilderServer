@@ -49,10 +49,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("AddRecurringComponents")]
-        public IResponse<ApiResponse> AddRecurringComponents(SalaryStructure salaryStructure)
+        [HttpPost("AddUpdateRecurringComponents")]
+        public IResponse<ApiResponse> AddUpdateRecurringComponents(SalaryStructure salaryStructure)
         {
-            var result = _salaryComponentService.AddRecurringComponents(salaryStructure);
+            var result = _salaryComponentService.AddUpdateRecurringComponents(salaryStructure);
             return BuildResponse(result);
          }
 
