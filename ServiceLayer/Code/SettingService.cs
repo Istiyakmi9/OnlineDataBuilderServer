@@ -390,5 +390,66 @@ namespace ServiceLayer.Code
 
             return status;
         }
+
+        public string UpdateSalaryComponentDetailService(long componentId, SalaryComponents component)
+        {
+            var status = string.Empty;
+
+            if (componentId <= 0)
+                throw new HiringBellException("Invalid component passed.");
+
+            var salaryComponent = _db.Get<SalaryComponents>("sp_salary_components_get_byId", new { ComponentId = componentId });
+            if (salaryComponent != null)
+            {
+                salaryComponent.CalculateInPercentage = component.CalculateInPercentage;
+                //salaryComponent.TaxExempt = component.TaxExempt;
+
+                if (component.CalculateInPercentage)
+                    salaryComponent.PercentageValue = component.MaxLimit;
+                else
+                    salaryComponent.MaxLimit = component.MaxLimit;
+                salaryComponent.Formula = component.Formula;
+                //salaryComponent.EmployeeContribution = component.EmployeeContribution;
+                //salaryComponent.EmployerContribution = component.EmployerContribution;
+                //salaryComponent.IncludeInPayslip = component.IncludeInPayslip;
+                //salaryComponent.IsOpted = component.IsOpted;
+
+                salaryComponent.IsActive = true;
+                salaryComponent.AdminId = _currentSession.CurrentUserDetail.UserId;
+
+                var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
+                {
+                    salaryComponent.ComponentId,
+                    salaryComponent.ComponentDescription,
+                    salaryComponent.CalculateInPercentage,
+                    salaryComponent.TaxExempt,
+                    salaryComponent.ComponentTypeId,
+                    salaryComponent.PercentageValue,
+                    salaryComponent.MaxLimit,
+                    salaryComponent.Formula,
+                    salaryComponent.EmployeeContribution,
+                    salaryComponent.EmployerContribution,
+                    salaryComponent.IncludeInPayslip,
+                    salaryComponent.IsAdHoc,
+                    salaryComponent.AdHocId,
+                    salaryComponent.Section,
+                    salaryComponent.SectionMaxLimit,
+                    salaryComponent.IsAffectInGross,
+                    salaryComponent.RequireDocs,
+                    salaryComponent.IsOpted,
+                    salaryComponent.IsActive,
+                    salaryComponent.AdminId
+                }, true);
+
+                if (ApplicationConstants.IsExecuted(!result))
+                    throw new HiringBellException("Fail to update the record.");
+            }
+            else
+            {
+                throw new HiringBellException("Invalid component passed.");
+            }
+
+            return status;
+        }
     }
 }

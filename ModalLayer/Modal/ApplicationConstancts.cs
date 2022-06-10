@@ -17,6 +17,17 @@ public class ApplicationConstants
     public const string Pdf = "pdf";
     public const string Docx = "docx";
     public const string Excel = "xlsx";
+
+    public const string Inserted = "inserted";
+    public const string Updated = "updated";
+
+
+    public static bool IsExecuted(string Result)
+    {
+        if (Result.ToLower() == Inserted || Result.ToLower() == Updated)
+            return true;
+        return false;
+    }
 }
 
 public enum FileSystemType
