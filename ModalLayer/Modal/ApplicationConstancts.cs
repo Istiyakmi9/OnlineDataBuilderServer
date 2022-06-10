@@ -24,7 +24,7 @@ public class ApplicationConstants
 
     public static bool IsExecuted(string Result)
     {
-        if (Result.ToLower() == Inserted || Result.ToLower() == Updated)
+        if (Result != null && (Result.ToLower() == Inserted || Result.ToLower() == Updated))
             return true;
         return false;
     }
