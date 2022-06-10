@@ -251,5 +251,52 @@ namespace ServiceLayer.Code
 
             return company;
         }
+
+        public BankDetail InsertUpdateCompanyAccounts(BankDetail bankDetail)
+        {
+            BankDetail bank = null;
+
+            if (bankDetail.OrganizationId <= 0)
+                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+            if (bankDetail.CompanyId <= 0)
+                throw new HiringBellException("Invalid company detail submitted. Please login again.");
+
+            bank = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { OrganizationId = bankDetail.OrganizationId, CompanyId = bankDetail.CompanyId });
+
+            if (bank == null)
+                bank = bankDetail;
+            else
+            {
+                bank.BankAccountId = bankDetail.BankAccountId;
+                bank.CompanyId = bankDetail.CompanyId;
+                bank.AccountNumber = bankDetail.AccountNumber;
+                bank.BankName = bankDetail.BankName;
+                bank.Branch = bankDetail.Branch;
+                bank.IFSCCode = bankDetail.IFSCCode;
+                bank.IsUser = bankDetail.IsUser;
+                bank.OpeningDate = bankDetail.OpeningDate;
+                bank.BranchCode = bankDetail.BranchCode;
+                bank.UserId = bankDetail.UserId;
+                bank.OrganizationId = bankDetail.OrganizationId;
+                bank.PANNumber = bankDetail.PANNumber;
+                bank.GSTINNumber = bankDetail.GSTINNumber;
+                bank.TradeLiecenceNumber = bankDetail.TradeLiecenceNumber;
+            }
+
+            var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd", bank, true);
+
+            if (string.IsNullOrEmpty(status))
+            {
+                throw new HiringBellException("Fail to insert or update.");
+            }
+
+            return bank;
+        }
+
+        public BankDetail GetCompanyBankDetail(int OrganizationId, int CompanyId)
+        {
+            BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { OrganizationId, CompanyId });
+            return result;
+        }
     }
 }

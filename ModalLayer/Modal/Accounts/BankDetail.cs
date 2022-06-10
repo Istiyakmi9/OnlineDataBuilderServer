@@ -16,6 +16,7 @@ namespace ModalLayer.Modal.Accounts
         public string PANNumber { get; set; }
         public string GSTINNumber { get; set; }
         public string TradeLiecenceNumber { get; set; }
+        public int CompanyId { get; set; }
         public DateTime OpeningDate { set; get; } = DateTime.Now;
     }
 }

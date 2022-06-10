@@ -11,6 +11,8 @@ namespace ServiceLayer.Interface
         List<OrganizationSettings> UpdateCompanyGroup(OrganizationSettings companyGroup, int companyId);
         OrganizationSettings GetCompanyById(int companyId);
         OrganizationSettings UpdateCompanyDetails(OrganizationSettings companyInfo, IFormFileCollection fileCollection);
+        BankDetail InsertUpdateCompanyAccounts(BankDetail bankDetail);
+        BankDetail GetCompanyBankDetail(int OrganizationId, int CompanyId);
 
     }
 }
