@@ -103,6 +103,7 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(recurringComponent.ComponentName))
                 throw new HiringBellException("Invalid component name.");
+
             if (string.IsNullOrEmpty(recurringComponent.Type))
                 throw new HiringBellException("Invalid component type.");
 
