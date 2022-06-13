@@ -255,27 +255,34 @@ namespace ServiceLayer.Code
                 pfsetting = PfSetting;
             else
             {
-                pfsetting.MaxLimit = PfSetting.MaxLimit;
+                pfsetting.CalculateInPercentage = PfSetting.CalculateInPercentage;
+                pfsetting.EmployerContribution = PfSetting.EmployerContribution;
+                pfsetting.IsActive = PfSetting.IsActive;
+                pfsetting.IncludeInPayslip = PfSetting.IncludeInPayslip;
             }
             if (esisetting == null)
                 esisetting = EsiSetting;
             else
             {
                 esisetting.MaxLimit = EsiSetting.MaxLimit;
+                esisetting.EmployerContribution =EsiSetting.EmployerContribution;
+                esisetting.IsActive = EsiSetting.IsActive;
+                esisetting.EmployeeContribution = EsiSetting.EmployeeContribution;
+                esisetting.IncludeInPayslip = EsiSetting.IncludeInPayslip;
             }
 
             value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
             {
-                PfSetting.ComponentId,
-                PfSetting.CalculateInPercentage,
+                pfsetting.ComponentId,
+                pfsetting.CalculateInPercentage,
                 pfsetting.EmployeeContribution,
-                PfSetting.IsActive,
-                PfSetting.TaxExempt,
-                PfSetting.ComponentTypeId,
-                PfSetting.IncludeInPayslip,
+                pfsetting.IsActive,
+                pfsetting.TaxExempt,
+                pfsetting.ComponentTypeId,
+                pfsetting.IncludeInPayslip,
                 pfsetting.ComponentDescription,
                 pfsetting.MaxLimit,
-                PfSetting.EmployerContribution,
+                pfsetting.EmployerContribution,
                 pfsetting.IsOpted,
                 pfsetting.PercentageValue,
                 pfsetting.Formula,
@@ -294,16 +301,16 @@ namespace ServiceLayer.Code
 
             value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
             {
-                EsiSetting.ComponentId,
-                EsiSetting.CalculateInPercentage,
+                esisetting.ComponentId,
+                esisetting.CalculateInPercentage,
                 esisetting.EmployeeContribution,
-                EsiSetting.IsActive,
-                EsiSetting.TaxExempt,
-                EsiSetting.ComponentTypeId,
-                EsiSetting.IncludeInPayslip,
+                esisetting.IsActive,
+                esisetting.TaxExempt,
+                esisetting.ComponentTypeId,
+                esisetting.IncludeInPayslip,
                 esisetting.ComponentDescription,
                 esisetting.MaxLimit,
-                EsiSetting.EmployerContribution,
+                esisetting.EmployerContribution,
                 esisetting.IsOpted,
                 esisetting.PercentageValue,
                 esisetting.Formula,
