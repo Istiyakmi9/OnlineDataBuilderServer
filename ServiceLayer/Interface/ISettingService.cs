@@ -19,5 +19,7 @@ namespace ServiceLayer.Interface
         Payroll GetPayrollSetting(int companyId);
         string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure);
         string UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
+        List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component);
+        List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);
     }
 }
