@@ -438,7 +438,7 @@ namespace ServiceLayer.Code
                 salaryComponent.IsActive = true;
                 salaryComponent.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-                var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
+                status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
                 {
                     salaryComponent.ComponentId,
                     salaryComponent.ComponentDescription,
@@ -462,7 +462,7 @@ namespace ServiceLayer.Code
                     salaryComponent.AdminId
                 }, true);
 
-                if (!ApplicationConstants.IsExecuted(result))
+                if (!ApplicationConstants.IsExecuted(status))
                     throw new HiringBellException("Fail to update the record.");
             }
             else
@@ -471,6 +471,87 @@ namespace ServiceLayer.Code
             }
 
             return status;
+        }
+
+        public List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component)
+        {
+            List<SalaryComponents> salaryComponents = null;
+
+            if (string.IsNullOrEmpty(componentId))
+                throw new HiringBellException("Invalid component passed.");
+
+            var salaryComponent = _db.Get<SalaryComponents>("sp_salary_components_get_byId", new { ComponentId = componentId });
+            if (salaryComponent != null)
+            {
+                salaryComponent.CalculateInPercentage = component.CalculateInPercentage;
+                salaryComponent.TaxExempt = component.TaxExempt;
+
+                if (component.CalculateInPercentage)
+                {
+                    salaryComponent.PercentageValue = component.MaxLimit;
+                    salaryComponent.MaxLimit = 0;
+                }
+                else
+                {
+                    salaryComponent.MaxLimit = component.MaxLimit;
+                    salaryComponent.PercentageValue = 0;
+                }
+
+                salaryComponent.IsActive = component.IsActive;
+                salaryComponent.TaxExempt = component.TaxExempt;
+                salaryComponent.RequireDocs = component.RequireDocs;
+                salaryComponent.IncludeInPayslip = component.IncludeInPayslip;
+                salaryComponent.AdminId = _currentSession.CurrentUserDetail.UserId;
+
+                var status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
+                {
+                    salaryComponent.ComponentId,
+                    salaryComponent.ComponentDescription,
+                    salaryComponent.CalculateInPercentage,
+                    salaryComponent.TaxExempt,
+                    salaryComponent.ComponentTypeId,
+                    salaryComponent.PercentageValue,
+                    salaryComponent.MaxLimit,
+                    salaryComponent.Formula,
+                    salaryComponent.EmployeeContribution,
+                    salaryComponent.EmployerContribution,
+                    salaryComponent.IncludeInPayslip,
+                    salaryComponent.IsAdHoc,
+                    salaryComponent.AdHocId,
+                    salaryComponent.Section,
+                    salaryComponent.SectionMaxLimit,
+                    salaryComponent.IsAffectInGross,
+                    salaryComponent.RequireDocs,
+                    salaryComponent.IsOpted,
+                    salaryComponent.IsActive,
+                    salaryComponent.AdminId
+                }, true);
+
+                if (!ApplicationConstants.IsExecuted(status))
+                    throw new HiringBellException("Fail to update the record.");
+
+                salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = 0 });
+                if (salaryComponents == null)
+                    throw new HiringBellException("Fail to retrieve component detail.");
+            }
+            else
+            {
+                throw new HiringBellException("Invalid component passed.");
+            }
+
+            return salaryComponents;
+        }
+
+        public List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId)
+        {
+            if (componentTypeId < 0)
+                throw new HiringBellException("Invalid component type passed.");
+
+            List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = componentTypeId });
+            if (salaryComponent == null)
+                throw new HiringBellException("Fail to retrieve component detail.");
+
+            return salaryComponent;
         }
     }
 }

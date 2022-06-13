@@ -110,9 +110,23 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("UpdateSalaryComponentDetail/{componentId}")]
-        public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute]string componentId, [FromBody]SalaryComponents component)
+        public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
         {
             var result = _settingService.UpdateSalaryComponentDetailService(componentId, component);
+            return BuildResponse(result);
+        }
+
+        [HttpPut("EnableSalaryComponentDetail/{componentId}")]
+        public IResponse<ApiResponse> EnableSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
+        {
+            var result = _settingService.EnableSalaryComponentDetailService(componentId, component);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("FetchComponentDetailById/{componentId}")]
+        public IResponse<ApiResponse> FetchComponentDetailById(int componentTypeId)
+        {
+            var result = _settingService.FetchComponentDetailByIdService(componentTypeId);
             return BuildResponse(result);
         }
     }

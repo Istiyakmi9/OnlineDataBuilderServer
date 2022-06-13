@@ -25,7 +25,7 @@
         public decimal SectionMaxLimit { get; set; }
         public bool IsAffectInGross { get; set; }
         public bool RequireDocs { get; set; }
-        public string TaxExempt { get; set; }
+        public bool TaxExempt { get; set; }
 
 
     }
