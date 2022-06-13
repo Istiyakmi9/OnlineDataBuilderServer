@@ -253,8 +253,16 @@ namespace ServiceLayer.Code
 
             if (pfsetting == null)
                 pfsetting = PfSetting;
+            else
+            {
+                pfsetting.MaxLimit = PfSetting.MaxLimit;
+            }
             if (esisetting == null)
                 esisetting = EsiSetting;
+            else
+            {
+                esisetting.MaxLimit = EsiSetting.MaxLimit;
+            }
 
             value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
             {
