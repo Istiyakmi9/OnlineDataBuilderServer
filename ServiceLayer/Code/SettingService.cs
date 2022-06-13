@@ -391,28 +391,34 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public string UpdateSalaryComponentDetailService(long componentId, SalaryComponents component)
+        public string UpdateSalaryComponentDetailService(string componentId, SalaryComponents component)
         {
             var status = string.Empty;
 
-            if (componentId <= 0)
+            if (string.IsNullOrEmpty(componentId))
                 throw new HiringBellException("Invalid component passed.");
 
             var salaryComponent = _db.Get<SalaryComponents>("sp_salary_components_get_byId", new { ComponentId = componentId });
             if (salaryComponent != null)
             {
                 salaryComponent.CalculateInPercentage = component.CalculateInPercentage;
-                //salaryComponent.TaxExempt = component.TaxExempt;
+                salaryComponent.TaxExempt = component.TaxExempt;
 
                 if (component.CalculateInPercentage)
+                {
                     salaryComponent.PercentageValue = component.MaxLimit;
+                    salaryComponent.MaxLimit = 0;
+                }
                 else
+                {
                     salaryComponent.MaxLimit = component.MaxLimit;
+                    salaryComponent.PercentageValue = 0;
+                }
                 salaryComponent.Formula = component.Formula;
-                //salaryComponent.EmployeeContribution = component.EmployeeContribution;
-                //salaryComponent.EmployerContribution = component.EmployerContribution;
-                //salaryComponent.IncludeInPayslip = component.IncludeInPayslip;
-                //salaryComponent.IsOpted = component.IsOpted;
+                salaryComponent.EmployeeContribution = component.EmployeeContribution;
+                salaryComponent.EmployerContribution = component.EmployerContribution;
+                salaryComponent.IncludeInPayslip = component.IncludeInPayslip;
+                salaryComponent.IsOpted = component.IsOpted;
 
                 salaryComponent.IsActive = true;
                 salaryComponent.AdminId = _currentSession.CurrentUserDetail.UserId;

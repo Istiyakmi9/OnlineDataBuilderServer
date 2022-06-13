@@ -95,6 +95,9 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(companyInfo.Email))
                 throw new HiringBellException("Invalid organization email.");
 
+            if (string.IsNullOrEmpty(companyInfo.CompanyName))
+                throw new HiringBellException("Invalid company name.");
+
             if (companyInfo.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
 
@@ -262,6 +265,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid organization detail submitted. Please login again.");
             if (bankDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid company detail submitted. Please login again.");
+            if (string.IsNullOrEmpty(bankDetail.AccountNumber))
+                throw new HiringBellException("Invalid account number submitted.");
 
             bank = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { OrganizationId = bankDetail.OrganizationId, CompanyId = bankDetail.CompanyId });
 

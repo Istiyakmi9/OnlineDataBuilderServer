@@ -110,7 +110,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("UpdateSalaryComponentDetail/{componentId}")]
-        public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute]long componentId, [FromBody]SalaryComponents component)
+        public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute]string componentId, [FromBody]SalaryComponents component)
         {
             var result = _settingService.UpdateSalaryComponentDetailService(componentId, component);
             return BuildResponse(result);

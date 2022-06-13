@@ -103,6 +103,7 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(recurringComponent.ComponentName))
                 throw new HiringBellException("Invalid component name.");
+
             if (string.IsNullOrEmpty(recurringComponent.Type))
                 throw new HiringBellException("Invalid component type.");
 
@@ -157,7 +158,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(bonusComponent.ComponentName))
                 throw new HiringBellException("Invalid component name.");
 
-            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("");
             var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentName);
             if (value == null)
             {
@@ -172,11 +173,30 @@ namespace ServiceLayer.Code
                 value.ComponentDescription = bonusComponent.ComponentDescription;
                 value.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
-            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
+            var result = _db.Execute<SalaryComponents>("", value, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail insert salary component.");
 
             return this.GetSalaryComponentsDetailService();
+        }
+
+        public List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup)
+        {
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            if (salaryGrp == null)
+                throw new HiringBellException("Salary Group already exist.");
+            else
+            {
+                salaryGrp = salaryGroup;
+                salaryGrp.ComponentId = "[]";
+                salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+
+            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update.");
+            List<SalaryGroup> value = this.GetSalaryGroupService();
+            return value;
         }
     }
 }
