@@ -258,8 +258,11 @@ namespace ServiceLayer.Code
                 pfsetting.CalculateInPercentage = PfSetting.CalculateInPercentage;
                 pfsetting.EmployerContribution = PfSetting.EmployerContribution;
                 pfsetting.IsActive = PfSetting.IsActive;
+                pfsetting.MaxLimit = PfSetting.MaxLimit;
+                pfsetting.DeclaredValue = PfSetting.DeclaredValue;
                 pfsetting.IncludeInPayslip = PfSetting.IncludeInPayslip;
             }
+
             if (esisetting == null)
                 esisetting = EsiSetting;
             else
@@ -267,6 +270,8 @@ namespace ServiceLayer.Code
                 esisetting.MaxLimit = EsiSetting.MaxLimit;
                 esisetting.EmployerContribution =EsiSetting.EmployerContribution;
                 esisetting.IsActive = EsiSetting.IsActive;
+                esisetting.MaxLimit = EsiSetting.MaxLimit;
+                esisetting.DeclaredValue = EsiSetting.DeclaredValue;
                 esisetting.EmployeeContribution = EsiSetting.EmployeeContribution;
                 esisetting.IncludeInPayslip = EsiSetting.IncludeInPayslip;
             }
@@ -283,6 +288,7 @@ namespace ServiceLayer.Code
                 pfsetting.IncludeInPayslip,
                 pfsetting.ComponentDescription,
                 pfsetting.MaxLimit,
+                pfsetting.DeclaredValue,
                 pfsetting.EmployerContribution,
                 pfsetting.IsOpted,
                 pfsetting.PercentageValue,
@@ -312,6 +318,7 @@ namespace ServiceLayer.Code
                 esisetting.ComponentFullName,
                 esisetting.ComponentDescription,
                 esisetting.MaxLimit,
+                esisetting.DeclaredValue,
                 esisetting.EmployerContribution,
                 esisetting.IsOpted,
                 esisetting.PercentageValue,
@@ -450,6 +457,7 @@ namespace ServiceLayer.Code
                     salaryComponent.ComponentTypeId,
                     salaryComponent.PercentageValue,
                     salaryComponent.MaxLimit,
+                    salaryComponent.DeclaredValue,
                     salaryComponent.Formula,
                     salaryComponent.EmployeeContribution,
                     salaryComponent.EmployerContribution,
@@ -516,6 +524,7 @@ namespace ServiceLayer.Code
                     salaryComponent.ComponentTypeId,
                     salaryComponent.PercentageValue,
                     salaryComponent.MaxLimit,
+                    salaryComponent.DeclaredValue,
                     salaryComponent.Formula,
                     salaryComponent.EmployeeContribution,
                     salaryComponent.EmployerContribution,

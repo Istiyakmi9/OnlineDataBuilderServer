@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -15,5 +16,7 @@ namespace ServiceLayer.Interface
         Employee GetEmployeeByIdService(int EmployeeId, bool? IsActive = null);
         List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive);
         Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating);
+        string UploadDeclaration(string UserId, int UserTypeId, SalaryComponents DeclarationDetail, IFormFileCollection FileCollection, List<Files> fileDetail);
+
     }
 }
