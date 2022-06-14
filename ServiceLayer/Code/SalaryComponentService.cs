@@ -57,6 +57,7 @@ namespace ServiceLayer.Code
                                   select new
                                   {
                                       n.ComponentId,
+                                      n.ComponentFullName,
                                       n.ComponentDescription,
                                       n.CalculateInPercentage,
                                       n.TaxExempt,
@@ -113,6 +114,7 @@ namespace ServiceLayer.Code
             {
                 value = new SalaryComponents();
                 value.ComponentId = recurringComponent.ComponentName;
+                value.ComponentFullName = recurringComponent.ComponentFullName;
                 value.ComponentDescription = recurringComponent.ComponentDescription;
                 value.MaxLimit = recurringComponent.MaxLimit;
                 value.TaxExempt = recurringComponent.TaxExempt;
@@ -124,7 +126,7 @@ namespace ServiceLayer.Code
             else
             {
                 value.ComponentId = recurringComponent.ComponentName;
-                value.ComponentDescription = recurringComponent.ComponentDescription;
+                value.ComponentFullName = recurringComponent.ComponentFullName;
                 value.MaxLimit= recurringComponent.MaxLimit;
                 value.ComponentTypeId = Convert.ToInt32(recurringComponent.Type);
                 value.TaxExempt = recurringComponent.TaxExempt;
@@ -139,41 +141,105 @@ namespace ServiceLayer.Code
             return this.GetSalaryComponentsDetailService();
         }
 
-        public List<SalaryStructure> AddAdhocComponents(SalaryStructure adhocComponent)
+        public List<SalaryComponents> AddAdhocComponents(SalaryStructure adhocComponent)
         {
-            List<SalaryStructure> adhocComponents = null;
+            if (string.IsNullOrEmpty(adhocComponent.ComponentName))
+                throw new HiringBellException("Invalid AdHoc component name.");
+            if (adhocComponent.AdHocId <= 0)
+                throw new HiringBellException("Invalid AdHoc type component.");
+            List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            var value = adhocComp.Find(x => x.ComponentId == adhocComponent.ComponentName);
+            if (value == null)
+            {
+                value = new SalaryComponents();
+                value.ComponentId = adhocComponent.ComponentName;
+                value.ComponentFullName = adhocComponent.ComponentFullName;
+                value.ComponentDescription = adhocComponent.ComponentDescription;
+                value.MaxLimit = adhocComponent.MaxLimit;
+                value.TaxExempt = adhocComponent.TaxExempt;
+                value.Section = adhocComponent.Section;
+                value.AdHocId = Convert.ToInt32(adhocComponent.AdHocId);
+                value.SectionMaxLimit = adhocComponent.SectionMaxLimit;
+                value.IsAdHoc = adhocComponent.IsAdHoc;
+                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+            else
+                throw new HiringBellException("Component already exist.");
+            //else
+            //{
+            //    value.ComponentId = adhocComponent.ComponentName;
+            //    value.ComponentFullName = adhocComponent.ComponentFullName;
+            //    value.MaxLimit = adhocComponent.MaxLimit;
+            //    value.ComponentTypeId = Convert.ToInt32(adhocComponent.Type);
+            //    value.TaxExempt = adhocComponent.TaxExempt;
+            //    value.Section = adhocComponent.Section;
+            //    value.SectionMaxLimit = adhocComponent.SectionMaxLimit;
+            //    value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            //}
 
-            return adhocComponents;
+            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail insert salary component.");
+
+            return this.GetSalaryComponentsDetailService();
         }
 
-        public List<SalaryStructure> AddDeductionComponents(SalaryStructure deductionComponent)
+        public List<SalaryComponents> AddDeductionComponents(SalaryStructure deductionComponent)
         {
-            List<SalaryStructure> deductionComponents = null;
+            if (string.IsNullOrEmpty(deductionComponent.ComponentName))
+                throw new HiringBellException("Invalid AdHoc component name.");
+            if (deductionComponent.AdHocId <= 0)
+                throw new HiringBellException("Invalid AdHoc type component.");
+            List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            var value = adhocComp.Find(x => x.ComponentId == deductionComponent.ComponentName);
+            if (value == null)
+            {
+                value = new SalaryComponents();
+                value.ComponentId = deductionComponent.ComponentName;
+                value.ComponentFullName = deductionComponent.ComponentFullName;
+                value.ComponentDescription = deductionComponent.ComponentDescription;
+                value.IsAffectInGross = deductionComponent.IsAffectInGross;
+                value.AdHocId = Convert.ToInt32(deductionComponent.AdHocId);
+                value.IsAdHoc = deductionComponent.IsAdHoc;
+                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+            else
+                throw new HiringBellException("Deduction Component already exist.");
 
-            return deductionComponents;
+            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail insert salary component.");
+
+            return this.GetSalaryComponentsDetailService();
         }
 
         public List<SalaryComponents> AddBonusComponents(SalaryStructure bonusComponent)
         {
             if (string.IsNullOrEmpty(bonusComponent.ComponentName))
                 throw new HiringBellException("Invalid component name.");
+            if (bonusComponent.AdHocId <= 0)
+                throw new HiringBellException("Invalid AdHoc type component.");
 
-            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("");
+            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("sp_salary_components_get");
             var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentName);
             if (value == null)
             {
                 value = new SalaryComponents();
                 value.ComponentId = bonusComponent.ComponentName;
+                value.ComponentFullName = bonusComponent.ComponentFullName;
                 value.ComponentDescription = bonusComponent.ComponentDescription;
+                value.AdHocId = Convert.ToInt32(bonusComponent.AdHocId);
+                value.IsAdHoc = bonusComponent.IsAdHoc;
                 value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            else
-            {
-                value.ComponentId = bonusComponent.ComponentName;
-                value.ComponentDescription = bonusComponent.ComponentDescription;
-                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            var result = _db.Execute<SalaryComponents>("", value, true);
+            } else
+                throw new HiringBellException("Bonus Component already exist.");
+            //else
+            //{
+            //    value.ComponentId = bonusComponent.ComponentName;
+            //    value.ComponentDescription = bonusComponent.ComponentDescription;
+            //    value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            //}
+            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail insert salary component.");
 
