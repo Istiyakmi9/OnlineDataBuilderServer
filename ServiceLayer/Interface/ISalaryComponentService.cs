@@ -12,8 +12,8 @@ namespace ServiceLayer.Interface
         List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup);
         List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup);
         List<SalaryComponents> AddUpdateRecurringComponents(SalaryStructure salaryStructure);
-        List<SalaryStructure> AddAdhocComponents(SalaryStructure salaryStructure);
+        List<SalaryComponents> AddAdhocComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
-        List<SalaryStructure> AddDeductionComponents(SalaryStructure salaryStructure);
+        List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
     }
 }

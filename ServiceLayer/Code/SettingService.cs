@@ -274,6 +274,7 @@ namespace ServiceLayer.Code
             value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
             {
                 pfsetting.ComponentId,
+                pfsetting.ComponentFullName,
                 pfsetting.CalculateInPercentage,
                 pfsetting.EmployeeContribution,
                 pfsetting.IsActive,
@@ -308,6 +309,7 @@ namespace ServiceLayer.Code
                 esisetting.TaxExempt,
                 esisetting.ComponentTypeId,
                 esisetting.IncludeInPayslip,
+                esisetting.ComponentFullName,
                 esisetting.ComponentDescription,
                 esisetting.MaxLimit,
                 esisetting.EmployerContribution,
@@ -441,6 +443,7 @@ namespace ServiceLayer.Code
                 status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
                 {
                     salaryComponent.ComponentId,
+                    salaryComponent.ComponentFullName,
                     salaryComponent.ComponentDescription,
                     salaryComponent.CalculateInPercentage,
                     salaryComponent.TaxExempt,
@@ -506,6 +509,7 @@ namespace ServiceLayer.Code
                 var status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
                 {
                     salaryComponent.ComponentId,
+                    salaryComponent.ComponentFullName,
                     salaryComponent.ComponentDescription,
                     salaryComponent.CalculateInPercentage,
                     salaryComponent.TaxExempt,
