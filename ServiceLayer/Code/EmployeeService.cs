@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
@@ -294,6 +295,57 @@ namespace ServiceLayer.Code
                 //});
             }
             return employees;
+        }
+
+        public string UploadDeclaration(string UserId, int UserTypeId, SalaryComponents decalarationDetails, IFormFileCollection FileCollection, List<Files> files)
+        {
+            string result = string.Empty;
+            if (Int32.Parse(UserId) <= 0)
+            {
+                throw new HiringBellException("Invalid UserId");
+            }
+
+            if (UserTypeId <= 0)
+            {
+                throw new HiringBellException("Invalid UserTypeId");
+            }
+
+            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            var value = components.Find(x => x.ComponentId == decalarationDetails.ComponentId);
+            if (value == null)
+                throw new HiringBellException("Component doesn't exist");
+            else
+            {
+                value.DeclaredValue = decalarationDetails.DeclaredValue;
+            }
+
+            var status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
+            if (string.IsNullOrEmpty(status))
+                throw new HiringBellException("Fail insert salary component.");
+
+            if (FileCollection.Count > 0)
+            {
+                _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, UserId);
+                var fileInfo = (from n in files
+                                select new
+                                {
+                                    FileId = n.FileUid,
+                                    FileOwnerId = UserId,
+                                    FileName = n.FileName,
+                                    FilePath = n.FilePath,
+                                    FileExtension = n.FileExtension,
+                                    UserTypeId = UserTypeId,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
+                                });
+
+                DataTable table = Converter.ToDataTable(fileInfo);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                int insertedCount = _db.BatchInsert("", table, true);
+                _db.Commit();
+                if (insertedCount == 1)
+                    result = "Declaration Uploaded Successfully.";
+            }
+            return result;
         }
 
         public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating)

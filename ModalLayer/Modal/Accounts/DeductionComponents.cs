@@ -11,6 +11,6 @@ namespace ModalLayer.Modal.Accounts
         public bool IsMandatory { set; get; }
         public bool IsFixedAmount { set; get; }
         public DateTime UpdatedOn { set; get; }
-        public long Admin { set; get; }
+        public long AdminId { set; get; }
     }
 }

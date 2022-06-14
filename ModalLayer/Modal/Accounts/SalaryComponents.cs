@@ -19,6 +19,7 @@
         public string ComponentFullName { set; get; }
         public bool IsComponentEnabled { set; get; }
         public decimal MaxLimit { set; get; }
+        public decimal DeclaredValue { set; get; }
         public string Formula { set; get; }
         public string Section { get; set; }
         public decimal SectionMaxLimit { get; set; }
