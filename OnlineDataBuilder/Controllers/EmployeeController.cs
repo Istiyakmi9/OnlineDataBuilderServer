@@ -104,21 +104,6 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpPost("UploadDeclaration/{UserId}/{UserTypeId}")]
-        public IResponse<ApiResponse> UploadDeclaration(string UserId, int UserTypeId)
-        {
-            StringValues declaration = default(string);
-            _httpContext.Request.Form.TryGetValue("declaration", out declaration);
-            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
-            if (declaration.Count > 0)
-            {
-                var DeclarationDetail = JsonConvert.DeserializeObject<SalaryComponents>(declaration);
-                List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                var result = _employeeService.UploadDeclaration(UserId, UserTypeId, DeclarationDetail, fileDetail, files);
-                return BuildResponse(result, HttpStatusCode.OK);
-            }
-            return BuildResponse("No files found", HttpStatusCode.OK);
-        }
+        
     }
 }
