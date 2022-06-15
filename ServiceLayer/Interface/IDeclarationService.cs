@@ -11,7 +11,7 @@ namespace ServiceLayer.Interface
     {
         EmployeeDeclaration GetDeclarationByEmployee(long EmployeeId);
         EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId);
-        string UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> fileDetail);
+        List<SalaryComponents> UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> fileDetail);
         EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId);
     }
 }
