@@ -20,7 +20,7 @@ namespace OnlineDataBuilder.Controllers
         public DeclarationController(IDeclarationService declarationService, IHttpContextAccessor httpContext)
         {
             _declarationService = declarationService;
-            _httpContext = HttpContext;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpGet("GetEmployeeDeclarationDetailById/{EmployeeId}")]
@@ -31,7 +31,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UpdateDeclarationDetail/{EmployeeDeclarationId}")]
-        public IResponse<ApiResponse> UpdateDeclarationDetail(long EmployeeDeclarationId)
+        public IResponse<ApiResponse> UpdateDeclarationDetail([FromRoute]long EmployeeDeclarationId)
         {
             StringValues declaration = default(string);
             _httpContext.Request.Form.TryGetValue("declaration", out declaration);

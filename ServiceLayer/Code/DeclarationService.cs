@@ -32,24 +32,30 @@ namespace ServiceLayer.Code
             throw new NotImplementedException();
         }
 
-        public string UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> files)
+        public List<SalaryComponents> UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> files)
         {
             EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
             if (declaration != null)
             {
-                List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+                salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
                 SalaryComponents salaryComponent = salaryComponents.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
+                if (salaryComponent == null)
+                    throw new HiringBellException("Requested component not found. Please contact to admin.");
                 salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
 
                 declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
             }
+            else
+            {
+                throw new HiringBellException("Requested component not found. Please contact to admin.");
+            }
 
             string declarationDoc = String.Empty;
-                if (FileCollection[0].Name == "declaration")
-                {
-                declarationDoc = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, FileCollection[0].Name);
-                }
-            
+            if (FileCollection.Count > 0)
+            {
+                declarationDoc = Path.Combine(_fileLocationDetail.RootPath, "declarated_documents", FileCollection[0].Name);
+            }
 
             if (File.Exists(declarationDoc))
             {
@@ -106,12 +112,12 @@ namespace ServiceLayer.Code
                 DeclarationDetail = declaration.DeclarationDetail
             }, true);
 
-            if(!ApplicationConstants.IsExecuted(result))
+            if (!ApplicationConstants.IsExecuted(result))
             {
                 File.Delete(declarationDoc);
             }
 
-            return result;
+            return salaryComponents;
         }
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
@@ -123,7 +129,8 @@ namespace ServiceLayer.Code
         public EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId)
         {
             EmployeeDeclaration employeeDeclaration = _db.Get<EmployeeDeclaration>("sp_employee_declaration_get_byEmployeeId", new { EmployeeId = EmployeeId });
-            //var salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            employeeDeclaration.DeclarationDetail = null;
             return employeeDeclaration;
         }
     }
