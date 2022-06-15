@@ -10,6 +10,7 @@ namespace ModalLayer.Modal.Accounts
         public string DeclarationDetail { set; get; }
         public string ComponentId { set; get; }
         public decimal DeclaredValue { set; get; }
+        public string Email { set; get; }
         public List<SalaryComponents> SalaryComponentItems { set; get; }
     }
 }

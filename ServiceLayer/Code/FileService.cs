@@ -112,6 +112,57 @@ namespace CoreServiceLayer.Implementation
             return fileDetail;
         }
 
+        public List<Files> SaveFileToLocation(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles)
+        {
+            string Extension = "";
+            string Email = string.Empty;
+            string NewFileName = string.Empty;
+            string _folderPath = String.Empty;
+            if (!string.IsNullOrEmpty(FolderPath))
+            {
+                int i = 0;
+                foreach (var file in formFiles)
+                {
+                    _folderPath = FolderPath;
+                    if (!string.IsNullOrEmpty(file.Name))
+                    {
+                        var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
+
+                        currentFile.FilePath = _folderPath;
+                        if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath)))
+                            Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath));
+
+                        Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
+                        currentFile.FileName = file.Name;
+                        if (!file.Name.Contains("."))
+                            NewFileName = file.Name + $"_{i}." + Extension;
+                        else
+                            throw new HiringBellException("Invalid file name passed");
+
+                        if (currentFile != null)
+                        {
+                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath, NewFileName);
+                            if (File.Exists(FilePath))
+                            {
+                                File.Delete(FilePath);
+                            }
+
+                            currentFile.FileExtension = Extension;
+                            currentFile.DocumentId = 0;
+                            currentFile.FilePath = _folderPath;
+
+                            using (FileStream fs = System.IO.File.Create(FilePath))
+                            {
+                                file.CopyTo(fs);
+                                fs.Flush();
+                            }
+                        }
+                    }
+                }
+            }
+            return fileDetail;
+        }
+
         public DataSet DeleteFiles(long userId, List<string> fileIds, int userTypeId)
         {
             this.DeleteFilesEntry(fileIds, ApplicationConstants.GetUserFileById);

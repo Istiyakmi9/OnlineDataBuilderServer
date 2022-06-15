@@ -54,24 +54,11 @@ namespace ServiceLayer.Code
             string declarationDoc = String.Empty;
             if (FileCollection.Count > 0)
             {
-                declarationDoc = Path.Combine(_fileLocationDetail.RootPath, "declarated_documents", FileCollection[0].Name);
-            }
-
-            if (File.Exists(declarationDoc))
-            {
-                File.Delete(declarationDoc);
-            }
-            else
-            {
-                FileDetail fileDetailWSig = new FileDetail();
-                fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, declarationDoc);
-                declaration.DocumentPath = fileDetailWSig.DiskFilePath;
-            }
-
-
-
-            if (FileCollection.Count > 0)
-            {
+                declarationDoc = Path.Combine(
+                    _fileLocationDetail.UserFolder,
+                    employeeDeclaration.Email,
+                    "declarated_documents"
+                );
                 var file = FileCollection.Select(x => new Files
                 {
                     FileUid = employeeDeclaration.EmployeeId,
@@ -79,14 +66,14 @@ namespace ServiceLayer.Code
                     Email = "",
                     FileExtension = string.Empty
                 }).ToList<Files>();
-                _fileService.SaveFile(_fileLocationDetail.LogoPath, file, FileCollection, (employeeDeclaration.EmployeeId).ToString());
+                _fileService.SaveFileToLocation(declarationDoc, file, FileCollection);
 
                 var fileInfo = (from n in files
                                 select new
                                 {
                                     FileId = n.FileUid,
                                     FileOwnerId = (employeeDeclaration.EmployeeId),
-                                    FilePath = n.FilePath,
+                                    FilePath = declarationDoc,
                                     FileName = n.FileName,
                                     FileExtension = n.FileExtension,
                                     ItemStatusId = 0,
@@ -108,7 +95,7 @@ namespace ServiceLayer.Code
             {
                 EmployeeDeclarationId = declaration.EmployeeDeclarationId,
                 EmployeeId = declaration.EmployeeId,
-                DocumentPath = declaration.DocumentPath,
+                DocumentPath = declarationDoc,
                 DeclarationDetail = declaration.DeclarationDetail
             }, true);
 
