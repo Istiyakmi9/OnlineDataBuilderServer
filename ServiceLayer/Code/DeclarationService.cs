@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -19,12 +20,14 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
-        public DeclarationService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, CurrentSession currentSession)
+        private readonly Dictionary<string, List<string>> _sections;
+        public DeclarationService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, CurrentSession currentSession, IOptions<Dictionary<string, List<string>>> options)
         {
             _db = db;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _currentSession = currentSession;
+            _sections = options.Value;
         }
 
         public EmployeeDeclaration GetDeclarationByEmployee(long EmployeeId)
@@ -54,9 +57,10 @@ namespace ServiceLayer.Code
             string declarationDoc = String.Empty;
             if (FileCollection.Count > 0)
             {
+                var email = employeeDeclaration.Email.Replace("@", "_").Replace(".", "_");
                 declarationDoc = Path.Combine(
                     _fileLocationDetail.UserFolder,
-                    employeeDeclaration.Email,
+                    email,
                     "declarated_documents"
                 );
                 var file = FileCollection.Select(x => new Files
@@ -118,6 +122,7 @@ namespace ServiceLayer.Code
             EmployeeDeclaration employeeDeclaration = _db.Get<EmployeeDeclaration>("sp_employee_declaration_get_byEmployeeId", new { EmployeeId = EmployeeId });
             employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
             employeeDeclaration.DeclarationDetail = null;
+            employeeDeclaration.Sections = _sections;
             return employeeDeclaration;
         }
     }

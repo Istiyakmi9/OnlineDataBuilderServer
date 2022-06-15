@@ -26,6 +26,7 @@ using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using SocialMediaServices;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -100,6 +101,7 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
+            services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
 
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>();
