@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -71,6 +72,9 @@ namespace ServiceLayer.Code
                     FileExtension = string.Empty
                 }).ToList<Files>();
                 _fileService.SaveFileToLocation(declarationDoc, file, FileCollection);
+
+                int i = 0;
+                Parallel.For(i, files.Count, x => files.ElementAt(i).FileName = file.ElementAt(i).FileName + "_"+ i);
 
                 var fileInfo = (from n in files
                                 select new
