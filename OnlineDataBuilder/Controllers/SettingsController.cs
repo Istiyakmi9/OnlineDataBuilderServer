@@ -109,6 +109,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPost("ActivateCurrentComponent")]
+        public IResponse<ApiResponse> ActivateCurrentComponent(List<SalaryComponents> components)
+        {
+            var result = _settingService.ActivateCurrentComponentService(components);
+            return BuildResponse(result);
+        }
+
         [HttpPut("UpdateSalaryComponentDetail/{componentId}")]
         public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
         {
@@ -127,6 +134,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> FetchComponentDetailById(int componentTypeId)
         {
             var result = _settingService.FetchComponentDetailByIdService(componentTypeId);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("FetchActiveComponents")]
+        public IResponse<ApiResponse> FetchActiveComponents()
+        {
+            var result = _settingService.FetchActiveComponentService();
             return BuildResponse(result);
         }
     }

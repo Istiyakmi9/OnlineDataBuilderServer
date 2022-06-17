@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -268,7 +269,7 @@ namespace ServiceLayer.Code
             else
             {
                 esisetting.MaxLimit = EsiSetting.MaxLimit;
-                esisetting.EmployerContribution =EsiSetting.EmployerContribution;
+                esisetting.EmployerContribution = EsiSetting.EmployerContribution;
                 esisetting.IsActive = EsiSetting.IsActive;
                 esisetting.MaxLimit = EsiSetting.MaxLimit;
                 esisetting.DeclaredValue = EsiSetting.DeclaredValue;
@@ -484,6 +485,63 @@ namespace ServiceLayer.Code
             return status;
         }
 
+        public List<SalaryComponents> ActivateCurrentComponentService(List<SalaryComponents> components)
+        {
+            List<SalaryComponents> updateSalaryComponent = null;
+            var salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            if (salaryComponent != null)
+            {
+                SalaryComponents componentItem = null;
+                Parallel.ForEach<SalaryComponents>(salaryComponent, x =>
+                {
+                    componentItem = components.Find(i => i.ComponentId == x.ComponentId);
+                    if (componentItem != null)
+                    {
+                        x.IsActive = componentItem.IsActive;
+                    }
+                });
+
+                var updateComponents = (from n in salaryComponent
+                                        select new
+                                        {
+                                            n.ComponentId,
+                                            n.ComponentFullName,
+                                            n.ComponentDescription,
+                                            n.CalculateInPercentage,
+                                            n.TaxExempt,
+                                            n.ComponentTypeId,
+                                            n.PercentageValue,
+                                            n.MaxLimit,
+                                            n.DeclaredValue,
+                                            n.Formula,
+                                            n.EmployeeContribution,
+                                            n.EmployerContribution,
+                                            n.IncludeInPayslip,
+                                            n.IsAdHoc,
+                                            n.AdHocId,
+                                            n.Section,
+                                            n.SectionMaxLimit,
+                                            n.IsAffectInGross,
+                                            n.RequireDocs,
+                                            n.IsOpted,
+                                            n.IsActive,
+                                            AdminId = _currentSession.CurrentUserDetail.UserId
+                                        }).ToList();
+
+                DataTable table = Converter.ToDataTable(updateComponents);
+                int statue = _db.BatchInsert("sp_salary_components_insupd", table, true);
+
+                if (statue <= 0)
+                    throw new HiringBellException("Unable to update detail");
+            }
+            else
+            {
+                throw new HiringBellException("Invalid component passed.");
+            }
+
+            return salaryComponent;
+        }
+
         public List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component)
         {
             List<SalaryComponents> salaryComponents = null;
@@ -561,6 +619,15 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid component type passed.");
 
             List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = componentTypeId });
+            if (salaryComponent == null)
+                throw new HiringBellException("Fail to retrieve component detail.");
+
+            return salaryComponent;
+        }
+
+        public List<SalaryComponents> FetchActiveComponentService()
+        {
+            List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get");
             if (salaryComponent == null)
                 throw new HiringBellException("Fail to retrieve component detail.");
 
