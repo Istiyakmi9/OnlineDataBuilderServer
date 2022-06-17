@@ -62,6 +62,7 @@ namespace ServiceLayer.Code
                                       n.CalculateInPercentage,
                                       n.TaxExempt,
                                       n.ComponentTypeId,
+                                      n.ComponentCatagoryId,
                                       n.PercentageValue,
                                       n.MaxLimit,
                                       n.DeclaredValue,
@@ -109,6 +110,10 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(recurringComponent.Type))
                 throw new HiringBellException("Invalid component type.");
 
+
+            if (recurringComponent.ComponentCatagoryId <= 0)
+                throw new HiringBellException("Invalid component type.");
+
             List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get");
             var value = components.Find(x => x.ComponentId == recurringComponent.ComponentName);
             if (value == null)
@@ -122,7 +127,9 @@ namespace ServiceLayer.Code
             value.TaxExempt = recurringComponent.TaxExempt;
             value.Section = recurringComponent.Section;
             value.ComponentTypeId = Convert.ToInt32(recurringComponent.Type);
+            value.ComponentCatagoryId = Convert.ToInt32(recurringComponent.ComponentCatagoryId);
             value.SectionMaxLimit = recurringComponent.SectionMaxLimit;
+            value.ComponentCatagoryId = recurringComponent.ComponentCatagoryId;
             value.AdminId = _currentSession.CurrentUserDetail.AdminId;
 
             var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);

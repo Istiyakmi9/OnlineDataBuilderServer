@@ -28,6 +28,6 @@
         public bool TaxExempt { get; set; }
         public int AdHocId { get; set; }
         public bool IsAdHoc { get; set; }
-
+        public int ComponentCatagoryId { get; set; }
     }
 }
