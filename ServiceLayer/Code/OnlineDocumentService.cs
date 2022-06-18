@@ -302,7 +302,7 @@ namespace ServiceLayer.Code
                 new DbParam(filterModel.PageSize, typeof(int), "_pageSize")
             };
 
-            var Result = this.db.GetDataset("sp_Files_GetById", dbParams);
+            var Result = this.db.GetDataset("sp_billdetail_filter", dbParams);
             if (Result.Tables.Count == 3)
             {
                 Result.Tables[0].TableName = "Files";
