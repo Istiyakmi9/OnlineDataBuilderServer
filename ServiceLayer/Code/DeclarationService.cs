@@ -64,17 +64,8 @@ namespace ServiceLayer.Code
                     email,
                     "declarated_documents"
                 );
-                var file = FileCollection.Select(x => new Files
-                {
-                    FileUid = employeeDeclaration.EmployeeId,
-                    FileName = x.Name,
-                    Email = "",
-                    FileExtension = string.Empty
-                }).ToList<Files>();
-                _fileService.SaveFileToLocation(declarationDoc, file, FileCollection);
 
-                int i = 0;
-                Parallel.For(i, files.Count, x => files.ElementAt(i).FileName = file.ElementAt(i).FileName + "_"+ i);
+                _fileService.SaveFileToLocation(declarationDoc, files, FileCollection);
 
                 var fileInfo = (from n in files
                                 select new
@@ -84,18 +75,13 @@ namespace ServiceLayer.Code
                                     FilePath = declarationDoc,
                                     FileName = n.FileName,
                                     FileExtension = n.FileExtension,
-                                    ItemStatusId = 0,
-                                    PaidOn = DateTime.Now,
-                                    UserTypeId = (int)UserType.Admin,
-                                    CreatedBy = _currentSession.CurrentUserDetail.UserId,
-                                    UpdatedBy = _currentSession.CurrentUserDetail.UserId,
-                                    CreatedOn = DateTime.Now,
-                                    UpdatedOn = DateTime.Now
+                                    UserTypeId = (int)UserType.Compnay,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
                                 }); ;
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_Files_InsUpd", table, false);
+                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, false);
                 _db.Commit();
             }
 
@@ -123,8 +109,24 @@ namespace ServiceLayer.Code
 
         public EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId)
         {
-            EmployeeDeclaration employeeDeclaration = _db.Get<EmployeeDeclaration>("sp_employee_declaration_get_byEmployeeId", new { EmployeeId = EmployeeId });
+            List<Files> files = default;
+            EmployeeDeclaration employeeDeclaration = default;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(EmployeeId, typeof(long), "_EmployeeId"),
+                new DbParam(UserType.Compnay, typeof(int), "_UserTypeId")
+            };
+
+            DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
+            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
+                throw new HiringBellException("Unable to get the detail");
+
+            employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+            if (resultSet.Tables[1].Rows.Count > 0)
+                files = Converter.ToList<Files>(resultSet.Tables[1]);
+
             employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            employeeDeclaration.FileDetails = files;
             employeeDeclaration.DeclarationDetail = null;
             employeeDeclaration.Sections = _sections;
             return employeeDeclaration;

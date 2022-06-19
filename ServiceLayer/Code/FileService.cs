@@ -115,9 +115,8 @@ namespace CoreServiceLayer.Implementation
         public List<Files> SaveFileToLocation(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles)
         {
             string Extension = "";
-            string Email = string.Empty;
-            string NewFileName = string.Empty;
             string _folderPath = String.Empty;
+
             if (!string.IsNullOrEmpty(FolderPath))
             {
                 int i = 0;
@@ -133,15 +132,13 @@ namespace CoreServiceLayer.Implementation
                             Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath));
 
                         Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
-                        currentFile.FileName = file.Name;
-                        if (!file.Name.Contains("."))
-                            NewFileName = file.Name + $"_{i}." + Extension;
-                        else
-                            throw new HiringBellException("Invalid file name passed");
+
+                        if (!string.IsNullOrEmpty(currentFile.AlternateName))
+                            currentFile.FileName = currentFile.AlternateName + "_" + i + "." + Extension;
 
                         if (currentFile != null)
                         {
-                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath, NewFileName);
+                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath, currentFile.FileName);
                             if (File.Exists(FilePath))
                             {
                                 File.Delete(FilePath);
@@ -158,6 +155,7 @@ namespace CoreServiceLayer.Implementation
                             }
                         }
                     }
+                    i++;
                 }
             }
             return fileDetail;

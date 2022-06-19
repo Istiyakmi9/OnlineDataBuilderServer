@@ -12,6 +12,7 @@ namespace ModalLayer.Modal.Accounts
         public decimal DeclaredValue { set; get; }
         public string Email { set; get; }
         public List<SalaryComponents> SalaryComponentItems { set; get; }
+        public List<Files> FileDetails { set; get; }
         public Dictionary<string, List<string>> Sections { set; get; }
     }
 }
