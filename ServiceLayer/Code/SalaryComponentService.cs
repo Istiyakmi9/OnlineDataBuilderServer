@@ -82,6 +82,97 @@ namespace ServiceLayer.Code
             return salaryComponents;
         }
 
+        public List<SalaryComponents> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents)
+        {
+            List<SalaryComponents> finalResult = new List<SalaryComponents>();
+            if (salaryComponents.Count > 0)
+            {
+                List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
+
+                foreach (SalaryComponents item in salaryComponents)
+                {
+                    if (string.IsNullOrEmpty(item.ComponentId) || string.IsNullOrEmpty(item.ComponentFullName))
+                        throw new HiringBellException("ComponentId or ComponentFullName is empty.");
+                }
+
+                var itemOfRows = (from n in salaryComponents
+                                  select new
+                                  {
+                                      n.ComponentId,
+                                      n.ComponentFullName,
+                                      n.ComponentDescription,
+                                      n.CalculateInPercentage,
+                                      n.TaxExempt,
+                                      n.ComponentTypeId,
+                                      n.ComponentCatagoryId,
+                                      n.PercentageValue,
+                                      n.MaxLimit,
+                                      n.DeclaredValue,
+                                      n.Formula,
+                                      n.EmployeeContribution,
+                                      n.EmployerContribution,
+                                      n.IncludeInPayslip,
+                                      n.IsAdHoc,
+                                      n.AdHocId,
+                                      n.Section,
+                                      n.SectionMaxLimit,
+                                      n.IsAffectInGross,
+                                      n.RequireDocs,
+                                      n.IsOpted,
+                                      n.IsActive,
+                                      AdminId = _currentSession.CurrentUserDetail.UserId,
+                                  }).ToList();
+
+                var table = BottomhalfCore.Services.Code.Converter.ToDataTable(itemOfRows);
+                int count = _db.BatchInsert("sp_salary_components_insupd", table, true);
+                if (count > 0)
+                {
+                    foreach (var item in result)
+                    {
+                        var modified = salaryComponents.Find(x => x.ComponentId == item.ComponentId);
+                        if (modified != null)
+                        {
+                            item.ComponentFullName = modified.ComponentFullName;
+                            item.AdHocId = modified.AdHocId;
+                            item.AdminId = modified.AdminId;
+                            item.ComponentId = modified.ComponentId;
+                            item.ComponentDescription = modified.ComponentDescription;
+                            item.CalculateInPercentage = modified.CalculateInPercentage;
+                            item.TaxExempt = modified.TaxExempt;
+                            item.ComponentTypeId = modified.ComponentTypeId;
+                            item.ComponentCatagoryId = modified.ComponentCatagoryId;
+                            item.PercentageValue = modified.PercentageValue;
+                            item.MaxLimit = modified.MaxLimit;
+                            item.DeclaredValue = modified.DeclaredValue;
+                            item.Formula = modified.Formula;
+                            item.EmployeeContribution = modified.EmployeeContribution;
+                            item.EmployerContribution = modified.EmployerContribution;
+                            item.IncludeInPayslip = modified.IncludeInPayslip;
+                            item.IsAdHoc = modified.IsAdHoc;
+                            item.Section = modified.Section;
+                            item.SectionMaxLimit = modified.SectionMaxLimit;
+                            item.IsAffectInGross = modified.IsAffectInGross;
+                            item.RequireDocs = modified.RequireDocs;
+                            item.IsOpted = modified.IsOpted;
+                            item.IsActive = modified.IsActive;
+
+                            finalResult.Add(item);
+                        }
+                        else
+                        {
+                            finalResult.Add(modified);
+                        }
+                    }
+                }
+                else
+                {
+                    finalResult = result;
+                }
+            }
+
+            return finalResult;
+        }
+
         public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
         {
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
