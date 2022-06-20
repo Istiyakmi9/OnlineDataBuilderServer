@@ -77,7 +77,7 @@ namespace ServiceLayer.Code
                                     FileExtension = n.FileExtension,
                                     UserTypeId = (int)UserType.Compnay,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
-                                }); ;
+                                });
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
