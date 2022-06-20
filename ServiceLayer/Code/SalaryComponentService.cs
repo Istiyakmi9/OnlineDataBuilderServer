@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace ServiceLayer.Code
 {
@@ -242,7 +243,10 @@ namespace ServiceLayer.Code
             else
             {
                 salaryGrp = salaryGroup;
-                salaryGrp.ComponentId = "[]";
+                if (string.IsNullOrEmpty(salaryGrp.ComponentId))
+                    salaryGrp.ComponentId = "[]";
+                else
+                    salaryGrp.ComponentId = JsonConvert.SerializeObject(salaryGroup.ComponentIdList);
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
@@ -251,6 +255,47 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
             List<SalaryGroup> value = this.GetSalaryGroupService();
             return value;
+        }
+
+        public List<SalaryComponents> UpdateSalaryGroupComponentService(SalaryGroup salaryGroup)
+        {
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            if (salaryGrp == null)
+                throw new HiringBellException("Salary Group already exist.");
+            else
+            {
+                salaryGrp = salaryGroup;
+                if (salaryGrp.ComponentIdList == null)
+                    salaryGrp.ComponentId = "[]";
+                else
+                    salaryGrp.ComponentId = JsonConvert.SerializeObject(salaryGroup.ComponentIdList);
+                salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+
+            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update.");
+            List<SalaryComponents> value = this.GetSalaryGroupComponents(salaryGroup.SalaryGroupId);
+            return value;
+        }
+
+        public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId)
+        {
+            List<SalaryComponents> components = null;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(salaryGroupId, typeof(int), "_SalaryGroupId")
+            };
+
+            var dataSet = _db.GetDataset("sp_salary_group_get_components", param);
+            if (dataSet != null && dataSet.Tables.Count > 0)
+            {
+                components = BottomhalfCore.Services.Code.Converter.ToList<SalaryComponents>(dataSet.Tables[0]);
+            }
+
+            if (components == null)
+                throw new HiringBellException("Unable to get salary component of this group. Please contact admin");
+            return components;
         }
     }
 }

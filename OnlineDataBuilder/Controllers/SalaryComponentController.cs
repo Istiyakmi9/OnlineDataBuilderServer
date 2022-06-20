@@ -56,6 +56,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPost("UpdateSalaryGroupComponents")]
+        public IResponse<ApiResponse> UpdateSalaryGroupComponents(SalaryGroup salaryGroup)
+        {
+            var result = _salaryComponentService.UpdateSalaryGroupComponentService(salaryGroup);
+            return BuildResponse(result);
+        }
+
         [HttpPost("AddUpdateRecurringComponents")]
         public IResponse<ApiResponse> AddUpdateRecurringComponents(SalaryStructure salaryStructure)
         {
@@ -81,6 +88,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> AddBonusComponents(SalaryStructure salaryStructure)
         {
             var result = _salaryComponentService.AddBonusComponents(salaryStructure);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetSalaryGroupComponents/{CompanyId}")]
+        public IResponse<ApiResponse> GetSalaryGroupComponents(int CompanyId)
+        {
+            var result = _salaryComponentService.GetSalaryGroupComponents(CompanyId);
             return BuildResponse(result);
         }
     }
