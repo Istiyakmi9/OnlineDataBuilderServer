@@ -501,6 +501,7 @@ namespace ServiceLayer.Code
                     if (componentItem != null)
                     {
                         x.IsActive = componentItem.IsActive;
+                        x.ComponentCatagoryId = componentItem.ComponentCatagoryId;
                     }
                 });
 

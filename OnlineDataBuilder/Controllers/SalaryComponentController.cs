@@ -42,6 +42,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPost("InsertUpdateSalaryComponentsByExcel")]
+        public IResponse<ApiResponse> InsertUpdateSalaryComponentsByExcel(List<SalaryComponents> salaryComponents)
+        {
+            var result = _salaryComponentService.InsertUpdateSalaryComponentsByExcelService(salaryComponents);
+            return BuildResponse(result);
+        }
+
         [HttpPost("AddSalaryGroup")]
         public IResponse<ApiResponse> AddSalaryGroup(SalaryGroup salaryGroup)
         {
