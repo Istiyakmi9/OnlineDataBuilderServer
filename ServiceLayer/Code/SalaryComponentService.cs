@@ -199,7 +199,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(recurringComponent.ComponentName))
                 throw new HiringBellException("Invalid component name.");
 
-            if (string.IsNullOrEmpty(recurringComponent.Type))
+            if (recurringComponent.ComponentTypeId <= 0)
                 throw new HiringBellException("Invalid component type.");
 
 
@@ -218,8 +218,7 @@ namespace ServiceLayer.Code
             value.DeclaredValue = recurringComponent.DeclaredValue;
             value.TaxExempt = recurringComponent.TaxExempt;
             value.Section = recurringComponent.Section;
-            value.ComponentTypeId = Convert.ToInt32(recurringComponent.Type);
-            value.ComponentCatagoryId = Convert.ToInt32(recurringComponent.ComponentCatagoryId);
+            value.ComponentTypeId = recurringComponent.ComponentTypeId;
             value.SectionMaxLimit = recurringComponent.SectionMaxLimit;
             value.ComponentCatagoryId = recurringComponent.ComponentCatagoryId;
             value.AdminId = _currentSession.CurrentUserDetail.AdminId;
