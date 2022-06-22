@@ -161,7 +161,7 @@ namespace ServiceLayer.Code
                         }
                         else
                         {
-                            finalResult.Add(modified);
+                            finalResult.Add(item);
                         }
                     }
                 }
