@@ -22,6 +22,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
         private readonly Dictionary<string, List<string>> _sections;
+
         public DeclarationService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, CurrentSession currentSession, IOptions<Dictionary<string, List<string>>> options)
         {
             _db = db;
@@ -118,18 +119,45 @@ namespace ServiceLayer.Code
             };
 
             DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
-            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
+            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
                 throw new HiringBellException("Unable to get the detail");
 
             employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
             if (resultSet.Tables[1].Rows.Count > 0)
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
+            if (resultSet.Tables[2].Rows.Count == 1)
+                employeeDeclaration.SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
+
             employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            if (employeeDeclaration.SalaryComponentItems != null)
+            {
+                this.BuildSectionWiseComponents(employeeDeclaration);
+            }
+
             employeeDeclaration.FileDetails = files;
             employeeDeclaration.DeclarationDetail = null;
             employeeDeclaration.Sections = _sections;
             return employeeDeclaration;
+        }
+
+        private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
+        {
+            Parallel.ForEach(_sections, x =>
+            {
+                switch (x.Key)
+                {
+                    case "ExemptionDeclaration":
+                        employeeDeclaration.ExemptionDeclaration = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
+                        break;
+                    case "OtherDeclaration":
+                        employeeDeclaration.OtherDeclaration = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
+                        break;
+                    case "TaxSavingAlloance":
+                        employeeDeclaration.TaxSavingAlloance = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
+                        break;
+                }
+            });
         }
     }
 }
