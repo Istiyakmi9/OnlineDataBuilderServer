@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Net;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -14,10 +18,12 @@ namespace OnlineDataBuilder.Controllers
     public class SalaryComponentController : BaseController
     {
         private readonly ISalaryComponentService _salaryComponentService;
+        private readonly HttpContext _httpContext;
 
-        public SalaryComponentController(ISalaryComponentService salaryComponentService)
+        public SalaryComponentController(ISalaryComponentService salaryComponentService, IHttpContextAccessor httpContext)
         {
             _salaryComponentService = salaryComponentService;
+            _httpContext = httpContext.HttpContext;
         }
 
 
@@ -103,6 +109,21 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = _salaryComponentService.GetSalaryGroupComponents(CompanyId);
             return BuildResponse(result);
+        }
+
+        [HttpPost("InsertUpdateSalaryBreakUp/{EmployeeId}")]
+        public IResponse<ApiResponse> salaryDetail(long EmployeeId)
+        {
+            _httpContext.Request.Form.TryGetValue("completesalarydetail", out StringValues compSalaryDetail);
+            _httpContext.Request.Form.TryGetValue("salarydeatil", out StringValues salaryDetail);
+            if (compSalaryDetail.Count > 0 && salaryDetail.Count > 0)
+            {
+                var fullSalaryDetail = JsonConvert.DeserializeObject<CompleteSalaryBreakup>(compSalaryDetail);
+                var SalaryDetail = JsonConvert.DeserializeObject<SalaryBreakup>(salaryDetail);
+                var result = _salaryComponentService.salaryDetailService(EmployeeId, SalaryDetail, fullSalaryDetail);
+                return BuildResponse(result);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
         }
     }
 }

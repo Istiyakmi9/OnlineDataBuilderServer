@@ -405,5 +405,34 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to get salary component of this group. Please contact admin");
             return components;
         }
+
+        public string salaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail)
+        {
+            SalaryBreakup salaryBreakup = new SalaryBreakup();
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid EmployeeId");
+            List<SalaryBreakup> allSalaryBreakups = _db.GetList<SalaryBreakup>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
+            if (salaryBreakup == null)
+            {
+                salaryBreakup = salaryDetail;
+                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
+            }
+            else
+            {
+                salaryBreakup = allSalaryBreakups.FirstOrDefault(x => x.EmployeeId == EmployeeId);
+                salaryBreakup.CTC = salaryDetail.CTC;
+                salaryBreakup.GrossIncome = salaryDetail.GrossIncome;
+                salaryBreakup.GroupId = salaryDetail.GroupId;
+                salaryBreakup.NetSalary = salaryDetail.NetSalary;
+                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
+                salaryBreakup.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+            var result = _db.Execute<SalaryBreakup>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update salary breakup");
+            else
+                result = "Inserted/Updated successfully";
+            return result;
+        }
     }
 }
