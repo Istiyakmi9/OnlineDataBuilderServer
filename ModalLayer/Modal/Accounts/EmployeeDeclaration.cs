@@ -18,5 +18,16 @@ namespace ModalLayer.Modal.Accounts
         public List<Files> FileDetails { set; get; }
         public EmployeeSalaryDetail SalaryDetail { set; get; }
         public Dictionary<string, List<string>> Sections { set; get; }
+        public List<DeclarationReport> Declarations { set; get; } = new List<DeclarationReport>();
+    }
+
+    public class DeclarationReport
+    {
+        public string DeclarationName { set; get; }
+        public List<string> Declarations { set; get; }
+        public decimal TotalAmountDeclared { set; get; }
+        public int NumberOfProofSubmitted { set; get; }
+        public decimal RejectedAmount { set; get; }
+        public decimal AcceptedAmount { set; get; }
     }
 }

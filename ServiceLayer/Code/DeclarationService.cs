@@ -37,8 +37,9 @@ namespace ServiceLayer.Code
             throw new NotImplementedException();
         }
 
-        public List<SalaryComponents> UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> files)
+        public EmployeeDeclaration UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> files)
         {
+            EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
             List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
             if (declaration != null)
@@ -99,7 +100,9 @@ namespace ServiceLayer.Code
                 File.Delete(declarationDoc);
             }
 
-            return salaryComponents;
+            empDeclaration.SalaryComponentItems = salaryComponents;
+            this.BuildSectionWiseComponents(empDeclaration);
+            return empDeclaration;
         }
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
@@ -149,14 +152,61 @@ namespace ServiceLayer.Code
                 {
                     case "ExemptionDeclaration":
                         employeeDeclaration.ExemptionDeclaration = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
+                        employeeDeclaration.Declarations.Add(new DeclarationReport
+                        {
+                            DeclarationName = "1.5 Lac Exemptions",
+                            NumberOfProofSubmitted = 0,
+                            Declarations = employeeDeclaration.ExemptionDeclaration.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
+                            AcceptedAmount = employeeDeclaration.ExemptionDeclaration.Sum(a => a.AcceptedAmount),
+                            RejectedAmount = employeeDeclaration.ExemptionDeclaration.Sum(a => a.RejectedAmount),
+                            TotalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue)
+                        });
                         break;
                     case "OtherDeclaration":
                         employeeDeclaration.OtherDeclaration = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
+                        employeeDeclaration.Declarations.Add(new DeclarationReport
+                        {
+                            DeclarationName = "Other Exemptions",
+                            NumberOfProofSubmitted = 0,
+                            Declarations = employeeDeclaration.OtherDeclaration.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
+                            AcceptedAmount = employeeDeclaration.OtherDeclaration.Sum(a => a.AcceptedAmount),
+                            RejectedAmount = employeeDeclaration.OtherDeclaration.Sum(a => a.RejectedAmount),
+                            TotalAmountDeclared = employeeDeclaration.OtherDeclaration.Sum(a => a.DeclaredValue)
+                        });
                         break;
                     case "TaxSavingAlloance":
                         employeeDeclaration.TaxSavingAlloance = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
+                        employeeDeclaration.Declarations.Add(new DeclarationReport
+                        {
+                            DeclarationName = "Tax Saving Allowance",
+                            NumberOfProofSubmitted = 0,
+                            Declarations = employeeDeclaration.TaxSavingAlloance.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
+                            AcceptedAmount = employeeDeclaration.TaxSavingAlloance.Sum(a => a.AcceptedAmount),
+                            RejectedAmount = employeeDeclaration.TaxSavingAlloance.Sum(a => a.RejectedAmount),
+                            TotalAmountDeclared = employeeDeclaration.TaxSavingAlloance.Sum(a => a.DeclaredValue)
+                        });
                         break;
                 }
+            });
+
+            employeeDeclaration.Declarations.Add(new DeclarationReport
+            {
+                DeclarationName = "House Property",
+                NumberOfProofSubmitted = 0,
+                Declarations = new List<string>(),
+                AcceptedAmount = 0,
+                RejectedAmount = 0,
+                TotalAmountDeclared = 0
+            });
+
+            employeeDeclaration.Declarations.Add(new DeclarationReport
+            {
+                DeclarationName = "Income From Other Sources",
+                NumberOfProofSubmitted = 0,
+                Declarations = new List<string>(),
+                AcceptedAmount = 0,
+                RejectedAmount = 0,
+                TotalAmountDeclared = 0
             });
         }
     }

@@ -67,6 +67,9 @@ namespace ServiceLayer.Code
                                       n.PercentageValue,
                                       n.MaxLimit,
                                       n.DeclaredValue,
+                                      n.RejectedAmount,
+                                      n.AcceptedAmount,
+                                      n.UploadedFileIds,
                                       n.Formula,
                                       n.EmployeeContribution,
                                       n.EmployerContribution,
@@ -109,6 +112,9 @@ namespace ServiceLayer.Code
                                       n.PercentageValue,
                                       n.MaxLimit,
                                       n.DeclaredValue,
+                                      n.AcceptedAmount,
+                                      n.RejectedAmount,
+                                      n.UploadedFileIds,
                                       n.Formula,
                                       n.EmployeeContribution,
                                       n.EmployerContribution,
@@ -216,6 +222,9 @@ namespace ServiceLayer.Code
             value.ComponentDescription = recurringComponent.ComponentDescription;
             value.MaxLimit = recurringComponent.MaxLimit;
             value.DeclaredValue = recurringComponent.DeclaredValue;
+            value.AcceptedAmount = recurringComponent.AcceptedAmount;
+            value.RejectedAmount = recurringComponent.RejectedAmount;
+            value.UploadedFileIds = recurringComponent.UploadedFileIds;
             value.TaxExempt = recurringComponent.TaxExempt;
             value.Section = recurringComponent.Section;
             value.ComponentTypeId = recurringComponent.ComponentTypeId;
@@ -246,6 +255,9 @@ namespace ServiceLayer.Code
                 value.ComponentDescription = adhocComponent.ComponentDescription;
                 value.MaxLimit = adhocComponent.MaxLimit;
                 value.DeclaredValue = adhocComponent.DeclaredValue;
+                value.AcceptedAmount = adhocComponent.AcceptedAmount;
+                value.RejectedAmount = adhocComponent.RejectedAmount;
+                value.UploadedFileIds = adhocComponent.UploadedFileIds;
                 value.TaxExempt = adhocComponent.TaxExempt;
                 value.Section = adhocComponent.Section;
                 value.AdHocId = Convert.ToInt32(adhocComponent.AdHocId);
@@ -281,6 +293,9 @@ namespace ServiceLayer.Code
                 value.AdHocId = Convert.ToInt32(deductionComponent.AdHocId);
                 value.MaxLimit = deductionComponent.MaxLimit;
                 value.DeclaredValue = deductionComponent.DeclaredValue;
+                value.AcceptedAmount = deductionComponent.AcceptedAmount;
+                value.RejectedAmount = deductionComponent.RejectedAmount;
+                value.UploadedFileIds = deductionComponent.UploadedFileIds;
                 value.IsAdHoc = deductionComponent.IsAdHoc;
                 value.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
@@ -312,6 +327,9 @@ namespace ServiceLayer.Code
                 value.AdHocId = Convert.ToInt32(bonusComponent.AdHocId);
                 value.MaxLimit = bonusComponent.MaxLimit;
                 value.DeclaredValue = bonusComponent.DeclaredValue;
+                value.AcceptedAmount = bonusComponent.AcceptedAmount;
+                value.RejectedAmount = bonusComponent.RejectedAmount;
+                value.UploadedFileIds = bonusComponent.UploadedFileIds;
                 value.IsAdHoc = bonusComponent.IsAdHoc;
                 value.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
