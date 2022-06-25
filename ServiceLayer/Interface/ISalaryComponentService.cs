@@ -18,6 +18,6 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> AddAdhocComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
-        string salaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail);
+        string SalaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail);
     }
 }

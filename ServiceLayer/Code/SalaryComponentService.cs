@@ -406,7 +406,7 @@ namespace ServiceLayer.Code
             return components;
         }
 
-        public string salaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail)
+        public string SalaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail)
         {
             SalaryBreakup salaryBreakup = new SalaryBreakup();
             if (EmployeeId <= 0)
@@ -433,6 +433,11 @@ namespace ServiceLayer.Code
             else
                 result = "Inserted/Updated successfully";
             return result;
+        }
+
+        public void CalculateBreakup(CompleteSalaryBreakup complcompSalaryDetail)
+        {
+            // _db.Get<SalaryComponents>("sp_employee_declaration_get_byEmployeeId", new {  }
         }
     }
 }
