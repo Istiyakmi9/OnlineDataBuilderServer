@@ -20,6 +20,9 @@
         public bool IsComponentEnabled { set; get; }
         public decimal MaxLimit { set; get; }
         public decimal DeclaredValue { set; get; }
+        public decimal AcceptedAmount { set; get; }
+        public decimal RejectedAmount { set; get; }
+        public string UploadedFileIds { set; get; }
         public string Formula { set; get; }
         public string Section { get; set; }
         public decimal SectionMaxLimit { get; set; }
