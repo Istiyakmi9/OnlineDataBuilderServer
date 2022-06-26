@@ -159,13 +159,14 @@ namespace ServiceLayer.Code
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 5)
+            if (resultset.Tables.Count == 6)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
                 resultset.Tables[2].TableName = "FileDetail";
                 resultset.Tables[3].TableName = "Roles";
                 resultset.Tables[4].TableName = "SalaryDetail";
+                resultset.Tables[5].TableName = "Companies";
 
                 finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Employee).Copy());
                 finalResultSet.Tables[0].TableName = "EmployeesList";
@@ -178,6 +179,7 @@ namespace ServiceLayer.Code
                 finalResultSet.Tables.Add(resultset.Tables[2].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[3].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[4].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[5].Copy());
             }
             return finalResultSet;
         }
