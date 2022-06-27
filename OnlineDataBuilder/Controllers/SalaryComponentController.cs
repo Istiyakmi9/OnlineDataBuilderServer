@@ -125,5 +125,12 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
+
+        [HttpPost("SalaryBreakupCalc/{EmployeeId}/{SalaryGroupId}")]
+        public IResponse<ApiResponse> SalaryBreakupCalc(long EmployeeId, int SalaryGroupId, [FromBody] int CTCAnnually)
+        {
+            var result = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, SalaryGroupId, CTCAnnually);
+            return BuildResponse(result);
+        }
     }
 }
