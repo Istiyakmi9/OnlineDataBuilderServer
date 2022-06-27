@@ -454,5 +454,260 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[2].Rows.Count == 1)
                 employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
         }
+
+        public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, int SalaryGroupId, int CTCAnnually)
+        {
+            CompleteSalaryBreakup completeSalaryBreakup = new CompleteSalaryBreakup();
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid EmployeeId");
+            if (SalaryGroupId <= 0)
+                throw new HiringBellException("Invalid SalaryGroupId");
+            if (CTCAnnually <= 0)
+                throw new HiringBellException("Invalid CTCAnnually");
+
+            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponents(SalaryGroupId);
+            List<SalaryComponents> fixedComponents = salaryComponents.FindAll(x => x.PercentageValue == 0);
+            completeSalaryBreakup.CTCAnnually = CTCAnnually;
+            foreach (SalaryComponents component in fixedComponents)
+            {
+                switch (component.ComponentId.ToUpper())
+                {
+                    case "ECTG":
+                        completeSalaryBreakup.GratuityAnnually = component.MaxLimit;
+                        break;
+                    case "CA":
+                        completeSalaryBreakup.ConveyanceAnnually = component.MaxLimit;
+                        break;
+                    case "EPF":
+                        completeSalaryBreakup.PFAnnually = component.MaxLimit;
+                        break;
+                    case "MA":
+                        completeSalaryBreakup.MedicalAnnually = component.MaxLimit;
+                        break;
+                    case "SA":
+                        completeSalaryBreakup.ShiftAnnually = component.MaxLimit;
+                        break;
+                    case "ESI":
+                        completeSalaryBreakup.InsuranceAnnually = component.MaxLimit;
+                        break;
+                }
+            }
+            var gross = completeSalaryBreakup.CTCAnnually - (completeSalaryBreakup.InsuranceAnnually + completeSalaryBreakup.PFAnnually + completeSalaryBreakup.GratuityAnnually);
+            if (gross > 0)
+                completeSalaryBreakup.GrossAnnually = gross;
+            else
+                throw new HiringBellException("invalid gross salary");
+            foreach (var item in salaryComponents)
+            {
+                var formula = item.Formula;
+                var componentId = item.ComponentId;
+                if (!string.IsNullOrEmpty(formula))
+                {
+                    if (formula.Contains("[BASIC]"))
+                    {
+                        formula = formula.Replace("[BASIC]", (completeSalaryBreakup.BasicAnnually).ToString());
+                    }
+                    else if (formula.Contains("[CTC]"))
+                    {
+                        formula = formula.Replace("[CTC]", (completeSalaryBreakup.CTCAnnually).ToString());
+                    }
+                    else if (formula.Contains("[GROSS]"))
+                    {
+                        formula = formula.Replace("[GROSS]", (completeSalaryBreakup.GrossAnnually).ToString());
+                    }
+
+                    var finalvalue = this.calculateExpressionUsingInfixDS(formula);
+                    switch (componentId.ToUpper())
+                    {
+                        case "BS":
+                            completeSalaryBreakup.BasicAnnually = finalvalue;
+                            break;
+                        case "HRA":
+                            completeSalaryBreakup.HRAAnnually = finalvalue;
+                            break;
+                    }
+                }
+            }
+            completeSalaryBreakup.SpecialAnnually = completeSalaryBreakup.GrossAnnually - (completeSalaryBreakup.BasicAnnually + completeSalaryBreakup.ConveyanceAnnually + completeSalaryBreakup.HRAAnnually + completeSalaryBreakup.MedicalAnnually + completeSalaryBreakup.ShiftAnnually);
+            return completeSalaryBreakup;
+        }
+
+        private int calculateExpressionUsingInfixDS(string expression)
+        {
+            if (!expression.Contains("()"))
+            {
+                expression = string.Format("({0})", expression);
+            }
+            List<string> operatorStact = new List<string>();
+            var expressionStact = new List<object>();
+            int index = 0;
+            var lastOp = "";
+            var ch = "";
+
+            while (index < expression.Length)
+            {
+                ch = expression[index].ToString();
+                if (ch.Trim() == "")
+                {
+                    index++;
+                    continue;
+                }
+                int number;
+                if (!int.TryParse(ch.ToString(), out number))
+                {
+                    switch (ch)
+                    {
+                        case "+":
+                        case "-":
+                        case "/":
+                        case "%":
+                        case "*":
+                            if (operatorStact.Count > 0)
+                            {
+                                lastOp = operatorStact[operatorStact.Count - 1];
+                                if (lastOp == "+" || lastOp == "-" || lastOp == "/" || lastOp == "*" || lastOp == "%")
+                                {
+                                    lastOp = operatorStact[operatorStact.Count - 1];
+                                    operatorStact.RemoveAt(operatorStact.Count - 1);
+                                    expressionStact.Add(lastOp);
+                                }
+                            }
+                            operatorStact.Add(ch);
+                            break;
+                        case ")":
+                            while (true)
+                            {
+                                lastOp = operatorStact[operatorStact.Count - 1];
+                                operatorStact.RemoveAt(operatorStact.Count-1);
+                                if (lastOp == "(")
+                                {
+                                    break;
+                                }
+                                expressionStact.Add(lastOp);
+                            }
+                            break;
+                        case "(":
+                            operatorStact.Add(ch);
+                            break;
+                    }
+                }
+                else
+                {
+                    var value = 0;
+                    while (true)
+                    {
+                        ch = expression[index].ToString();
+                        if (ch.Trim() == "")
+                        {
+                            expressionStact.Add(value);
+                            break;
+                        }
+
+                        if (int.TryParse(ch.ToString(), out number))
+                        {
+                            value = Convert.ToInt32(value + ch);
+                            index++;
+                        }
+                        else
+                        {
+                            index--;
+                            expressionStact.Add(value);
+                            break;
+                        }
+                    }
+                }
+
+                index++;
+            }
+
+            return this.calculationUsingInfixExpression(expressionStact);
+        }
+
+        private int calculationUsingInfixExpression(List<object> expressionStact)
+        {
+            int i = 0;
+            var term = new List<int>();
+            int number;
+            while (i < expressionStact.Count)
+            {
+                if (int.TryParse(expressionStact[i].ToString(), out number) && int.TryParse(expressionStact[i+1].ToString(), out number) && !int.TryParse(expressionStact[i+2].ToString(), out number))
+                {
+                    int finalvalue = 0;
+                    switch (expressionStact[i + 2])
+                    {
+                        case "+":
+                            finalvalue = Convert.ToInt32(expressionStact[i]) + Convert.ToInt32(expressionStact[i + 1]);
+                            break;
+                        case "*":
+                            finalvalue = Convert.ToInt32(expressionStact[i]) * Convert.ToInt32(expressionStact[i + 1]);
+                            break;
+                        case "-":
+                            finalvalue = Convert.ToInt32(expressionStact[i]) - Convert.ToInt32(expressionStact[i + 1]);
+                            break;
+                        case "%":
+                            finalvalue = (Convert.ToInt32(expressionStact[i]) * Convert.ToInt32(expressionStact[i + 1])) / 100;
+                            break;
+                    }
+                    term.Add(finalvalue);
+                    i = i + 3;
+                }
+                else if (int.TryParse(expressionStact[i].ToString(), out number) && !int.TryParse(expressionStact[i + 1].ToString(), out number))
+                {
+                    var finalvalue = 0;
+                    var lastterm = term[term.Count - 1];
+                    term.RemoveAt(term.Count - 1);
+                    switch (expressionStact[i + 1])
+                    {
+                        case "+":
+                            finalvalue = Convert.ToInt32(lastterm) + Convert.ToInt32(expressionStact[i]);
+                            break;
+                        case "*":
+                            finalvalue = Convert.ToInt32(lastterm) * Convert.ToInt32(expressionStact[i]);
+                            break;
+                        case "-":
+                            finalvalue = Convert.ToInt32(lastterm) - Convert.ToInt32(expressionStact[i]);
+                            break;
+                        case "%":
+                            finalvalue = (Convert.ToInt32(lastterm) * Convert.ToInt32(expressionStact[i])) / 100;
+                            break;
+                    }
+                    term.Add(finalvalue);
+                    i = i + 2;
+                }
+                else
+                {
+                    var finalvalue = 0;
+                    var lastterm = term[term.Count - 1];
+                    term.RemoveAt(term.Count - 1);
+                    var previousterm = term[term.Count - 1];
+                    term.RemoveAt(term.Count - 1);
+                    switch (expressionStact[i])
+                    {
+                        case "+":
+                            finalvalue = previousterm + lastterm;
+                            break;
+                        case "*":
+                            finalvalue = previousterm * lastterm;
+                            break;
+                        case "-":
+                            finalvalue = previousterm - lastterm;
+                            break;
+                        case "%":
+                            finalvalue = (previousterm * lastterm) / 100;
+                            break;
+                    }
+                    term.Add(finalvalue);
+                    i++;
+                }
+            }
+            if (term.Count == 1)
+            {
+                return term[0];
+            }
+            else
+            {
+                throw new HiringBellException ("Invalid expression");
+            }
+        }
     }
 }
