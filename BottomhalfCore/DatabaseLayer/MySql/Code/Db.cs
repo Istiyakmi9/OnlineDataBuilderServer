@@ -91,7 +91,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         private void PrepareArguments<T>(object instance)
         {
-            List<PropertyInfo> properties = typeof(T).GetProperties().ToList();
+            List<PropertyInfo> properties = instance.GetType().GetProperties().ToList();
             PrepareArguments(instance, properties);
         }
 
@@ -308,7 +308,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         {
             T data = default(T);
             object userType = Parameters;
-            var properties = typeof(T).GetProperties().ToList();
+            var properties = userType.GetType().GetProperties().ToList();
 
             List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
             if (result != null)

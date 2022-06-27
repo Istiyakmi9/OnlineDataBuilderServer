@@ -380,9 +380,9 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public Payroll GetPayrollSetting(int companyId)
+        public Payroll GetPayrollSetting(int CompanyId)
         {
-            var result = _db.Get<Payroll>("sp_payroll_cycle_setting_getById", new { CompanyId = companyId });
+            var result = _db.Get<Payroll>("sp_payroll_cycle_setting_getById", new { CompanyId });
 
             if (result == null)
                 throw new HiringBellException("No record found for given company.");
