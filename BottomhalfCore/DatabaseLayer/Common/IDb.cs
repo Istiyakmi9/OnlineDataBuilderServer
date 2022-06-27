@@ -37,5 +37,6 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         List<T> GetList<T>(string ProcedureName, dynamic Parameters, bool OutParam = false) where T : new();
         DataSet Get(string ProcedureName, object Parameters, bool OutParam = false);
         public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
+        List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
     }
 }

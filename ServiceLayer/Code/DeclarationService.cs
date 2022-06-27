@@ -136,12 +136,31 @@ namespace ServiceLayer.Code
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 this.BuildSectionWiseComponents(employeeDeclaration);
+                this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
             }
 
             employeeDeclaration.FileDetails = files;
             employeeDeclaration.DeclarationDetail = null;
             employeeDeclaration.Sections = _sections;
             return employeeDeclaration;
+        }
+
+        private void CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration)
+        {
+            List<SalaryComponents> salaryComponents = _db.GetListValue<SalaryComponents>("sp_salary_components_group_by_employeeid", new { EmployeeId = EmployeeId });
+            employeeDeclaration.TotalAmount = 2124000;
+            decimal StandardDeduction = 50000;
+
+            SalaryComponents component = null;
+            component = salaryComponents.Find(x => x.ComponentId == "PTAX");
+            if (component != null)
+                employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
+
+            component = salaryComponents.Find(x => x.ComponentId == "EPF");
+            if (component != null)
+                employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
+
+            employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - StandardDeduction;
         }
 
         private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
