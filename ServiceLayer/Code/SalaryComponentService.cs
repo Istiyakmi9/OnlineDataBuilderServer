@@ -484,7 +484,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("invalid gross salary");
             foreach (var item in salaryComponents)
             {
-                var formula = item.Formula.ToUpper();
+                var formula = item.Formula;
                 var componentId = item.ComponentId;
                 if (!string.IsNullOrEmpty(formula))
                 {
