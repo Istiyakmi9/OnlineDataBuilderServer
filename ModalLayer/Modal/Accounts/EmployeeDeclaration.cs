@@ -11,6 +11,9 @@ namespace ModalLayer.Modal.Accounts
         public string ComponentId { set; get; }
         public decimal DeclaredValue { set; get; }
         public string Email { set; get; }
+        public decimal TotalAmount { set; get; }
+        public decimal TaxNeedToPay { set; get; }
+        public decimal TaxPaid { set; get; }
         public List<SalaryComponents> SalaryComponentItems { set; get; }
         public List<SalaryComponents> ExemptionDeclaration { set; get; }
         public List<SalaryComponents> OtherDeclaration { set; get; }

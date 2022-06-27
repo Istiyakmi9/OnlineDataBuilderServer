@@ -395,6 +395,7 @@ namespace ServiceLayer.Code
                     new DbParam(EncreptedPassword, typeof(string), "_Password"),
                     new DbParam(employee.AccessLevelId, typeof(int), "_AccessLevelId"),
                     new DbParam(employee.UserTypeId, typeof(int), "_UserTypeId"),
+                    new DbParam(employee.CompnayId, typeof(int), "_CompnayId"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 

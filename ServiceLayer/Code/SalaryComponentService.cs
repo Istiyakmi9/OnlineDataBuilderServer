@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using Newtonsoft.Json;
+using System.Data;
 
 namespace ServiceLayer.Code
 {
@@ -435,9 +436,23 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public void CalculateBreakup(CompleteSalaryBreakup complcompSalaryDetail)
+        public void CalculateBreakup(long employeeId, CompleteSalaryBreakup complcompSalaryDetail)
         {
-            // _db.Get<SalaryComponents>("sp_employee_declaration_get_byEmployeeId", new {  }
+            EmployeeDeclaration employeeDeclaration = default;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(employeeId, typeof(long), "_EmployeeId"),
+                new DbParam(UserType.Compnay, typeof(int), "_UserTypeId")
+            };
+
+            DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
+            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
+                throw new HiringBellException("Unable to get the detail");
+
+            employeeDeclaration = BottomhalfCore.Services.Code.Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+
+            if (resultSet.Tables[2].Rows.Count == 1)
+                employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
         }
 
         public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, int SalaryGroupId, int CTCAnnually)
