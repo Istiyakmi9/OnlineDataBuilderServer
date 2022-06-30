@@ -8,6 +8,7 @@
         public decimal NetSalary { get; set; }
         public int GroupId { get; set; }
         public string CompleteSalaryDetail { get; set; }
+        public string TaxDetail { get; set; }
         public long AdminId { get; set; }
     }
 

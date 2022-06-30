@@ -452,7 +452,7 @@ namespace ServiceLayer.Code
             employeeDeclaration = BottomhalfCore.Services.Code.Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
 
             if (resultSet.Tables[2].Rows.Count == 1)
-                employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
+                employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
         }
 
         public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, int SalaryGroupId, int CTCAnnually)
