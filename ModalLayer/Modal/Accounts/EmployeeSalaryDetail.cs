@@ -1,4 +1,6 @@
-﻿namespace ModalLayer.Modal.Accounts
+﻿using System.Collections.Generic;
+
+namespace ModalLayer.Modal.Accounts
 {
     public class EmployeeSalaryDetail
     {
@@ -8,5 +10,7 @@
         public decimal NetSalary { set; get; }
         public string CompleteSalaryDetail { set; get; }
         public int GroupId { set; get; }
+        public string TaxDetail { get; set; }
+
     }
 }

@@ -22,14 +22,16 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
         private readonly Dictionary<string, List<string>> _sections;
+        private readonly ISalaryComponentService _salaryComponentService;
 
-        public DeclarationService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, CurrentSession currentSession, IOptions<Dictionary<string, List<string>>> options)
+        public DeclarationService(IDb db, IFileService fileService, FileLocationDetail fileLocationDetail, CurrentSession currentSession, IOptions<Dictionary<string, List<string>>> options, ISalaryComponentService salaryComponentService)
         {
             _db = db;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _currentSession = currentSession;
             _sections = options.Value;
+            _salaryComponentService = salaryComponentService;
         }
 
         public EmployeeDeclaration GetDeclarationByEmployee(long EmployeeId)
@@ -102,6 +104,7 @@ namespace ServiceLayer.Code
 
             empDeclaration.SalaryComponentItems = salaryComponents;
             this.BuildSectionWiseComponents(empDeclaration);
+            this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
             return empDeclaration;
         }
 
@@ -130,7 +133,7 @@ namespace ServiceLayer.Code
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
             if (resultSet.Tables[2].Rows.Count == 1)
-                employeeDeclaration.SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
+                employeeDeclaration.SalaryDetail = Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
 
             employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
             if (employeeDeclaration.SalaryComponentItems != null)
@@ -148,7 +151,9 @@ namespace ServiceLayer.Code
         private void CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration)
         {
             List<SalaryComponents> salaryComponents = _db.GetListValue<SalaryComponents>("sp_salary_components_group_by_employeeid", new { EmployeeId = EmployeeId });
-            employeeDeclaration.TotalAmount = 2124000;
+            SalaryBreakup salaryBreakup = _db.Get<SalaryBreakup>("sp_employee_salary_detail_get_by_empid");
+            CompleteSalaryBreakup completeSalaryBreakup = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.GroupId, Convert.ToInt32(salaryBreakup.CTC));
+            employeeDeclaration.TotalAmount = completeSalaryBreakup.GrossAnnually;
             decimal StandardDeduction = 50000;
 
             SalaryComponents component = null;
@@ -160,7 +165,49 @@ namespace ServiceLayer.Code
             if (component != null)
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
 
-            employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - StandardDeduction;
+            decimal totalDeduction = 0;
+            foreach (var item in employeeDeclaration.Declarations)
+            {
+                decimal value = item.TotalAmountDeclared;
+                if (item.DeclarationName == "1.5 Lac Exemptions")
+                {
+                    if (item.TotalAmountDeclared >= 150000)
+                        value = 150000;
+                    else
+                        value = item.TotalAmountDeclared;
+                }
+                totalDeduction += value;
+            }
+            employeeDeclaration.SalaryDetail = salaryBreakup;
+            employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction);
+            employeeDeclaration.TaxNeedToPay = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount);
+            List<TaxDetails> taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(salaryBreakup.TaxDetail);
+
+            //TaxDetails TaxDetail = taxdetails.Find(x => x.Month == DateTime.Now.AddMonths(-1).Month && x.Year == DateTime.Now.Year);
+            decimal previousMonthTax = 0;
+            int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
+            int currentMonthIndex = i;
+            if (currentMonthIndex > 0)
+            {
+                previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
+            }
+            while (i < taxdetails.Count)
+            {
+                decimal currentMonthTax = (employeeDeclaration.TaxNeedToPay / 12);
+                if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
+                {
+                    taxdetails[i].TaxDeducted = currentMonthTax - (previousMonthTax - currentMonthTax);
+                } else
+                    taxdetails[i].TaxDeducted = currentMonthTax;
+
+                i++;
+            }
+            employeeDeclaration.TaxPaid = (taxdetails.Find(x => x.Month == DateTime.Now.AddMonths(-1).Month && x.Year == DateTime.Now.Year).TaxDeducted);
+            salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+            var result = _db.Execute<SalaryBreakup>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update salary breakup");
+
         }
 
         private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
@@ -227,6 +274,38 @@ namespace ServiceLayer.Code
                 RejectedAmount = 0,
                 TotalAmountDeclared = 0
             });
+        }
+
+        private decimal OldTaxRegimeCalculation(decimal TaxableIncome)
+        {
+            if (TaxableIncome <= 0)
+                throw new HiringBellException("Invalid TaxableIncome");
+
+            decimal tax = 0;
+            decimal value = 0;
+            decimal remainingAmount = 0;
+
+            if (TaxableIncome > 500000 )
+            {
+                value = 500000 - 250000;
+                remainingAmount = TaxableIncome - 500000;
+                tax = (value * 5) / 100;
+            }
+            else if (TaxableIncome > 500000 && TaxableIncome < 1000000)
+            {
+                tax += (remainingAmount * 20) / 100;
+            }
+
+            if (TaxableIncome > 1000000)
+            {
+                value = 1000000 - 500000;
+                remainingAmount = TaxableIncome - 1000000;
+                tax += (value * 20) / 100;
+                tax += (remainingAmount * 30) / 100;
+            } 
+
+            decimal cess = (tax * 4 ) / 100;
+            return tax = (tax + cess);
         }
     }
 }

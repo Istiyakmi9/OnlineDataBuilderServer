@@ -19,7 +19,7 @@ namespace ModalLayer.Modal.Accounts
         public List<SalaryComponents> OtherDeclaration { set; get; }
         public List<SalaryComponents> TaxSavingAlloance { set; get; }
         public List<Files> FileDetails { set; get; }
-        public EmployeeSalaryDetail SalaryDetail { set; get; }
+        public SalaryBreakup SalaryDetail { set; get; }
         public Dictionary<string, List<string>> Sections { set; get; }
         public List<DeclarationReport> Declarations { set; get; } = new List<DeclarationReport>();
     }
