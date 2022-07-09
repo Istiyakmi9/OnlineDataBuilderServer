@@ -19,13 +19,11 @@ namespace ServiceLayer.Code
     {
         private readonly JwtSetting _jwtSetting;
         private readonly IDb _db;
-        private readonly IConfiguration _configuration;
         private readonly CurrentSession _currentSession;
-        public AuthenticationService(IOptions<JwtSetting> options, IDb db, IConfiguration configuration, CurrentSession currentSession)
+        public AuthenticationService(IOptions<JwtSetting> options, IDb db, CurrentSession currentSession)
         {
             _jwtSetting = options.Value;
             _db = db;
-            _configuration = configuration;
             _currentSession = currentSession;
         }
 
@@ -48,10 +46,10 @@ namespace ServiceLayer.Code
                         ValidateIssuer = false,
                         ValidateAudience = false,
                         ValidateLifetime = false,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = _configuration["jwtSetting:Issuer"],
-                        ValidAudience = _configuration["jwtSetting:Issuer"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["jwtSetting:Key"]))
+                        ValidateIssuerSigningKey = true,                        
+                        ValidIssuer = _jwtSetting.Issuer, //_configuration["jwtSetting:Issuer"],
+                        ValidAudience = _jwtSetting.Issuer, //_configuration["jwtSetting:Issuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSetting.Key))
                     }, out SecurityToken validatedToken);
 
                     var securityToken = handler.ReadToken(token) as JwtSecurityToken;
