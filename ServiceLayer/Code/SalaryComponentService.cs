@@ -38,6 +38,14 @@ namespace ServiceLayer.Code
             return salaryComponents;
         }
 
+        public SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId)
+        {
+            if (SalaryGroupId <= 0)
+                throw new HiringBellException("Invalid SalaryGroupId");
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId });
+            return salaryGroup;
+        }
+
         public List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents)
         {
             if (salaryComponents.Count > 0)

@@ -114,7 +114,7 @@ namespace ServiceLayer.Code
                     new DbParam(null, typeof(long), "_Password"),
                     new DbParam(employee.AccessLevelId, typeof(int), "_AccessLevelId"),
                     new DbParam(employee.UserTypeId, typeof(int), "_UserTypeId"),
-                    new DbParam(employee.CompnayId, typeof(int), "_CompnayId"),
+                    new DbParam(employee.CompanyId, typeof(int), "_CompnayId"),
                     new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
                 };
