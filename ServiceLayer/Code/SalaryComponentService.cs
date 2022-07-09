@@ -548,6 +548,12 @@ namespace ServiceLayer.Code
             return completeSalaryBreakup;
         }
 
+        public SalaryBreakup GetSalaryBreakupByEmpIdService(long EmployeeId)
+        {
+            SalaryBreakup completeSalaryBreakup = _db.Get<SalaryBreakup>("sp_employee_salary_detail_get_by_empid", new { EmployeeId });
+            return completeSalaryBreakup;
+        }
+
         private int calculateExpressionUsingInfixDS(string expression)
         {
             if (!expression.Contains("()"))
