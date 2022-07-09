@@ -41,6 +41,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpGet("GetSalaryGroupsById/{SalaryGroupId}")]
+        public IResponse<ApiResponse> GetSalaryGroupsById(int SalaryGroupId)
+        {
+            var result = _salaryComponentService.GetSalaryGroupsByIdService(SalaryGroupId);
+            return BuildResponse(result);
+        }
+
         [HttpPost("UpdateSalaryComponents")]
         public IResponse<ApiResponse> UpdateSalaryComponents(List<SalaryComponents> salaryComponents)
         {
