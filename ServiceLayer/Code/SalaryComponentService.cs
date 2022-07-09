@@ -38,6 +38,14 @@ namespace ServiceLayer.Code
             return salaryComponents;
         }
 
+        public SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId)
+        {
+            if (SalaryGroupId <= 0)
+                throw new HiringBellException("Invalid SalaryGroupId");
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId });
+            return salaryGroup;
+        }
+
         public List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents)
         {
             if (salaryComponents.Count > 0)
@@ -183,7 +191,13 @@ namespace ServiceLayer.Code
 
         public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
         {
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            foreach (SalaryGroup existSalaryGroup in salaryGroups)
+            {
+                if ((salaryGroup.MinAmount > existSalaryGroup.MinAmount && salaryGroup.MinAmount < existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
+                    throw new HiringBellException("Salary group limit already exist");
+            }
             if (salaryGrp == null)
             {
                 salaryGrp = salaryGroup;
@@ -346,7 +360,13 @@ namespace ServiceLayer.Code
 
         public List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup)
         {
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            foreach (SalaryGroup existSalaryGroup in salaryGroups)
+            {
+                if ((salaryGroup.MinAmount > existSalaryGroup.MinAmount && salaryGroup.MinAmount < existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
+                    throw new HiringBellException("Salary group limit already exist");
+            }
             if (salaryGrp == null)
                 throw new HiringBellException("Salary Group already exist.");
             else
@@ -501,6 +521,7 @@ namespace ServiceLayer.Code
             {
                 var formula = item.Formula;
                 var componentId = item.ComponentId;
+                decimal finalvalue = 0;
                 if (!string.IsNullOrEmpty(formula))
                 {
                     if (formula.Contains("[BASIC]"))
@@ -515,8 +536,11 @@ namespace ServiceLayer.Code
                     {
                         formula = formula.Replace("[GROSS]", (completeSalaryBreakup.GrossAnnually).ToString());
                     }
+                    if (formula.Contains('+') || formula.Contains('-') || formula.Contains('*') || formula.Contains('/') || formula.Contains('%'))
+                    {
+                        finalvalue = this.calculateExpressionUsingInfixDS(formula);
+                    }
 
-                    var finalvalue = this.calculateExpressionUsingInfixDS(formula);
                     switch (componentId.ToUpper())
                     {
                         case "BS":
