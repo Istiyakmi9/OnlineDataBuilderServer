@@ -133,7 +133,7 @@ namespace ServiceLayer.Code
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
             if (resultSet.Tables[2].Rows.Count == 1)
-                employeeDeclaration.SalaryDetail = Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
+                employeeDeclaration.SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
 
             employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
             if (employeeDeclaration.SalaryComponentItems != null)
@@ -148,20 +148,59 @@ namespace ServiceLayer.Code
             return employeeDeclaration;
         }
 
-        private void CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration)
+        public void CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration)
         {
-            List<SalaryComponents> salaryComponents = _db.GetListValue<SalaryComponents>("sp_salary_components_group_by_employeeid", new { EmployeeId = EmployeeId });
-            SalaryBreakup salaryBreakup = _db.Get<SalaryBreakup>("sp_employee_salary_detail_get_by_empid");
-            CompleteSalaryBreakup completeSalaryBreakup = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.GroupId, Convert.ToInt32(salaryBreakup.CTC));
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(EmployeeId, typeof(long), "_EmployeeId")
+            };
+
+            var resultSet = _db.GetDataset("sp_salary_components_group_by_employeeid", param);
+            if (resultSet == null || resultSet.Tables.Count != 2)
+            {
+                throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
+            }
+
+
+            SalaryGroup salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[0]);
+            if (salaryGroup == null)
+                throw new HiringBellException("No group found for the current employee salary package. Please create one.");
+
+            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+
+            EmployeeSalaryDetail salaryBreakup = null;
+            if (resultSet.Tables[1].Rows.Count == 1)
+            {
+                salaryBreakup = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[1]);
+                if (salaryBreakup == null)
+                    throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
+
+                salaryBreakup.CTC = employeeDeclaration.SalaryDetail.CTC;
+            }
+            else
+            {
+                salaryBreakup = new EmployeeSalaryDetail
+                {
+                    CompleteSalaryDetail = "{}",
+                    CTC = employeeDeclaration.SalaryDetail.CTC,
+                    EmployeeId = EmployeeId,
+                    GrossIncome = 0,
+                    GroupId = 0,
+                    NetSalary = 0,
+                    TaxDetail = "[]"
+                };
+            }
+
+            CompleteSalaryBreakup completeSalaryBreakup = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.CTC);
             employeeDeclaration.TotalAmount = completeSalaryBreakup.GrossAnnually;
             decimal StandardDeduction = 50000;
 
             SalaryComponents component = null;
-            component = salaryComponents.Find(x => x.ComponentId == "PTAX");
+            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "PTAX");
             if (component != null)
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
 
-            component = salaryComponents.Find(x => x.ComponentId == "EPF");
+            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "EPF");
             if (component != null)
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
 
@@ -178,33 +217,72 @@ namespace ServiceLayer.Code
                 }
                 totalDeduction += value;
             }
+
+            salaryBreakup.GrossIncome = completeSalaryBreakup.GrossAnnually;
+            salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakup);
             employeeDeclaration.SalaryDetail = salaryBreakup;
             employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction);
             employeeDeclaration.TaxNeedToPay = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount);
-            List<TaxDetails> taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(salaryBreakup.TaxDetail);
 
-            //TaxDetails TaxDetail = taxdetails.Find(x => x.Month == DateTime.Now.AddMonths(-1).Month && x.Year == DateTime.Now.Year);
-            decimal previousMonthTax = 0;
-            int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
-            int currentMonthIndex = i;
-            if (currentMonthIndex > 0)
+            List<TaxDetails> taxdetails = null;
+            if (salaryBreakup.TaxDetail != null)
             {
-                previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
-            }
-            while (i < taxdetails.Count)
-            {
-                decimal currentMonthTax = (employeeDeclaration.TaxNeedToPay / 12);
-                if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
+                taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(salaryBreakup.TaxDetail);
+
+                if (taxdetails.Count > 0)
                 {
-                    taxdetails[i].TaxDeducted = currentMonthTax - (previousMonthTax - currentMonthTax);
-                } else
-                    taxdetails[i].TaxDeducted = currentMonthTax;
+                    decimal previousMonthTax = 0;
+                    int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
+                    int currentMonthIndex = i;
+                    if (currentMonthIndex > 0)
+                    {
+                        previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
+                    }
+                    while (i < taxdetails.Count)
+                    {
+                        decimal currentMonthTax = (employeeDeclaration.TaxNeedToPay / 12);
+                        if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
+                        {
+                            taxdetails[i].TaxDeducted = currentMonthTax - (previousMonthTax - currentMonthTax);
+                        }
+                        else
+                            taxdetails[i].TaxDeducted = currentMonthTax;
 
-                i++;
+                        i++;
+                    }
+                    employeeDeclaration.TaxPaid = (taxdetails.Find(x => x.Month == DateTime.Now.AddMonths(-1).Month && x.Year == DateTime.Now.Year).TaxDeducted);
+                    salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+                }
+                else
+                {
+                    if (employeeDeclaration.TaxNeedToPay > 0)
+                    {
+                        var permonthTax = employeeDeclaration.TaxNeedToPay / 12;
+                        taxdetails = new List<TaxDetails>();
+                        DateTime financialYearMonth = new DateTime(DateTime.Now.Year, 4, 1);
+                        int i = 0;
+                        while (i <= 11)
+                        {
+                            taxdetails.Add(new TaxDetails
+                            {
+                                Month = financialYearMonth.AddMonths(i).Month,
+                                Year = financialYearMonth.AddMonths(i).Year,
+                                EmployeeId = EmployeeId,
+                                TaxDeducted = Convert.ToDecimal(String.Format("{0:0.00}", permonthTax))
+                            });
+
+                            i++;
+                        }
+                    }
+                }
             }
-            employeeDeclaration.TaxPaid = (taxdetails.Find(x => x.Month == DateTime.Now.AddMonths(-1).Month && x.Year == DateTime.Now.Year).TaxDeducted);
+            else
+            {
+                salaryBreakup.TaxDetail = "[]";
+            }
+
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-            var result = _db.Execute<SalaryBreakup>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
+            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
 
@@ -283,29 +361,35 @@ namespace ServiceLayer.Code
 
             decimal tax = 0;
             decimal value = 0;
-            decimal remainingAmount = 0;
+            decimal remainingAmount = TaxableIncome;
 
-            if (TaxableIncome > 500000 )
+            while (remainingAmount > 250000)
             {
-                value = 500000 - 250000;
-                remainingAmount = TaxableIncome - 500000;
-                tax = (value * 5) / 100;
+                if (remainingAmount > 250000 && remainingAmount <= 500000)
+                {
+                    value = (250000 - remainingAmount);
+                    if (value < 0) value = value * -1;
+                    remainingAmount = remainingAmount - value;
+                    tax += (value * 5) / 100;
+                }
+                else if (remainingAmount > 500000 && remainingAmount <= 1000000)
+                {
+                    value = (500000 - remainingAmount);
+                    if (value < 0) value = value * -1;
+                    remainingAmount = remainingAmount - value;
+                    tax += (value * 20) / 100;
+                }
+                else if (remainingAmount > 1000000)
+                {
+                    value = (1000000 - remainingAmount);
+                    if (value < 0) value = value * -1;
+                    remainingAmount = remainingAmount - value;
+                    tax += (value * 30) / 100;
+                }
             }
-            else if (TaxableIncome > 500000 && TaxableIncome < 1000000)
-            {
-                tax += (remainingAmount * 20) / 100;
-            }
 
-            if (TaxableIncome > 1000000)
-            {
-                value = 1000000 - 500000;
-                remainingAmount = TaxableIncome - 1000000;
-                tax += (value * 20) / 100;
-                tax += (remainingAmount * 30) / 100;
-            } 
-
-            decimal cess = (tax * 4 ) / 100;
-            return tax = (tax + cess);
+            decimal cess = (tax * 4) / 100;
+            return (tax + cess);
         }
     }
 }

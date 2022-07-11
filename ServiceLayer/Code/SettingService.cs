@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -424,82 +425,72 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public string UpdateSalaryComponentDetailService(string componentId, SalaryComponents component)
+        public string UpdateGroupSalaryComponentDetailService(string componentId, int groupId, SalaryComponents component)
         {
             var status = string.Empty;
-
+            if (groupId <= 0)
+                throw new HiringBellException("Invalid groupId");
             if (string.IsNullOrEmpty(componentId))
                 throw new HiringBellException("Invalid component passed.");
 
-            var salaryComponent = _db.Get<SalaryComponents>("sp_salary_components_get_byId", new { ComponentId = componentId });
-            if (salaryComponent != null)
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = groupId });
+            if (salaryGroup == null)
+                throw new HiringBellException("Unable to get salary group. Please contact admin");
+
+            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+
+            var existingComponent = salaryGroup.GroupComponents.Find(x => x.ComponentId == component.ComponentId);
+            if (existingComponent == null)
             {
-                salaryComponent.CalculateInPercentage = component.CalculateInPercentage;
-                salaryComponent.TaxExempt = component.TaxExempt;
-
-                if (component.CalculateInPercentage)
-                {
-                    salaryComponent.PercentageValue = component.MaxLimit;
-                    salaryComponent.MaxLimit = 0;
-                }
-                else
-                {
-                    salaryComponent.MaxLimit = component.MaxLimit;
-                    salaryComponent.PercentageValue = 0;
-                }
-                salaryComponent.Formula = component.Formula;
-                salaryComponent.EmployeeContribution = component.EmployeeContribution;
-                salaryComponent.EmployerContribution = component.EmployerContribution;
-                salaryComponent.IncludeInPayslip = component.IncludeInPayslip;
-                salaryComponent.IsOpted = component.IsOpted;
-
-                salaryComponent.IsActive = true;
-                salaryComponent.AdminId = _currentSession.CurrentUserDetail.UserId;
-
-                status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
-                {
-                    salaryComponent.ComponentId,
-                    salaryComponent.ComponentFullName,
-                    salaryComponent.ComponentDescription,
-                    salaryComponent.CalculateInPercentage,
-                    salaryComponent.TaxExempt,
-                    salaryComponent.ComponentTypeId,
-                    salaryComponent.ComponentCatagoryId,
-                    salaryComponent.PercentageValue,
-                    salaryComponent.MaxLimit,
-                    salaryComponent.DeclaredValue,
-                    salaryComponent.RejectedAmount,
-                    salaryComponent.AcceptedAmount,
-                    salaryComponent.UploadedFileIds,
-                    salaryComponent.Formula,
-                    salaryComponent.EmployeeContribution,
-                    salaryComponent.EmployerContribution,
-                    salaryComponent.IncludeInPayslip,
-                    salaryComponent.IsAdHoc,
-                    salaryComponent.AdHocId,
-                    salaryComponent.Section,
-                    salaryComponent.SectionMaxLimit,
-                    salaryComponent.IsAffectInGross,
-                    salaryComponent.RequireDocs,
-                    salaryComponent.IsOpted,
-                    salaryComponent.IsActive,
-                    salaryComponent.AdminId
-                }, true);
-
-                if (!ApplicationConstants.IsExecuted(status))
-                    throw new HiringBellException("Fail to update the record.");
+                salaryGroup.GroupComponents.Add(component);
             }
             else
             {
-                throw new HiringBellException("Invalid component passed.");
+                if (component.Formula.Contains('%'))
+                {
+                    int result = 0;
+                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
+                     .TakeWhile(x => char.IsDigit(x))
+                     .ToArray()), out result);
+                    existingComponent.PercentageValue = result;
+                    existingComponent.MaxLimit = 0;
+                    existingComponent.DeclaredValue = 0;
+                    existingComponent.CalculateInPercentage = true;
+                }
+                else
+                {
+                    int result = 0;
+                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
+                     .TakeWhile(x => char.IsDigit(x))
+                     .ToArray()), out result);
+                    existingComponent.DeclaredValue = result;
+                    existingComponent.MaxLimit = 0;
+                    existingComponent.PercentageValue = 0;
+                    existingComponent.CalculateInPercentage = false;
+                }
+                existingComponent.Formula = component.Formula;
             }
+
+            salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
+            status = _db.Execute<SalaryComponents>("sp_salary_group_insupd", new
+            {
+                salaryGroup.SalaryGroupId,
+                salaryGroup.SalaryComponents,
+                salaryGroup.GroupName,
+                salaryGroup.GroupDescription,
+                salaryGroup.MinAmount,
+                salaryGroup.MaxAmount,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(status))
+                throw new HiringBellException("Fail to update the record.");
 
             return status;
         }
 
         public List<SalaryComponents> ActivateCurrentComponentService(List<SalaryComponents> components)
         {
-            List<SalaryComponents> updateSalaryComponent = null;
             var salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get");
             if (salaryComponent != null)
             {

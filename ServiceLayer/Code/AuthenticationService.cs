@@ -331,7 +331,7 @@ namespace ServiceLayer.Code
             }
             catch (Exception Ex)
             {
-                return null;
+                throw Ex;
             }
         }
     }

@@ -19,8 +19,9 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> AddAdhocComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
-        string SalaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail);
-        CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, int SalaryGroupId, int CTCAnnually);
-        SalaryBreakup GetSalaryBreakupByEmpIdService (long EmployeeId);
+        string SalaryDetailService(long EmployeeId, EmployeeSalaryDetail salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail);
+        CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
+        List<SalaryComponents> GetSalaryGroupComponentsByCTC(decimal CTC);
+        EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
     }
 }

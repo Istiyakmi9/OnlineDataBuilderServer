@@ -1,17 +1,5 @@
 ﻿namespace ModalLayer.Modal.Accounts
 {
-    public class SalaryBreakup
-    {
-        public long EmployeeId { get; set; }
-        public decimal CTC { get; set; }
-        public decimal GrossIncome { get; set; }
-        public decimal NetSalary { get; set; }
-        public int GroupId { get; set; }
-        public string CompleteSalaryDetail { get; set; }
-        public string TaxDetail { get; set; }
-        public long AdminId { get; set; }
-    }
-
     public class  CompleteSalaryBreakup
     {
         public decimal BasicAnnually { get; set; }

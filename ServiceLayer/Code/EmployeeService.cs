@@ -29,6 +29,7 @@ namespace ServiceLayer.Code
         private readonly ICacheManager _cacheManager;
         private readonly IAuthenticationService _authenticationService;
         private readonly ILoginService _loginService;
+        private readonly IDeclarationService _declarationService;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
@@ -38,6 +39,7 @@ namespace ServiceLayer.Code
             ICommonService commonService,
             IConfiguration configuration,
             ILoginService loginService,
+            IDeclarationService declarationService,
             IAuthenticationService authenticationService,
             FileLocationDetail fileLocationDetail)
         {
@@ -51,6 +53,7 @@ namespace ServiceLayer.Code
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _commonService = commonService;
+            _declarationService = declarationService;
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
@@ -349,6 +352,16 @@ namespace ServiceLayer.Code
             };
             employeeDetail.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
+
+            EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+            {
+                SalaryDetail = new EmployeeSalaryDetail
+                {
+                    CTC = employee.CTC
+                }
+            };
+            _declarationService.CalculateSalaryDetail(employee.EmployeeUid, employeeDeclaration);
+
             return await Task.Run(() =>
             {
                 string EncreptedPassword = _authenticationService.Encrypt(
@@ -356,50 +369,57 @@ namespace ServiceLayer.Code
                     _configuration.GetSection("EncryptSecret").Value
                 );
 
-                DataSet ResultSet = null;
-                DbParam[] param = new DbParam[]
-                {
-                    new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
-                    new DbParam(employee.FirstName, typeof(string), "_FirstName"),
-                    new DbParam(employee.LastName, typeof(string), "_LastName"),
-                    new DbParam(employee.Mobile, typeof(string), "_Mobile"),
-                    new DbParam(employee.Email, typeof(string), "_Email"),
-                    new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
-                    new DbParam(employee.FatherName, typeof(string), "_FatherName"),
-                    new DbParam(employee.MotherName, typeof(string), "_MotherName"),
-                    new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
-                    new DbParam(employee.Gender, typeof(bool), "_Gender"),
-                    new DbParam(employee.State, typeof(string), "_State"),
-                    new DbParam(employee.City, typeof(string), "_City"),
-                    new DbParam(employee.Pincode, typeof(int), "_Pincode"),
-                    new DbParam(employee.Address, typeof(string), "_Address"),
-                    new DbParam(employee.PANNo, typeof(string), "_PANNo"),
-                    new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
-                    new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
-                    new DbParam(employee.BankName, typeof(string), "_BankName"),
-                    new DbParam(employee.BranchName, typeof(string), "_BranchName"),
-                    new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
-                    new DbParam(employee.Domain, typeof(string), "_Domain"),
-                    new DbParam(employee.Specification, typeof(string), "_Specification"),
-                    new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
-                    new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
-                    new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
-                    new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
-                    new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
-                    new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
-                    new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
-                    new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
-                    new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
-                    new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
-                    new DbParam(employeeDetail.ProfessionalDetail_Json, typeof(string), "_ProfessionalDetail_Json"),
-                    new DbParam(EncreptedPassword, typeof(string), "_Password"),
-                    new DbParam(employee.AccessLevelId, typeof(int), "_AccessLevelId"),
-                    new DbParam(employee.UserTypeId, typeof(int), "_UserTypeId"),
-                    new DbParam(employee.CompanyId, typeof(int), "_CompanyId"),
-                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                };
+                employee.CompleteSalaryDetail = "{}";
+                employee.TaxDetail = "[]";
 
-                var employeeId = _db.ExecuteNonQuery("sp_Employees_InsUpdate", param, true);
+                var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
+                {
+                    employee.EmployeeUid,
+                    employee.FirstName,
+                    employee.LastName,
+                    employee.Mobile,
+                    employee.Email,
+                    employee.SecondaryMobile,
+                    employee.FatherName,
+                    employee.MotherName,
+                    employee.SpouseName,
+                    employee.Gender,
+                    employee.State,
+                    employee.City,
+                    employee.Pincode,
+                    employee.Address,
+                    employee.PANNo,
+                    employee.AadharNo,
+                    employee.AccountNumber,
+                    employee.BankName,
+                    employee.BranchName,
+                    employee.IFSCCode,
+                    employee.Domain,
+                    employee.Specification,
+                    employee.ExprienceInYear,
+                    employee.LastCompanyName,
+                    employee.IsPermanent,
+                    employee.ActualPackage,
+                    employee.FinalPackage,
+                    employee.TakeHomeByCandidate,
+                    employee.ReportingManagerId,
+                    employee.DesignationId,
+                    employeeDetail.ProfessionalDetail_Json,
+                    Password = EncreptedPassword,
+                    employee.AccessLevelId,
+                    employee.UserTypeId,
+                    employee.CompanyId,
+                    employee.CTC,
+                    employee.GrossIncome,
+                    employee.NetSalary,
+                    employee.CompleteSalaryDetail,
+                    employee.TaxDetail,
+                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                },
+                    true
+                );
+
+
                 if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
                 {
                     throw new HiringBellException("Fail to insert or update record. Contact to admin.");
@@ -436,7 +456,7 @@ namespace ServiceLayer.Code
                     _db.Commit();
                 }
 
-                ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
+                var ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
                 return ResultSet;
             });
         }
