@@ -360,7 +360,7 @@ namespace ServiceLayer.Code
                     CTC = employee.CTC
                 }
             };
-            _declarationService.CalculateSalaryDetail(employee.EmployeeUid, employeeDeclaration);
+            EmployeeSalaryDetail employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
 
             return await Task.Run(() =>
             {
@@ -409,11 +409,11 @@ namespace ServiceLayer.Code
                     employee.AccessLevelId,
                     employee.UserTypeId,
                     employee.CompanyId,
-                    employee.CTC,
-                    employee.GrossIncome,
-                    employee.NetSalary,
-                    employee.CompleteSalaryDetail,
-                    employee.TaxDetail,
+                    employeeSalaryDetail.CTC,
+                    employeeSalaryDetail.GrossIncome,
+                    employeeSalaryDetail.NetSalary,
+                    employeeSalaryDetail.CompleteSalaryDetail,
+                    employeeSalaryDetail.TaxDetail,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true
