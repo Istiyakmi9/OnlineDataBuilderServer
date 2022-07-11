@@ -104,7 +104,12 @@ namespace ServiceLayer.Code
 
             empDeclaration.SalaryComponentItems = salaryComponents;
             this.BuildSectionWiseComponents(empDeclaration);
-            this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
+            EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
+
+            result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update salary breakup");
+
             return empDeclaration;
         }
 
@@ -139,7 +144,11 @@ namespace ServiceLayer.Code
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 this.BuildSectionWiseComponents(employeeDeclaration);
-                this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
+                EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
+
+                var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Unable to insert or update salary breakup");
             }
 
             employeeDeclaration.FileDetails = files;
@@ -148,11 +157,12 @@ namespace ServiceLayer.Code
             return employeeDeclaration;
         }
 
-        public void CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration)
+        public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
         {
             DbParam[] param = new DbParam[]
             {
-                new DbParam(EmployeeId, typeof(long), "_EmployeeId")
+                new DbParam(EmployeeId, typeof(long), "_EmployeeId"),
+                new DbParam(CTC, typeof(decimal), "_CTC")
             };
 
             var resultSet = _db.GetDataset("sp_salary_components_group_by_employeeid", param);
@@ -282,10 +292,7 @@ namespace ServiceLayer.Code
             }
 
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to insert or update salary breakup");
-
+            return salaryBreakup;
         }
 
         private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)

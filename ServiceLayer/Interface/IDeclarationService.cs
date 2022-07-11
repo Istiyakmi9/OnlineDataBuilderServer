@@ -11,6 +11,6 @@ namespace ServiceLayer.Interface
         EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId);
         EmployeeDeclaration UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> fileDetail);
         EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId);
-        void CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration);
+        EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0);
     }
 }
