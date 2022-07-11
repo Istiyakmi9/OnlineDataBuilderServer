@@ -480,7 +480,7 @@ namespace ServiceLayer.Code
         public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
         {
             CompleteSalaryBreakup completeSalaryBreakup = new CompleteSalaryBreakup();
-            if (EmployeeId <= 0)
+            if (EmployeeId < 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
             if (CTCAnnually <= 0)
