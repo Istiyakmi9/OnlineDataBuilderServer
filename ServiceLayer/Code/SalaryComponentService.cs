@@ -557,9 +557,9 @@ namespace ServiceLayer.Code
             return completeSalaryBreakup;
         }
 
-        public SalaryBreakup GetSalaryBreakupByEmpIdService(long EmployeeId)
+        public EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId)
         {
-            SalaryBreakup completeSalaryBreakup = _db.Get<SalaryBreakup>("sp_employee_salary_detail_get_by_empid", new { EmployeeId });
+            EmployeeSalaryDetail completeSalaryBreakup = _db.Get<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId });
             return completeSalaryBreakup;
         }
 
