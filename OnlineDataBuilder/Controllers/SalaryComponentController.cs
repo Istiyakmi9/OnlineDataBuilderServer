@@ -88,7 +88,7 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = _salaryComponentService.AddUpdateRecurringComponents(salaryStructure);
             return BuildResponse(result);
-         }
+        }
 
         [HttpPost("AddAdhocComponents")]
         public IResponse<ApiResponse> AddAdhocComponents(SalaryStructure salaryStructure)
@@ -137,6 +137,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> SalaryBreakupCalc(long EmployeeId, int SalaryGroupId, [FromBody] int CTCAnnually)
         {
             var result = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, SalaryGroupId, CTCAnnually);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetSalaryBreakupByEmpId/{EmployeeId}")]
+        public IResponse<ApiResponse> GetSalaryBreakupByEmpId(long EmployeeId)
+        {
+            var result = _salaryComponentService.GetSalaryBreakupByEmpIdService(EmployeeId);
             return BuildResponse(result);
         }
     }
