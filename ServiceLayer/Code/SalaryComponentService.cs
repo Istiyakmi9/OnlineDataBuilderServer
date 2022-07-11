@@ -366,7 +366,7 @@ namespace ServiceLayer.Code
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
             {
-                if ((salaryGroup.MinAmount > existSalaryGroup.MinAmount && salaryGroup.MinAmount < existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
+                if ((salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
                     throw new HiringBellException("Salary group limit already exist");
             }
             if (salaryGrp == null)
@@ -480,7 +480,7 @@ namespace ServiceLayer.Code
         public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
         {
             CompleteSalaryBreakup completeSalaryBreakup = new CompleteSalaryBreakup();
-            if (EmployeeId <= 0)
+            if (EmployeeId < 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
             if (CTCAnnually <= 0)
@@ -493,23 +493,23 @@ namespace ServiceLayer.Code
             {
                 switch (component.ComponentId.ToUpper())
                 {
-                    case "GR":
-                        completeSalaryBreakup.GratuityAnnually = component.MaxLimit;
+                    case "GRA":
+                        completeSalaryBreakup.GratuityAnnually = component.DeclaredValue;
                         break;
                     case "CA":
-                        completeSalaryBreakup.ConveyanceAnnually = component.MaxLimit;
+                        completeSalaryBreakup.ConveyanceAnnually = component.DeclaredValue;
                         break;
                     case "EPER-PF":
-                        completeSalaryBreakup.PFAnnually = component.MaxLimit;
+                        completeSalaryBreakup.PFAnnually = component.DeclaredValue;
                         break;
                     case "MA":
-                        completeSalaryBreakup.MedicalAnnually = component.MaxLimit;
+                        completeSalaryBreakup.MedicalAnnually = component.DeclaredValue;
                         break;
                     case "SA":
-                        completeSalaryBreakup.ShiftAnnually = component.MaxLimit;
+                        completeSalaryBreakup.ShiftAnnually = component.DeclaredValue;
                         break;
                     case "ECI":
-                        completeSalaryBreakup.InsuranceAnnually = component.MaxLimit;
+                        completeSalaryBreakup.InsuranceAnnually = component.DeclaredValue;
                         break;
                 }
             }

@@ -174,8 +174,8 @@ namespace ServiceLayer.Code
                 salaryBreakup = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[1]);
                 if (salaryBreakup == null)
                     throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
-
-                salaryBreakup.CTC = employeeDeclaration.SalaryDetail.CTC;
+                if (employeeDeclaration.SalaryDetail != null)
+                    salaryBreakup.CTC = employeeDeclaration.SalaryDetail.CTC;
             }
             else
             {
