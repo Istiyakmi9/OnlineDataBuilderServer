@@ -355,7 +355,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             List<T> data = new List<T>();
-            var properties = typeof(T).GetProperties().ToList();
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
 
             List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
             if (result != null)

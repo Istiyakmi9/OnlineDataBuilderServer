@@ -126,7 +126,7 @@ namespace OnlineDataBuilder.Controllers
             if (compSalaryDetail.Count > 0 && salaryDetail.Count > 0)
             {
                 var fullSalaryDetail = JsonConvert.DeserializeObject<CompleteSalaryBreakup>(compSalaryDetail);
-                var SalaryDetail = JsonConvert.DeserializeObject<SalaryBreakup>(salaryDetail);
+                var SalaryDetail = JsonConvert.DeserializeObject<EmployeeSalaryDetail>(salaryDetail);
                 var result = _salaryComponentService.SalaryDetailService(EmployeeId, SalaryDetail, fullSalaryDetail);
                 return BuildResponse(result);
             }
@@ -136,7 +136,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("SalaryBreakupCalc/{EmployeeId}/{SalaryGroupId}")]
         public IResponse<ApiResponse> SalaryBreakupCalc(long EmployeeId, int SalaryGroupId, [FromBody] int CTCAnnually)
         {
-            var result = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, SalaryGroupId, CTCAnnually);
+            var result = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, CTCAnnually);
             return BuildResponse(result);
         }
     }

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using ModalLayer.Modal.Accounts;
+using System;
 
 namespace ModalLayer.Modal
 {
-    public class AssignedClients
+    public class AssignedClients : EmployeeSalaryDetail
     {
         public long EmployeeUid { set; get; }
         public long ReportingManagerId { set; get; }

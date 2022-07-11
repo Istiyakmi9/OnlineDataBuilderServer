@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal.Accounts;
-using System;
 using System.Collections.Generic;
-using System.Data;
 
 namespace ServiceLayer.Interface
 {
@@ -19,7 +17,7 @@ namespace ServiceLayer.Interface
         Payroll GetPayrollSetting(int companyId);
         string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure);
         List<SalaryComponents> ActivateCurrentComponentService(List<SalaryComponents> components);
-        string UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
+        string UpdateGroupSalaryComponentDetailService(string componentId, int groupId,SalaryComponents component);
         List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component);
         List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);
         List<SalaryComponents> FetchActiveComponentService();

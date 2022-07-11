@@ -198,13 +198,15 @@ namespace ServiceLayer.Code
                 if ((salaryGroup.MinAmount > existSalaryGroup.MinAmount && salaryGroup.MinAmount < existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
                     throw new HiringBellException("Salary group limit already exist");
             }
+
+            List<SalaryComponents> initialSalaryComponents = _db.GetList<SalaryComponents>("sp_salary_group_get_initial_components");
+
             if (salaryGrp == null)
             {
                 salaryGrp = salaryGroup;
-                salaryGrp.ComponentId = "[]";
+                salaryGrp.SalaryComponents = JsonConvert.SerializeObject(initialSalaryComponents);
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
-
             else
                 throw new HiringBellException("Salary Group already exist.");
 
@@ -372,10 +374,10 @@ namespace ServiceLayer.Code
             else
             {
                 salaryGrp = salaryGroup;
-                if (string.IsNullOrEmpty(salaryGrp.ComponentId))
-                    salaryGrp.ComponentId = "[]";
+                if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
+                    salaryGrp.SalaryComponents = "[]";
                 else
-                    salaryGrp.ComponentId = JsonConvert.SerializeObject(salaryGroup.ComponentIdList);
+                    salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
@@ -394,10 +396,10 @@ namespace ServiceLayer.Code
             else
             {
                 salaryGrp = salaryGroup;
-                if (salaryGrp.ComponentIdList == null)
-                    salaryGrp.ComponentId = "[]";
+                if (salaryGrp.GroupComponents == null)
+                    salaryGrp.SalaryComponents = "[]";
                 else
-                    salaryGrp.ComponentId = JsonConvert.SerializeObject(salaryGroup.ComponentIdList);
+                    salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
@@ -410,29 +412,30 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId)
         {
-            List<SalaryComponents> components = null;
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(salaryGroupId, typeof(int), "_SalaryGroupId")
-            };
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = salaryGroupId });
+            if (salaryGroup == null)
+                throw new HiringBellException("Unable to get salary group. Please contact admin");
 
-            var dataSet = _db.GetDataset("sp_salary_group_get_components", param);
-            if (dataSet != null && dataSet.Tables.Count > 0)
-            {
-                components = BottomhalfCore.Services.Code.Converter.ToList<SalaryComponents>(dataSet.Tables[0]);
-            }
-
-            if (components == null)
-                throw new HiringBellException("Unable to get salary component of this group. Please contact admin");
-            return components;
+            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+            return salaryGroup.GroupComponents;
         }
 
-        public string SalaryDetailService(long EmployeeId, SalaryBreakup salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail)
+        public List<SalaryComponents> GetSalaryGroupComponentsByCTC(decimal CTC)
         {
-            SalaryBreakup salaryBreakup = new SalaryBreakup();
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC });
+            if (salaryGroup == null)
+                throw new HiringBellException("Unable to get salary group. Please contact admin");
+
+            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+            return salaryGroup.GroupComponents;
+        }
+
+        public string SalaryDetailService(long EmployeeId, EmployeeSalaryDetail salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail)
+        {
+            EmployeeSalaryDetail salaryBreakup = new EmployeeSalaryDetail();
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
-            List<SalaryBreakup> allSalaryBreakups = _db.GetList<SalaryBreakup>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
+            List<EmployeeSalaryDetail> allSalaryBreakups = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
             if (salaryBreakup == null)
             {
                 salaryBreakup = salaryDetail;
@@ -446,9 +449,8 @@ namespace ServiceLayer.Code
                 salaryBreakup.GroupId = salaryDetail.GroupId;
                 salaryBreakup.NetSalary = salaryDetail.NetSalary;
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
-                salaryBreakup.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
-            var result = _db.Execute<SalaryBreakup>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
+            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
             else
@@ -456,49 +458,48 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public void CalculateBreakup(long employeeId, CompleteSalaryBreakup complcompSalaryDetail)
-        {
-            EmployeeDeclaration employeeDeclaration = default;
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(employeeId, typeof(long), "_EmployeeId"),
-                new DbParam(UserType.Compnay, typeof(int), "_UserTypeId")
-            };
+        //public void CalculateBreakup(long employeeId, CompleteSalaryBreakup complcompSalaryDetail)
+        //{
+        //    EmployeeDeclaration employeeDeclaration = default;
+        //    DbParam[] param = new DbParam[]
+        //    {
+        //        new DbParam(employeeId, typeof(long), "_EmployeeId"),
+        //        new DbParam(UserType.Compnay, typeof(int), "_UserTypeId")
+        //    };
 
-            DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
-            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
-                throw new HiringBellException("Unable to get the detail");
+        //    DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
+        //    if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
+        //        throw new HiringBellException("Unable to get the detail");
 
-            employeeDeclaration = BottomhalfCore.Services.Code.Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+        //    employeeDeclaration = BottomhalfCore.Services.Code.Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
 
-            if (resultSet.Tables[2].Rows.Count == 1)
-                employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
-        }
+        //    if (resultSet.Tables[2].Rows.Count == 1)
+        //        employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
+        //}
 
-        public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, int SalaryGroupId, int CTCAnnually)
+        public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
         {
             CompleteSalaryBreakup completeSalaryBreakup = new CompleteSalaryBreakup();
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
-            if (SalaryGroupId <= 0)
-                throw new HiringBellException("Invalid SalaryGroupId");
+
             if (CTCAnnually <= 0)
                 throw new HiringBellException("Invalid CTCAnnually");
 
-            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponents(SalaryGroupId);
+            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
             List<SalaryComponents> fixedComponents = salaryComponents.FindAll(x => x.PercentageValue == 0);
             completeSalaryBreakup.CTCAnnually = CTCAnnually;
             foreach (SalaryComponents component in fixedComponents)
             {
                 switch (component.ComponentId.ToUpper())
                 {
-                    case "ECTG":
+                    case "GR":
                         completeSalaryBreakup.GratuityAnnually = component.MaxLimit;
                         break;
                     case "CA":
                         completeSalaryBreakup.ConveyanceAnnually = component.MaxLimit;
                         break;
-                    case "EPF":
+                    case "EPER-PF":
                         completeSalaryBreakup.PFAnnually = component.MaxLimit;
                         break;
                     case "MA":
@@ -507,7 +508,7 @@ namespace ServiceLayer.Code
                     case "SA":
                         completeSalaryBreakup.ShiftAnnually = component.MaxLimit;
                         break;
-                    case "ESI":
+                    case "ECI":
                         completeSalaryBreakup.InsuranceAnnually = component.MaxLimit;
                         break;
                 }
@@ -526,15 +527,15 @@ namespace ServiceLayer.Code
                 {
                     if (formula.Contains("[BASIC]"))
                     {
-                        formula = formula.Replace("[BASIC]", (completeSalaryBreakup.BasicAnnually).ToString());
+                        formula = formula.Replace("[BASIC]", (Convert.ToInt32(completeSalaryBreakup.BasicAnnually)).ToString());
                     }
                     else if (formula.Contains("[CTC]"))
                     {
-                        formula = formula.Replace("[CTC]", (completeSalaryBreakup.CTCAnnually).ToString());
+                        formula = formula.Replace("[CTC]", (Convert.ToInt32(completeSalaryBreakup.CTCAnnually)).ToString());
                     }
                     else if (formula.Contains("[GROSS]"))
                     {
-                        formula = formula.Replace("[GROSS]", (completeSalaryBreakup.GrossAnnually).ToString());
+                        formula = formula.Replace("[GROSS]", (Convert.ToInt32(completeSalaryBreakup.GrossAnnually)).ToString());
                     }
                     if (formula.Contains('+') || formula.Contains('-') || formula.Contains('*') || formula.Contains('/') || formula.Contains('%'))
                     {
@@ -602,7 +603,7 @@ namespace ServiceLayer.Code
                             while (true)
                             {
                                 lastOp = operatorStact[operatorStact.Count - 1];
-                                operatorStact.RemoveAt(operatorStact.Count-1);
+                                operatorStact.RemoveAt(operatorStact.Count - 1);
                                 if (lastOp == "(")
                                 {
                                     break;
@@ -654,7 +655,7 @@ namespace ServiceLayer.Code
             int number;
             while (i < expressionStact.Count)
             {
-                if (int.TryParse(expressionStact[i].ToString(), out number) && int.TryParse(expressionStact[i+1].ToString(), out number) && !int.TryParse(expressionStact[i+2].ToString(), out number))
+                if (int.TryParse(expressionStact[i].ToString(), out number) && int.TryParse(expressionStact[i + 1].ToString(), out number) && !int.TryParse(expressionStact[i + 2].ToString(), out number))
                 {
                     int finalvalue = 0;
                     switch (expressionStact[i + 2])
@@ -730,7 +731,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                throw new HiringBellException ("Invalid expression");
+                throw new HiringBellException("Invalid expression");
             }
         }
     }
