@@ -436,7 +436,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
             List<EmployeeSalaryDetail> allSalaryBreakups = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
-            if (salaryBreakup == null)
+            if (allSalaryBreakups == null)
             {
                 salaryBreakup = salaryDetail;
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
@@ -450,7 +450,7 @@ namespace ServiceLayer.Code
                 salaryBreakup.NetSalary = salaryDetail.NetSalary;
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
             }
-            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
+            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
             else
