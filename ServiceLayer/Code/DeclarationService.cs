@@ -227,8 +227,8 @@ namespace ServiceLayer.Code
             salaryBreakup.GrossIncome = completeSalaryBreakup.GrossAnnually;
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakup);
             employeeDeclaration.SalaryDetail = salaryBreakup;
-            employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction);
-            employeeDeclaration.TaxNeedToPay = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount);
+            employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
+            employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount)));
 
             bool IsBuildTaxDetail = false;
             List<TaxDetails> taxdetails = null;
@@ -240,13 +240,13 @@ namespace ServiceLayer.Code
                 {
                     decimal previousMonthTax = 0;
                     int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
-                    employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("0:0.00",(taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k))));
+                    employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("{0:0.00}",taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k)));
                     int currentMonthIndex = i;
                     if (currentMonthIndex > 0)
                     {
                         previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
                     }
-                    decimal currentMonthTax = Convert.ToDecimal(string.Format("0:0.00",((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12-i))));
+                    decimal currentMonthTax = Convert.ToDecimal(string.Format("{0:0.00}",((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12-i))));
                     while (i < taxdetails.Count)
                     {
                         //if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
