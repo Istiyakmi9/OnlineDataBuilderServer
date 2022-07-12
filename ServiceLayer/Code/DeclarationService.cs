@@ -240,25 +240,27 @@ namespace ServiceLayer.Code
                 {
                     decimal previousMonthTax = 0;
                     int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
+                    employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("0:0.00",(taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k))));
                     int currentMonthIndex = i;
                     if (currentMonthIndex > 0)
                     {
                         previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
                     }
+                    decimal currentMonthTax = Convert.ToDecimal(string.Format("0:0.00",((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12-i))));
                     while (i < taxdetails.Count)
                     {
-                        decimal currentMonthTax = (employeeDeclaration.TaxNeedToPay / 12);
-                        if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
-                        {
-                            taxdetails[i].TaxDeducted = currentMonthTax - (previousMonthTax - currentMonthTax);
-                        }
-                        else
+                        //if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
+                        //{
+                        //    var extraPaid = Math.Round((previousMonthTax * i), 2) - (currentMonthTax*2);
+                        //    currentMonthTax = Math.Round((employeeDeclaration.TaxNeedToPay - extraPaid)/(12-i), 2);
+                        //    taxdetails[i].TaxDeducted = currentMonthTax;
+                        //}
+                        //else
                             taxdetails[i].TaxDeducted = currentMonthTax;
 
                         i++;
                     }
 
-                    employeeDeclaration.TaxPaid = taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k);
                 }
                 else
                 {
@@ -315,7 +317,7 @@ namespace ServiceLayer.Code
                             Declarations = employeeDeclaration.ExemptionDeclaration.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
                             AcceptedAmount = employeeDeclaration.ExemptionDeclaration.Sum(a => a.AcceptedAmount),
                             RejectedAmount = employeeDeclaration.ExemptionDeclaration.Sum(a => a.RejectedAmount),
-                            TotalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue)
+                            TotalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue),
                         });
                         break;
                     case "OtherDeclaration":
