@@ -137,7 +137,7 @@ namespace ServiceLayer.Code
         public dynamic GetAttendamceById(AttendenceDetail attendenceDetail)
         {
             List<DateTime> missingDayList = new List<DateTime>();
-            var attendenceList = new List<AttendenceDetail>();
+            List<AttendenceDetail> attendenceList = null;
 
             DbParam[] dbParams = new DbParam[]
             {
@@ -148,10 +148,20 @@ namespace ServiceLayer.Code
             };
 
             var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
-            if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
+            if (result.Tables.Count == 1)
             {
-                var currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
-                attendenceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
+                Attendance currentAttendence = null;
+                if (result.Tables[0].Rows.Count > 0)
+                {
+                    currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
+                    attendenceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
+                }
+                else
+                {
+                    attendenceList = new List<AttendenceDetail>();
+                    currentAttendence = new Attendance { ForMonth = attendenceDetail.ForMonth, ForYear = attendenceDetail.ForYear };
+                }
+
                 attendenceList.OrderBy(DateTime => DateTime);
                 int days = DateTime.DaysInMonth(currentAttendence.ForYear, currentAttendence.ForMonth);
                 int i = 1;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModalLayer.Modal.Accounts
+﻿namespace ModalLayer.Modal.Accounts
 {
     public class TaxDetails
     {
@@ -10,5 +6,6 @@ namespace ModalLayer.Modal.Accounts
         public int Year { get; set; }
         public int Month { get; set; }
         public decimal TaxDeducted { get; set; }
+        public decimal TaxPaid { get; set; }
     }
 }
