@@ -505,6 +505,8 @@ namespace ServiceLayer.Code
                     }
                 });
 
+                this.AddorRemoveListSalaryComponentfromSalaryGroup(components);
+
                 var updateComponents = (from n in salaryComponent
                                         select new
                                         {
@@ -550,6 +552,57 @@ namespace ServiceLayer.Code
             return salaryComponent;
         }
 
+        private void AddorRemoveListSalaryComponentfromSalaryGroup(List<SalaryComponents> components)
+        {
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
+            if (salaryGroups.Count > 0)
+            {
+                List<SalaryComponents> salaryComponents = null;
+                foreach (SalaryGroup salaryGroup in salaryGroups)
+                {
+                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+                    Parallel.For(0, components.Count, i =>
+                    {
+                        if (components[i].IncludeInPayslip == true)
+                            salaryComponents.Add(components[i]);
+                        else
+                            salaryComponents.RemoveAll(x => x.ComponentId == components[i].ComponentId);
+
+                    });
+                    salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
+                }
+                DataTable table = Converter.ToDataTable(salaryGroups);
+                int statue = _db.BatchInsert("sp_salary_group_insupd", table, true);
+                if (statue <= 0)
+                    throw new HiringBellException("Unable to update detail");
+            }
+        }
+
+        private int AddorRemoveSalaryComponentfromSalaryGroup(SalaryComponents components)
+        {
+            int status = 0;
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
+            if (salaryGroups.Count > 0)
+            {
+                List<SalaryComponents> salaryComponents = null;
+                foreach (SalaryGroup salaryGroup in salaryGroups)
+                {
+                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+                        if (components.IncludeInPayslip == true)
+                            salaryComponents.Add(components);
+                        else
+                            salaryComponents.RemoveAll(x => x.ComponentId == components.ComponentId);
+
+                    salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
+                }
+                DataTable table = Converter.ToDataTable(salaryGroups);
+                status = _db.BatchInsert("sp_salary_group_insupd", table, true);
+                if (status <= 0)
+                    throw new HiringBellException("Unable to update detail");
+            }
+            return status;
+        }
+
         public List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component)
         {
             List<SalaryComponents> salaryComponents = null;
@@ -563,15 +616,27 @@ namespace ServiceLayer.Code
                 salaryComponent.CalculateInPercentage = component.CalculateInPercentage;
                 salaryComponent.TaxExempt = component.TaxExempt;
 
-                if (component.CalculateInPercentage)
+                if (component.Formula.Contains('%'))
                 {
-                    salaryComponent.PercentageValue = component.MaxLimit;
+                    int result = 0;
+                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
+                     .TakeWhile(x => char.IsDigit(x))
+                     .ToArray()), out result);
+                    salaryComponent.PercentageValue = result;
                     salaryComponent.MaxLimit = 0;
+                    salaryComponent.DeclaredValue = 0;
+                    salaryComponent.CalculateInPercentage = true;
                 }
                 else
                 {
-                    salaryComponent.MaxLimit = component.MaxLimit;
+                    int result = 0;
+                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
+                     .TakeWhile(x => char.IsDigit(x))
+                     .ToArray()), out result);
+                    salaryComponent.DeclaredValue = result;
+                    salaryComponent.MaxLimit = 0;
                     salaryComponent.PercentageValue = 0;
+                    salaryComponent.CalculateInPercentage = false;
                 }
 
                 salaryComponent.IsActive = component.IsActive;
@@ -612,6 +677,10 @@ namespace ServiceLayer.Code
 
                 if (!ApplicationConstants.IsExecuted(status))
                     throw new HiringBellException("Fail to update the record.");
+
+                int returnstatus = this.AddorRemoveSalaryComponentfromSalaryGroup(component);
+                if (returnstatus <= 0)
+                    throw new HiringBellException("Unable to update detail");
 
                 salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = 0 });
                 if (salaryComponents == null)

@@ -11,5 +11,6 @@ namespace ModalLayer.Modal.Accounts
         public string GroupDescription { get; set; }
         public decimal MinAmount { set; get; }
         public decimal MaxAmount { set; get; }
+        public decimal? CTC { get; set; }
     }
 }
