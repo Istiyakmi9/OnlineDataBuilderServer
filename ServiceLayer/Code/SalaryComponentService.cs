@@ -366,7 +366,7 @@ namespace ServiceLayer.Code
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
             {
-                if ((salaryGroup.MinAmount > existSalaryGroup.MinAmount && salaryGroup.MinAmount < existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
+                if ((salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
                     throw new HiringBellException("Salary group limit already exist");
             }
             if (salaryGrp == null)
@@ -436,7 +436,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
             List<EmployeeSalaryDetail> allSalaryBreakups = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
-            if (salaryBreakup == null)
+            if (allSalaryBreakups == null)
             {
                 salaryBreakup = salaryDetail;
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
@@ -450,7 +450,7 @@ namespace ServiceLayer.Code
                 salaryBreakup.NetSalary = salaryDetail.NetSalary;
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
             }
-            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, false);
+            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
             else
@@ -493,23 +493,23 @@ namespace ServiceLayer.Code
             {
                 switch (component.ComponentId.ToUpper())
                 {
-                    case "GR":
-                        completeSalaryBreakup.GratuityAnnually = component.MaxLimit;
+                    case "GRA":
+                        completeSalaryBreakup.GratuityAnnually = component.DeclaredValue;
                         break;
                     case "CA":
-                        completeSalaryBreakup.ConveyanceAnnually = component.MaxLimit;
+                        completeSalaryBreakup.ConveyanceAnnually = component.DeclaredValue;
                         break;
                     case "EPER-PF":
-                        completeSalaryBreakup.PFAnnually = component.MaxLimit;
+                        completeSalaryBreakup.PFAnnually = component.DeclaredValue;
                         break;
                     case "MA":
-                        completeSalaryBreakup.MedicalAnnually = component.MaxLimit;
+                        completeSalaryBreakup.MedicalAnnually = component.DeclaredValue;
                         break;
                     case "SA":
-                        completeSalaryBreakup.ShiftAnnually = component.MaxLimit;
+                        completeSalaryBreakup.ShiftAnnually = component.DeclaredValue;
                         break;
                     case "ECI":
-                        completeSalaryBreakup.InsuranceAnnually = component.MaxLimit;
+                        completeSalaryBreakup.InsuranceAnnually = component.DeclaredValue;
                         break;
                 }
             }
