@@ -493,7 +493,30 @@ namespace ServiceLayer.Code
 
                     if (attendanceOn == null)
                     {
-                        throw new HiringBellException("Not ablt to submit attendance.");
+                        attendanceOn = new AttendenceDetail
+                        {
+                            AttendanceDay = commentDetails.AttendanceDay,
+                            PresentDayStatus = (int)ItemStatus.Pending,
+                            AttendanceId = 0,
+                            AttendenceFromDay = commentDetails.AttendenceToDay,
+                            AttendenceStatus = (int)ItemStatus.Pending,
+                            AttendenceToDay = commentDetails.AttendenceToDay,
+                            BillingHours = 9 * 5,
+                            EmployeeUid = commentDetails.EmployeeUid,
+                            ForMonth = commentDetails.ForMonth,
+                            ForYear = commentDetails.ForYear,
+                            IsActiveDay = true,
+                            IsHoliday = false,
+                            IsOnLeave = false,
+                            IsOpen = false,
+                            SubmittedBy = _currentSession.CurrentUserDetail.UserId,
+                            SubmittedOn = DateTime.Now,
+                            UserComments = commentDetails.UserComments,
+                            UserId = commentDetails.EmployeeUid,
+                            UserTypeId = (int)UserType.Employee
+                        };
+
+                        attendanceList.Add(attendanceOn);
                     }
                     else
                     {

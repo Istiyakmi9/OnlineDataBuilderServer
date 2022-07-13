@@ -119,6 +119,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IAttendanceService, AttendanceService>();
             services.AddScoped<ICommonService, CommonService>();
             services.AddScoped<IHTMLConverter, HTMLConverter>();
+            services.AddScoped<ITemplateService, TemplateService>();
             services.AddScoped<HtmlConverterService>();
             services.AddScoped<IDOCXToHTMLConverter, DOCXToHTMLConverter>();
             services.AddScoped<ExcelWriter>();

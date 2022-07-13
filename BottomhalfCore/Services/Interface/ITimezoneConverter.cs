@@ -5,6 +5,7 @@ namespace BottomhalfCore.Services.Interface
     public interface ITimezoneConverter
     {
         DateTime ToUtcTime(DateTime now);
+        DateTime UpdateToUTCTimeZoneOnly(DateTime now);
         DateTime ToIstTime(DateTime now);
         DateTime ZeroTime(DateTime now);
         DateTime IstZeroTime(DateTime now);

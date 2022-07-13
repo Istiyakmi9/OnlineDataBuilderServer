@@ -11,6 +11,12 @@ namespace BottomhalfCore.Services.Code
             return TimeZoneInfo.ConvertTimeToUtc(now);
         }
 
+        public DateTime UpdateToUTCTimeZoneOnly(DateTime now)
+        {
+            DateTime utcNow = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, now.Millisecond, DateTimeKind.Utc);
+            return utcNow;
+        }
+
         public DateTime ToIstTime(DateTime now)
         {
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
