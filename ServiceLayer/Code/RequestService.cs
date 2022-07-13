@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -7,38 +8,36 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
     public class RequestService : IRequestService
     {
         private readonly IDb _db;
+        private readonly ITimezoneConverter _timezoneConverter;
 
-        public RequestService(IDb db)
+        public RequestService(IDb db, ITimezoneConverter timezoneConverter)
         {
             _db = db;
+            _timezoneConverter = timezoneConverter;
         }
 
         public List<ApprovalRequest> FetchPendingRequestService(int employeeId, int requestTypeId)
         {
-            List<ApprovalRequest> result = null;
-
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            if (employeeId == 0)
-                employeeId = 0;
-
-            DbParam[] param = new DbParam[]
+            List<ApprovalRequest> result = _db.GetList<ApprovalRequest>("sp_attendance_get_pending_requests", new { ManagerId = employeeId, StatusId = requestTypeId });
+            if (result != null && result.Count > 0)
             {
-                new DbParam(employeeId, typeof(long), "_ManagerId"),
-                new DbParam(requestTypeId, typeof(int), "_StatusId")
-            };
-
-            var data = _db.GetDataset("sp_attendance_get_pending_requests", param);
-            if (data == null || data.Tables.Count == 0)
-                throw new HiringBellException("Unable to get records.");
-            result = Converter.ToList<ApprovalRequest>(data.Tables[0]);
+                int i = 0;
+                Parallel.For(i, result.Count, x =>
+                {
+                    result.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(result.ElementAt(i).FromDate);
+                    result.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(result.ElementAt(i).ToDate);
+                });
+            }
             return result;
         }
 

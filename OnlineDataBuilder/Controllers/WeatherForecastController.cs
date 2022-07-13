@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using EMailService.Service;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,7 @@ namespace OnlineDataBuilder.Controllers
         //private readonly IEMailManager _eMailManager;
         private readonly ILogger<WeatherForecastController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IEMailManager eMailManager)
         {
             _logger = logger;
         }
@@ -31,8 +32,6 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            // _billService.GenerateDocument(null);
-            // SendMail();
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -41,37 +40,6 @@ namespace OnlineDataBuilder.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)]
             })
             .ToArray();
-        }
-
-        private void SendMail()
-        {
-            try
-            {
-                MailMessage msgs = new MailMessage();
-                msgs.To.Add("istiyaq.4game@gmail.com");
-                MailAddress address = new MailAddress("info@bottomhalf.in");
-                msgs.From = address;
-                msgs.Subject = "Contact";
-                string htmlBody = @"<!DOCTYPE html>
-                    <html>            
-                    <head>
-                    <title> Email </title> 
-                        </ head> 
-                            <body>            
-                                <h1> Hi welcome </h1> 
-                                <p> Thank you for register </p> 
-                            </body> 
-                        </html>";
-                msgs.Body = htmlBody;
-                msgs.IsBodyHtml = true;
-                SmtpClient client = new SmtpClient();
-                client.Host = "relay-hosting.secureserver.net";
-                client.Port = 25;
-                client.UseDefaultCredentials = false;
-                client.Credentials = new System.Net.NetworkCredential("info@bottomhalf.in", "bottomhalf@mi9");
-                client.Send(msgs);
-            }
-            catch (Exception ex) { }
         }
     }
 }
