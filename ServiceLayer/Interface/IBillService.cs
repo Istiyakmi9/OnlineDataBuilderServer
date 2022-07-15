@@ -10,5 +10,6 @@ namespace ServiceLayer.Interface
         string UpdateGstStatus(GstStatusModel createPageModel, IFormFileCollection FileCollection, List<Files> fileDetail);
         FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfmodal);
         FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfmodal, Organization organization, Organization receiverOrganization);
+        string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail);
     }
 }

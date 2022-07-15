@@ -1,63 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ModalLayer.Modal;
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
 
 namespace EMailService.Service
 {
     public class EMailManager : IEMailManager
     {
-        public bool Send()
+        private readonly FileLocationDetail _fileLocationDetail;
+
+        public EMailManager(FileLocationDetail fileLocationDetail)
         {
-            bool flag = false;
-            try
-            {
-                MailMessage msgs = new MailMessage();
-                msgs.To.Add("istiyaq.mi9@gmail.com");
-                MailAddress address = new MailAddress("info@bottomhalf.in");
-                msgs.From = address;
-                msgs.Subject = "Testing";
-                string htmlBody = @"< !DOCTYPE html >            
-                    <html>
-                        <head>
-                            <title>Email</title> 
-                         </head> 
-                         <body>
-                            <h1> Hi welcome </h1> 
-                            <p> Thank you for register</p> 
-                        </body> 
-                    </html>";
-                msgs.Body = htmlBody;
-                msgs.IsBodyHtml = true;
-                SmtpClient client = new SmtpClient();
-                client.Host = "relay-hosting.secureserver.net";
-                client.Port = 25;
-                client.EnableSsl = false;
-                client.UseDefaultCredentials = true;
-                client.Credentials = new System.Net.NetworkCredential("info@bottomhalf.in", "bottomhalf@mi9");
-                client.Send(msgs);
-                return flag;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            _fileLocationDetail = fileLocationDetail;
         }
 
-        public void SendMail(string emailId, string userName, string subject, string body)
+        public string SendMail(EmailSenderModal emailSenderModal)
         {
+            string status = string.Empty;
+            emailSenderModal.CC.Add("marghub12@gmail.com");
+            emailSenderModal.CC.Add("marghub12@rediffmail.com");
+            emailSenderModal.BCC.Add("marghub.rahman96@gmail.com");
+            emailSenderModal.BCC.Add("marghub12@exdonuts.com");
             var fromEmail = new
             {
-                Id = "info@bottomhalf.in",
+                Id = emailSenderModal.From,
                 Pwd = "bottomhalf@mi9",
                 Host = "smtpout.asia.secureserver.net",
                 Port = 587  // 25	                 
             };
 
-            var fromAddress = new MailAddress(fromEmail.Id, "Testing - godaddy ");
-            var toAddress = new MailAddress(emailId, userName);
+            var fromAddress = new MailAddress(fromEmail.Id, emailSenderModal.Title);
+            var toAddress = new MailAddress(emailSenderModal.To, emailSenderModal.UserName);
 
             var smtp = new SmtpClient
             {
@@ -70,25 +44,36 @@ namespace EMailService.Service
             };
             using (var message = new MailMessage(fromAddress, toAddress)
             {
-                Subject = subject,
+                Subject = emailSenderModal.Title,
                 Body = this.GetClientBillingBody(),
                 IsBodyHtml = true
             })
+            {
+                foreach (var emailAddress in emailSenderModal.CC)
+                    message.CC.Add(emailAddress);
+
+                foreach (var emailAddress in emailSenderModal.BCC)
+                    message.Bcc.Add(emailAddress);
 
                 try
                 {
-                    using (FileStream stream = new FileStream(@"C:\Users\istiy\Downloads\Appointment_Letter.pdf", FileMode.Open))
+                    foreach (var files in emailSenderModal.FileDetails)
                     {
-                        Attachment attachment = new Attachment(stream, "Letter_Of_Appointment.pdf");
-                        message.Attachments.Add(attachment);
-                        smtp.Send(message);
+                        message.Attachments.Add(
+                            new Attachment(Path.Combine(_fileLocationDetail.RootPath, files.FilePath, files.FileName + ".pdf"))
+                        );
                     }
+
+                    smtp.Send(message);
+                    status = "success";
                 }
                 catch (Exception ex)
                 {
                     var _e = ex;
                     throw;
                 }
+            }
+            return status;
         }
 
         private string GetClientBillingBody()
@@ -102,8 +87,8 @@ namespace EMailService.Service
                             <h4>Hi Sir/Madam, </h4> 
                             <p>PFA bill for the month of July.</p> 
                             <p>Developer detail as follows:</p>
-                            <span style='margin-left:10px;'>1. FAHIM SHAIKH  [ROLE: SOFTWARE DEVELOPER]</span> 
-                            <span style='margin-left:10px;'>2. VANHAR BASHA  [ROLE: SOFTWARE DEVELOPER]</span> 
+                            <div style='margin-left:10px;'>1. FAHIM SHAIKH  [ROLE: SOFTWARE DEVELOPER]</div> 
+                            <div style='margin-left:10px;'>2. VANHAR BASHA  [ROLE: SOFTWARE DEVELOPER]</div> 
                             
                             <p style='margin-top: 2rem;'>Thanks & Regards,</p>
                             <div>Team BottomHalf</div>

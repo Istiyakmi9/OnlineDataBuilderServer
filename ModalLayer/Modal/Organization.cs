@@ -14,6 +14,10 @@ namespace ModalLayer.Modal
         public string PrimaryPhoneNo { set; get; }
         public string SecondaryPhoneNo { set; get; }
         public string Email { set; get; }
+        public string OtherEmail_1 { set; get; }
+        public string OtherEmail_2 { set; get; }
+        public string OtherEmail_3 { set; get; }
+        public string OtherEmail_4 { set; get; }
         public string Fax { set; get; }
         public string FirstAddress { set; get; }
         public string SecondAddress { set; get; }

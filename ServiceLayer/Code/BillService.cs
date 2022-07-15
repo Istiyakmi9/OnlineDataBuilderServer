@@ -3,11 +3,11 @@ using BottomhalfCore.Services.Code;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using EMailService.Service;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTagModel;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -24,7 +24,7 @@ namespace ServiceLayer.Code
     {
         private readonly IDb db;
         private readonly IFileService fileService;
-        private readonly IHTMLConverter iHTMLConverter;//
+        private readonly IHTMLConverter iHTMLConverter;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
         private readonly IFileMaker _fileMaker;
@@ -32,6 +32,7 @@ namespace ServiceLayer.Code
         private readonly ExcelWriter _excelWriter;
         private readonly IDocumentProcessing _documentProcessing;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
+        private readonly IEMailManager _eMailManager;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
@@ -41,10 +42,12 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             ExcelWriter excelWriter,
             HtmlToPdfConverter htmlToPdfConverter,
+            IEMailManager eMailManager,
             IFileMaker fileMaker)
         {
             this.db = db;
             _logger = logger;
+            _eMailManager = eMailManager;
             _htmlToPdfConverter = htmlToPdfConverter;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
@@ -601,6 +604,59 @@ namespace ServiceLayer.Code
             };
 
             result = this.db.ExecuteNonQuery("sp_gstdetail_insupd", dbParams, true);
+            return result;
+        }
+
+        public string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail)
+        {
+            string result = null;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(generateBillFileDetail.SenderId, typeof(long), "_SenderId"),
+                new DbParam(generateBillFileDetail.ClientId, typeof(long), "_ReceiverId"),
+                new DbParam(generateBillFileDetail.FileId, typeof(long), "_FileId")
+            };
+
+            var resultSet = this.db.GetDataset("SP_ClientsAndSender_Emails_By_Id", param);
+            if (resultSet != null && resultSet.Tables.Count == 2)
+            {
+                var organizations = Converter.ToList<Organization>(resultSet.Tables[0]);
+
+                var receiver = organizations.Find(x => x.ClientId == generateBillFileDetail.ClientId);
+                var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
+                EmailSenderModal emailSenderModal = new EmailSenderModal
+                {
+                    To = "istiyaq.mi9@gmail.com", //receiver.Email,
+                    From = "info@bottomhalf.in", //sender.Email,
+                    UserName = "BottomHalf",
+                    CC = new List<string>(),
+                    BCC = new List<string>(),
+                    Title = "STAFFING BILL FOR MONTH - JAN, 2022",
+                    Subject = "Staffing bill",
+                    FileDetails = Converter.ToList<FileDetail>(resultSet.Tables[1])
+                };
+
+                if (!string.IsNullOrEmpty(sender.OtherEmail_1))
+                    emailSenderModal.CC.Add(sender.OtherEmail_1);
+                if (!string.IsNullOrEmpty(sender.OtherEmail_2))
+                    emailSenderModal.CC.Add(sender.OtherEmail_2);
+                if (!string.IsNullOrEmpty(sender.OtherEmail_3))
+                    emailSenderModal.CC.Add(sender.OtherEmail_3);
+                if (!string.IsNullOrEmpty(sender.OtherEmail_4))
+                    emailSenderModal.CC.Add(sender.OtherEmail_4);
+
+                if (!string.IsNullOrEmpty(receiver.OtherEmail_1))
+                    emailSenderModal.CC.Add(receiver.OtherEmail_1);
+                if (!string.IsNullOrEmpty(receiver.OtherEmail_2))
+                    emailSenderModal.CC.Add(receiver.OtherEmail_2);
+                if (!string.IsNullOrEmpty(receiver.OtherEmail_3))
+                    emailSenderModal.CC.Add(receiver.OtherEmail_3);
+                if (!string.IsNullOrEmpty(receiver.OtherEmail_4))
+                    emailSenderModal.CC.Add(receiver.OtherEmail_4);
+
+               result = _eMailManager.SendMail(emailSenderModal);
+            }
+
             return result;
         }
     }

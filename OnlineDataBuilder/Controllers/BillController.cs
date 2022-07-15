@@ -42,8 +42,16 @@ namespace OnlineDataBuilder.Controllers
                     return BuildResponse(Result, HttpStatusCode.OK);
                 }
             }
-            
+
             return GenerateResponse(HttpStatusCode.BadRequest);
+        }
+
+
+        [HttpPost("SendBillToClient")]
+        public ApiResponse SendBillToClient(GenerateBillFileDetail generateBillFileDetail)
+        {
+            var Result = _billService.SendBillToClientService(generateBillFileDetail);
+            return BuildResponse(Result, HttpStatusCode.OK);
         }
     }
 }
