@@ -10,6 +10,7 @@ namespace ServiceLayer.Interface
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
         string SubmitAttendanceService(AttendenceDetail commentDetails);
+        string ApplyLeaveService(LeaveDetails leaveDetail);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
         dynamic GetAttendamceById(AttendenceDetail attendenceDetail);
     }
