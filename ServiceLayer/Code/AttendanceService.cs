@@ -607,13 +607,13 @@ namespace ServiceLayer.Code
         {
 
             CompleteLeaveDetail completeLeaveDetail = null;
-            var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new { EmployeeId = leaveDetail.EmployeeId, ForMonth=leaveDetail.ForMonth, ForYear=leaveDetail.ForYear });
+            var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new { EmployeeId = leaveDetail.EmployeeId, ForMonth = leaveDetail.ForMonth, ForYear = leaveDetail.ForYear });
             if (result != null)
             {
-                CompleteLeaveDetail leaves= JsonConvert.DeserializeObject<CompleteLeaveDetail>(result.LeaveDetail);
+                CompleteLeaveDetail leaves = JsonConvert.DeserializeObject<CompleteLeaveDetail>(result.LeaveDetail);
                 if (leaves.LeaveToDay.Equals(leaveDetail.LeaveToDay) && leaves.LeaveFromDay.Equals(leaveDetail.LeaveFromDay))
                     throw new HiringBellException("Leave allready applied.");
-            } 
+            }
             completeLeaveDetail = new CompleteLeaveDetail()
             {
                 EmployeeId = leaveDetail.EmployeeId,
@@ -624,8 +624,24 @@ namespace ServiceLayer.Code
                 LeaveToDay = leaveDetail.LeaveToDay,
                 LeaveStatus = (int)ItemStatus.Pending
             };
+
             leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
-            var value = _db.Execute<LeaveDetails>("sp_employee_leave_request_InsUpdate", leaveDetail, true);
+            var value = _db.Execute<LeaveDetails>("sp_employee_leave_request_InsUpdate", new
+            {
+                leaveDetail.EmployeeId,
+                leaveDetail.LeaveDetail,
+                leaveDetail.ForMonth,
+                leaveDetail.ForYear,
+                leaveDetail.Reason,
+                leaveDetail.UserTypeId,
+                leaveDetail.AssignTo,
+                leaveDetail.LeaveFromDay,
+                leaveDetail.LeaveToDay,
+                leaveDetail.LeaveType,
+                RequestStatusId = (int)ItemStatus.Pending,
+                leaveDetail.RequestType
+            }, true);
+
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to apply for leave. Please contact to admin.");
             return "Successfully";
