@@ -65,3 +65,10 @@ public enum ItemStatus
     Submitted = 8,
     Approved = 9
 }
+
+public enum LeaveType
+{
+    SickLeave = 1,
+    Compensatory = 2,
+    PaidLeave = 3
+}
