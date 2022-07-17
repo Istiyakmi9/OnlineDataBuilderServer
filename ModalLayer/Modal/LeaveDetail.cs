@@ -20,11 +20,12 @@ namespace ModalLayer.Modal
         public int LeaveType { get; set; }
         public int RequestType { get; set; }
         public string LeaveDetail { get; set; }
-
+        public long LeaveRequestId { set; get; }
 
     }
     public class Leave
     {
+        public long LeaveRequestId { set; get; }
         public long EmployeeId { set; get; }
         public string LeaveDetail { get; set; }
         public int ForYear { get; set; }
