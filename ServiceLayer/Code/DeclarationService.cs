@@ -94,7 +94,8 @@ namespace ServiceLayer.Code
                 EmployeeDeclarationId = declaration.EmployeeDeclarationId,
                 EmployeeId = declaration.EmployeeId,
                 DocumentPath = declarationDoc,
-                DeclarationDetail = declaration.DeclarationDetail
+                DeclarationDetail = declaration.DeclarationDetail,
+                HousingProperty = declaration.HousingProperty
             }, true);
 
             if (!ApplicationConstants.IsExecuted(result))
@@ -151,6 +152,82 @@ namespace ServiceLayer.Code
             employeeDeclaration.DeclarationDetail = null;
             employeeDeclaration.Sections = _sections;
             return employeeDeclaration;
+        }
+
+        public EmployeeDeclaration HousingPropertyDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> files)
+        {
+            EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
+            EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
+            if (declaration != null)
+            {
+                salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+                SalaryComponents salaryComponent = salaryComponents.Find(x => x.ComponentId == DeclarationDetail.ComponentId);
+                if (salaryComponent == null)
+                    throw new HiringBellException("Requested component not found. Please contact to admin.");
+                salaryComponent.DeclaredValue = DeclarationDetail.HousePropertyDetail.TotalRent;
+
+                declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
+            }
+            else
+            {
+                throw new HiringBellException("Requested component not found. Please contact to admin.");
+            }
+
+            string declarationDoc = String.Empty;
+            if (FileCollection.Count > 0)
+            {
+                var email = DeclarationDetail.Email.Replace("@", "_").Replace(".", "_");
+                declarationDoc = Path.Combine(
+                    _fileLocationDetail.UserFolder,
+                    email,
+                    "declarated_documents"
+                );
+
+                _fileService.SaveFileToLocation(declarationDoc, files, FileCollection);
+
+                var fileInfo = (from n in files
+                                select new
+                                {
+                                    FileId = n.FileUid,
+                                    FileOwnerId = (DeclarationDetail.EmployeeId),
+                                    FilePath = declarationDoc,
+                                    FileName = n.FileName,
+                                    FileExtension = n.FileExtension,
+                                    UserTypeId = (int)UserType.Compnay,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
+                                });
+
+                DataTable table = Converter.ToDataTable(fileInfo);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, false);
+                _db.Commit();
+            }
+            var housingTax = JsonConvert.SerializeObject(DeclarationDetail.HousePropertyDetail);
+            var result = _db.Execute<EmployeeDeclaration>("sp_employee_declaration_insupd", new
+            {
+                EmployeeDeclarationId = declaration.EmployeeDeclarationId,
+                EmployeeId = declaration.EmployeeId,
+                DocumentPath = declarationDoc,
+                DeclarationDetail = declaration.DeclarationDetail,
+                HousingProperty = housingTax
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(result))
+            {
+                File.Delete(declarationDoc);
+            }
+
+            empDeclaration.SalaryComponentItems = salaryComponents;
+            empDeclaration.HousingProperty = housingTax;
+            this.BuildSectionWiseComponents(empDeclaration);
+            EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(DeclarationDetail.EmployeeId, empDeclaration);
+
+            result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update salary breakup");
+
+            return empDeclaration;
         }
 
         public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
@@ -228,8 +305,9 @@ namespace ServiceLayer.Code
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakup);
             employeeDeclaration.SalaryDetail = salaryBreakup;
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
-            employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount)));
-
+            var incomeTaxDetails = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount);
+            employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
+            employeeDeclaration.IncomeTaxSlab = incomeTaxDetails.GetType().GetProperty("IncomeTaxSlab").GetValue(incomeTaxDetails, null);
             bool IsBuildTaxDetail = false;
             List<TaxDetails> taxdetails = null;
             if (salaryBreakup.TaxDetail != null)
@@ -304,7 +382,7 @@ namespace ServiceLayer.Code
 
         private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
         {
-            Parallel.ForEach(_sections, x =>
+            foreach(var x in _sections)
             {
                 switch (x.Key)
                 {
@@ -345,16 +423,17 @@ namespace ServiceLayer.Code
                         });
                         break;
                 }
-            });
+            };
 
+            var houseProperty = employeeDeclaration.SalaryComponentItems.FindAll(x => x.ComponentFullName.ToLower() == "House Property".ToLower());
             employeeDeclaration.Declarations.Add(new DeclarationReport
             {
                 DeclarationName = "House Property",
                 NumberOfProofSubmitted = 0,
                 Declarations = new List<string>(),
-                AcceptedAmount = 0,
-                RejectedAmount = 0,
-                TotalAmountDeclared = 0
+                AcceptedAmount = houseProperty.Sum(a => a.AcceptedAmount),
+                RejectedAmount = houseProperty.Sum(a => a.RejectedAmount),
+                TotalAmountDeclared = houseProperty.Sum(a => a.DeclaredValue)
             });
 
             employeeDeclaration.Declarations.Add(new DeclarationReport
@@ -368,7 +447,7 @@ namespace ServiceLayer.Code
             });
         }
 
-        private decimal OldTaxRegimeCalculation(decimal TaxableIncome)
+        private dynamic OldTaxRegimeCalculation(decimal TaxableIncome)
         {
             if (TaxableIncome <= 0)
                 throw new HiringBellException("Invalid TaxableIncome");
@@ -376,6 +455,8 @@ namespace ServiceLayer.Code
             decimal tax = 0;
             decimal value = 0;
             decimal remainingAmount = TaxableIncome;
+            var taxSlab = new Dictionary<string, decimal>();
+            taxSlab.Add("0% Tax on income up to 250000", 0);
 
             while (remainingAmount > 250000)
             {
@@ -385,6 +466,7 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 5) / 100;
+                    taxSlab.Add("5% Tax on income between 250001 and 500000", tax);
                 }
                 else if (remainingAmount > 500000 && remainingAmount <= 1000000)
                 {
@@ -392,6 +474,7 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 20) / 100;
+                    taxSlab.Add("20% Tax on income between 500001 and 1000000", tax);
                 }
                 else if (remainingAmount > 1000000)
                 {
@@ -399,11 +482,13 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 30) / 100;
+                    taxSlab.Add("30% Tax on income above 1000000", tax);
                 }
             }
 
             decimal cess = (tax * 4) / 100;
-            return (tax + cess);
+            taxSlab.Add("Gross Income Tax", tax + cess);
+            return new {TotalTax = tax+cess, IncomeTaxSlab = taxSlab };
         }
     }
 }

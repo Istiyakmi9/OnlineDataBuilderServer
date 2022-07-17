@@ -627,7 +627,7 @@ namespace ServiceLayer.Code
             leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
             var value = _db.Execute<LeaveDetails>("sp_employee_leave_request_InsUpdate", leaveDetail, true);
             if (string.IsNullOrEmpty(value))
-                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
+                throw new HiringBellException("Unable to apply for leave. Please contact to admin.");
             return "Successfully";
         }
 
