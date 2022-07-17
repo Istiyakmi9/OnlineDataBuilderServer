@@ -605,15 +605,23 @@ namespace ServiceLayer.Code
 
         public string ApplyLeaveService(LeaveDetails leaveDetail)
         {
+            if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
+                throw new HiringBellException("Invalid From and To date passed.");
 
             CompleteLeaveDetail completeLeaveDetail = null;
             var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new { EmployeeId = leaveDetail.EmployeeId, ForMonth = leaveDetail.ForMonth, ForYear = leaveDetail.ForYear });
             if (result != null)
             {
                 CompleteLeaveDetail leaves = JsonConvert.DeserializeObject<CompleteLeaveDetail>(result.LeaveDetail);
-                if (leaves.LeaveToDay.Equals(leaveDetail.LeaveToDay) && leaves.LeaveFromDay.Equals(leaveDetail.LeaveFromDay))
-                    throw new HiringBellException("Leave allready applied.");
+
+                if (leaves.LeaveToDay != null && leaves.LeaveToDay != null)
+                {
+                    if (leaveDetail.LeaveFromDay.Subtract(leaves.LeaveFromDay).TotalDays >= 0 ||
+                        leaveDetail.LeaveToDay.Subtract(leaves.LeaveFromDay).TotalDays <= 0)
+                        throw new HiringBellException("Incorrect From and To date applied. These dates are already used.");
+                }
             }
+
             completeLeaveDetail = new CompleteLeaveDetail()
             {
                 EmployeeId = leaveDetail.EmployeeId,
