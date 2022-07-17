@@ -615,30 +615,6 @@ namespace ServiceLayer.Code
             {
                 salaryComponent.CalculateInPercentage = component.CalculateInPercentage;
                 salaryComponent.TaxExempt = component.TaxExempt;
-
-                if (component.Formula.Contains('%'))
-                {
-                    int result = 0;
-                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
-                     .TakeWhile(x => char.IsDigit(x))
-                     .ToArray()), out result);
-                    salaryComponent.PercentageValue = result;
-                    salaryComponent.MaxLimit = 0;
-                    salaryComponent.DeclaredValue = 0;
-                    salaryComponent.CalculateInPercentage = true;
-                }
-                else
-                {
-                    int result = 0;
-                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
-                     .TakeWhile(x => char.IsDigit(x))
-                     .ToArray()), out result);
-                    salaryComponent.DeclaredValue = result;
-                    salaryComponent.MaxLimit = 0;
-                    salaryComponent.PercentageValue = 0;
-                    salaryComponent.CalculateInPercentage = false;
-                }
-
                 salaryComponent.IsActive = component.IsActive;
                 salaryComponent.TaxExempt = component.TaxExempt;
                 salaryComponent.RequireDocs = component.RequireDocs;

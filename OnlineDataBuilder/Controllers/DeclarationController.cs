@@ -46,7 +46,21 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
-
-
+        [HttpPost("HousingPropertyDeclaration/{EmployeeDeclarationId}")]
+        public IResponse<ApiResponse> HousingPropertyDeclaration([FromRoute] long EmployeeDeclarationId)
+        {
+            StringValues declaration = default(string);
+            _httpContext.Request.Form.TryGetValue("declaration", out declaration);
+            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+            if (declaration.Count > 0)
+            {
+                var DeclarationDetail = JsonConvert.DeserializeObject<HousingDeclartion>(declaration);
+                List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
+                var result = _declarationService.HousingPropertyDeclarationService(EmployeeDeclarationId, DeclarationDetail, fileDetail, files);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
+        }
     }
 }

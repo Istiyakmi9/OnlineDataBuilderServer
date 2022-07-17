@@ -505,7 +505,7 @@ namespace ServiceLayer.Code
                     case "MA":
                         completeSalaryBreakup.MedicalAnnually = component.DeclaredValue;
                         break;
-                    case "SA":
+                    case "SHA":
                         completeSalaryBreakup.ShiftAnnually = component.DeclaredValue;
                         break;
                     case "ECI":
