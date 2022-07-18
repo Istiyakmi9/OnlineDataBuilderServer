@@ -606,6 +606,7 @@ namespace ServiceLayer.Code
 
         public string ApplyLeaveService(LeaveDetails leaveDetail)
         {
+            Employee employee = null;
             if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
@@ -616,6 +617,14 @@ namespace ServiceLayer.Code
                 FromDate = leaveDetail.LeaveFromDay,
                 ToDate = leaveDetail.LeaveToDay
             });
+            var empData = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
+            List<Employee> employees = Converter.ToList<Employee>(empData);
+            if (employees == null || employees.Count == 0)
+            {
+                throw new HiringBellException("No employee found. Please login again.");
+            }
+
+            employee = employees.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
 
             if (result != null)
             {
@@ -633,12 +642,15 @@ namespace ServiceLayer.Code
             completeLeaveDetail = new CompleteLeaveDetail()
             {
                 EmployeeId = leaveDetail.EmployeeId,
+                EmployeeName = employee.FirstName + " " + employee.LastName,
                 AssignTo = leaveDetail.AssignTo,
                 Session = leaveDetail.Session,
                 LeaveType = leaveDetail.LeaveType,
                 LeaveFromDay = leaveDetail.LeaveFromDay,
                 LeaveToDay = leaveDetail.LeaveToDay,
-                LeaveStatus = (int)ItemStatus.Pending
+                LeaveStatus = (int)ItemStatus.Pending,
+                Reason = leaveDetail.Reason,
+                RequestedOn = DateTime.UtcNow
             };
 
             leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);

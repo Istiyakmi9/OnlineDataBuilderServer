@@ -32,6 +32,7 @@ namespace ModalLayer.Modal
     public class CompleteLeaveDetail
     {
         public long EmployeeId { set; get; }
+        public string EmployeeName { get; set; }
         public long ProjectId { set; get; }
         public long AssignTo { get; set; }
         public int LeaveType { get; set; }
@@ -41,5 +42,7 @@ namespace ModalLayer.Modal
         public int LeaveStatus { set; get; }
         public int RespondedBy { set; get; }
         public DateTime UpdatedOn { set; get; }
+        public string Reason { get; set; }
+        public DateTime RequestedOn { get; set; }
     }
 }
