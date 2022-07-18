@@ -7,6 +7,7 @@ using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace ServiceLayer.Code
@@ -614,12 +615,13 @@ namespace ServiceLayer.Code
             {
                 CompleteLeaveDetail leaves = JsonConvert.DeserializeObject<CompleteLeaveDetail>(result.LeaveDetail);
 
-                if (leaves.LeaveToDay != null && leaves.LeaveToDay != null)
+                if (leaves.LeaveToDay != null && leaves.LeaveFromDay != null)
                 {
-                    if (leaveDetail.LeaveFromDay.Subtract(leaves.LeaveFromDay).TotalDays >= 0 ||
-                        leaveDetail.LeaveToDay.Subtract(leaves.LeaveFromDay).TotalDays <= 0)
+                    if (leaveDetail.LeaveFromDay.Subtract(leaves.LeaveFromDay).TotalDays <= 0 ||
+                        leaveDetail.LeaveToDay.Subtract(leaves.LeaveToDay).TotalDays <= 0)
                         throw new HiringBellException("Incorrect From and To date applied. These dates are already used.");
                 }
+                //leaveDetail.LeaveRequestId = result.LeaveRequestId;
             }
 
             completeLeaveDetail = new CompleteLeaveDetail()
@@ -636,6 +638,7 @@ namespace ServiceLayer.Code
             leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
             var value = _db.Execute<LeaveDetails>("sp_employee_leave_request_InsUpdate", new
             {
+                leaveDetail.LeaveRequestId,
                 leaveDetail.EmployeeId,
                 leaveDetail.LeaveDetail,
                 leaveDetail.ForMonth,
@@ -653,6 +656,26 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to apply for leave. Please contact to admin.");
             return "Successfully";
+        }
+
+        public DataSet GetAllLeavesByEmpIdService(long EmployeeId, FilterModel filterModel)
+        {
+            if (EmployeeId < 0)
+                throw new HiringBellException("Invalid employee id.");
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(EmployeeId, typeof(long), "_EmployeeId"),
+                new DbParam(filterModel.SearchString, typeof(string), "_searchString"),
+                new DbParam(filterModel.SortBy, typeof(string), "_sortBy"),
+                new DbParam(filterModel.PageIndex, typeof(int), "_pageIndex"),
+                new DbParam(filterModel.PageSize, typeof(int), "_pageSize")
+            };
+            var result = _db.GetDataset("sp_employee_leave_request_filter", param);
+            if (result.Tables.Count == 1)
+                result.Tables[0].TableName = "Leave";
+            else
+                throw new HiringBellException("Unable to get employee leave deatils");
+            return result;
         }
 
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen)

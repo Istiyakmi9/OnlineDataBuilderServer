@@ -68,10 +68,18 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.EnablePermission(attendenceDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
         [HttpPost("ApplyLeave")]
         public IResponse<ApiResponse> ApplyLeave(LeaveDetails leaveDetail)
         {
             var result = _attendanceService.ApplyLeaveService(leaveDetail);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("GetAllLeavesByEmpId/{EmployeeId}")]
+        public IResponse<ApiResponse> GetAllLeavesByEmpId(long EmployeeId, FilterModel filterModel)
+        {
+            var result = _attendanceService.GetAllLeavesByEmpIdService(EmployeeId, filterModel);
             return BuildResponse(result);
         }
     }
