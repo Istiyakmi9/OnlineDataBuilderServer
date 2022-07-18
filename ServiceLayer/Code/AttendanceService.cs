@@ -610,7 +610,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid From and To date passed.");
 
             CompleteLeaveDetail completeLeaveDetail = null;
-            var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new { EmployeeId = leaveDetail.EmployeeId, ForMonth = leaveDetail.ForMonth, ForYear = leaveDetail.ForYear });
+            var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new
+            {
+                leaveDetail.EmployeeId,
+                FromDate = leaveDetail.LeaveFromDay,
+                ToDate = leaveDetail.LeaveToDay
+            });
+
             if (result != null)
             {
                 CompleteLeaveDetail leaves = JsonConvert.DeserializeObject<CompleteLeaveDetail>(result.LeaveDetail);
@@ -641,8 +647,6 @@ namespace ServiceLayer.Code
                 leaveDetail.LeaveRequestId,
                 leaveDetail.EmployeeId,
                 leaveDetail.LeaveDetail,
-                leaveDetail.ForMonth,
-                leaveDetail.ForYear,
                 leaveDetail.Reason,
                 leaveDetail.UserTypeId,
                 leaveDetail.AssignTo,
