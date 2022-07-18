@@ -9,8 +9,6 @@ namespace ModalLayer.Modal
         public long EmployeeId { set; get; }
         public int UserTypeId { get; set; }
         public long LeaveId { set; get; }
-        public int ForYear { get; set; }
-        public int ForMonth { get; set; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
         public string Session { get; set; }
@@ -28,8 +26,8 @@ namespace ModalLayer.Modal
         public long LeaveRequestId { set; get; }
         public long EmployeeId { set; get; }
         public string LeaveDetail { get; set; }
-        public int ForYear { get; set; }
-        public int ForMonth { get; set; }
+        public DateTime FromDate { get; set; }
+        public DateTime ToDate { get; set; }
     }
     public class CompleteLeaveDetail
     {
