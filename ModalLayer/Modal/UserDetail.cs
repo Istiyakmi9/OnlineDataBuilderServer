@@ -32,7 +32,7 @@ namespace ModalLayer.Modal
         public string CompanyName { set; get; }
         public int RoleId { set; get; }
         public int UserTypeId { set; get; }
-
+        public long ReportingManagerId { set; get; }
     }
 
     public class LoginResponse

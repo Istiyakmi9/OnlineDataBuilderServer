@@ -202,10 +202,11 @@ namespace ServiceLayer.Code
                             EmailId = loginDetail.EmailId,
                             UserId = loginDetail.UserId,
                             CompanyName = loginDetail.CompanyName,
-                            UserTypeId = loginDetail.UserTypeId
+                            UserTypeId = loginDetail.UserTypeId,
+                            ReportingManagerId = loginDetail.ReportingManagerId
                         };
 
-                        var _token = _authenticationService.Authenticate(userDetail.UserId, loginDetail.RoleId);
+                        var _token = _authenticationService.Authenticate(userDetail.UserId, userDetail.ReportingManagerId, loginDetail.RoleId);
                         if (_token != null)
                         {
                             userDetail.Token = _token.Token;
