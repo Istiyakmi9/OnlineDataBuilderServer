@@ -31,7 +31,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("UpdateLeavePlans/{leavePlanId}")]
-        public IResponse<ApiResponse> UpdateLeavePlans(int leavePlanId, LeavePlan leavePlan)
+        public IResponse<ApiResponse> UpdateLeavePlans([FromRoute]int leavePlanId, [FromBody]LeavePlan leavePlan)
         {
             var result = _leaveService.UpdateLeavePlansService(leavePlanId, leavePlan);
             return BuildResponse(result);
