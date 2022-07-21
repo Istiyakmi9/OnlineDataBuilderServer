@@ -20,18 +20,20 @@ namespace OnlineDataBuilder.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
-        //private readonly IEMailManager _eMailManager;
+        private readonly IEMailManager _eMailManager;
         private readonly ILogger<WeatherForecastController> _logger;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger, IEMailManager eMailManager)
         {
             _logger = logger;
+            _eMailManager = eMailManager;
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
+            // _eMailManager.ReadMails();
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

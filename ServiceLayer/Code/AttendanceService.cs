@@ -661,7 +661,7 @@ namespace ServiceLayer.Code
                 leaveDetail.LeaveDetail,
                 leaveDetail.Reason,
                 leaveDetail.UserTypeId,
-                leaveDetail.AssignTo,
+                AssignTo = _currentSession.CurrentUserDetail.ReportingManagerId,
                 leaveDetail.LeaveFromDay,
                 leaveDetail.LeaveToDay,
                 leaveDetail.LeaveType,

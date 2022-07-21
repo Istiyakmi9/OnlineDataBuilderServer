@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EAGetMail" Version="5.2.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
   </ItemGroup>
 

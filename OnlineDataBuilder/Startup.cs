@@ -152,6 +152,7 @@ namespace OnlineDataBuilder
             services.AddScoped<ISalaryComponentService, SalaryComponentService>();
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<IDeclarationService, DeclarationService>();
+            services.AddScoped<ILeaveService, LeaveService>();
 
             services.AddCors(options =>
             {

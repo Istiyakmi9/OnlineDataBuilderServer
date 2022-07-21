@@ -59,7 +59,7 @@ namespace ServiceLayer.Code
             return userId;
         }
 
-        public RefreshTokenModal Authenticate(long userId, int roleId)
+        public RefreshTokenModal Authenticate(long userId, long managerId, int roleId)
         {
             string role = string.Empty;
             switch (roleId)
@@ -80,14 +80,14 @@ namespace ServiceLayer.Code
                     role = Role.Other;
                     break;
             }
-            string generatedToken = GenerateAccessToken(userId.ToString(), role);
+            string generatedToken = GenerateAccessToken(userId.ToString(), managerId.ToString(), role);
             var refreshToken = GenerateRefreshToken(null);
             refreshToken.Token = generatedToken;
             SaveRefreshToken(refreshToken, userId);
             return refreshToken;
         }
 
-        private string GenerateAccessToken(string userId, string role)
+        private string GenerateAccessToken(string userId, string managerId, string role)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -98,6 +98,7 @@ namespace ServiceLayer.Code
                     new Claim(ClaimTypes.Role, role),
                     new Claim(ClaimTypes.Name, userId),
                     new Claim(ClaimTypes.Version, "1.0.0"),
+                    new Claim(ClaimTypes.Sid, managerId),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 }),
 
@@ -139,7 +140,7 @@ namespace ServiceLayer.Code
                         var currentModal = Result.FirstOrDefault();
                         refreshTokenModal = new RefreshTokenModal
                         {
-                            Token = GenerateAccessToken(UserId.ToString(), UserRole),
+                            Token = GenerateAccessToken(UserId.ToString(), "0", UserRole),
                             Expires = currentModal.ExpiryTime
                         };
                     }
