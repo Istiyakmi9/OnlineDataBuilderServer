@@ -336,38 +336,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return data;
         }
 
-        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            List<T> data = new List<T>();
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = result;
-            }
-
-            return data;
-        }
-
-        public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            List<T> data = new List<T>();
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = result;
-            }
-
-            return data;
-        }
-
         public T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new()
         {
             T t = new T();
@@ -404,6 +372,38 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
 
             return t;
+        }
+        
+        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            List<T> data = new List<T>();
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
+
+            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
+            if (result != null)
+            {
+                if (result.Count > 0)
+                    data = result;
+            }
+
+            return data;
+        }
+
+        public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            List<T> data = new List<T>();
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
+
+            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
+            if (result != null)
+            {
+                if (result.Count > 0)
+                    data = result;
+            }
+
+            return data;
         }
 
         private List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader) where T : new()
@@ -1046,6 +1046,36 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
                     con.Close();
             }
+        }
+
+        public (T, Q) GetMulti<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public (T, Q, R) GetMulti<T, Q, R>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+            where R : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public (List<T>, List<R>) GetList<T, R>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+            where T : new()
+            where R : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public (List<T>, List<R>, List<Q>) GetList<T, R, Q>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+            where T : new()
+            where R : new()
+            where Q : new()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

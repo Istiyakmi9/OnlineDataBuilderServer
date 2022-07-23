@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModalLayer.Modal.Leaves
+﻿namespace ModalLayer.Modal.Leaves
 {
-    public class LeaveQuota
+    public class LeaveDetail
     {
-        public bool IsQuotaLimit { get; set; }
-        public int QuotaLimit { get; set; }
-        public bool IsBeyondAnnualQuota { get; set; }
-        public int BeyondAnnualQuota { get; set; }
-        public bool IsLeaveQuotaAllocated { get; set; }
-        public int LeaveQuotaAllocatedAfter { get; set; }
-        public bool IsManagerAwardCasual { get; set; }
+        public int LeaveDetailId { set; get; }
+        public int LeavePlanId { set; get; }
+        public bool IsLeaveDaysLimit { set; get; }
+        public int LeaveLimit { set; get; }
+        public bool CanApplyExtraLeave { set; get; }
+        public int ExtraLeaveLimit { set; get; }
+        public int LeaveNotAllocatedIfJoinAfter { set; get; }
+        public bool IsNoLeaveAfterDate { set; get; }
+        public bool CanManagerAwardCausalLeave { set; get; }
+        public bool CanCompoffAllocatedAutomatically { set; get; }
+        public bool CanCompoffCreditedByManager { set; get; }
     }
 }
