@@ -8,5 +8,6 @@ namespace ServiceLayer.Interface
         List<LeavePlan> GetLeavePlansService();
         string AddLeavePlansService(LeavePlan leavePlan);
         string UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan);
+        string AddUpdateLeaveQuotaService(int leavePlanId, LeaveQuota leaveQuota);
     }
 }

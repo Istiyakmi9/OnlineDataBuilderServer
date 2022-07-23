@@ -87,5 +87,11 @@ namespace ServiceLayer.Code
 
             return this.AddLeavePlansService(leavePlan);
         }
+
+        public string AddUpdateLeaveQuotaService(int leavePlanId, LeaveQuota leaveQuota)
+        {
+            string value = "";
+            return value;
+        }
     }
 }

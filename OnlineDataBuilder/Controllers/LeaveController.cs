@@ -36,5 +36,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _leaveService.UpdateLeavePlansService(leavePlanId, leavePlan);
             return BuildResponse(result);
         }
+
+        [HttpPost("AddUpdateLeaveQuota/{leavePlanId}")]
+        public IResponse<ApiResponse> AddUpdateLeaveQuota([FromRoute] int leavePlanId, [FromBody] LeaveQuota leaveQuota)
+        {
+            var result = _leaveService.AddUpdateLeaveQuotaService(leavePlanId, leaveQuota);
+            return BuildResponse(result);
+        }
     }
 }
