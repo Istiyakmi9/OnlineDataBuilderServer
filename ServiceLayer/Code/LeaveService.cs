@@ -20,24 +20,37 @@ namespace ServiceLayer.Code
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
         {
-            ValidateLeavePlanToInsert(leavePlan);
-            string result = _db.Execute<LeavePlan>("sp_leave_plans_insupd", new
+            string result = _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);
+            List<LeavePlan> leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            return leavePlans;
+        }
+
+        public string AddLeavePlanTypeService(LeavePlanType leavePlanType)
+        {
+            if (leavePlanType.LeavePlanId <= 0)
+                throw new HiringBellException("Leave plan id not found. Please add one plan first.");
+
+            ValidateLeavePlanToInsert(leavePlanType);
+
+            leavePlanType.PlanConfigurationDetail = "{}";
+            string result = _db.Execute<LeavePlanType>("sp_leave_plans_type_insupd", new
             {
-                leavePlan.IsPaidLeave,
-                leavePlan.MaxLeaveLimit,
-                leavePlan.IsSickLeave,
-                leavePlan.IsStatutoryLeave,
-                leavePlan.LeavePlanId,
-                leavePlan.ShowDescription,
-                leavePlan.LeavePlanCode,
-                leavePlan.PlanName,
-                leavePlan.PlanDescription,
-                leavePlan.LeaveGroupId,
-                leavePlan.IsMale,
-                leavePlan.IsMarried,
-                leavePlan.IsRestrictOnGender,
-                leavePlan.IsRestrictOnMaritalStatus,
-                Reasons = leavePlan.Reasons,
+                leavePlanType.IsPaidLeave,
+                leavePlanType.MaxLeaveLimit,
+                leavePlanType.IsSickLeave,
+                leavePlanType.IsStatutoryLeave,
+                leavePlanType.LeavePlanId,
+                leavePlanType.LeavePlanTypeId,
+                leavePlanType.ShowDescription,
+                leavePlanType.LeavePlanCode,
+                leavePlanType.PlanName,
+                leavePlanType.PlanDescription,
+                leavePlanType.IsMale,
+                leavePlanType.IsMarried,
+                leavePlanType.IsRestrictOnGender,
+                leavePlanType.IsRestrictOnMaritalStatus,
+                Reasons = leavePlanType.Reasons,
+                PlanConfigurationDetail = leavePlanType.PlanConfigurationDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
             if (string.IsNullOrEmpty(result))
@@ -45,54 +58,79 @@ namespace ServiceLayer.Code
             return this.GetLeavePlansService();
         }
 
-        private void ValidateLeavePlanToInsert(LeavePlan leavePlan)
+        private void ValidateLeavePlanToInsert(LeavePlanType leavePlanType)
         {
-            if (leavePlan == null)
+            if (leavePlanType == null)
                 throw new HiringBellException("Empty Leave plan submitted.");
 
             int multiPlanFlag = 3;
-            if (leavePlan.IsPaidLeave)
+            if (leavePlanType.IsPaidLeave)
                 multiPlanFlag--;
 
-            if (leavePlan.IsSickLeave)
+            if (leavePlanType.IsSickLeave)
                 multiPlanFlag--;
 
-            if (leavePlan.IsStatutoryLeave)
+            if (leavePlanType.IsStatutoryLeave)
                 multiPlanFlag--;
 
             if (multiPlanFlag != 2)
             {
-                if (leavePlan.IsSickLeave)
+                if (leavePlanType.IsSickLeave)
                     throw new HiringBellException("Multiple leave type selected. (i.e. Select only one from Sick or Paid or Statutory)");
 
-                if (leavePlan.IsStatutoryLeave)
+                if (leavePlanType.IsStatutoryLeave)
                     throw new HiringBellException("Multiple leave type selected. (i.e. Select only one from Sick or Paid or Statutory)");
             }
         }
 
-        public List<LeavePlan> GetLeavePlansService()
+        public List<LeavePlanType> GetLeavePlansService()
         {
-            List<LeavePlan> LeavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
-            return LeavePlans;
+            List<LeavePlanType> leavePlanType = _db.GetList<LeavePlanType>("sp_leave_plans_get");
+            return leavePlanType;
         }
 
-        public List<LeavePlan> UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan)
+        public string UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType)
         {
-            ValidateLeavePlanToInsert(leavePlan);
-            LeavePlan record = _db.Get<LeavePlan>("sp_leave_plans_getbyId", new { LeavePlanId = leavePlanId });
+            if (leavePlanType.LeavePlanId <= 0)
+                throw new HiringBellException("Leave plan id not found. Please add one plan first.");
 
-            if (record == null || record.LeavePlanId != leavePlanId)
+            ValidateLeavePlanToInsert(leavePlanType);
+            LeavePlanType record = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (record == null || record.LeavePlanId != leavePlanTypeId)
                 throw new HiringBellException("Trying to udpate invalid leave plan");
 
-            leavePlan.LeaveGroupId = record.LeaveGroupId;
+            leavePlanType.LeavePlanId = record.LeavePlanId;
 
-            return this.AddLeavePlansService(leavePlan);
+            return this.AddLeavePlanTypeService(leavePlanType);
         }
 
-        public string AddUpdateLeaveQuotaService(int leavePlanId, LeaveQuota leaveQuota)
+        public string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail)
         {
-            string value = "";
-            return value;
+            string result = _db.Execute<LeaveDetail>("sp_leave_detail_InsUpdate", leaveDetail, true);
+            return result;
+        }
+
+        public List<LeavePlanType> GetLeaveTypeDetailByPlan(int leavePlanId)
+        {
+            List<LeavePlanType> leavePlanTypes = _db.GetList<LeavePlanType>("sp_leave_plans_type_get_planid", new { LeavePlanId = leavePlanId });
+            if (leavePlanTypes == null)
+                throw new HiringBellException("Invalid plan id supplied");
+
+            return leavePlanTypes;
+        }
+
+        public LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId)
+        {
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan id supplied");
+
+            LeavePlanConfiguration leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+            if (leavePlanConfiguration == null)
+                leavePlanConfiguration = new LeavePlanConfiguration();
+
+            return leavePlanConfiguration;
         }
     }
 }

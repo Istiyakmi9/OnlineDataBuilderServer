@@ -5,9 +5,12 @@ namespace ServiceLayer.Interface
 {
     public interface ILeaveService
     {
-        List<LeavePlan> GetLeavePlansService();
-        List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan);
-        List<LeavePlan> UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan);
-        string AddUpdateLeaveQuotaService(int leavePlanId, LeaveQuota leaveQuota);
+        List<LeavePlanType> GetLeavePlansService();
+        string AddLeavePlanTypeService(LeavePlanType leavePlanType);
+        List<LeavePlan> AddLeavePlansService(LeavePlan leavePlanType);
+        string UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType);
+        string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail);
+        List<LeavePlanType> GetLeaveTypeDetailByPlan(int leavePlanId);
+        LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId);
     }
 }
