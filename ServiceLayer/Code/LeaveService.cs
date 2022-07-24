@@ -53,8 +53,9 @@ namespace ServiceLayer.Code
                 PlanConfigurationDetail = leavePlanType.PlanConfigurationDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
-
-            return result;
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update leave type.");
+            return this.GetLeavePlansService();
         }
 
         private void ValidateLeavePlanToInsert(LeavePlanType leavePlanType)
