@@ -676,6 +676,36 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public (T, Q) GetMulti<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public (T, Q, R) GetMulti<T, Q, R>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+            where R : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public (List<T>, List<R>) GetList<T, R>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+            where T : new()
+            where R : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public (List<T>, List<R>, List<Q>) GetList<T, R, Q>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+            where T : new()
+            where R : new()
+            where Q : new()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }

@@ -29,14 +29,29 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
 
         /*=========================================  Generic type =====================================*/
 
+        DataSet Get(string ProcedureName, object Parameters, bool OutParam = false);
         string Execute<T>(string ProcedureName, dynamic instance, bool OutParam);
         T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new();
         T Get<T>(string ProcedureName, bool OutParam = false) where T : new();
-        List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new();
         T Get<T>(string ProcedureName, dynamic Parameters, bool OutParam = false) where T : new();
+        (T, Q) GetMulti<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new();
+        (T, Q, R) GetMulti<T, Q, R>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+            where R : new();
+        T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
+
+        List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new();
         List<T> GetList<T>(string ProcedureName, dynamic Parameters, bool OutParam = false) where T : new();
-        DataSet Get(string ProcedureName, object Parameters, bool OutParam = false);
-        public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
+        (List<T>, List<R>) GetList<T, R>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+            where T : new()
+            where R : new();
+        (List<T>, List<R>, List<Q>) GetList<T, R, Q>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+            where T : new()
+            where R : new()
+            where Q : new();
         List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
     }
 }
