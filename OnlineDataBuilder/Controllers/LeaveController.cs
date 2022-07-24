@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -37,10 +38,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateLeavePlanType/{leavePlanId}")]
-        public IResponse<ApiResponse> UpdateLeavePlanType([FromRoute] int leavePlanId, [FromBody] LeavePlanType leavePlanType)
+        [HttpPost("LeavePlanUpdateTypes/{leavePlanId}")]
+        public IResponse<ApiResponse> LeavePlanUpdateTypes([FromRoute] int leavePlanId, [FromBody] List<LeavePlanType> leavePlanTypes)
         {
-            var result = _leaveService.UpdateLeavePlanTypeService(leavePlanId, leavePlanType);
+            var result = _leaveService.LeavePlanUpdateTypes(leavePlanId, leavePlanTypes);
+            return BuildResponse(result);
+        }
+
+        [HttpPut("UpdateLeavePlanType/{leavePlanTypeId}")]
+        public IResponse<ApiResponse> UpdateLeavePlanType([FromRoute] int leavePlanTypeId, [FromBody] LeavePlanType leavePlanType)
+        {
+            var result = _leaveService.UpdateLeavePlanTypeService(leavePlanTypeId, leavePlanType);
             return BuildResponse(result);
         }
 
@@ -51,17 +59,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetLeaveTypeByPlanId/{leavePlanId}")]
-        public IResponse<ApiResponse> GetLeaveTypeByPlanId(int leavePlanId)
-        {
-            var result = _leaveService.GetLeaveTypeDetailByPlan(leavePlanId);
-            return BuildResponse(result);
-        }
-
         [HttpGet("GetLeaveTypeDetailById/{leavePlanTypeId}")]
         public IResponse<ApiResponse> GetLeaveTypeDetailById(int leavePlanTypeId)
         {
-            var result = _leaveService.GetLeaveTypeDetailByPlan(leavePlanTypeId);
+            var result = _leaveService.GetLeaveTypeDetailByIdService(leavePlanTypeId);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetLeaveTypeFilter")]
+        public IResponse<ApiResponse> GetLeaveTypeFilter()
+        {
+            var result = _leaveService.GetLeaveTypeFilterService();
             return BuildResponse(result);
         }
     }
