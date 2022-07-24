@@ -18,7 +18,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public string AddLeavePlansService(LeavePlan leavePlan)
+        public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
         {
             ValidateLeavePlanToInsert(leavePlan);
             string result = _db.Execute<LeavePlan>("sp_leave_plans_insupd", new
@@ -40,8 +40,9 @@ namespace ServiceLayer.Code
                 Reasons = leavePlan.Reasons,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
-
-            return result;
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update leave type.");
+            return this.GetLeavePlansService();
         }
 
         private void ValidateLeavePlanToInsert(LeavePlan leavePlan)
@@ -75,7 +76,7 @@ namespace ServiceLayer.Code
             return LeavePlans;
         }
 
-        public string UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan)
+        public List<LeavePlan> UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan)
         {
             ValidateLeavePlanToInsert(leavePlan);
             LeavePlan record = _db.Get<LeavePlan>("sp_leave_plans_getbyId", new { LeavePlanId = leavePlanId });

@@ -6,8 +6,8 @@ namespace ServiceLayer.Interface
     public interface ILeaveService
     {
         List<LeavePlan> GetLeavePlansService();
-        string AddLeavePlansService(LeavePlan leavePlan);
-        string UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan);
+        List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan);
+        List<LeavePlan> UpdateLeavePlansService(int leavePlanId, LeavePlan leavePlan);
         string AddUpdateLeaveQuotaService(int leavePlanId, LeaveQuota leaveQuota);
     }
 }
