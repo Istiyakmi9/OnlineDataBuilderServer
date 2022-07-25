@@ -30,5 +30,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _manageLeavePlanService.UpdateLeaveDetail(leavePlanTypeId, leaveDetail);
             return BuildResponse(result);
         }
+
+        [HttpPut("UpdateLeaveAccrual/{leavePlanTypeId}")]
+        public IResponse<ApiResponse> UpdateLeaveAccrual([FromRoute] int leavePlanTypeId, [FromBody] LeaveAccrual leaveAccrual)
+        {
+            var result = _manageLeavePlanService.UpdateLeaveAccrualService(leavePlanTypeId, leaveAccrual);
+            return BuildResponse(result);
+        }
     }
 }

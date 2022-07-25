@@ -7,7 +7,7 @@ namespace ModalLayer.Modal.Leaves
     public class LeaveAccrual
     {
         public int LeaveAccrualId { get; set; }
-        public int LeavePlanId { get; set; }
+        public int LeavePlanTypeId { get; set; }
         public bool CanApplyEntireLeave { get; set; }
         public bool IsLeaveAccruedPatternAvail { get; set; }
         public string LeaveDistributionSequence { get; set; }
@@ -19,7 +19,7 @@ namespace ModalLayer.Modal.Leaves
         public bool IsVaryOnProbationOrExprience { get; set; }
         public bool IsImpactedOnWorkDaysEveryMonth { get; set; }
         public int WeekOffAsAbsentIfAttendaceLessThen { get; set; }
-        public bool HolidayAsAbsentIfAttendaceLessThen { get; set; }
+        public int HolidayAsAbsentIfAttendaceLessThen { get; set; }
         public bool CanApplyForFutureDate { get; set; }
         public bool ExtraLeaveBeyondAccruedBalance { get; set; }
         public int NoOfDaysForExtraLeave { get; set; }
