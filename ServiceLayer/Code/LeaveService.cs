@@ -20,9 +20,32 @@ namespace ServiceLayer.Code
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
         {
-            leavePlan.AssociatedPlanTypes = "[]";
-            _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);
-            List<LeavePlan> leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            List<LeavePlan> leavePlans = null;
+            if (leavePlan.LeavePlanId > 0)
+            {
+                leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+                if (leavePlans.Count <= 0)
+                    throw new HiringBellException("Invalid leave plan.");
+
+                var result = leavePlans.Find(x => x.LeavePlanId == leavePlan.LeavePlanId);
+                if (result == null)
+                    throw new HiringBellException("Invalid leave plan.");
+
+                result.PlanName = leavePlan.PlanName;
+                result.PlanDescription = leavePlan.PlanDescription;
+                result.IsShowLeavePolicy = leavePlan.IsShowLeavePolicy;
+                result.IsUploadedCustomLeavePolicy = leavePlan.IsUploadedCustomLeavePolicy;
+                result.PlanStartCalendarDate = leavePlan.PlanStartCalendarDate;
+                leavePlan = result;
+            } else
+            {
+                leavePlan.AssociatedPlanTypes = "[]";
+            }
+            var value = _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);
+            if (string.IsNullOrEmpty(value))
+                throw new HiringBellException("Unable to add or update leave plan");
+
+            leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
             return leavePlans;
         }
 
