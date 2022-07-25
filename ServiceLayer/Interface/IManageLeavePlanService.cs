@@ -9,6 +9,7 @@ namespace ServiceLayer.Interface
     {
         LeavePlanConfiguration UpdateLeaveAccrual(int leavePlanTypeId, LeaveAccrual leaveAccrual);
         LeavePlanConfiguration UpdateLeaveDetail(int leavePlanTypeId, LeaveDetail leaveDetail);
+        LeavePlanConfiguration UpdateLeaveAccrualService(int leavePlanTypeId, LeaveAccrual leaveAccrual);
         LeavePlanConfiguration GetLeaveConfigurationDetail(int leavePlanTypeId);
     }
 }
