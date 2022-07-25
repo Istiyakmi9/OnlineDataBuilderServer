@@ -119,6 +119,44 @@ namespace ServiceLayer.Code
 
             return leavePlanConfiguration;
         }
-        
+
+        public LeavePlanConfiguration UpdateApplyForLeaveService(int leavePlanTypeId, LeaveApplyDetail leaveApplyDetail)
+        {
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan type id. No record found.");
+
+            if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
+            {
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+                leavePlanConfiguration.leaveApplyDetail = leaveApplyDetail;
+            }
+
+            var result = _db.Execute<LeaveApplyDetail>("sp_leave_apply_detail_InsUpdate", new
+            {
+                leaveApplyDetail.LeaveApplyDetailId,
+                leaveApplyDetail.LeavePlanTypeId,
+                leaveApplyDetail.IsAllowForHalfDay,
+                leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave,
+                leaveApplyDetail.RemaningCalendarDayInNotice,
+                leaveApplyDetail.RequiredCalendarDaysForLeaveApply,
+                leaveApplyDetail.RemaningWorkingDaysInNotice,
+                leaveApplyDetail.ApplyPriorBeforeLeaveDate,
+                leaveApplyDetail.BackDateLeaveApplyNotBeyondDays,
+                leaveApplyDetail.RestrictBackDateLeaveApplyAfter,
+                leaveApplyDetail.CurrentLeaveRequiredComments,
+                leaveApplyDetail.ProofRequiredIfDaysExceeds,
+                leaveApplyDetail.NoOfDaysExceeded,
+                LeavePlanConfiguration = JsonConvert.SerializeObject(leavePlanConfiguration)
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(result))
+                throw new HiringBellException("Fail to insert or update apply for leave detail.");
+
+            return leavePlanConfiguration;
+        }
+
     }
 }
