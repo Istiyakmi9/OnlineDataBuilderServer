@@ -7,7 +7,7 @@ namespace ModalLayer.Modal.Leaves
     public class LeaveApplyDetail
     {
         public int LeaveApplyDetailId { get; set; }
-        public int LeavePlanId { get; set; }
+        public int LeavePlanTypeId { get; set; }
         public bool IsAllowForHalfDay { get; set; }
         public bool EmployeeCanSeeAndApplyCurrentPlanLeave { get; set; }
         public int RemaningCalendarDayInNotice { get; set; }
