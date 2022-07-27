@@ -1,30 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace ModalLayer.Modal.Leaves
 {
     public class LeaveAccrual
     {
+        public List<AllocateTimeBreakup> ExitMonthLeaveDistribution { set; get; }
+        public List<AllocateTimeBreakup> JoiningMonthLeaveDistribution { set; get; }
+        public List<AccrualProrate> AccrualProrateDetail { set; get; }
         public int LeaveAccrualId { get; set; }
         public int LeavePlanTypeId { get; set; }
         public bool CanApplyEntireLeave { get; set; }
         public bool IsLeaveAccruedPatternAvail { get; set; }
         public string LeaveDistributionSequence { get; set; }
-        public int LeaveDistributionAppliedFrom { get; set; }
-        public bool IsAllowLeavesForJoinigMonth { get; set; }
-        public bool IsAllowLeavesProbationPeriod { get; set; }
-        public int BreakMonthLeaveAllocationId { get; set; }
+        public decimal LeaveDistributionAppliedFrom { get; set; }
+        public bool IsLeavesProratedForJoinigMonth { get; set; }
+        public bool IsLeavesProratedOnProbation { get; set; }
+        public bool IsNotAllowProratedOnProbation { get; set; }
         public bool IsNoLeaveOnProbationPeriod { get; set; }
         public bool IsVaryOnProbationOrExprience { get; set; }
+        public bool IsAccrualStartsAfterJoining { get; set; }
+        public bool IsAccrualStartsAfterProbationEnds { get; set; }
+        public decimal AccrualDaysAfterJoining { get; set; }
+        public decimal AccrualDaysAfterProbationEnds { get; set; }
         public bool IsImpactedOnWorkDaysEveryMonth { get; set; }
-        public int WeekOffAsAbsentIfAttendaceLessThen { get; set; }
-        public int HolidayAsAbsentIfAttendaceLessThen { get; set; }
+        public decimal WeekOffAsAbsentIfAttendaceLessThen { get; set; }
+        public decimal HolidayAsAbsentIfAttendaceLessThen { get; set; }
         public bool CanApplyForFutureDate { get; set; }
-        public bool ExtraLeaveBeyondAccruedBalance { get; set; }
-        public int NoOfDaysForExtraLeave { get; set; }
-        public int AllowOnlyIfAccrueBalanceIsAlleast { get; set; }
-        public int NotAllowIfAlreadyOnLeaveMoreThan { get; set; }
+        public bool IsExtraLeaveBeyondAccruedBalance { get; set; }
+        public bool IsNoExtraLeaveBeyondAccruedBalance { get; set; }
+        public decimal NoOfDaysForExtraLeave { get; set; }
+        public decimal AllowOnlyIfAccrueBalanceIsAlleast { get; set; }
+        public bool IsAccrueIfHavingLeaveBalance { get; set; }
+        public bool IsAccrueIfOnOtherLeave { get; set; }
+        public decimal NotAllowIfAlreadyOnLeaveMoreThan { get; set; }
         public bool RoundOffLeaveBalance { get; set; }
         public bool ToNearestHalfDay { get; set; }
         public bool ToNearestFullDay { get; set; }
@@ -32,16 +40,14 @@ namespace ModalLayer.Modal.Leaves
         public bool ToNextAvailableFullDay { get; set; }
         public bool ToPreviousHalfDay { get; set; }
         public bool DoesLeaveExpireAfterSomeTime { get; set; }
-        public int AfterHowManyDays { get; set; }
+        public decimal AfterHowManyDays { get; set; }
     }
 
-    public class Allocate_leave_break_for_month
+    public class AccrualProrate
     {
-    public int BreakMonthLeaveAllocationId { get; set; }
-    public int LeavePlanId { get; set; }
-    public int LeavePlanDetailId { get; set; }
-    public int FromDate { get; set; }
-    public int ToDate { get; set; }
-    public int AllocatedLeave { get; set; }
+        public string PeriodType { set; get; }
+        public int YearsAfterJoining { set; get; }
+        public int DaysMonthly { set; get; }
+        public int DaysYearly { set; get; }
     }
 }

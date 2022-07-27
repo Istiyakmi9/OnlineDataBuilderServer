@@ -3,6 +3,8 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
+using System.Collections.Generic;
 
 namespace ServiceLayer.Code
 {
@@ -43,7 +45,6 @@ namespace ServiceLayer.Code
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
             {
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
-                leavePlanConfiguration.leaveDetail = leaveDetail;
             }
 
             var result = _db.Execute<LeaveDetail>("sp_leave_detail_insupd", new
@@ -58,12 +59,17 @@ namespace ServiceLayer.Code
                 leaveDetail.LeaveNotAllocatedIfJoinAfter,
                 leaveDetail.CanManagerAwardCausalLeave,
                 leaveDetail.CanCompoffAllocatedAutomatically,
-                leaveDetail.CanCompoffCreditedByManager,
-                LeavePlanConfiguration = JsonConvert.SerializeObject(leavePlanConfiguration)
+                leaveDetail.CanCompoffCreditedByManager
             }, true);
 
-            if (!ApplicationConstants.IsExecuted(result))
+            if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update leave plan detail.");
+            else
+            {
+                leaveDetail.LeaveDetailId = Convert.ToInt32(result);
+                leavePlanConfiguration.leaveDetail = leaveDetail;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
 
             return leavePlanConfiguration;
         }
@@ -77,10 +83,9 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid plan type id. No record found.");
 
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
-            {
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
-                leavePlanConfiguration.leaveAccrual = leaveAccrual;
-            }
+
+            ValidateAndPreFillValue(leaveAccrual);
 
             var result = _db.Execute<LeaveAccrual>("sp_leave_accrual_InsUpdate", new
             {
@@ -88,20 +93,30 @@ namespace ServiceLayer.Code
                 leaveAccrual.LeavePlanTypeId,
                 leaveAccrual.CanApplyEntireLeave,
                 leaveAccrual.IsLeaveAccruedPatternAvail,
-                leaveAccrual.LeaveDistributionSequence,
+                JoiningMonthLeaveDistribution = JsonConvert.SerializeObject(leaveAccrual.JoiningMonthLeaveDistribution),
+                ExitMonthLeaveDistribution = JsonConvert.SerializeObject(leaveAccrual.ExitMonthLeaveDistribution),
+                LeaveDistributionSequence = leaveAccrual.LeaveDistributionSequence,
                 leaveAccrual.LeaveDistributionAppliedFrom,
-                leaveAccrual.IsAllowLeavesForJoinigMonth,
-                leaveAccrual.IsAllowLeavesProbationPeriod,
-                leaveAccrual.BreakMonthLeaveAllocationId,
+                leaveAccrual.IsLeavesProratedForJoinigMonth,
+                leaveAccrual.IsLeavesProratedOnProbation,
+                leaveAccrual.IsNotAllowProratedOnProbation,
                 leaveAccrual.IsNoLeaveOnProbationPeriod,
                 leaveAccrual.IsVaryOnProbationOrExprience,
+                leaveAccrual.IsAccrualStartsAfterJoining,
+                leaveAccrual.IsAccrualStartsAfterProbationEnds,
+                leaveAccrual.AccrualDaysAfterJoining,
+                leaveAccrual.AccrualDaysAfterProbationEnds,
+                AccrualProrateDetail = JsonConvert.SerializeObject(leaveAccrual.AccrualProrateDetail),
                 leaveAccrual.IsImpactedOnWorkDaysEveryMonth,
                 leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen,
                 leaveAccrual.HolidayAsAbsentIfAttendaceLessThen,
                 leaveAccrual.CanApplyForFutureDate,
-                leaveAccrual.ExtraLeaveBeyondAccruedBalance,
+                leaveAccrual.IsExtraLeaveBeyondAccruedBalance,
+                leaveAccrual.IsNoExtraLeaveBeyondAccruedBalance,
                 leaveAccrual.NoOfDaysForExtraLeave,
+                leaveAccrual.IsAccrueIfHavingLeaveBalance,
                 leaveAccrual.AllowOnlyIfAccrueBalanceIsAlleast,
+                leaveAccrual.IsAccrueIfOnOtherLeave,
                 leaveAccrual.NotAllowIfAlreadyOnLeaveMoreThan,
                 leaveAccrual.RoundOffLeaveBalance,
                 leaveAccrual.ToNearestHalfDay,
@@ -110,14 +125,40 @@ namespace ServiceLayer.Code
                 leaveAccrual.ToNextAvailableFullDay,
                 leaveAccrual.ToPreviousHalfDay,
                 leaveAccrual.DoesLeaveExpireAfterSomeTime,
-                leaveAccrual.AfterHowManyDays,
+                leaveAccrual.AfterHowManyDays
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update leave plan detail.");
+            else
+            {
+                leaveAccrual.LeaveAccrualId = Convert.ToInt32(result);
+                leavePlanConfiguration.leaveAccrual = leaveAccrual;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
+
+            return leavePlanConfiguration;
+        }
+
+        private void ValidateAndPreFillValue(LeaveAccrual leaveAccrual)
+        {
+            if (!leaveAccrual.IsNotAllowProratedOnProbation)
+                leaveAccrual.ExitMonthLeaveDistribution = new List<AllocateTimeBreakup>();
+
+            if (leaveAccrual.IsLeavesProratedForJoinigMonth)
+                leaveAccrual.JoiningMonthLeaveDistribution = new List<AllocateTimeBreakup>();
+        }
+
+        public void UpdateLeavePlanConfigurationDetail(int leavePlanTypeId, LeavePlanConfiguration leavePlanConfiguration)
+        {
+            var result = _db.Execute<LeaveAccrual>("sp_leave_plan_upd_configuration", new
+            {
+                LeavePlanTypeId = leavePlanTypeId,
                 LeavePlanConfiguration = JsonConvert.SerializeObject(leavePlanConfiguration)
             }, true);
 
             if (!ApplicationConstants.IsExecuted(result))
                 throw new HiringBellException("Fail to insert or update leave plan detail.");
-
-            return leavePlanConfiguration;
         }
 
         public LeavePlanConfiguration UpdateApplyForLeaveService(int leavePlanTypeId, LeaveApplyDetail leaveApplyDetail)
@@ -129,10 +170,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid plan type id. No record found.");
 
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
-            {
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
-                leavePlanConfiguration.leaveApplyDetail = leaveApplyDetail;
-            }
 
             var result = _db.Execute<LeaveApplyDetail>("sp_leave_apply_detail_InsUpdate", new
             {
@@ -140,23 +178,77 @@ namespace ServiceLayer.Code
                 leaveApplyDetail.LeavePlanTypeId,
                 leaveApplyDetail.IsAllowForHalfDay,
                 leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave,
-                leaveApplyDetail.RemaningCalendarDayInNotice,
-                leaveApplyDetail.RequiredCalendarDaysForLeaveApply,
-                leaveApplyDetail.RemaningWorkingDaysInNotice,
                 leaveApplyDetail.ApplyPriorBeforeLeaveDate,
                 leaveApplyDetail.BackDateLeaveApplyNotBeyondDays,
                 leaveApplyDetail.RestrictBackDateLeaveApplyAfter,
                 leaveApplyDetail.CurrentLeaveRequiredComments,
                 leaveApplyDetail.ProofRequiredIfDaysExceeds,
                 leaveApplyDetail.NoOfDaysExceeded,
-                LeavePlanConfiguration = JsonConvert.SerializeObject(leavePlanConfiguration)
+                RuleForLeaveInNotice = JsonConvert.SerializeObject(leaveApplyDetail.RuleForLeaveInNotice)
             }, true);
 
-            if (!ApplicationConstants.IsExecuted(result))
+            if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update apply for leave detail.");
+            else
+            {
+                leaveApplyDetail.LeaveApplyDetailId = Convert.ToInt32(result);
+                leavePlanConfiguration.leaveApplyDetail = leaveApplyDetail;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
 
             return leavePlanConfiguration;
         }
 
+
+        public LeavePlanConfiguration UpdateLeaveRestrictionService(int leavePlanTypeId, LeavePlanRestriction leavePlanRestriction)
+        {
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan type id. No record found.");
+
+            if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            var result = _db.Execute<LeaveApplyDetail>("sp_leave_plan_restriction_insupd", leavePlanRestriction, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update apply for leave detail.");
+            else
+            {
+                leavePlanRestriction.LeavePlanRestrictionId = Convert.ToInt32(result);
+                leavePlanConfiguration.leavePlanRestriction = leavePlanRestriction;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
+
+            return leavePlanConfiguration;
+        }
+
+        public LeavePlanConfiguration UpdateHolidayNWeekOffPlanService(int leavePlanTypeId, LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
+        {
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan type id. No record found.");
+
+            leaveHolidaysAndWeekoff.LeavePlanTypeId = leavePlanTypeId;
+            if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            var result = _db.Execute<LeaveHolidaysAndWeekoff>("sp_leave_holidays_and_weekoff_insupd", leaveHolidaysAndWeekoff, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update apply for leave detail.");
+            else
+            {
+                leaveHolidaysAndWeekoff.LeaveHolidaysAndWeekOffId = Convert.ToInt32(result);
+                leavePlanConfiguration.leaveHolidaysAndWeekoff = leaveHolidaysAndWeekoff;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
+
+            return leavePlanConfiguration;
+        }
     }
 }
