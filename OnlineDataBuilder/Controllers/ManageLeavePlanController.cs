@@ -44,5 +44,19 @@ namespace OnlineDataBuilder.Controllers
             var result = _manageLeavePlanService.UpdateApplyForLeaveService(leavePlanTypeId, leaveApplyDetail);
             return BuildResponse(result);
         }
+
+        [HttpPut("UpdateLeaveRestriction/{leavePlanTypeId}")]
+        public IResponse<ApiResponse> UpdateLeaveRestriction([FromRoute] int leavePlanTypeId, [FromBody] LeavePlanRestriction leavePlanRestriction)
+        {
+            var result = _manageLeavePlanService.UpdateLeaveRestrictionService(leavePlanTypeId, leavePlanRestriction);
+            return BuildResponse(result);
+        }
+
+        [HttpPut("UpdateHolidayNWeekOffPlan/{leavePlanTypeId}")]
+        public IResponse<ApiResponse> UpdateHolidayNWeekOffPlan([FromRoute] int leavePlanTypeId, [FromBody] LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
+        {
+            var result = _manageLeavePlanService.UpdateHolidayNWeekOffPlanService(leavePlanTypeId, leaveHolidaysAndWeekoff);
+            return BuildResponse(result);
+        }
     }
 }
