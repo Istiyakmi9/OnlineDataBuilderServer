@@ -42,6 +42,15 @@ namespace ServiceLayer.Code
             if (leavePlanType == null)
                 throw new HiringBellException("Invalid plan type id. No record found.");
 
+            if (leaveDetail.IsLeaveDaysLimit == false)
+                leaveDetail.LeaveLimit = 0;
+
+            if (leaveDetail.IsNoLeaveAfterDate == false)
+                leaveDetail.LeaveNotAllocatedIfJoinAfter = 0;
+
+            if (leaveDetail.CanApplyExtraLeave == false)
+                leaveDetail.ExtraLeaveLimit = 0;
+
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
             {
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
@@ -81,6 +90,7 @@ namespace ServiceLayer.Code
 
             if (leavePlanType == null)
                 throw new HiringBellException("Invalid plan type id. No record found.");
+
 
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
@@ -147,6 +157,48 @@ namespace ServiceLayer.Code
 
             if (leaveAccrual.IsLeavesProratedForJoinigMonth)
                 leaveAccrual.JoiningMonthLeaveDistribution = new List<AllocateTimeBreakup>();
+
+            if (leaveAccrual.CanApplyEntireLeave == false)
+            {
+                leaveAccrual.LeaveDistributionSequence = "";
+                leaveAccrual.LeaveDistributionAppliedFrom = 0;
+            }
+
+            if (leaveAccrual.IsVaryOnProbationOrExprience == false)
+            {
+                leaveAccrual.IsAccrualStartsAfterJoining = false;
+                leaveAccrual.AccrualDaysAfterJoining = 0;
+                leaveAccrual.IsAccrualStartsAfterProbationEnds = false;
+                leaveAccrual.AccrualDaysAfterProbationEnds = 0;
+                leaveAccrual.AccrualProrateDetail = new List<AccrualProrate>();
+            }
+
+            if (leaveAccrual.IsAccrualStartsAfterJoining == true)
+            {
+                leaveAccrual.IsAccrualStartsAfterProbationEnds = false;
+                leaveAccrual.AccrualDaysAfterProbationEnds = 0;
+            }
+
+            if (leaveAccrual.IsAccrualStartsAfterProbationEnds == true)
+            {
+                leaveAccrual.IsAccrualStartsAfterJoining = false;
+                leaveAccrual.AccrualDaysAfterJoining = 0;
+            }
+
+            if (leaveAccrual.IsNoExtraLeaveBeyondAccruedBalance == true)
+            {
+                leaveAccrual.IsExtraLeaveBeyondAccruedBalance = false;
+                leaveAccrual.NoOfDaysForExtraLeave = 0;
+            }
+
+            if (leaveAccrual.IsAccrueIfHavingLeaveBalance == false)
+                leaveAccrual.AllowOnlyIfAccrueBalanceIsAlleast = 0;
+
+            if (leaveAccrual.IsAccrueIfOnOtherLeave == false)
+                leaveAccrual.NotAllowIfAlreadyOnLeaveMoreThan = 0;
+
+            if (leaveAccrual.DoesLeaveExpireAfterSomeTime == false)
+                leaveAccrual.AfterHowManyDays = 0;
         }
 
         public void UpdateLeavePlanConfigurationDetail(int leavePlanTypeId, LeavePlanConfiguration leavePlanConfiguration)
