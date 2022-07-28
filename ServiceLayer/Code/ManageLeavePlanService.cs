@@ -250,5 +250,71 @@ namespace ServiceLayer.Code
 
             return leavePlanConfiguration;
         }
+
+        public LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, LeaveApproval leaveApproval)
+        {
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan type id. No record found.");
+
+            if (leaveApproval.IsLeaveRequiredApproval == false)
+                leaveApproval.ApprovalChain = new List<ApprovalRoleDetail>();
+
+            leaveApproval.LeavePlanTypeId = leavePlanTypeId;
+            if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            var result = _db.Execute<LeaveApproval>("sp_leave_approval_insupd", new
+            {
+                leaveApproval.LeaveApprovalId,
+                leaveApproval.LeavePlanTypeId,
+                leaveApproval.IsLeaveRequiredApproval,
+                leaveApproval.ApprovalLevels,
+                ApprovalChain = JsonConvert.SerializeObject(leaveApproval.ApprovalChain),
+                leaveApproval.IsRequiredAllLevelApproval,
+                leaveApproval.CanHigherRankPersonsIsAvailForAction,
+                leaveApproval.IsPauseForApprovalNotification,
+                leaveApproval.IsReportingManageIsDefaultForAction
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update apply for leave detail.");
+            else
+            {
+                leaveApproval.LeaveApprovalId = Convert.ToInt32(result);
+                leavePlanConfiguration.leaveApproval = leaveApproval;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
+
+            return leavePlanConfiguration;
+        }
+
+        public LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, LeaveEndYearProcessing leaveEndYearProcessing)
+        {
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan type id. No record found.");
+
+            leaveEndYearProcessing.LeavePlanTypeId = leavePlanTypeId;
+            if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            var result = _db.Execute<LeaveEndYearProcessing>("sp_leave_endyear_processing_insupd", leaveEndYearProcessing, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update apply for leave detail.");
+            else
+            {
+                leaveEndYearProcessing.LeaveEndYearProcessingId = Convert.ToInt32(result);
+                leavePlanConfiguration.leaveEndYearProcessing = leaveEndYearProcessing;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+            }
+
+            return leavePlanConfiguration;
+        }
     }
 }
