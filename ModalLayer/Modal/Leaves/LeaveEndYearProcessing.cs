@@ -1,35 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModalLayer.Modal.Leaves
+﻿namespace ModalLayer.Modal.Leaves
 {
     public class LeaveEndYearProcessing
     {
-        public int LeaveEndYearProcessingId { get; set; }
-        public int LeavePlanId { get; set; }
-        public bool IsLeaveBalanceExpiredOnEndOfYear { get; set; }
-        public bool AllConvertedToPaid { get; set; }
-        public bool AllLeavesCarryForwardToNextYear { get; set; }
-        public bool PayFirstNCarryForwordRemaning { get; set; }
-        public bool CarryForwordFirstNPayRemaning { get; set; }
-        public bool PayNCarryForwardForFixedDays { get; set; }
-        public bool PayNCarryForwardForPercent { get; set; }
-        public int PayNCarryForwardIfDaysBalance { get; set; }
-        public decimal PayPercent { get; set; }
-        public decimal CarryForwardPercent { get; set; }
-        public bool IsMaximumPayableRequired { get; set; }
-        public decimal MaximumPayableDays { get; set; }
-        public bool IsMaximumCarryForwardRequired { get; set; }
-        public decimal MaximumCarryForwardDays { get; set; }
-        public decimal RulesForLeaveBalanceIsMoreThan { get; set; }
-        public decimal PaybleForDays { get; set; }
-        public decimal CarryForwardForDays { get; set; }
-        public bool DoestCarryForwardExpired { get; set; }
-        public decimal ExpiredAfter { get; set; }
-        public bool DoesNegativeLeaveHasImpact { get; set; }
-        public bool DeductFromSalaryOnYearChange { get; set; }
-        public bool ResetBalanceToZero { get; set; }
-        public bool CarryForwardToNextYear { get; set; }
+        public int LeaveEndYearProcessingId { set; get; }
+        public int LeavePlanTypeId { set; get; }
+        public bool IsLeaveBalanceExpiredOnEndOfYear { set; get; }
+        public bool AllConvertedToPaid { set; get; }
+        public bool AllLeavesCarryForwardToNextYear { set; get; }
+        public bool PayFirstNCarryForwordRemaning { set; get; }
+        public bool CarryForwordFirstNPayRemaning { set; get; }
+        public bool PayNCarryForwardForPercent { set; get; }
+        public string PayNCarryForwardDefineType { set; get; }
+        public decimal PayNCarryForwardRuleInPercent { set; get; }
+        public decimal PayPercent { set; get; }
+        public decimal CarryForwardPercent { set; get; }
+        public bool IsMaximumPayableRequired { set; get; }
+        public decimal MaximumPayableDays { set; get; }
+        public bool IsMaximumCarryForwardRequired { set; get; }
+        public decimal MaximumCarryForwardDays { set; get; }
+        public decimal PayNCarryForwardRuleInDays { set; get; }
+        public decimal PaybleForDays { set; get; }
+        public decimal CarryForwardForDays { set; get; }
+        public bool DoestCarryForwardExpired { set; get; }
+        public decimal ExpiredAfter { set; get; }
+        public bool DoesExpiryLeaveRemainUnchange { set; get; }
+        public bool DeductFromSalaryOnYearChange { set; get; }
+        public bool ResetBalanceToZero { set; get; }
+        public bool CarryForwardToNextYear { set; get; }
     }
 }
