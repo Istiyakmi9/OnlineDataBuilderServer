@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -70,6 +71,20 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> UpdateYearEndProcessing([FromRoute] int leavePlanTypeId, [FromBody] LeaveEndYearProcessing leaveEndYearProcessing)
         {
             var result = _manageLeavePlanService.UpdateYearEndProcessingService(leavePlanTypeId, leaveEndYearProcessing);
+            return BuildResponse(result);
+        }
+
+        [HttpPut("AddUpdateEmpLeavePlan/{leavePlanId}")]
+        public IResponse<ApiResponse> AddUpdateEmpLeavePlan([FromRoute] int leavePlanId, [FromBody] List<EmpLeavePlanMapping> empLeavePlanMapping)
+        {
+            var result = _manageLeavePlanService.AddUpdateEmpLeavePlanService(leavePlanId, empLeavePlanMapping);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetEmpMappingByLeavePlanId/{leavePlanId}")]
+        public IResponse<ApiResponse> GetEmpMappingByLeavePlanId([FromRoute] int leavePlanId)
+        {
+            var result = _manageLeavePlanService.GetEmpMappingByLeavePlanIdService(leavePlanId);
             return BuildResponse(result);
         }
     }

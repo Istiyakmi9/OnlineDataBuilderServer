@@ -16,5 +16,7 @@ namespace ServiceLayer.Interface
         LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, LeaveEndYearProcessing leaveEndYearProcessing);
         LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, LeaveApproval leaveApproval);        
         LeavePlanConfiguration GetLeaveConfigurationDetail(int leavePlanTypeId);
+        string AddUpdateEmpLeavePlanService(int leavePlanId, List<EmpLeavePlanMapping> empLeavePlanMapping);
+        List<EmpLeavePlanMapping> GetEmpMappingByLeavePlanIdService(int leavePlanId);
     }
 }
