@@ -1,10 +1,13 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -315,6 +318,37 @@ namespace ServiceLayer.Code
             }
 
             return leavePlanConfiguration;
+        }
+
+        public string AddUpdateEmpLeavePlanService(int leavePlanId, List<EmpLeavePlanMapping> empLeavePlanMapping)
+        {
+            string status = string.Empty;
+            if (leavePlanId <= 0)
+                throw new Exception("Invalid plan selected.");
+
+            var table = Converter.ToDataTable(empLeavePlanMapping);
+            var result = _db.BatchInsert("sp_employee_leaveplan_mapping_insupd", table, true);
+
+            if (result <= 0)
+                throw new HiringBellException("Fail to insert or update employee leave plan deatils.");
+            else
+                status = "updated";
+
+            return status;
+        }
+
+        public List<EmpLeavePlanMapping> GetEmpMappingByLeavePlanIdService(int leavePlanId)
+        {
+            if (leavePlanId <= 0)
+                throw new Exception("Invalid plan selected.");
+
+            List<EmpLeavePlanMapping> empLeavePlanMappings = _db.GetList<EmpLeavePlanMapping>("sp_employee_leaveplan_mapping_GetByPlanId", new { LeavePlanId = leavePlanId });
+            Parallel.ForEach(empLeavePlanMappings, i =>
+            {
+                i.IsAdded = true;
+            });
+
+            return empLeavePlanMappings;
         }
     }
 }
