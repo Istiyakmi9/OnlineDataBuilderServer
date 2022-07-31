@@ -36,6 +36,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateLeaveDetail(int leavePlanTypeId, LeaveDetail leaveDetail)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -85,6 +88,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateLeaveAccrualService(int leavePlanTypeId, LeaveAccrual leaveAccrual)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -158,7 +164,7 @@ namespace ServiceLayer.Code
             if (leaveAccrual.IsLeavesProratedForJoinigMonth)
                 leaveAccrual.JoiningMonthLeaveDistribution = new List<AllocateTimeBreakup>();
 
-            if (leaveAccrual.CanApplyEntireLeave == false)
+            if (leaveAccrual.IsLeaveAccruedPatternAvail == false)
             {
                 leaveAccrual.LeaveDistributionSequence = "";
                 leaveAccrual.LeaveDistributionAppliedFrom = 0;
@@ -203,6 +209,9 @@ namespace ServiceLayer.Code
 
         public void UpdateLeavePlanConfigurationDetail(int leavePlanTypeId, LeavePlanConfiguration leavePlanConfiguration)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             var result = _db.Execute<LeaveAccrual>("sp_leave_plan_upd_configuration", new
             {
                 LeavePlanTypeId = leavePlanTypeId,
@@ -215,6 +224,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateApplyForLeaveService(int leavePlanTypeId, LeaveApplyDetail leaveApplyDetail)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -223,6 +235,12 @@ namespace ServiceLayer.Code
 
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            if (leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave == true)
+                leaveApplyDetail.RuleForLeaveInNotice = new List<LeaveRuleInNotice>();
+
+            if (leaveApplyDetail.ProofRequiredIfDaysExceeds == false)
+                leaveApplyDetail.NoOfDaysExceeded = 0;
 
             var result = _db.Execute<LeaveApplyDetail>("sp_leave_apply_detail_InsUpdate", new
             {
@@ -254,6 +272,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateLeaveRestrictionService(int leavePlanTypeId, LeavePlanRestriction leavePlanRestriction)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -262,6 +283,24 @@ namespace ServiceLayer.Code
 
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            if (leavePlanRestriction.CanApplyAfterProbation == false)
+                leavePlanRestriction.DaysAfterProbation = 0;
+
+            if (leavePlanRestriction.CanApplyAfterJoining == false)
+                leavePlanRestriction.DaysAfterJoining = 0;
+
+            if (leavePlanRestriction.IsConsecutiveLeaveLimit == false)
+                leavePlanRestriction.ConsecutiveDaysLimit = 0;
+
+            if (leavePlanRestriction.IsLeaveInNoticeExtendsNoticePeriod == false)
+                leavePlanRestriction.NoOfTimesNoticePeriodExtended = 0;
+
+            if (leavePlanRestriction.IsCurrentPlanDepnedsOnOtherPlan == false)
+                leavePlanRestriction.AssociatedPlanTypeId = 0;
+
+            if (leavePlanRestriction.IsCheckOtherPlanTypeBalance == false)
+                leavePlanRestriction.DependentPlanTypeId = 0;
 
             var result = _db.Execute<LeaveApplyDetail>("sp_leave_plan_restriction_insupd", leavePlanRestriction, true);
 
@@ -279,6 +318,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateHolidayNWeekOffPlanService(int leavePlanTypeId, LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -288,6 +330,26 @@ namespace ServiceLayer.Code
             leaveHolidaysAndWeekoff.LeavePlanTypeId = leavePlanTypeId;
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            if (leaveHolidaysAndWeekoff.AdJoiningHolidayIsConsiderAsLeave == false)
+            {
+                leaveHolidaysAndWeekoff.ConsiderLeaveIfNumOfDays = 0;
+                leaveHolidaysAndWeekoff.IfLeaveLieBetweenTwoHolidays = false;
+                leaveHolidaysAndWeekoff.IfHolidayIsRightBeforLeave = false;
+                leaveHolidaysAndWeekoff.IfHolidayIsRightAfterLeave = false;
+                leaveHolidaysAndWeekoff.IfHolidayIsBetweenLeave = false;
+                leaveHolidaysAndWeekoff.IfHolidayIsRightBeforeAfterOrInBetween = false;
+            }
+
+            if (leaveHolidaysAndWeekoff.AdjoiningWeekOffIsConsiderAsLeave == false)
+            {
+                leaveHolidaysAndWeekoff.ConsiderLeaveIfIncludeDays = 0;
+                leaveHolidaysAndWeekoff.IfLeaveLieBetweenWeekOff = false;
+                leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforLeave = false;
+                leaveHolidaysAndWeekoff.IfWeekOffIsRightAfterLeave = false;
+                leaveHolidaysAndWeekoff.IfWeekOffIsBetweenLeave = false;
+                leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforeAfterOrInBetween = false;
+            }
 
             var result = _db.Execute<LeaveHolidaysAndWeekoff>("sp_leave_holidays_and_weekoff_insupd", leaveHolidaysAndWeekoff, true);
 
@@ -305,6 +367,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, LeaveApproval leaveApproval)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -345,6 +410,9 @@ namespace ServiceLayer.Code
 
         public LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, LeaveEndYearProcessing leaveEndYearProcessing)
         {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
@@ -355,7 +423,38 @@ namespace ServiceLayer.Code
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
 
-            var result = _db.Execute<LeaveEndYearProcessing>("sp_leave_endyear_processing_insupd", leaveEndYearProcessing, true);
+            if (leaveEndYearProcessing.DoestCarryForwardExpired == false)
+                leaveEndYearProcessing.ExpiredAfter = 0;
+
+            if (leaveEndYearProcessing.PayNCarryForwardDefineType == "fixed" || (leaveEndYearProcessing.PayFirstNCarryForwordRemaning == false && leaveEndYearProcessing.CarryForwordFirstNPayRemaning == false))
+                leaveEndYearProcessing.PercentagePayNCarryForward = new List<PercentagePayNCarryForward>();
+
+            if (leaveEndYearProcessing.PayNCarryForwardDefineType == "percentage" || (leaveEndYearProcessing.PayFirstNCarryForwordRemaning == false && leaveEndYearProcessing.CarryForwordFirstNPayRemaning == false))
+                leaveEndYearProcessing.FixedPayNCarryForward = new List<FixedPayNCarryForward>();
+
+            if (leaveEndYearProcessing.PayFirstNCarryForwordRemaning == false && leaveEndYearProcessing.CarryForwordFirstNPayRemaning == false)
+                leaveEndYearProcessing.PayNCarryForwardDefineType = "";
+
+            var result = _db.Execute<LeaveEndYearProcessing>("sp_leave_endyear_processing_insupd", new
+            {
+                leaveEndYearProcessing.LeaveEndYearProcessingId,
+                leaveEndYearProcessing.LeavePlanTypeId,
+                leaveEndYearProcessing.IsLeaveBalanceExpiredOnEndOfYear,
+                leaveEndYearProcessing.AllConvertedToPaid,
+                leaveEndYearProcessing.AllLeavesCarryForwardToNextYear,
+                leaveEndYearProcessing.PayFirstNCarryForwordRemaning,
+                leaveEndYearProcessing.CarryForwordFirstNPayRemaning,
+                leaveEndYearProcessing.PayNCarryForwardForPercent,
+                leaveEndYearProcessing.PayNCarryForwardDefineType,
+                FixedPayNCarryForward = JsonConvert.SerializeObject(leaveEndYearProcessing.FixedPayNCarryForward),
+                PercentagePayNCarryForward = JsonConvert.SerializeObject(leaveEndYearProcessing.PercentagePayNCarryForward),
+                leaveEndYearProcessing.DoestCarryForwardExpired,
+                leaveEndYearProcessing.ExpiredAfter,
+                leaveEndYearProcessing.DoesExpiryLeaveRemainUnchange,
+                leaveEndYearProcessing.DeductFromSalaryOnYearChange,
+                leaveEndYearProcessing.ResetBalanceToZero,
+                leaveEndYearProcessing.CarryForwardToNextYear
+            }, true);
 
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update apply for leave detail.");
