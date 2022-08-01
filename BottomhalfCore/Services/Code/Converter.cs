@@ -61,8 +61,11 @@ namespace BottomhalfCore.Services.Code
                 index++;
             }
 
-            var row = table.Rows[0];
-            result = CreateItemFromRow<T>((DataRow)row, properties);
+            if (table.Rows.Count > 0)
+            {
+                var row = table.Rows[0];
+                result = CreateItemFromRow<T>((DataRow)row, properties);
+            }
             return result;
         }
 

@@ -11,11 +11,13 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
+        private readonly IEmployeeService _employeeService;
 
-        public LeaveService(IDb db, CurrentSession currentSession)
+        public LeaveService(IDb db, CurrentSession currentSession, IEmployeeService employeeService)
         {
             _db = db;
             _currentSession = currentSession;
+            _employeeService = employeeService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -108,10 +110,11 @@ namespace ServiceLayer.Code
             }
         }
 
-        public List<LeavePlan> GetLeavePlansService()
+        public dynamic GetLeavePlansService(FilterModel filterModel)
         {
             List<LeavePlan> leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
-            return leavePlans;
+            List<Employee> employees = _employeeService.GetEmployees(filterModel);
+            return new { LeavePlan = leavePlans, Employees = employees };
         }
 
         public List<LeavePlanType> UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType)

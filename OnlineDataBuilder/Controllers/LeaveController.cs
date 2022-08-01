@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
@@ -17,10 +18,10 @@ namespace OnlineDataBuilder.Controllers
             _leaveService = leaveService;
         }
 
-        [HttpGet("GetLeavePlans")]
-        public IResponse<ApiResponse> GetLeavePlans()
+        [HttpPost("GetLeavePlans")]
+        public IResponse<ApiResponse> GetLeavePlans(FilterModel filterModel)
         {
-            var result = _leaveService.GetLeavePlansService();
+            var result = _leaveService.GetLeavePlansService(filterModel);
             return BuildResponse(result);
         }
 

@@ -141,7 +141,9 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[2].Rows.Count == 1)
                 employeeDeclaration.SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
 
-            employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            if (employeeDeclaration.DeclarationDetail != null)
+                employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 this.BuildSectionWiseComponents(employeeDeclaration);
@@ -318,13 +320,13 @@ namespace ServiceLayer.Code
                 {
                     decimal previousMonthTax = 0;
                     int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
-                    employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("{0:0.00}",taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k)));
+                    employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("{0:0.00}", taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k)));
                     int currentMonthIndex = i;
                     if (currentMonthIndex > 0)
                     {
                         previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
                     }
-                    decimal currentMonthTax = Convert.ToDecimal(string.Format("{0:0.00}",((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12-i))));
+                    decimal currentMonthTax = Convert.ToDecimal(string.Format("{0:0.00}", ((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12 - i))));
                     while (i < taxdetails.Count)
                     {
                         //if (previousMonthTax > currentMonthTax && i == currentMonthIndex)
@@ -334,7 +336,7 @@ namespace ServiceLayer.Code
                         //    taxdetails[i].TaxDeducted = currentMonthTax;
                         //}
                         //else
-                            taxdetails[i].TaxDeducted = currentMonthTax;
+                        taxdetails[i].TaxDeducted = currentMonthTax;
 
                         i++;
                     }
@@ -382,7 +384,7 @@ namespace ServiceLayer.Code
 
         private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
         {
-            foreach(var x in _sections)
+            foreach (var x in _sections)
             {
                 switch (x.Key)
                 {
@@ -488,7 +490,7 @@ namespace ServiceLayer.Code
 
             decimal cess = (tax * 4) / 100;
             taxSlab.Add("Gross Income Tax", tax + cess);
-            return new {TotalTax = tax+cess, IncomeTaxSlab = taxSlab };
+            return new { TotalTax = tax + cess, IncomeTaxSlab = taxSlab };
         }
     }
 }
