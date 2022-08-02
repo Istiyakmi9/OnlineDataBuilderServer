@@ -14,5 +14,6 @@ namespace ServiceLayer.Interface
         string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail);
         LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId);
         List<LeavePlanType> GetLeaveTypeFilterService();
+        List<LeavePlan> SetDefaultPlanService(int leavePlanId, LeavePlan leavePlan);
     }
 }

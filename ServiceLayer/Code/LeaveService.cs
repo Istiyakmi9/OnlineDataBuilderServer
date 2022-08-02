@@ -173,5 +173,23 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to add leave type.");
             return leavePlan;
         }
+
+        public List<LeavePlan> SetDefaultPlanService(int LeavePlanId, LeavePlan leavePlan)
+        {
+            List<LeavePlan> leavePlans = null;
+            if (leavePlan.LeavePlanId <= 0)
+                throw new HiringBellException("Invalid leave plan selected.");
+                
+            var value = _db.Execute<LeavePlan>("sp_leave_plan_set_default", new
+            {
+                leavePlan.LeavePlanId,
+                leavePlan.IsDefaultPlan
+            }, true);
+            if (string.IsNullOrEmpty(value))
+                throw new HiringBellException("Unable to add or update leave plan");
+
+            leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            return leavePlans;
+        }
     }
 }
