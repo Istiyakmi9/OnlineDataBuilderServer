@@ -11,5 +11,6 @@ namespace ModalLayer.Modal.Leaves
         public string AssociatedPlanTypes { set; get; }
         public bool IsShowLeavePolicy { set; get; }
         public bool IsUploadedCustomLeavePolicy { set; get; }
+        public bool IsDefaultPlan { set; get; }
     }
 }

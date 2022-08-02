@@ -165,6 +165,7 @@ namespace ServiceLayer.Code
             if (leavePlan == null)
                 throw new HiringBellException("Invalid leave plan selected.");
 
+            leavePlanTypes.ForEach(item => item.PlanConfigurationDetail = "");
             leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
 
             var result = _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);
