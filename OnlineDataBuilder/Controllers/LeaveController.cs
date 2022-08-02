@@ -73,5 +73,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _leaveService.GetLeaveTypeFilterService();
             return BuildResponse(result);
         }
+
+        [HttpPut("SetDefaultPlan/{leavePlanId}")]
+        public IResponse<ApiResponse> SetDefaultPlan([FromRoute] int leavePlanId, [FromBody] LeavePlan leavePlan)
+        {
+            var result = _leaveService.SetDefaultPlanService(leavePlanId, leavePlan);
+            return BuildResponse(result);
+        }
     }
 }
