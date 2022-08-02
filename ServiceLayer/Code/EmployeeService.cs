@@ -57,101 +57,26 @@ namespace ServiceLayer.Code
         }
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
-            int skipValue = (filterModel.PageIndex - 1) * 10;
-            int takeValue = 10;
-            var table = _commonService.LoadEmployeeData();
-            List<Employee> employees = Converter.ToList<Employee>(table);
-            // List<Employee> employees = _commonFilterService.GetResult<Employee>(filterModel, "SP_Employees_Get");
-
-            if (filterModel.IsActive == true)
+            int IsActiveState = -1;
+            if (filterModel.IsActive != null)
             {
-                employees = employees.FindAll(x => x.IsActive == true);
-            }
-            else if (filterModel.IsActive == false)
-            {
-                //employees = employees.FindAll(x => x.IsActive == false);
-                DataSet data = _db.GetDataset("SP_DeActivatedEmployee_Get", null);
-                employees = Converter.ToList<Employee>(data.Tables[0]);
-            }
-            else
-            {
-                DataSet data = _db.GetDataset("SP_Employee_GetAll", null);
-                employees = Converter.ToList<Employee>(data.Tables[0]);
+                IsActiveState = (filterModel.IsActive == true ? 1 : 0);
             }
 
-            List<Employee> emp = null;
-            if (filterModel.SortBy == "FirstName Asc")
-                emp = employees.OrderBy(x => x.FirstName).Skip(skipValue).Take(takeValue).ToList();
-            else if (filterModel.SortBy == "FirstName Desc")
-                emp = employees.OrderByDescending(x => x.FirstName).Skip(skipValue).Take(takeValue).ToList();
-            if (filterModel.SortBy == "Mobile Asc")
-                emp = employees.OrderBy(x => x.Mobile).Skip(skipValue).Take(takeValue).ToList();
-            else if (filterModel.SortBy == "Mobile Desc")
-                emp = employees.OrderByDescending(x => x.Mobile).Skip(skipValue).Take(takeValue).ToList();
-            if (filterModel.SortBy == "Email Asc")
-                emp = employees.OrderBy(x => x.Email).Skip(skipValue).Take(takeValue).ToList();
-            else if (filterModel.SortBy == "Email Desc")
-                emp = employees.OrderByDescending(x => x.Email).Skip(skipValue).Take(takeValue).ToList();
+            if (string.IsNullOrEmpty(filterModel.SearchString))
+                filterModel.SearchString = "1=1";
 
-            int total = employees.Count;
-            Parallel.For(0, total, i => employees[i].Total = total);
-
-            if (emp == null)
-                emp = employees;
-
-            if (filterModel.SearchString.Contains("Global"))
+            List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
             {
-                int lastIndex = filterModel.SearchString.Length - 13;
-                string value = (filterModel.SearchString.Substring(13, lastIndex)).ToLower();
-                var result = emp.FindAll(x => x.Email.Contains(value));
-                if (result.Count == 0)
-                {
-                    string saerchValue = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(value);
-                    result = emp.FindAll(x => x.FirstName.Contains(saerchValue));
-                }
-                if (result.Count == 0)
-                {
-                    result = emp.FindAll(x => x.Mobile.Contains(value));
-                }
-                emp = result;
+                filterModel.SearchString,
+                filterModel.PageIndex,
+                filterModel.PageSize,
+                filterModel.SortBy,
+                IsActive = IsActiveState
+            });
 
-                total = emp.Count;
-                Parallel.For(0, total, i => emp[i].Total = total);
-            }
-            else
-            {
-                if (filterModel.SearchString.Contains("FirstName"))
-                {
-                    int lastIndex = filterModel.SearchString.Length - 16;
-                    string searchValue = (filterModel.SearchString.Substring(16, lastIndex)).ToLower();
-                    string value = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(searchValue);
-                    emp = emp.FindAll(x => x.FirstName.Contains(value));
-                    total = emp.Count;
-                    Parallel.For(0, total, i => emp[i].Total = total);
-                }
-                else if (filterModel.SearchString.Contains("Email"))
-                {
-                    int lastIndex = filterModel.SearchString.Length - 11;
-                    string value = (filterModel.SearchString.Substring(11, lastIndex)).ToLower();
-                    emp = emp.FindAll(x => x.Email.Contains(value));
-                    total = emp.Count;
-                    Parallel.For(0, total, i => emp[i].Total = total);
-                }
-                else if (filterModel.SearchString.Contains("Mobile"))
-                {
-                    int lastIndex = filterModel.SearchString.Length - 12;
-                    string value = filterModel.SearchString.Substring(12, lastIndex);
-                    emp = emp.FindAll(x => x.Mobile.Contains(value));
-                    total = emp.Count;
-                    Parallel.For(0, total, i => emp[i].Total = total);
-                }
 
-            }
-
-            if (string.IsNullOrEmpty(filterModel.SortBy))
-                emp = emp.OrderBy(x => x.CreatedOn).Skip(skipValue).Take(takeValue).ToList();
-
-            return emp;
+            return employees;
         }
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
@@ -162,20 +87,23 @@ namespace ServiceLayer.Code
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 6)
+            if (resultset.Tables.Count == 8)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
                 resultset.Tables[2].TableName = "FileDetail";
                 resultset.Tables[3].TableName = "Roles";
                 resultset.Tables[4].TableName = "SalaryDetail";
-                resultset.Tables[5].TableName = "Companies";
+                resultset.Tables[5].TableName = "Company";
+                resultset.Tables[6].TableName = "SalaryGroup";
+                resultset.Tables[7].TableName = "EmployeesList";
 
-                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Employee).Copy());
-                finalResultSet.Tables[0].TableName = "EmployeesList";
 
                 finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Client).Copy());
-                finalResultSet.Tables[1].TableName = "Clients";
+                finalResultSet.Tables[0].TableName = "Clients";
+
+                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Companies).Copy());
+                finalResultSet.Tables[1].TableName = "Companies";
 
                 finalResultSet.Tables.Add(resultset.Tables[0].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[1].Copy());
@@ -183,6 +111,8 @@ namespace ServiceLayer.Code
                 finalResultSet.Tables.Add(resultset.Tables[3].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[4].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[5].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[6].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[7].Copy());
             }
             return finalResultSet;
         }
@@ -234,33 +164,11 @@ namespace ServiceLayer.Code
             return resultset;
         }
 
-        public Employee GetEmployeeByIdService(int EmployeeId, bool? IsActive)
+        public Employee GetEmployeeByIdService(int EmployeeId, int IsActive)
         {
-            int statusValue = -1;
-            switch (IsActive)
-            {
-                case true:
-                    statusValue = 1;
-                    break;
-                case false:
-                    statusValue = 0;
-                    break;
-            }
-
-            Employee employee = default;
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(EmployeeId, typeof(int), "_EmployeeId"),
-                new DbParam(statusValue, typeof(int), "_IsActive")
-            };
-
-            var resultSet = _db.GetDataset("SP_Employees_ById", param);
-            if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
-            {
-                var emps = Converter.ToList<Employee>(resultSet.Tables[0]);
-                if (emps != null && emps.Count > 0)
-                    employee = emps[0];
-            }
+            Employee employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = IsActive });
+            if (employee == null)
+                throw new HiringBellException("Unable to find employee");
             return employee;
         }
 
@@ -280,26 +188,15 @@ namespace ServiceLayer.Code
 
             if (!string.IsNullOrEmpty(status))
             {
-                _loginService.BuildApplicationCache(true);
-                var table = _commonService.LoadEmployeeData();
-                employees = Converter.ToList<Employee>(table);
-                if (IsActive == true)
+                // _loginService.BuildApplicationCache(true);
+                employees = _db.GetList<Employee>("SP_Employee_GetAll", new
                 {
-                    employees = employees.FindAll(x => x.IsActive == false);
-                }
-                else if (IsActive == false)
-                {
-                    employees = employees.FindAll(x => x.IsActive == true);
-                }
-                int total = employees.Count;
-                Parallel.For(0, total, i => employees[i].Total = total);
-                //employees = this.GetEmployees(new FilterModel
-                //{
-                //    PageIndex = 1,
-                //    PageSize = 10,
-                //    SearchString = "1=1",
-                //    SortBy = string.Empty,
-                //});
+                    SearchString = "1=1",
+                    SortBy = "",
+                    PageIndex = 1,
+                    PageSize = 10,
+                    IsActive = -1
+                });
             }
             return employees;
         }
@@ -319,7 +216,7 @@ namespace ServiceLayer.Code
             //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
             int empId = Convert.ToInt32(employee.EmployeeUid);
 
-            Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive);
+            Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive ? 1 : 0);
             if (employeeDetail == null)
             {
                 employeeDetail = new Employee

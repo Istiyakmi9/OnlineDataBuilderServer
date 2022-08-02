@@ -76,7 +76,7 @@ namespace ServiceLayer.Code
             else if (UserTypeId == 1)
             {
                 int empId = Convert.ToInt32(_currentSession.CurrentUserDetail.UserId);
-                Employee employee = _employeeService.GetEmployeeByIdService(empId);
+                Employee employee = _employeeService.GetEmployeeByIdService(empId, -1);
                 DbParam[] dbParams = new DbParam[]
                 {
                     new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
@@ -381,11 +381,24 @@ namespace ServiceLayer.Code
             {
                 await Task.Run(() =>
                 {
-                    var emps = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
-                    emps.TableName = "Employees";
+                    DbParam[] param = new DbParam[]
+                    {
+                        new DbParam("1=1", typeof(string), "_SearchString"),
+                        new DbParam("", typeof(string), "_SortBy"),
+                        new DbParam(1, typeof(int), "_PageIndex"),
+                        new DbParam(10, typeof(int), "_PageSize"),
+                        new DbParam(1, typeof(int), "_IsActive")
+                    };
+
+                    DataSet emps = _db.GetDataset("SP_Employee_GetAll", param);
+
+                    if (emps == null)
+                        throw new HiringBellException("Unable to find employees");
+
+                    emps.Tables[0].TableName = "Employees";
                     var clients = _cacheManager.Get(ServiceLayer.Caching.Table.Client);
                     clients.TableName = "Clients";
-                    ds.Tables.Add(emps.Copy());
+                    ds.Tables.Add(emps.Tables[0].Copy());
                     ds.Tables.Add(clients.Copy());
                 });
             }

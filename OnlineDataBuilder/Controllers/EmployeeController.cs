@@ -70,7 +70,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("GetEmployeeById/{EmployeeId}/{IsActive}")]
-        public ApiResponse GetEmployeeById(int EmployeeId, bool IsActive)
+        public ApiResponse GetEmployeeById(int EmployeeId, int IsActive)
         {
             var Result = _employeeService.GetEmployeeByIdService(EmployeeId, IsActive);
             return BuildResponse(Result, HttpStatusCode.OK);

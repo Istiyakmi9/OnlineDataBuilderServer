@@ -8,7 +8,9 @@ namespace ServiceLayer.Caching
     {
         Employee = 1,
         Client =2,
-        MappedOrganization = 3
+        MappedOrganization = 3,
+        EmployeeRoles = 4,
+        Companies = 5
     }
 
     public class Cache

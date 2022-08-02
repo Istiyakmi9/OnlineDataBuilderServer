@@ -114,7 +114,7 @@ namespace ServiceLayer.Code
                 encryptedPassword = ds.Tables[0].Rows[0]["Password"].ToString();
                 int userTypeId = Convert.ToInt32(ds.Tables[0].Rows[0]["UserTypeId"]);
 
-                if(userTypeId != authUser.UserTypeId)
+                if (userTypeId != authUser.UserTypeId)
                 {
                     throw new HiringBellException("Incorrect user or role. Please contact to your admin.");
                 }
@@ -225,27 +225,20 @@ namespace ServiceLayer.Code
 
         public void BuildApplicationCache(bool isRelead = false)
         {
-            DataSet ds = new DataSet();
             string ProcedureName = "SP_ApplicationData_Get";
             if (_cacheManager.IsEmpty() || isRelead)
             {
-                ds = db.GetDataset(ProcedureName, null);
+                DataSet ds = db.GetDataset(ProcedureName, null);
 
-                if (ds.Tables.Count == 3)
+                if (ds.Tables.Count == 4)
                 {
                     if (isRelead)
-                    {
                         _cacheManager.Clean();
-                        //_cacheManager.ReLoad(() =>
-                        //{
-                        //    if (ds.Tables[0].Rows.Count <= 0)
-                        //        throw new HiringBellException("Unable to load application data.");
-                        //    return ds.Tables[0];
-                        //}, Table.Employee);
-                    }
-                    _cacheManager.Add(Table.Employee, ds.Tables[1]);
+
                     _cacheManager.Add(Table.Client, ds.Tables[0]);
-                    _cacheManager.Add(Table.MappedOrganization, ds.Tables[2]);
+                    _cacheManager.Add(Table.Employee, ds.Tables[1]);
+                    _cacheManager.Add(Table.EmployeeRoles, ds.Tables[2]);
+                    _cacheManager.Add(Table.Companies, ds.Tables[3]);
                 }
                 else
                 {

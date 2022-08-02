@@ -421,15 +421,17 @@ namespace ServiceLayer.Code
         {
             string Result = string.Empty;
             bool flag = false;
-            Employee employee = null;
-            var empData = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
-            List<Employee> employees = Converter.ToList<Employee>(empData);
-            if (employees == null || employees.Count == 0)
+            Employee employee = _db.Get<Employee>("SP_Employees_ById", new
+            {
+                EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                IsActive = 1
+            });
+
+            if (employee == null)
             {
                 throw new HiringBellException("No employee found. Please login again.");
             }
 
-            employee = employees.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
             DateTime barrierDate = this.GetPreviousThreeWorkingDaysBackDate();
             if (commentDetails.AttendanceDay.Subtract(barrierDate).TotalDays >= 0)
             {
@@ -606,7 +608,6 @@ namespace ServiceLayer.Code
 
         public string ApplyLeaveService(LeaveDetails leaveDetail)
         {
-            Employee employee = null;
             if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
@@ -617,14 +618,15 @@ namespace ServiceLayer.Code
                 FromDate = leaveDetail.LeaveFromDay,
                 ToDate = leaveDetail.LeaveToDay
             });
-            var empData = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
-            List<Employee> employees = Converter.ToList<Employee>(empData);
-            if (employees == null || employees.Count == 0)
+            
+            Employee employee = _db.Get<Employee>("SP_Employees_ById", new
             {
-                throw new HiringBellException("No employee found. Please login again.");
-            }
+                EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                IsActive = 1
+            });
 
-            employee = employees.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
+            if (employee == null)
+                throw new HiringBellException("No employee found. Please login again.");
 
             if (result != null)
             {
