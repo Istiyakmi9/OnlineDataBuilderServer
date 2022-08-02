@@ -51,16 +51,19 @@ namespace ServiceLayer.Caching
         {
             var _db = new Db(_connectionString);
             var Result = _db.GetDataset("SP_ApplicationData_Get", null);
-            if (Result.Tables.Count == 3)
+            if (Result.Tables.Count == 5)
             {
                 Result.Tables[0].TableName = "clients";
                 Result.Tables[1].TableName = "employees";
-                Result.Tables[2].TableName = "allocatedClients";
+                Result.Tables[2].TableName = "accessLevel";
+                Result.Tables[3].TableName = "companies";
+                Result.Tables[4].TableName = "allocatedClients";
 
                 _cache.Clean();
                 _cache.Add(Table.Client, Result.Tables[0]);
                 _cache.Add(Table.Employee, Result.Tables[1]);
-                _cache.Add(Table.MappedOrganization, Result.Tables[2]);
+                _cache.Add(Table.EmployeeRoles, Result.Tables[2]);
+                _cache.Add(Table.Companies, Result.Tables[3]);
             }
             return Result;
         }

@@ -230,7 +230,7 @@ namespace ServiceLayer.Code
             {
                 DataSet ds = db.GetDataset(ProcedureName, null);
 
-                if (ds.Tables.Count == 4)
+                if (ds.Tables.Count == 5)
                 {
                     if (isRelead)
                         _cacheManager.Clean();
