@@ -40,7 +40,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("GetManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetManageEmployeeDetail(long EmployeeId)
         {
-            var Result = _employeeService.GetManageEmployeeDetailService(EmployeeId);
+            var Result = _employeeService.GetEmployeeLeaveDetailService(EmployeeId);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
