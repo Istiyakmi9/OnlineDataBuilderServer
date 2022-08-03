@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
@@ -373,7 +374,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
             return t;
         }
-        
+
         public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             List<T> data = new List<T>();
@@ -1052,7 +1053,23 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             where T : new()
             where Q : new()
         {
-            throw new NotImplementedException();
+            T firstInstance = default(T);
+            Q secondInstance = default(Q);
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
+
+            int tableCount = 0;
+            var result = FetchFromReader<T, Q>(ProcedureName, properties, out tableCount, Parameters, OutParam);
+            if (tableCount == 2 && result.Item1 != null && result.Item2)
+            {
+                if (result.Item1.Count > 0)
+                    firstInstance = result.Item1.FirstOrDefault();
+
+                if (result.Item2.Count > 0)
+                    secondInstance = result.Item2.FirstOrDefault();
+            }
+
+            return (firstInstance, secondInstance);
         }
 
         public (T, Q, R) GetMulti<T, Q, R>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
@@ -1067,7 +1084,20 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             where T : new()
             where R : new()
         {
-            throw new NotImplementedException();
+            List<T> firstInstance = default(List<T>);
+            List<R> secondInstance = default(List<R>);
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
+
+            int tableCount = 0;
+            var result = FetchFromReader<T, R>(ProcedureName, properties, out tableCount, Parameters, OutParam);
+            if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
+            {
+                firstInstance = result.Item1;
+                secondInstance = result.Item2;
+            }
+
+            return (firstInstance, secondInstance);
         }
 
         public (List<T>, List<R>, List<Q>) GetList<T, R, Q>(string ProcedureName, dynamic Parameters, bool OutParam = false)
@@ -1078,6 +1108,62 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             throw new NotImplementedException();
         }
 
+
+        private Tuple<List<T>, List<Q>> FetchFromReader<T, Q>(string ProcedureName, List<PropertyInfo> properties, out int tableCount, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+        {
+            tableCount = 0;
+            List<T> firstResult = null;
+            List<Q> secondResult = null;
+            try
+            {
+                ds = null;
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = ProcedureName;
+
+                if (Parameters != null)
+                {
+                    PrepareArguments(Parameters, properties);
+                }
+
+                con.Open();
+
+                if (OutParam)
+                {
+                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                }
+
+                reader = cmd.ExecuteReader();
+                firstResult = this.ReadAndConvertToType<T>(reader);
+                tableCount++;
+                if (!reader.NextResult())
+                    throw new HiringBellException("[DB Query] getting error while trying to read data.");
+
+                secondResult = this.ReadAndConvertToType<Q>(reader);
+                tableCount++;
+            }
+            catch (HiringBellException Hex)
+            {
+                throw Hex;
+            }
+            catch (MySqlException MySqlException)
+            {
+                throw MySqlException;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
+            }
+
+            return Tuple.Create(firstResult, secondResult);
+        }
         #endregion
     }
 

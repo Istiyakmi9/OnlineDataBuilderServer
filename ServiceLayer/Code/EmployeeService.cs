@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
@@ -75,8 +76,18 @@ namespace ServiceLayer.Code
                 IsActive = IsActiveState
             });
 
-
             return employees;
+        }
+
+        public dynamic GetEmployeeLeaveDetailService(long EmployeeId)
+        {
+            (var employees, var leavePlan) = _db.GetList<Employee, LeavePlan>("sp_leave_detail_getby_employeeId", new
+            {
+                EmployeeId,
+            });
+            if (employees == null || leavePlan == null)
+                throw new HiringBellException("Unable to get data.");
+            return new { Employees = employees, LeavePlan = leavePlan };
         }
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
@@ -86,6 +97,7 @@ namespace ServiceLayer.Code
             {
                 new DbParam(EmployeeId, typeof(long), "_employeeId")
             };
+
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
             if (resultset.Tables.Count == 8)
             {
