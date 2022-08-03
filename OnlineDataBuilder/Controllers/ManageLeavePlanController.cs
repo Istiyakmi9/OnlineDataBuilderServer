@@ -25,52 +25,52 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateLeaveDetail/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateLeaveDetail([FromRoute] int leavePlanTypeId, [FromBody] LeaveDetail leaveDetail)
+        [HttpPut("UpdateLeaveDetail/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateLeaveDetail([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveDetail leaveDetail)
         {
-            var result = _manageLeavePlanService.UpdateLeaveDetail(leavePlanTypeId, leaveDetail);
+            var result = _manageLeavePlanService.UpdateLeaveDetail(leavePlanTypeId, leavePlanId, leaveDetail);
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateLeaveAccrual/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateLeaveAccrual([FromRoute] int leavePlanTypeId, [FromBody] LeaveAccrual leaveAccrual)
+        [HttpPut("UpdateLeaveAccrual/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateLeaveAccrual([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveAccrual leaveAccrual)
         {
-            var result = _manageLeavePlanService.UpdateLeaveAccrualService(leavePlanTypeId, leaveAccrual);
+            var result = _manageLeavePlanService.UpdateLeaveAccrualService(leavePlanTypeId, leavePlanId, leaveAccrual);
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateApplyForLeave/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateApplyForLeave([FromRoute] int leavePlanTypeId, [FromBody] LeaveApplyDetail leaveApplyDetail)
+        [HttpPut("UpdateApplyForLeave/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateApplyForLeave([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveApplyDetail leaveApplyDetail)
         {
-            var result = _manageLeavePlanService.UpdateApplyForLeaveService(leavePlanTypeId, leaveApplyDetail);
+            var result = _manageLeavePlanService.UpdateApplyForLeaveService(leavePlanTypeId, leavePlanId, leaveApplyDetail);
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateLeaveRestriction/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateLeaveRestriction([FromRoute] int leavePlanTypeId, [FromBody] LeavePlanRestriction leavePlanRestriction)
+        [HttpPut("UpdateLeaveRestriction/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateLeaveRestriction([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeavePlanRestriction leavePlanRestriction)
         {
-            var result = _manageLeavePlanService.UpdateLeaveRestrictionService(leavePlanTypeId, leavePlanRestriction);
+            var result = _manageLeavePlanService.UpdateLeaveRestrictionService(leavePlanTypeId, leavePlanId, leavePlanRestriction);
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateHolidayNWeekOffPlan/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateHolidayNWeekOffPlan([FromRoute] int leavePlanTypeId, [FromBody] LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
+        [HttpPut("UpdateHolidayNWeekOffPlan/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateHolidayNWeekOffPlan([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
         {
-            var result = _manageLeavePlanService.UpdateHolidayNWeekOffPlanService(leavePlanTypeId, leaveHolidaysAndWeekoff);
+            var result = _manageLeavePlanService.UpdateHolidayNWeekOffPlanService(leavePlanTypeId, leavePlanId, leaveHolidaysAndWeekoff);
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateLeaveApproval/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateLeaveApproval([FromRoute] int leavePlanTypeId, [FromBody] LeaveApproval leaveApproval)
+        [HttpPut("UpdateLeaveApproval/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateLeaveApproval([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveApproval leaveApproval)
         {
-            var result = _manageLeavePlanService.UpdateLeaveApprovalService(leavePlanTypeId, leaveApproval);
+            var result = _manageLeavePlanService.UpdateLeaveApprovalService(leavePlanTypeId, leavePlanId, leaveApproval);
             return BuildResponse(result);
         }
 
-        [HttpPut("UpdateYearEndProcessing/{leavePlanTypeId}")]
-        public IResponse<ApiResponse> UpdateYearEndProcessing([FromRoute] int leavePlanTypeId, [FromBody] LeaveEndYearProcessing leaveEndYearProcessing)
+        [HttpPut("UpdateYearEndProcessing/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateYearEndProcessing([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveEndYearProcessing leaveEndYearProcessing)
         {
-            var result = _manageLeavePlanService.UpdateYearEndProcessingService(leavePlanTypeId, leaveEndYearProcessing);
+            var result = _manageLeavePlanService.UpdateYearEndProcessingService(leavePlanTypeId, leavePlanId, leaveEndYearProcessing);
             return BuildResponse(result);
         }
 

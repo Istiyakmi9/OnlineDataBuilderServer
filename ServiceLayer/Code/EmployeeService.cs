@@ -87,7 +87,7 @@ namespace ServiceLayer.Code
             });
             if (employees == null || leavePlan == null)
                 throw new HiringBellException("Unable to get data.");
-            return new { Employees = employees, LeavePlan = leavePlan };
+            return new { Employees = employees, LeavePlan = leavePlan.FirstOrDefault() };
         }
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)

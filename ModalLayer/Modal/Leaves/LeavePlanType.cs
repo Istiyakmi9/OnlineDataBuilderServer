@@ -12,9 +12,9 @@
         public bool IsSickLeave { set; get; }
         public bool IsStatutoryLeave { set; get; }
         public bool IsRestrictOnGender { set; get; }
-        public bool? IsMale { set; get; }
+        public bool IsMale { set; get; }
         public bool IsRestrictOnMaritalStatus { set; get; }
-        public bool? IsMarried { set; get; }
+        public bool IsMarried { set; get; }
         public string Reasons { set; get; }
         public string PlanConfigurationDetail { set; get; }
     }
