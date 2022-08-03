@@ -120,9 +120,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                 else
                                     cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = fieldValue;
                             }
-                            else if (p.PropertyType == typeof(bool))
+                            else if (p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?))
                             {
-                                cmd.Parameters.Add($"_{p.Name}", MySqlDbType.Bit).Value = Convert.ToBoolean(fieldValue);
+                                if (fieldValue != null)
+                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.Bit).Value = Convert.ToBoolean(fieldValue);
+                                else
+                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.Bit).Value = null;
                             }
                             else
                                 cmd.Parameters.Add($"_{p.Name}", MySqlDbType.VarChar).Value = fieldValue;

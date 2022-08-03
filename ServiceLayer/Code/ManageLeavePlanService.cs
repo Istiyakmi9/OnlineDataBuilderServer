@@ -37,9 +37,12 @@ namespace ServiceLayer.Code
             return leavePlanConfiguration;
         }
 
-        public LeavePlanConfiguration UpdateLeaveDetail(int leavePlanTypeId, LeaveDetail leaveDetail)
+        public LeavePlanConfiguration UpdateLeaveDetail(int leavePlanTypeId, int leavePlanId, LeaveDetail leaveDetail)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -83,15 +86,17 @@ namespace ServiceLayer.Code
             {
                 leaveDetail.LeaveDetailId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveDetail = leaveDetail;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
         }
 
-        public LeavePlanConfiguration UpdateLeaveAccrualService(int leavePlanTypeId, LeaveAccrual leaveAccrual)
+        public LeavePlanConfiguration UpdateLeaveAccrualService(int leavePlanTypeId, int leavePlanId, LeaveAccrual leaveAccrual)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -153,7 +158,7 @@ namespace ServiceLayer.Code
             {
                 leaveAccrual.LeaveAccrualId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveAccrual = leaveAccrual;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
@@ -210,24 +215,41 @@ namespace ServiceLayer.Code
                 leaveAccrual.AfterHowManyDays = 0;
         }
 
-        public void UpdateLeavePlanConfigurationDetail(int leavePlanTypeId, LeavePlanConfiguration leavePlanConfiguration)
+        public void UpdateLeavePlanConfigurationDetail(int leavePlanTypeId, int leavePlanId, LeavePlanConfiguration leavePlanConfiguration)
         {
-            if (leavePlanTypeId <= 0)
-                throw new HiringBellException("Invalid plan selected");
+            LeavePlan leavePlan = _db.Get<LeavePlan>("sp_leave_plans_getbyId", new { LeavePlanId = leavePlanId });
+            if (leavePlan == null)
+                throw new HiringBellException("Invalid plan used for setup");
+
+            LeavePlanType leavePlantype = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+            if (leavePlantype == null)
+                throw new HiringBellException("Invalid plan type used for setup");
+
+            leavePlantype.PlanConfigurationDetail = "";
+            List<LeavePlanType> leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
+            int workingPlanIndex = leavePlanTypes.FindLastIndex(x => x.LeavePlanTypeId == leavePlanTypeId);
+            if (workingPlanIndex == -1)
+                leavePlanTypes.Add(leavePlantype);
+            else
+                leavePlanTypes[workingPlanIndex] = leavePlantype;
 
             var result = _db.Execute<LeaveAccrual>("sp_leave_plan_upd_configuration", new
             {
                 LeavePlanTypeId = leavePlanTypeId,
-                LeavePlanConfiguration = JsonConvert.SerializeObject(leavePlanConfiguration)
+                LeavePlanId = leavePlanId,
+                LeavePlanConfiguration = JsonConvert.SerializeObject(leavePlanConfiguration),
+                AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes)
             }, true);
 
             if (!ApplicationConstants.IsExecuted(result))
                 throw new HiringBellException("Fail to insert or update leave plan detail.");
         }
 
-        public LeavePlanConfiguration UpdateApplyForLeaveService(int leavePlanTypeId, LeaveApplyDetail leaveApplyDetail)
+        public LeavePlanConfiguration UpdateApplyForLeaveService(int leavePlanTypeId, int leavePlanId, LeaveApplyDetail leaveApplyDetail)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -266,16 +288,19 @@ namespace ServiceLayer.Code
             {
                 leaveApplyDetail.LeaveApplyDetailId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveApplyDetail = leaveApplyDetail;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
         }
 
 
-        public LeavePlanConfiguration UpdateLeaveRestrictionService(int leavePlanTypeId, LeavePlanRestriction leavePlanRestriction)
+        public LeavePlanConfiguration UpdateLeaveRestrictionService(int leavePlanTypeId, int leavePlanId, LeavePlanRestriction leavePlanRestriction)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -313,15 +338,18 @@ namespace ServiceLayer.Code
             {
                 leavePlanRestriction.LeavePlanRestrictionId = Convert.ToInt32(result);
                 leavePlanConfiguration.leavePlanRestriction = leavePlanRestriction;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
         }
 
-        public LeavePlanConfiguration UpdateHolidayNWeekOffPlanService(int leavePlanTypeId, LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
+        public LeavePlanConfiguration UpdateHolidayNWeekOffPlanService(int leavePlanTypeId, int leavePlanId, LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -362,15 +390,18 @@ namespace ServiceLayer.Code
             {
                 leaveHolidaysAndWeekoff.LeaveHolidaysAndWeekOffId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveHolidaysAndWeekoff = leaveHolidaysAndWeekoff;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
         }
 
-        public LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, LeaveApproval leaveApproval)
+        public LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, int leavePlanId, LeaveApproval leaveApproval)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -405,15 +436,18 @@ namespace ServiceLayer.Code
             {
                 leaveApproval.LeaveApprovalId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveApproval = leaveApproval;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
         }
 
-        public LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, LeaveEndYearProcessing leaveEndYearProcessing)
+        public LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, int leavePlanId, LeaveEndYearProcessing leaveEndYearProcessing)
         {
             if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid plan selected");
 
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
@@ -465,7 +499,7 @@ namespace ServiceLayer.Code
             {
                 leaveEndYearProcessing.LeaveEndYearProcessingId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveEndYearProcessing = leaveEndYearProcessing;
-                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanConfiguration);
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
             return leavePlanConfiguration;
