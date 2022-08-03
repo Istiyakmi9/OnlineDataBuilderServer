@@ -1167,6 +1167,57 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
             return Tuple.Create(firstResult, secondResult);
         }
+
+        public DataSet FetchDataSet(string ProcedureName, dynamic Parameters, bool OutParam = false)
+        {
+            try
+            {
+                object userType = Parameters;
+                var properties = userType.GetType().GetProperties().ToList();
+                ds = null;
+                cmd = new MySqlCommand();
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = ProcedureName;
+
+                if (Parameters != null)
+                {
+                    PrepareArguments(Parameters, properties);
+                }
+
+                con.Open();
+
+                if (OutParam)
+                {
+                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                }
+
+                da = new MySqlDataAdapter();
+                da.SelectCommand = cmd;
+                ds = new DataSet();
+                da.Fill(ds);
+                if (ds.Tables.Count > 0)
+                {
+                    return ds;
+                }
+            }
+            catch (MySqlException MySqlException)
+            {
+                throw MySqlException;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (!this.IsTransactionStarted)
+                    con.Close();
+            }
+
+            return ds;
+        }
+
         #endregion
     }
 
