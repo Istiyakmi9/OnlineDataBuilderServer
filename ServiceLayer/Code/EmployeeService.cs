@@ -79,15 +79,22 @@ namespace ServiceLayer.Code
             return employees;
         }
 
-        public dynamic GetEmployeeLeaveDetailService(long EmployeeId)
+        public DataSet GetEmployeeLeaveDetailService(long EmployeeId)
         {
-            (var employees, var leavePlan) = _db.GetList<Employee, LeavePlan>("sp_leave_detail_getby_employeeId", new
+            var result = _db.FetchDataSet("sp_leave_detail_getby_employeeId", new
             {
                 EmployeeId,
             });
-            if (employees == null || leavePlan == null)
+            
+            if (result == null || result.Tables.Count != 2)
                 throw new HiringBellException("Unable to get data.");
-            return new { Employees = employees, LeavePlan = leavePlan.FirstOrDefault() };
+            else
+            {
+                result.Tables[0].TableName = "Employees";
+                result.Tables[1].TableName = "LeavePlan";
+            }
+
+            return result;
         }
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)

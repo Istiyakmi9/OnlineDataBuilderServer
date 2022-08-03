@@ -706,6 +706,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public DataSet FetchDataSet(string ProcedureName, dynamic Parameters, bool OutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }
