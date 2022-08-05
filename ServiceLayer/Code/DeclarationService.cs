@@ -95,7 +95,9 @@ namespace ServiceLayer.Code
                 EmployeeId = declaration.EmployeeId,
                 DocumentPath = declarationDoc,
                 DeclarationDetail = declaration.DeclarationDetail,
-                HousingProperty = declaration.HousingProperty
+                HousingProperty = declaration.HousingProperty,
+                TotalDeclaredAmount = 0,
+                TotalApprovedAmount = 0
             }, true);
 
             if (!ApplicationConstants.IsExecuted(result))
@@ -143,7 +145,7 @@ namespace ServiceLayer.Code
 
             if (employeeDeclaration.DeclarationDetail != null)
                 employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
-            
+
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 this.BuildSectionWiseComponents(employeeDeclaration);
@@ -212,7 +214,9 @@ namespace ServiceLayer.Code
                 EmployeeId = declaration.EmployeeId,
                 DocumentPath = declarationDoc,
                 DeclarationDetail = declaration.DeclarationDetail,
-                HousingProperty = housingTax
+                HousingProperty = housingTax,
+                TotalDeclaredAmount = 0,
+                TotalApprovedAmount = 0
             }, true);
 
             if (!ApplicationConstants.IsExecuted(result))
