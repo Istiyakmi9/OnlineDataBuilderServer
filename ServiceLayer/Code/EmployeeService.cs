@@ -186,8 +186,6 @@ namespace ServiceLayer.Code
         public Employee GetEmployeeByIdService(int EmployeeId, int IsActive)
         {
             Employee employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = IsActive });
-            if (employee == null)
-                throw new HiringBellException("Unable to find employee");
             return employee;
         }
 

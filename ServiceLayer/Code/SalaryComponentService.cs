@@ -497,7 +497,7 @@ namespace ServiceLayer.Code
                         completeSalaryBreakup.GratuityAnnually = component.DeclaredValue;
                         break;
                     case "CA":
-                        completeSalaryBreakup.ConveyanceAnnually = component.DeclaredValue;
+                        completeSalaryBreakup.ConveyanceAnnually = Convert.ToDecimal(this.calculateExpressionUsingInfixDS(component.Formula));
                         break;
                     case "EPER-PF":
                         completeSalaryBreakup.PFAnnually = component.DeclaredValue;
@@ -563,7 +563,7 @@ namespace ServiceLayer.Code
             return completeSalaryBreakup;
         }
 
-        private int calculateExpressionUsingInfixDS(string expression)
+        private decimal calculateExpressionUsingInfixDS(string expression)
         {
             if (!expression.Contains("()"))
             {
@@ -624,25 +624,37 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    var value = 0;
+                    decimal value = 0;
+                    decimal fraction = 0;
+                    bool isFractionFound = false;
                     while (true)
                     {
                         ch = expression[index].ToString();
+                        if (ch == ".")
+                        {
+                            index++;
+                            isFractionFound = true;
+                            break;
+                        }
+
                         if (ch.Trim() == "")
                         {
-                            expressionStact.Add(value);
+                            expressionStact.Add($"{value}.{fraction}");
                             break;
                         }
 
                         if (int.TryParse(ch.ToString(), out number))
                         {
-                            value = Convert.ToInt32(value + ch);
+                            if (!isFractionFound)
+                                value = Convert.ToDecimal(value + ch);
+                            else
+                                fraction = Convert.ToDecimal(fraction + ch);
                             index++;
                         }
                         else
                         {
                             index--;
-                            expressionStact.Add(value);
+                            expressionStact.Add($"{value}.{fraction}");
                             break;
                         }
                     }
@@ -654,91 +666,95 @@ namespace ServiceLayer.Code
             return this.calculationUsingInfixExpression(expressionStact);
         }
 
-        private int calculationUsingInfixExpression(List<object> expressionStact)
+        private decimal calculationUsingInfixExpression(List<object> expressionStact)
         {
             int i = 0;
-            var term = new List<int>();
-            int number;
-            while (i < expressionStact.Count)
+            var term = new List<decimal>();
+            decimal number;
+            if (expressionStact.Count > 0)
             {
-                if (int.TryParse(expressionStact[i].ToString(), out number) && int.TryParse(expressionStact[i + 1].ToString(), out number) && !int.TryParse(expressionStact[i + 2].ToString(), out number))
+                while (i < expressionStact.Count)
                 {
-                    int finalvalue = 0;
-                    switch (expressionStact[i + 2])
+                    //if (decimal.TryParse(expressionStact[i].ToString(), out number) && decimal.TryParse(expressionStact[i + 1].ToString(), out number) && !decimal.TryParse(expressionStact[i + 2].ToString(), out number))
+                    //{
+                    //    decimal finalvalue = 0;
+                    //    switch (expressionStact[i + 2])
+                    //    {
+                    //        case "+":
+                    //            finalvalue = Convert.ToDecimal(expressionStact[i]) + Convert.ToDecimal(expressionStact[i + 1]);
+                    //            break;
+                    //        case "*":
+                    //            finalvalue = Convert.ToDecimal(expressionStact[i]) * Convert.ToDecimal(expressionStact[i + 1]);
+                    //            break;
+                    //        case "-":
+                    //            finalvalue = Convert.ToDecimal(expressionStact[i]) - Convert.ToDecimal(expressionStact[i + 1]);
+                    //            break;
+                    //        case "%":
+                    //            finalvalue = (Convert.ToDecimal(expressionStact[i]) * Convert.ToDecimal(expressionStact[i + 1])) / 100;
+                    //            break;
+                    //    }
+                    //    term.Add(finalvalue);
+                    //    i = i + 3;
+                    //}
+                    //else if (decimal.TryParse(expressionStact[i].ToString(), out number) && !decimal.TryParse(expressionStact[i + 1].ToString(), out number))
+                    //{
+                    //    decimal finalvalue = 0;
+                    //    var lastterm = term[term.Count - 1];
+                    //    term.RemoveAt(term.Count - 1);
+                    //    switch (expressionStact[i + 1])
+                    //    {
+                    //        case "+":
+                    //            finalvalue = Convert.ToDecimal(lastterm) + Convert.ToDecimal(expressionStact[i]);
+                    //            break;
+                    //        case "*":
+                    //            finalvalue = Convert.ToDecimal(lastterm) * Convert.ToDecimal(expressionStact[i]);
+                    //            break;
+                    //        case "-":
+                    //            finalvalue = Convert.ToDecimal(lastterm) - Convert.ToDecimal(expressionStact[i]);
+                    //            break;
+                    //        case "%":
+                    //            finalvalue = (Convert.ToDecimal(lastterm) * Convert.ToDecimal(expressionStact[i])) / 100;
+                    //            break;
+                    //    }
+                    //    term.Add(finalvalue);
+                    //    i = i + 2;
+                    //}
+                    //else 
+                    if (decimal.TryParse(expressionStact[i].ToString(), out number))
                     {
-                        case "+":
-                            finalvalue = Convert.ToInt32(expressionStact[i]) + Convert.ToInt32(expressionStact[i + 1]);
-                            break;
-                        case "*":
-                            finalvalue = Convert.ToInt32(expressionStact[i]) * Convert.ToInt32(expressionStact[i + 1]);
-                            break;
-                        case "-":
-                            finalvalue = Convert.ToInt32(expressionStact[i]) - Convert.ToInt32(expressionStact[i + 1]);
-                            break;
-                        case "%":
-                            finalvalue = (Convert.ToInt32(expressionStact[i]) * Convert.ToInt32(expressionStact[i + 1])) / 100;
-                            break;
+                        decimal finalvalue = 0;
+                        switch (expressionStact[i + 2])
+                        {
+                            case "+":
+                                finalvalue = Convert.ToDecimal(expressionStact[i]) + Convert.ToDecimal(expressionStact[i + 1]);
+                                break;
+                            case "*":
+                                finalvalue = Convert.ToDecimal(expressionStact[i]) * Convert.ToDecimal(expressionStact[i + 1]);
+                                break;
+                            case "-":
+                                finalvalue = Convert.ToDecimal(expressionStact[i]) - Convert.ToDecimal(expressionStact[i + 1]);
+                                break;
+                            case "%":
+                                finalvalue = (Convert.ToDecimal(expressionStact[i]) * Convert.ToDecimal(expressionStact[i + 1])) / 100;
+                                break;
+                        }
+                        term.Add(finalvalue);
+                        i = i + 3;
+                        term.Add(Convert.ToDecimal(expressionStact[0]));
+                        i++;
                     }
-                    term.Add(finalvalue);
-                    i = i + 3;
-                }
-                else if (int.TryParse(expressionStact[i].ToString(), out number) && !int.TryParse(expressionStact[i + 1].ToString(), out number))
-                {
-                    var finalvalue = 0;
-                    var lastterm = term[term.Count - 1];
-                    term.RemoveAt(term.Count - 1);
-                    switch (expressionStact[i + 1])
+                    else
                     {
-                        case "+":
-                            finalvalue = Convert.ToInt32(lastterm) + Convert.ToInt32(expressionStact[i]);
-                            break;
-                        case "*":
-                            finalvalue = Convert.ToInt32(lastterm) * Convert.ToInt32(expressionStact[i]);
-                            break;
-                        case "-":
-                            finalvalue = Convert.ToInt32(lastterm) - Convert.ToInt32(expressionStact[i]);
-                            break;
-                        case "%":
-                            finalvalue = (Convert.ToInt32(lastterm) * Convert.ToInt32(expressionStact[i])) / 100;
-                            break;
+                        throw new HiringBellException("Invalid value passed.");
                     }
-                    term.Add(finalvalue);
-                    i = i + 2;
                 }
+                if (term.Count == 1)
+                    return term[0];
                 else
-                {
-                    var finalvalue = 0;
-                    var lastterm = term[term.Count - 1];
-                    term.RemoveAt(term.Count - 1);
-                    var previousterm = term[term.Count - 1];
-                    term.RemoveAt(term.Count - 1);
-                    switch (expressionStact[i])
-                    {
-                        case "+":
-                            finalvalue = previousterm + lastterm;
-                            break;
-                        case "*":
-                            finalvalue = previousterm * lastterm;
-                            break;
-                        case "-":
-                            finalvalue = previousterm - lastterm;
-                            break;
-                        case "%":
-                            finalvalue = (previousterm * lastterm) / 100;
-                            break;
-                    }
-                    term.Add(finalvalue);
-                    i++;
-                }
-            }
-            if (term.Count == 1)
-            {
-                return term[0];
+                    throw new HiringBellException("Invalid expression");
             }
             else
-            {
-                throw new HiringBellException("Invalid expression");
-            }
+                return 0;
         }
     }
 }
