@@ -1063,7 +1063,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
             int tableCount = 0;
             var result = FetchFromReader<T, Q>(ProcedureName, properties, out tableCount, Parameters, OutParam);
-            if (tableCount == 2 && result.Item1 != null && result.Item2)
+            if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
             {
                 if (result.Item1.Count > 0)
                     firstInstance = result.Item1.FirstOrDefault();
