@@ -118,8 +118,20 @@ namespace ServiceLayer.Code
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
         {
-            var employeeDeclaration = _db.Get<EmployeeDeclaration>("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = EmployeeDeclarationId });
-            return employeeDeclaration;
+            (List<EmployeeDeclaration> declarations, List<SalaryComponents> salaryComponents) = GetDeclarationWithComponents(EmployeeDeclarationId);
+            if (declarations.Count != 1)
+                throw new HiringBellException("Fail to get current employee declaration detail");
+            return declarations.FirstOrDefault();
+        }
+
+        public (List<EmployeeDeclaration> declarations, List<SalaryComponents> salaryComponents) GetDeclarationWithComponents(long EmployeeDeclarationId)
+        {
+            (List<EmployeeDeclaration> declarations, List<SalaryComponents> salaryComponents) = _db.GetList<EmployeeDeclaration, SalaryComponents>("sp_employee_declaration_get_byId",
+                new
+                {
+                    EmployeeDeclarationId = EmployeeDeclarationId
+                });
+            return (declarations, salaryComponents);
         }
 
         public EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId)
@@ -133,7 +145,7 @@ namespace ServiceLayer.Code
             };
 
             DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
-            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
+            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 4)
                 throw new HiringBellException("Unable to get the detail");
 
             employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
@@ -145,6 +157,13 @@ namespace ServiceLayer.Code
 
             if (employeeDeclaration.DeclarationDetail != null)
                 employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+
+            List<SalaryComponents> salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
+            Parallel.ForEach(salaryComponents, x =>
+            {
+                if (employeeDeclaration.SalaryComponentItems.Find(i => i.ComponentId == x.ComponentId) == null)
+                    employeeDeclaration.SalaryComponentItems.Add(x);
+            });
 
             if (employeeDeclaration.SalaryComponentItems != null)
             {
@@ -161,11 +180,24 @@ namespace ServiceLayer.Code
         public EmployeeDeclaration HousingPropertyDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> files)
         {
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
-            EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            (List<EmployeeDeclaration> declarations, List<SalaryComponents> dbSalaryComponents) = this.GetDeclarationWithComponents(EmployeeDeclarationId);
+            if (declarations.Count != 1)
+                throw new HiringBellException("Fail to get current employee declaration detail");
+
+            EmployeeDeclaration declaration = declarations.FirstOrDefault();
+
+
             List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
             if (declaration != null)
             {
                 salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+
+                Parallel.ForEach(dbSalaryComponents, x =>
+                {
+                    if (salaryComponents.Find(i => i.ComponentId == x.ComponentId) == null)
+                        salaryComponents.Add(x);
+                });
+
                 SalaryComponents salaryComponent = salaryComponents.Find(x => x.ComponentId == DeclarationDetail.ComponentId);
                 if (salaryComponent == null)
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
