@@ -161,8 +161,14 @@ namespace ServiceLayer.Code
             List<SalaryComponents> salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
             Parallel.ForEach(salaryComponents, x =>
             {
-                if (employeeDeclaration.SalaryComponentItems.Find(i => i.ComponentId == x.ComponentId) == null)
-                    employeeDeclaration.SalaryComponentItems.Add(x);
+                if (employeeDeclaration.SalaryComponentItems != null)
+                {
+                    if (employeeDeclaration.SalaryComponentItems.Find(i => i.ComponentId == x.ComponentId) == null)
+                        employeeDeclaration.SalaryComponentItems.Add(x);
+                } else
+                {
+                    employeeDeclaration.SalaryComponentItems = salaryComponents;
+                }
             });
 
             if (employeeDeclaration.SalaryComponentItems != null)
@@ -325,6 +331,13 @@ namespace ServiceLayer.Code
             if (component != null)
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
 
+            var hra = this.HRACalculation(completeSalaryBreakup, employeeDeclaration);
+            if (hra != null)
+            {
+                var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
+                if (hraComponent != null)
+                    hraComponent.DeclaredValue = hra.HRAAmount;
+            }    
             decimal totalDeduction = 0;
             foreach (var item in employeeDeclaration.Declarations)
             {
@@ -344,6 +357,9 @@ namespace ServiceLayer.Code
             employeeDeclaration.SalaryDetail = salaryBreakup;
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
             var incomeTaxDetails = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount);
+
+            this.SurchargeAndCess(0, completeSalaryBreakup.GrossAnnually);
+
             employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
             employeeDeclaration.IncomeTaxSlab = incomeTaxDetails.GetType().GetProperty("IncomeTaxSlab").GetValue(incomeTaxDetails, null);
             bool IsBuildTaxDetail = false;
@@ -362,6 +378,10 @@ namespace ServiceLayer.Code
                     {
                         previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
                     }
+
+                    if (employeeDeclaration.TaxPaid == 0)
+                        i = 0;
+
                     decimal currentMonthTax = Convert.ToDecimal(string.Format("{0:0.00}", ((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12 - i))));
                     while (i < taxdetails.Count)
                     {
@@ -463,12 +483,12 @@ namespace ServiceLayer.Code
                 }
             };
 
-            var houseProperty = employeeDeclaration.SalaryComponentItems.FindAll(x => x.ComponentFullName.ToLower() == "House Property".ToLower());
+            var houseProperty = employeeDeclaration.SalaryComponentItems.FindAll(x => x.ComponentId.ToLower() == "HP".ToLower());
             employeeDeclaration.Declarations.Add(new DeclarationReport
             {
                 DeclarationName = "House Property",
                 NumberOfProofSubmitted = 0,
-                Declarations = new List<string>(),
+                Declarations = employeeDeclaration.TaxSavingAlloance.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
                 AcceptedAmount = houseProperty.Sum(a => a.AcceptedAmount),
                 RejectedAmount = houseProperty.Sum(a => a.RejectedAmount),
                 TotalAmountDeclared = houseProperty.Sum(a => a.DeclaredValue)
@@ -483,6 +503,51 @@ namespace ServiceLayer.Code
                 RejectedAmount = 0,
                 TotalAmountDeclared = 0
             });
+        }
+
+        private dynamic HRACalculation(CompleteSalaryBreakup completeSalaryBreakup, EmployeeDeclaration employeeDeclaration)
+        {
+            decimal HRA1 = completeSalaryBreakup.HRAAnnually;
+            decimal HRA2 = completeSalaryBreakup.BasicAnnually / 2;
+            decimal HRA3 = 0;
+            decimal HRAAmount = 0;
+            var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
+            if (houseProperty != null)
+            {
+                decimal declaredValue = houseProperty.TotalAmountDeclared;
+                HRA3 = declaredValue - (completeSalaryBreakup.BasicAnnually / 10);
+                if (HRA3 < HRA1 && HRA3 < HRA2)
+                    HRAAmount = HRA3;
+                else if (HRA2 < HRA1 && HRA2 < HRA3)
+                    HRAAmount = HRA2;
+                else
+                    HRAAmount = HRA1;
+                return new { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+
+        private decimal SurchargeAndCess(decimal GrossIncomeTax, decimal GrossIncome)
+        {
+            decimal Cess = 0;
+            decimal Surcharges = 0;
+            if (GrossIncomeTax > 0)
+                Cess = (4 * GrossIncomeTax) / 100;
+
+            if (GrossIncome > 5000000 && GrossIncome <=10000000)
+                Surcharges = (10 * GrossIncome) / 100;
+            else if (GrossIncome > 10000000 && GrossIncome <= 20000000)
+                Surcharges = (15 * GrossIncome) / 100;
+            else if (GrossIncome > 20000000 && GrossIncome <= 50000000)
+                Surcharges = (25 * GrossIncome) / 100;
+            else if (GrossIncome > 50000000)
+                Surcharges = (37 * GrossIncome) / 100;
+
+            return (Cess+ Surcharges);
         }
 
         private dynamic OldTaxRegimeCalculation(decimal TaxableIncome)
@@ -504,7 +569,7 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 5) / 100;
-                    taxSlab.Add("5% Tax on income between 250001 and 500000", tax);
+                    taxSlab.Add("5% Tax on income between 250001 and 500000", (value * 5) / 100);
                 }
                 else if (remainingAmount > 500000 && remainingAmount <= 1000000)
                 {
@@ -512,7 +577,7 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 20) / 100;
-                    taxSlab.Add("20% Tax on income between 500001 and 1000000", tax);
+                    taxSlab.Add("20% Tax on income between 500001 and 1000000", (value * 20) / 100);
                 }
                 else if (remainingAmount > 1000000)
                 {
@@ -520,12 +585,12 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 30) / 100;
-                    taxSlab.Add("30% Tax on income above 1000000", tax);
+                    taxSlab.Add("30% Tax on income above 1000000", (value * 30) / 100);
                 }
             }
 
             decimal cess = (tax * 4) / 100;
-            taxSlab.Add("Gross Income Tax", tax + cess);
+            taxSlab.Add("Gross Income Tax", tax);
             return new { TotalTax = tax + cess, IncomeTaxSlab = taxSlab };
         }
     }
