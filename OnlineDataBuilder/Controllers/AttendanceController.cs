@@ -76,10 +76,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("GetAllLeavesByEmpId/{EmployeeId}")]
-        public IResponse<ApiResponse> GetAllLeavesByEmpId(long EmployeeId, FilterModel filterModel)
+        [HttpGet("GetAllLeavesByEmpId/{EmployeeId}/{Year}")]
+        public IResponse<ApiResponse> GetAllLeavesByEmpId(long EmployeeId, int Year)
         {
-            var result = _attendanceService.GetAllLeavesByEmpIdService(EmployeeId, filterModel);
+            var result = _attendanceService.GetAllLeavesByEmpIdService(EmployeeId, Year);
             return BuildResponse(result);
         }
     }

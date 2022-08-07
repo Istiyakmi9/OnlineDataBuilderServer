@@ -6,7 +6,8 @@
         public string LeavePlanCode { set; get; }
         public string PlanName { set; get; }
         public string PlanDescription { set; get; }
-        public int MaxLeaveLimit { set; get; }
+        public decimal MaxLeaveLimit { set; get; }
+        public decimal AvailableLeave { set; get; }
         public bool ShowDescription { set; get; }
         public bool IsPaidLeave { set; get; }
         public bool IsSickLeave { set; get; }

@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -606,19 +608,18 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public string ApplyLeaveService(LeaveDetails leaveDetail)
+        public dynamic ApplyLeaveService(LeaveDetails leaveDetail)
         {
             if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
-            CompleteLeaveDetail completeLeaveDetail = null;
+            List<CompleteLeaveDetail> completeLeaveDetails = null;
             var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new
             {
                 leaveDetail.EmployeeId,
-                FromDate = leaveDetail.LeaveFromDay,
-                ToDate = leaveDetail.LeaveToDay
+                Year = leaveDetail.LeaveFromDay.Year
             });
-            
+
             Employee employee = _db.Get<Employee>("SP_Employees_ById", new
             {
                 EmployeeId = _currentSession.CurrentUserDetail.UserId,
@@ -630,32 +631,40 @@ namespace ServiceLayer.Code
 
             if (result != null)
             {
-                CompleteLeaveDetail leaves = JsonConvert.DeserializeObject<CompleteLeaveDetail>(result.LeaveDetail);
+                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(result.LeaveDetail);
 
-                if (leaves.LeaveToDay != null && leaves.LeaveFromDay != null)
+                if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
                 {
-                    if (leaveDetail.LeaveFromDay.Subtract(leaves.LeaveFromDay).TotalDays <= 0 ||
-                        leaveDetail.LeaveToDay.Subtract(leaves.LeaveToDay).TotalDays <= 0)
-                        throw new HiringBellException("Incorrect From and To date applied. These dates are already used.");
+                    Parallel.ForEach(completeLeaveDetails, x =>
+                    {
+                        if (leaveDetail.LeaveFromDay.Subtract(x.LeaveFromDay).TotalDays <= 0 ||
+                            leaveDetail.LeaveToDay.Subtract(x.LeaveToDay).TotalDays <= 0)
+                            throw new HiringBellException("Incorrect From and To date applied. These dates are already used.");
+                    });
                 }
-                //leaveDetail.LeaveRequestId = result.LeaveRequestId;
             }
+            else
+                completeLeaveDetails = new List<CompleteLeaveDetail>();
 
-            completeLeaveDetail = new CompleteLeaveDetail()
-            {
-                EmployeeId = leaveDetail.EmployeeId,
-                EmployeeName = employee.FirstName + " " + employee.LastName,
-                AssignTo = leaveDetail.AssignTo,
-                Session = leaveDetail.Session,
-                LeaveType = leaveDetail.LeaveType,
-                LeaveFromDay = leaveDetail.LeaveFromDay,
-                LeaveToDay = leaveDetail.LeaveToDay,
-                LeaveStatus = (int)ItemStatus.Pending,
-                Reason = leaveDetail.Reason,
-                RequestedOn = DateTime.UtcNow
-            };
+            completeLeaveDetails.Add(
+                    new CompleteLeaveDetail()
+                    {
+                        EmployeeId = leaveDetail.EmployeeId,
+                        EmployeeName = employee.FirstName + " " + employee.LastName,
+                        AssignTo = leaveDetail.AssignTo,
+                        Session = leaveDetail.Session,
+                        LeaveType = leaveDetail.LeaveType,
+                        LeaveFromDay = leaveDetail.LeaveFromDay,
+                        LeaveToDay = leaveDetail.LeaveToDay,
+                        NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
+                        LeaveStatus = (int)ItemStatus.Pending,
+                        Reason = leaveDetail.Reason,
+                        RequestedOn = DateTime.UtcNow
+                    }
+                );
 
-            leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
+
+            leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
             var value = _db.Execute<LeaveDetails>("sp_employee_leave_request_InsUpdate", new
             {
                 leaveDetail.LeaveRequestId,
@@ -664,6 +673,7 @@ namespace ServiceLayer.Code
                 leaveDetail.Reason,
                 leaveDetail.UserTypeId,
                 AssignTo = _currentSession.CurrentUserDetail.ReportingManagerId,
+                Year = leaveDetail.LeaveFromDay.Year,
                 leaveDetail.LeaveFromDay,
                 leaveDetail.LeaveToDay,
                 leaveDetail.LeaveType,
@@ -673,27 +683,55 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to apply for leave. Please contact to admin.");
-            return "Successfully";
+            return this.GetAllLeavesByEmpIdService(_currentSession.CurrentUserDetail.UserId, leaveDetail.LeaveFromDay.Year);
         }
 
-        public DataSet GetAllLeavesByEmpIdService(long EmployeeId, FilterModel filterModel)
+        public dynamic GetAllLeavesByEmpIdService(long EmployeeId, int Year)
         {
+            List<CompleteLeaveDetail> completeLeaveDetails = new List<CompleteLeaveDetail>();
             if (EmployeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(EmployeeId, typeof(long), "_EmployeeId"),
-                new DbParam(filterModel.SearchString, typeof(string), "_searchString"),
-                new DbParam(filterModel.SortBy, typeof(string), "_sortBy"),
-                new DbParam(filterModel.PageIndex, typeof(int), "_pageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "_pageSize")
-            };
-            var result = _db.GetDataset("sp_employee_leave_request_filter", param);
-            if (result.Tables.Count == 1)
-                result.Tables[0].TableName = "Leave";
-            else
+
+            Leave employeeLeaveDetail = null;
+            LeavePlan leavePlan = null;
+            List<Employee> employees = null;
+            DataSet result = _db.FetchDataSet("sp_employee_leave_request_detail", new { EmployeeId = EmployeeId, Year = 2022 });
+
+            if (result.Tables.Count != 3)
                 throw new HiringBellException("Unable to get employee leave deatils");
-            return result;
+            else
+            {
+                employeeLeaveDetail = Converter.ToType<Leave>(result.Tables[0]);
+                leavePlan = Converter.ToType<LeavePlan>(result.Tables[1]);
+                employees = Converter.ToList<Employee>(result.Tables[2]);
+            }
+
+            if (employeeLeaveDetail == null)
+                employeeLeaveDetail = new Leave();
+            else
+            {
+                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(employeeLeaveDetail.LeaveDetail);
+                if (completeLeaveDetails.Count > 0)
+                {
+                    List<LeavePlanType> leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
+                    if (leavePlanTypes.Count == 0)
+                        throw new HiringBellException("No associated plan type found. Please contact to admin.");
+
+                    List<CompleteLeaveDetail> leaveDetails = null;
+                    foreach (var i in leavePlanTypes)
+                    {
+                        leaveDetails = completeLeaveDetails.Where(x => x.LeaveType == i.LeavePlanTypeId).ToList();
+                        if (leaveDetails.Count > 0)
+                            i.AvailableLeave = i.MaxLeaveLimit - (leaveDetails.Sum(x => x.NumOfDays));
+                        else
+                            i.AvailableLeave = i.MaxLeaveLimit;
+                    }
+
+                    leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
+                }
+            }
+
+            return new { EmployeeLeaveDetail = employeeLeaveDetail, LeavePlan = leavePlan, Employees = employees };
         }
 
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen)
