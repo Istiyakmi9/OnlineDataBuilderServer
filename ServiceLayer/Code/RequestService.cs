@@ -46,7 +46,9 @@ namespace ServiceLayer.Code
             string message = string.Empty;
             DbParam[] param = new DbParam[]
             {
-                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId")
+                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
+                new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId"),
+                new DbParam(2, typeof(int), "_RequestType")
             };
 
             var result = _db.GetDataset("sp_approval_request_GetById", param);
@@ -107,10 +109,12 @@ namespace ServiceLayer.Code
                         new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
                         new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
                         new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(attendanceDetailString, typeof(string), "_AttendanceDetail")
+                        new DbParam(attendanceDetailString, typeof(string), "_AttendanceDetail"),
+                        new DbParam(0, typeof(int), "_LeaveType"),
+                        new DbParam(RequestType.Attandance, typeof(int), "_RequestType")
                     };
 
-                    message = _db.ExecuteNonQuery("sp_approval_request_InsUpdate", param, true);
+                    message = _db.ExecuteNonQuery("sp_approval_request_attendace_InsUpdate", param, true);
                 }
             }
             return message;

@@ -72,3 +72,9 @@ public enum LeaveType
     Compensatory = 2,
     PaidLeave = 3
 }
+
+public enum RequestType
+{
+    Leave = 1,
+    Attandance = 2
+}
