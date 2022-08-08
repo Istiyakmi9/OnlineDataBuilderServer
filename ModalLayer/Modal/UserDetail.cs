@@ -31,6 +31,7 @@ namespace ModalLayer.Modal
         public string Address { set; get; }
         public string CompanyName { set; get; }
         public int RoleId { set; get; }
+        public int AccessLevelId { set; get; }
         public int UserTypeId { set; get; }
         public long ReportingManagerId { set; get; }
     }

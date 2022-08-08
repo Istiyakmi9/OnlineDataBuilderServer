@@ -36,7 +36,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet]
-        // [Authorize(Roles = Role.Employee)]
+        [Authorize(Roles = Role.Employee)]
         [Route("GetManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetManageEmployeeDetail(long EmployeeId)
         {
@@ -104,6 +104,6 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        
+
     }
 }

@@ -61,14 +61,20 @@ namespace SchoolInMindServer.MiddlewareServices
                         var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
                         switch (roleName)
                         {
-                            case nameof(RolesName.Admin):
-                                currentSession.CurrentUserDetail.RoleId = (int)RolesName.Admin;
+                            case nameof(Role.Admin):
+                                currentSession.CurrentUserDetail.RoleId = 1;
                                 break;
-                            case nameof(RolesName.User):
-                                currentSession.CurrentUserDetail.RoleId = (int)RolesName.User;
+                            case nameof(Role.Employee):
+                                currentSession.CurrentUserDetail.RoleId = 2;
+                                break;
+                            case nameof(Role.Candidate):
+                                currentSession.CurrentUserDetail.RoleId = 3;
+                                break;
+                            case nameof(Role.Client):
+                                currentSession.CurrentUserDetail.RoleId = 4;
                                 break;
                             default:
-                                currentSession.CurrentUserDetail.RoleId = (int)RolesName.Other;
+                                currentSession.CurrentUserDetail.RoleId = 5;
                                 break;
                         }
 
