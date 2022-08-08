@@ -1066,10 +1066,10 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
             {
                 if (result.Item1.Count > 0)
-                    firstInstance = result.Item1.FirstOrDefault();
+                    firstInstance = (result.Item1 as List<T>).SingleOrDefault();
 
                 if (result.Item2.Count > 0)
-                    secondInstance = result.Item2.FirstOrDefault();
+                    secondInstance = (result.Item2 as List<Q>).SingleOrDefault();
             }
 
             return (firstInstance, secondInstance);

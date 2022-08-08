@@ -1,4 +1,5 @@
 ﻿using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,8 +12,8 @@ namespace ServiceLayer.Interface
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
         string SubmitAttendanceService(AttendenceDetail commentDetails);
-        string ApplyLeaveService(LeaveDetails leaveDetail);
-        DataSet GetAllLeavesByEmpIdService(long EmployeeId, FilterModel filterModel);
+        dynamic ApplyLeaveService(LeaveDetails leaveDetail);
+        dynamic GetAllLeavesByEmpIdService(long EmployeeId, int Year);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
         dynamic GetAttendamceById(AttendenceDetail attendenceDetail);
     }

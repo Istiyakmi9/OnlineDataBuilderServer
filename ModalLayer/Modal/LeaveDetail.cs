@@ -26,6 +26,7 @@ namespace ModalLayer.Modal
         public long LeaveRequestId { set; get; }
         public long EmployeeId { set; get; }
         public string LeaveDetail { get; set; }
+        public int Year { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
     }
@@ -36,6 +37,7 @@ namespace ModalLayer.Modal
         public long ProjectId { set; get; }
         public long AssignTo { get; set; }
         public int LeaveType { get; set; }
+        public decimal NumOfDays { get; set; }
         public string Session { get; set; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
