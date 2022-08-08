@@ -111,7 +111,8 @@ namespace ServiceLayer.Code
                         new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
                         new DbParam(attendanceDetailString, typeof(string), "_AttendanceDetail"),
                         new DbParam(0, typeof(int), "_LeaveType"),
-                        new DbParam(RequestType.Attandance, typeof(int), "_RequestType")
+                        new DbParam(RequestType.Attandance, typeof(int), "_RequestType"),
+                        new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId")
                     };
 
                     message = _db.ExecuteNonQuery("sp_approval_request_attendace_InsUpdate", param, true);

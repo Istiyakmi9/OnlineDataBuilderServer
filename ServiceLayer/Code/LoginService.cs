@@ -93,7 +93,7 @@ namespace ServiceLayer.Code
         }
 
 
-        public string FetchPasswordByRoleType(UserDetail authUser)
+        public string FetchPasswordByRoleType(UserDetail authUser, string role)
         {
             string encryptedPassword = string.Empty;
 
@@ -114,9 +114,22 @@ namespace ServiceLayer.Code
                 encryptedPassword = ds.Tables[0].Rows[0]["Password"].ToString();
                 int userTypeId = Convert.ToInt32(ds.Tables[0].Rows[0]["UserTypeId"]);
 
-                if (userTypeId != authUser.UserTypeId)
+                switch (userTypeId)
                 {
-                    throw new HiringBellException("Incorrect user or role. Please contact to your admin.");
+                    case 1:
+                        {
+                            if (role != Role.Admin)
+                                throw new HiringBellException("Invalid username or password for the current role.");
+                        }
+                        break;
+                    case 2:
+                        {
+                            if (role != Role.Employee)
+                                throw new HiringBellException("Invalid username or password for the current role.");
+                        }
+                        break;
+                    default:
+                        throw new HiringBellException("Invalid username or password for the current role.");
                 }
             }
             else
@@ -127,14 +140,14 @@ namespace ServiceLayer.Code
             return encryptedPassword;
         }
 
-        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)
+        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser, string role)
         {
             return await Task.Run(() =>
             {
                 LoginResponse loginResponse = default;
                 if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
                 {
-                    loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
+                    loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth", role);
                 }
 
                 return loginResponse;
@@ -162,13 +175,13 @@ namespace ServiceLayer.Code
             });
         }
 
-        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
+        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName, string role = Role.Other)
         {
             this.BuildApplicationCache();
             LoginResponse loginResponse = default;
             UserDetail userDetail = default;
 
-            var encryptedPassword = this.FetchPasswordByRoleType(authUser);
+            var encryptedPassword = this.FetchPasswordByRoleType(authUser, role);
             encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
             if (encryptedPassword.CompareTo(authUser.Password) != 0)
             {
@@ -206,7 +219,7 @@ namespace ServiceLayer.Code
                             ReportingManagerId = loginDetail.ReportingManagerId
                         };
 
-                        var _token = _authenticationService.Authenticate(userDetail.UserId, userDetail.ReportingManagerId, loginDetail.RoleId);
+                        var _token = _authenticationService.Authenticate(userDetail.UserId, userDetail.ReportingManagerId, loginDetail.UserTypeId);
                         if (_token != null)
                         {
                             userDetail.Token = _token.Token;
@@ -247,10 +260,10 @@ namespace ServiceLayer.Code
             }
         }
 
-        public string ResetEmployeePassword(UserDetail authUser)
+        public string ResetEmployeePassword(UserDetail authUser, string role)
         {
             string Status = string.Empty;
-            var encryptedPassword = this.FetchPasswordByRoleType(authUser);
+            var encryptedPassword = this.FetchPasswordByRoleType(authUser, role);
             encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
             if (encryptedPassword != authUser.Password)
                 throw new HiringBellException("Incorrect old password");

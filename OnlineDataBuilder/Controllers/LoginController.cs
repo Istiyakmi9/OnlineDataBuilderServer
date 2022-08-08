@@ -46,7 +46,16 @@ namespace OnlineDataBuilder.Controllers
         [Route("AuthenticateUser")]
         public async Task<ApiResponse> AuthenticateUser(UserDetail authUser)
         {
-            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser);
+            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser, Role.Employee);
+            return BuildResponse(userDetail, HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("Authenticate")]
+        public async Task<ApiResponse> Authenticate(UserDetail authUser)
+        {
+            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser, Role.Admin);
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
@@ -69,7 +78,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("ResetEmployeePassword")]
         public IResponse<ApiResponse> ResetEmployeePassword(UserDetail authUser)
         {
-            var result = this.loginService.ResetEmployeePassword(authUser);
+            var result = this.loginService.ResetEmployeePassword(authUser, Role.Employee);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

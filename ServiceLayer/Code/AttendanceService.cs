@@ -710,8 +710,17 @@ namespace ServiceLayer.Code
                 employeeLeaveDetail = new Leave();
             else
             {
-                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(employeeLeaveDetail.LeaveDetail);
-                if (completeLeaveDetails.Count > 0)
+                if (employeeLeaveDetail.LeaveDetail != null)
+                {
+                    completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(employeeLeaveDetail.LeaveDetail);
+                }
+                else
+                {
+                    employeeLeaveDetail.LeaveDetail = "[]";
+                    completeLeaveDetails = new List<CompleteLeaveDetail>();
+                }
+
+                if (completeLeaveDetails != null)
                 {
                     List<LeavePlanType> leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
                     if (leavePlanTypes.Count == 0)
