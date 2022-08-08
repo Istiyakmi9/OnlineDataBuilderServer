@@ -5,6 +5,6 @@ namespace ServiceLayer.Interface
 {
     public interface ITimesheetService
     {
-        DataSet GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
+        dynamic GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
     }
 }

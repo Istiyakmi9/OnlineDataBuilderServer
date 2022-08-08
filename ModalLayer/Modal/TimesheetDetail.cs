@@ -32,6 +32,11 @@ namespace ModalLayer.Modal
         public int DaysPending { get; set; }
         public bool IsActiveDay { get; set; }
         public bool IsOpen { get; set; }
-        public List<TimeSheet> ClientTimeSheet { set; get; }
+    }
+
+    public class TimesheetWithClientDetail
+    {
+        public List<TimesheetDetail> TimesheetDetails { set; get; }
+        public Employee EmployeeDetail { set; get; }
     }
 }

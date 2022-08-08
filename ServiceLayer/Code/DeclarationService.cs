@@ -356,12 +356,11 @@ namespace ServiceLayer.Code
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakup);
             employeeDeclaration.SalaryDetail = salaryBreakup;
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
-            var incomeTaxDetails = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount);
-
-            this.SurchargeAndCess(0, completeSalaryBreakup.GrossAnnually);
-
+            var incomeTaxDetails = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount, salaryBreakup.GrossIncome);
             employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
             employeeDeclaration.IncomeTaxSlab = incomeTaxDetails.GetType().GetProperty("IncomeTaxSlab").GetValue(incomeTaxDetails, null);
+            employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(employeeDeclaration.IncomeTaxSlab["Gross Income Tax"], completeSalaryBreakup.GrossAnnually);
+            
             bool IsBuildTaxDetail = false;
             List<TaxDetails> taxdetails = null;
             if (salaryBreakup.TaxDetail != null)
@@ -550,7 +549,7 @@ namespace ServiceLayer.Code
             return (Cess+ Surcharges);
         }
 
-        private dynamic OldTaxRegimeCalculation(decimal TaxableIncome)
+        private dynamic OldTaxRegimeCalculation(decimal TaxableIncome, decimal GrossIncome)
         {
             if (TaxableIncome <= 0)
                 throw new HiringBellException("Invalid TaxableIncome");
@@ -589,7 +588,7 @@ namespace ServiceLayer.Code
                 }
             }
 
-            decimal cess = (tax * 4) / 100;
+            decimal cess = this.SurchargeAndCess(tax, GrossIncome); //(tax * 4) / 100;
             taxSlab.Add("Gross Income Tax", tax);
             return new { TotalTax = tax + cess, IncomeTaxSlab = taxSlab };
         }
