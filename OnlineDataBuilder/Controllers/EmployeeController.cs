@@ -36,11 +36,18 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = Role.Employee)]
         [Route("GetManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetManageEmployeeDetail(long EmployeeId)
         {
             var Result = _employeeService.GetEmployeeLeaveDetailService(EmployeeId);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpGet]
+        [Route("LoadMappedClients/{EmployeeId}")]
+        public ApiResponse LoadMappedClients(long EmployeeId)
+        {
+            var Result = _employeeService.LoadMappedClientService(EmployeeId);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
