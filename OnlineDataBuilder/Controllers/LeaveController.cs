@@ -80,5 +80,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _leaveService.SetDefaultPlanService(leavePlanId, leavePlan);
             return BuildResponse(result);
         }
+
+        [HttpPut("ApprovalAction")]
+        public IResponse<ApiResponse> ApprovalLeave(ApprovalRequest approvalRequest)
+        {
+            var result = _leaveService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved);
+            return BuildResponse(result);
+        }
     }
 }
