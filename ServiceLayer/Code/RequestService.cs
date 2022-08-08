@@ -74,8 +74,7 @@ namespace ServiceLayer.Code
                                                                                   AttendanceId = n.AttendanceId,
                                                                                   UserComments = n.UserComments,
                                                                                   AttendanceDay = n.AttendanceDay,
-                                                                                  AttendenceStatus = n.AttendenceStatus,
-                                                                                  ClientTimeSheet = n.ClientTimeSheet
+                                                                                  AttendenceStatus = n.AttendenceStatus
                                                                               }));
                     }
                     else

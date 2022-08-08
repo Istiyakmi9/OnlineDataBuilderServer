@@ -544,7 +544,6 @@ namespace ServiceLayer.Code
                                                                        UserComments = n.UserComments,
                                                                        AttendanceDay = n.AttendanceDay,
                                                                        AttendenceStatus = n.AttendenceStatus,
-                                                                       ClientTimeSheet = n.ClientTimeSheet
                                                                    }));
 
                 double MonthsMinutes = 0;
@@ -880,12 +879,6 @@ namespace ServiceLayer.Code
         private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
         {
             var firstAttn = finalAttendanceSet.FirstOrDefault();
-            TimeSheet timeSheet = new TimeSheet
-            {
-                ClientId = firstAttn.ClientId,
-                Comments = "N/A",
-                SubmittedOn = DateTime.UtcNow
-            };
 
             var AttendaceDetail = JsonConvert.SerializeObject((from n in finalAttendanceSet
                                                                select new
@@ -897,8 +890,7 @@ namespace ServiceLayer.Code
                                                                    AttendanceId = n.AttendanceId,
                                                                    UserComments = n.UserComments,
                                                                    AttendanceDay = n.AttendanceDay,
-                                                                   AttendenceStatus = n.AttendenceStatus,
-                                                                   ClientTimeSheet = new List<TimeSheet> { timeSheet }
+                                                                   AttendenceStatus = n.AttendenceStatus
                                                                }));
 
             double MonthsMinutes = 0;
