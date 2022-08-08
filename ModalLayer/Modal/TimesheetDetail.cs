@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
-    public class AttendenceDetail
+    public class TimesheetDetail
     {
-        public long AttendanceId { set; get; } = 0;
+        public long TimesheetId { set; get; } = 0;
         public long UserId { get; set; }
         public int UserTypeId { get; set; }
         public DateTime AttendanceDay { get; set; }
@@ -32,11 +32,6 @@ namespace ModalLayer.Modal
         public int DaysPending { get; set; }
         public bool IsActiveDay { get; set; }
         public bool IsOpen { get; set; }
-    }
-
-    public class AttendanceWithClientDetail
-    {
-        public List<AttendenceDetail> AttendacneDetails { set; get; }
-        public Employee EmployeeDetail { set; get; }
+        public List<TimeSheet> ClientTimeSheet { set; get; }
     }
 }
