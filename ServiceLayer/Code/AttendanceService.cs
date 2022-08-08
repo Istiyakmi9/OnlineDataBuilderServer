@@ -221,7 +221,7 @@ namespace ServiceLayer.Code
                 new DbParam(firstItem.ForMonth, typeof(int), "_ForMonth")
             };
 
-            var Result = _db.GetDataset("sp_attendance_get", dbParams);
+            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
             if (Result.Tables.Count != 2 && Result.Tables[0].Rows.Count == 0)
             {
                 throw new HiringBellException("Attendance detail is invalid.");
@@ -710,8 +710,17 @@ namespace ServiceLayer.Code
                 employeeLeaveDetail = new Leave();
             else
             {
-                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(employeeLeaveDetail.LeaveDetail);
-                if (completeLeaveDetails.Count > 0)
+                if (employeeLeaveDetail.LeaveDetail != null)
+                {
+                    completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(employeeLeaveDetail.LeaveDetail);
+                }
+                else
+                {
+                    employeeLeaveDetail.LeaveDetail = "[]";
+                    completeLeaveDetails = new List<CompleteLeaveDetail>();
+                }
+
+                if (completeLeaveDetails != null)
                 {
                     List<LeavePlanType> leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
                     if (leavePlanTypes.Count == 0)

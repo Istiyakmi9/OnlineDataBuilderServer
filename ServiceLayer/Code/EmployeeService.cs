@@ -97,6 +97,23 @@ namespace ServiceLayer.Code
             return result;
         }
 
+        public DataSet LoadMappedClientService(long EmployeeId)
+        {
+            var result = _db.FetchDataSet("sp_attandence_detail_by_employeeId", new
+            {
+                EmployeeId,
+            });
+
+            if (result == null || result.Tables.Count != 1)
+                throw new HiringBellException("Unable to get data.");
+            else
+            {
+                result.Tables[0].TableName = "AllocatedClients";
+            }
+
+            return result;
+        }
+
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
         {
             DataSet finalResultSet = new DataSet();

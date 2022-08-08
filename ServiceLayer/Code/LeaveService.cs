@@ -202,7 +202,8 @@ namespace ServiceLayer.Code
             DbParam[] param = new DbParam[]
             {
                 new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                new DbParam(2, typeof(int), "_RequestType")
+                new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId"),
+                new DbParam(1, typeof(int), "_RequestType")
             };
 
             var result = _db.GetDataset("sp_approval_request_GetById", param);
@@ -273,7 +274,10 @@ namespace ServiceLayer.Code
                         new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
                         new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
                         new DbParam(existingRecord.LeaveRequestId, typeof(long), "_LeaveRequestId"),
-                        new DbParam(leaveDetailString, typeof(string), "_LeaveDetail")
+                        new DbParam(leaveDetailString, typeof(string), "_LeaveDetail"),
+                        new DbParam(existingRecord.LeaveType, typeof(int), "_LeaveType"),
+                        new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
+                        new DbParam(existingRecord.RequestType, typeof(int), "_RequestType")
                     };
 
                     message = _db.ExecuteNonQuery("sp_approval_request_leave_InsUpdate", param, true);
