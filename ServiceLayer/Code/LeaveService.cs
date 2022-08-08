@@ -1,9 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ServiceLayer.Code
 {
@@ -39,7 +42,8 @@ namespace ServiceLayer.Code
                 result.IsUploadedCustomLeavePolicy = leavePlan.IsUploadedCustomLeavePolicy;
                 result.PlanStartCalendarDate = leavePlan.PlanStartCalendarDate;
                 leavePlan = result;
-            } else
+            }
+            else
             {
                 leavePlan.AssociatedPlanTypes = "[]";
             }
@@ -179,7 +183,7 @@ namespace ServiceLayer.Code
             List<LeavePlan> leavePlans = null;
             if (leavePlan.LeavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan selected.");
-                
+
             var value = _db.Execute<LeavePlan>("sp_leave_plan_set_default", new
             {
                 leavePlan.LeavePlanId,
@@ -190,6 +194,92 @@ namespace ServiceLayer.Code
 
             leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
             return leavePlans;
+        }
+
+        public string ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status)
+        {
+            string message = string.Empty;
+            DbParam[] param = new DbParam[]
+            {
+                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
+                new DbParam(2, typeof(int), "_RequestType")
+            };
+
+            var result = _db.GetDataset("sp_approval_request_GetById", param);
+            if (result.Tables.Count > 0 && result.Tables[0].Rows.Count > 0)
+            {
+                var leaveDetailString = result.Tables[0].Rows[0]["LeaveDetail"].ToString();
+                List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveDetailString);
+                ApprovalRequest existingRecord = Converter.ToType<ApprovalRequest>(result.Tables[0]);
+
+                if (completeLeaveDetail != null)
+                {
+                    var singleLeaveDetail = completeLeaveDetail.Find(x =>
+                        approvalRequest.FromDate.Subtract(x.LeaveFromDay).TotalDays == 0 &&
+                        approvalRequest.ToDate.Subtract(x.LeaveToDay).TotalDays == 0
+                    );
+
+                    if (singleLeaveDetail != null)
+                    {
+                        singleLeaveDetail.LeaveStatus = (int)status;
+                        singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
+                        leaveDetailString = JsonConvert.SerializeObject((from n in completeLeaveDetail
+                                                                         select new
+                                                                         {
+                                                                             Reason = n.Reason,
+                                                                             Session = n.Session,
+                                                                             AssignTo = n.AssignTo,
+                                                                             LeaveType = n.LeaveType,
+                                                                             NumOfDays = n.NumOfDays,
+                                                                             ProjectId = n.ProjectId,
+                                                                             UpdatedOn = n.UpdatedOn,
+                                                                             EmployeeId = n.EmployeeId,
+                                                                             LeaveToDay = n.LeaveToDay,
+                                                                             LeaveStatus = n.LeaveStatus,
+                                                                             RequestedOn = n.RequestedOn,
+                                                                             RespondedBy = n.RespondedBy,
+                                                                             EmployeeName = n.EmployeeName,
+                                                                             LeaveFromDay = n.LeaveFromDay
+                                                                         }));
+                    }
+                    else
+                    {
+                        throw new HiringBellException("Error");
+                    }
+                }
+                else
+                {
+                    throw new HiringBellException("Error");
+                }
+
+                if (existingRecord != null)
+                {
+                    existingRecord.RequestStatusId = approvalRequest.RequestStatusId;
+
+                    param = new DbParam[]
+                    {
+                        new DbParam(existingRecord.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
+                        new DbParam(existingRecord.Message, typeof(string), "_Message"),
+                        new DbParam(existingRecord.UserName, typeof(string), "_UserName"),
+                        new DbParam(existingRecord.UserId, typeof(long), "_UserId"),
+                        new DbParam(existingRecord.UserTypeId, typeof(int), "_UserTypeId"),
+                        new DbParam(DateTime.Now, typeof(DateTime), "_RequestedOn"),
+                        new DbParam(existingRecord.Email, typeof(string), "_Email"),
+                        new DbParam(existingRecord.Mobile, typeof(string), "_Mobile"),
+                        new DbParam(existingRecord.FromDate, typeof(DateTime), "_FromDate"),
+                        new DbParam(existingRecord.ToDate, typeof(DateTime), "_ToDate"),
+                        new DbParam(existingRecord.AssigneeId, typeof(long), "_AssigneeId"),
+                        new DbParam(existingRecord.ProjectId, typeof(long), "_ProjectId"),
+                        new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
+                        new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
+                        new DbParam(existingRecord.LeaveRequestId, typeof(long), "_LeaveRequestId"),
+                        new DbParam(leaveDetailString, typeof(string), "_LeaveDetail")
+                    };
+
+                    message = _db.ExecuteNonQuery("sp_approval_request_leave_InsUpdate", param, true);
+                }
+            }
+            return message;
         }
     }
 }

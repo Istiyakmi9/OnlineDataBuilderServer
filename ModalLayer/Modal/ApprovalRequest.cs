@@ -23,5 +23,6 @@ namespace ModalLayer.Modal
         public int RequestType { set; get; }
         public int LeaveType { set; get; }
         public long AttendanceId { set; get; }
+        public int LeaveRequestId { set; get; }
     }
 }

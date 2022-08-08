@@ -42,7 +42,7 @@ namespace ModalLayer.Modal
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
         public int LeaveStatus { set; get; }
-        public int RespondedBy { set; get; }
+        public long RespondedBy { set; get; }
         public DateTime UpdatedOn { set; get; }
         public string Reason { get; set; }
         public DateTime RequestedOn { get; set; }

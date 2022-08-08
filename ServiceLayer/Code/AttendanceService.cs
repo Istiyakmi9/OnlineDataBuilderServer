@@ -474,8 +474,8 @@ namespace ServiceLayer.Code
                         flag = true;
                         int status = this.IsGivenDateAllowed((DateTime)commentDetails.AttendenceFromDay, (DateTime)commentDetails.AttendenceToDay, attendanceList);
                         DateTime now = (DateTime)commentDetails.AttendenceToDay;
-                        commentDetails.AttendenceFromDay = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
-                        attendanceList = this.GenerateWeekAttendaceData(commentDetails, status);
+                        var monthFirstDate = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
+                        attendanceList = this.GenerateWeekAttendaceData(commentDetails, status, monthFirstDate);
 
                         if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
                         {
@@ -487,8 +487,8 @@ namespace ServiceLayer.Code
                 {
                     int status = this.IsGivenDateAllowed((DateTime)commentDetails.AttendenceFromDay, (DateTime)commentDetails.AttendenceToDay, attendanceList);
                     DateTime now = (DateTime)commentDetails.AttendenceToDay;
-                    commentDetails.AttendenceFromDay = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
-                    attendanceList = this.GenerateWeekAttendaceData(commentDetails, status);
+                    var monthFirstDate = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
+                    attendanceList = this.GenerateWeekAttendaceData(commentDetails, status, monthFirstDate);
                 }
 
                 AttendenceDetail attendanceOn = null;
@@ -637,8 +637,8 @@ namespace ServiceLayer.Code
                 {
                     Parallel.ForEach(completeLeaveDetails, x =>
                     {
-                        if (leaveDetail.LeaveFromDay.Subtract(x.LeaveFromDay).TotalDays <= 0 ||
-                            leaveDetail.LeaveToDay.Subtract(x.LeaveToDay).TotalDays <= 0)
+                        if (leaveDetail.LeaveFromDay.Subtract(x.LeaveFromDay).TotalDays == 0 ||
+                            leaveDetail.LeaveToDay.Subtract(x.LeaveToDay).TotalDays == 0)
                             throw new HiringBellException("Incorrect From and To date applied. These dates are already used.");
                     });
                 }
@@ -734,10 +734,13 @@ namespace ServiceLayer.Code
             return new { EmployeeLeaveDetail = employeeLeaveDetail, LeavePlan = leavePlan, Employees = employees };
         }
 
-        private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen)
+        private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen, DateTime? monthFirstDate = null)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
-            var startDate = (DateTime)attendenceDetail.AttendenceFromDay;
+            DateTime startDate = (DateTime)attendenceDetail.AttendenceFromDay;
+            if (monthFirstDate != null)
+                startDate = (DateTime)monthFirstDate;
+
             var endDate = (DateTime)attendenceDetail.AttendenceToDay;
 
             while (startDate.Subtract(endDate).TotalDays <= 0)
