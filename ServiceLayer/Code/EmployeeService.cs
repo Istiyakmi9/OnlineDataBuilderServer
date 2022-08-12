@@ -1,18 +1,15 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -123,7 +120,7 @@ namespace ServiceLayer.Code
             };
 
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 8)
+            if (resultset.Tables.Count == 9)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
@@ -133,6 +130,7 @@ namespace ServiceLayer.Code
                 resultset.Tables[5].TableName = "Company";
                 resultset.Tables[6].TableName = "SalaryGroup";
                 resultset.Tables[7].TableName = "EmployeesList";
+                resultset.Tables[8].TableName = "LeavePlans";
 
 
                 finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Client).Copy());
@@ -149,6 +147,7 @@ namespace ServiceLayer.Code
                 finalResultSet.Tables.Add(resultset.Tables[5].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[6].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[7].Copy());
+                finalResultSet.Tables.Add(resultset.Tables[8].Copy());
             }
             return finalResultSet;
         }
@@ -345,6 +344,7 @@ namespace ServiceLayer.Code
                     employeeSalaryDetail.NetSalary,
                     employeeSalaryDetail.CompleteSalaryDetail,
                     employeeSalaryDetail.TaxDetail,
+                    employee.LeavePlanId,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true

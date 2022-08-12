@@ -9,6 +9,7 @@ public class ApplicationConstants
 
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
+    public const string InsertUpdateTimesheet = "sp_timesheet_insupd";
     public const string deleteUserFile = "sp_document_filedetail_delete";
     public const string GetUserFileById = "sp_document_filedetail_getById";
 
