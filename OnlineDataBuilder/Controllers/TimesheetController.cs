@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
@@ -24,6 +25,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetTimesheetByUserId(TimesheetDetail attendenceDetail)
         {
             var result = _timesheetService.GetTimesheetByUserIdService(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("InsertUpdateTimesheet")]
+        public IResponse<ApiResponse> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        {
+            var result = _timesheetService.InsertUpdateTimesheet(dailyTimesheetDetails);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

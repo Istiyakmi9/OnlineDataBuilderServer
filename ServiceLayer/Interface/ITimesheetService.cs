@@ -1,10 +1,11 @@
 ﻿using ModalLayer.Modal;
-using System.Data;
+using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
 {
     public interface ITimesheetService
     {
         dynamic GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
+        List<DailyTimesheetDetail> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetail);
     }
 }
