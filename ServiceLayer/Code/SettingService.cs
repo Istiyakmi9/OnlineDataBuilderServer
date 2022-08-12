@@ -500,12 +500,10 @@ namespace ServiceLayer.Code
                     componentItem = components.Find(i => i.ComponentId == x.ComponentId);
                     if (componentItem != null)
                     {
-                        x.IsActive = componentItem.IsActive;
+                        x.IsOpted = componentItem.IsOpted;
                         x.ComponentCatagoryId = componentItem.ComponentCatagoryId;
                     }
                 });
-
-                this.AddorRemoveListSalaryComponentfromSalaryGroup(components);
 
                 var updateComponents = (from n in salaryComponent
                                         select new
@@ -543,6 +541,8 @@ namespace ServiceLayer.Code
 
                 if (statue <= 0)
                     throw new HiringBellException("Unable to update detail");
+                else
+                    this.AddorRemoveListSalaryComponentfromSalaryGroup(components);
             }
             else
             {
@@ -563,7 +563,7 @@ namespace ServiceLayer.Code
                     salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
                     Parallel.For(0, components.Count, i =>
                     {
-                        if (components[i].IncludeInPayslip == true)
+                        if (components[i].IsOpted == true)
                             salaryComponents.Add(components[i]);
                         else
                             salaryComponents.RemoveAll(x => x.ComponentId == components[i].ComponentId);

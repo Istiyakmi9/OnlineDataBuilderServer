@@ -116,6 +116,23 @@ namespace BottomhalfCore.Services.Code
         }
 
         /// <summary>
+        /// This method will return the last day of given month and year. If month and year is 0 then current year and month will be used.
+        /// </summary>
+        public DateTime GetUtcLastDay(int year = 0, int month = 0)
+        {
+            DateTime utc = DateTime.UtcNow;
+            if (year == 0)
+                year = utc.Year;
+            if (month == 0)
+                month = utc.Month;
+
+            DateTime now = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+            DateTime.SpecifyKind(now, DateTimeKind.Utc);
+            now = TimeZoneInfo.ConvertTimeToUtc(now);
+            return now;
+        }
+
+        /// <summary>
         /// Get first day of the present week or specified date.
         /// </summary>
         public DateTime FirstDayOfWeekUTC(Nullable<DateTime> now = null)

@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -16,71 +16,64 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
-        public TimesheetService(IDb db, ITimezoneConverter timezoneConverter)
+        private readonly CurrentSession _currentSession;
+        public TimesheetService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
+            _currentSession = currentSession;
         }
+
         public dynamic GetTimesheetByUserIdService(TimesheetDetail timesheetDetail)
         {
-            List<TimesheetDetail> timesheetDetails = null;
+            List<DailyTimesheetDetail> dailyTimesheetDetails = null;
             Employee employee = null;
 
             if (timesheetDetail.ForMonth <= 0)
                 throw new HiringBellException("Invalid month num. passed.", nameof(timesheetDetail.ForMonth), timesheetDetail.ForMonth.ToString());
 
-            if (Convert.ToDateTime(timesheetDetail.AttendenceFromDay).Subtract(DateTime.UtcNow).TotalDays > 0)
-            {
-                throw new HiringBellException("Ohh!!!. Future dates are now allowed.");
-            }
-
+            if (timesheetDetail.EmployeeId <= 0 || timesheetDetail.ClientId <= 0)
+                throw new HiringBellException("Invalid Employee or Client id passed.");
 
             DbParam[] dbParams = new DbParam[]
             {
-                new DbParam(timesheetDetail.EmployeeUid, typeof(int), "_EmployeeId"),
+                new DbParam(timesheetDetail.EmployeeId, typeof(int), "_EmployeeId"),
                 new DbParam(timesheetDetail.ClientId, typeof(int), "_ClientId"),
                 new DbParam(timesheetDetail.UserTypeId, typeof(int), "_UserTypeId"),
                 new DbParam(timesheetDetail.ForYear, typeof(int), "_ForYear"),
                 new DbParam(timesheetDetail.ForMonth, typeof(int), "_ForMonth")
             };
 
-            var Result = _db.GetDataset("sp_attendance_get", dbParams);
+            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
             if (Result.Tables.Count == 2)
             {
 
                 if (Result.Tables[1].Rows.Count > 0)
-                {
                     employee = Converter.ToType<Employee>(Result.Tables[1]);
-                    if (Convert.ToDateTime(timesheetDetail.AttendenceToDay).Subtract(employee.CreatedOn).TotalDays < 0)
-                    {
-                        throw new HiringBellException("Past date before DOJ not allowed.");
-                    }
-                }
+                else
+                    throw new HiringBellException("Invalid employee detail passed.");
 
                 if (Result.Tables[0].Rows.Count > 0 && employee != null)
                 {
-                    var data = Result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
-                    var attendanceId = Convert.ToInt64(Result.Tables[0].Rows[0]["AttendanceId"]);
-                    timesheetDetails = JsonConvert.DeserializeObject<List<TimesheetDetail>>(data);
-                    int status = this.IsGivenDateAllowed((DateTime)timesheetDetail.AttendenceFromDay, (DateTime)timesheetDetail.AttendenceToDay, timesheetDetails);
+                    var employeeTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
+                    dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(employeeTimesheetDetail.TimesheetMonthJson);
 
-                    timesheetDetails.ForEach(x =>
+                    dailyTimesheetDetails.ForEach(x =>
                     {
-                        x.TimesheetId = attendanceId;
-                        x.IsActiveDay = false;
-                        x.IsOpen = status == 1 ? true : false;
+                        x.TimesheetId = employeeTimesheetDetail.TimesheetId;
+                        x.ClientId = employeeTimesheetDetail.ClientId;
                     });
 
                     int i = 0;
-                    var generatedTimesheet = this.GenerateWeekAttendaceData(timesheetDetail, status);
-                    TimesheetDetail attrDetail = null;
-                    foreach (var item in timesheetDetails)
+                    var generatedTimesheet = this.GenerateWeekAttendaceData(timesheetDetail);
+                    DailyTimesheetDetail attrDetail = null;
+                    foreach (var item in dailyTimesheetDetails)
                     {
                         i = 0;
                         while (i < generatedTimesheet.Count)
                         {
                             attrDetail = generatedTimesheet.ElementAt(i);
-                            if (attrDetail.AttendanceDay.Date.Subtract(item.AttendanceDay.Date).TotalDays == 0)
+                            if (attrDetail.PresentDate.Date.Subtract(item.PresentDate.Date).TotalDays == 0)
                             {
                                 generatedTimesheet[i] = item;
                                 break;
@@ -89,91 +82,61 @@ namespace ServiceLayer.Code
                         }
                     }
 
-                    timesheetDetails = generatedTimesheet;
+                    dailyTimesheetDetails = generatedTimesheet;
                 }
                 else
                 {
-                    int status = this.IsGivenDateAllowed((DateTime)timesheetDetail.AttendenceFromDay, (DateTime)timesheetDetail.AttendenceToDay, null);
-                    timesheetDetails = this.GenerateWeekAttendaceData(timesheetDetail, status);
+                    dailyTimesheetDetails = this.GenerateWeekAttendaceData(timesheetDetail);
                 }
 
                 if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
                 {
-                    timesheetDetails = timesheetDetails.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
+                    dailyTimesheetDetails = dailyTimesheetDetails.Where(x => employee.CreatedOn.Date.Subtract(x.PresentDate.Date).TotalDays <= 0).ToList();
                 }
             }
 
-            return new TimesheetWithClientDetail { EmployeeDetail = employee, TimesheetDetails = timesheetDetails.OrderByDescending(x => x.AttendanceDay).ToList() };
+            return new { EmployeeDetail = employee, DailyTimesheetDetails = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate).ToList() };
         }
 
-        private int IsGivenDateAllowed(DateTime From, DateTime To, List<TimesheetDetail> attendanceData)
+        private void IsGivenDateAllowed(DateTime From, DateTime To)
         {
-            var startDate = _timezoneConverter.ToIstTime(From);
-            var endDate = _timezoneConverter.ToIstTime(To);
-            var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
-            var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
-
-            if (startDate.Date.Subtract(weekFirstDate.Date).TotalDays == 0 && endDate.Date.Subtract(weekLastDate.Date).TotalDays == 0)
-            {
-                return 1;
-            }
-            else
-            {
-                if (attendanceData == null)
-                    return 0;
-
-                var workingWeek = attendanceData.Where(x => x.AttendanceDay.Date.Subtract(From.Date).TotalDays == 0).FirstOrDefault();
-                if (workingWeek == null || !workingWeek.IsOpen)
-                    return 0;
-
-                // if (!workingWeek.IsOpen)
-                // {
-                //     throw new HiringBellException("Only present week attendance is allowed. For previous week please raise a permission to your manager or HR.");
-                // }
-            }
-
-            return 0;
+            var firstDayOfMonth = _timezoneConverter.GetUtcFirstDay(From.Year, From.Month);
+            var lastDayOfMonth = _timezoneConverter.GetUtcLastDay(To.Year, To.Month);
+            if (firstDayOfMonth.Date.Subtract(From.Date).TotalDays < 0 || lastDayOfMonth.Date.Subtract(To.Date).TotalDays > 0)
+                throw new HiringBellException("Only current month timesheet allowed.");
         }
 
-        private List<TimesheetDetail> GenerateWeekAttendaceData(TimesheetDetail timesheetDetail, int isOpen, DateTime? monthFirstDate = null)
+        private List<DailyTimesheetDetail> GenerateWeekAttendaceData(TimesheetDetail timesheetDetail, DateTime? monthFirstDate = null)
         {
-            List<TimesheetDetail> timesheetDetails = new List<TimesheetDetail>();
-            DateTime startDate = (DateTime)timesheetDetail.AttendenceFromDay;
+            List<DailyTimesheetDetail> dailyTimesheetDetail = new List<DailyTimesheetDetail>();
+            DateTime startDate = (DateTime)timesheetDetail.TimesheetFromDate;
             if (monthFirstDate != null)
                 startDate = (DateTime)monthFirstDate;
 
-            var endDate = (DateTime)timesheetDetail.AttendenceToDay;
+            var endDate = (DateTime)timesheetDetail.TimesheetToDate;
 
             while (startDate.Subtract(endDate).TotalDays <= 0)
             {
-                timesheetDetails.Add(new TimesheetDetail
+                dailyTimesheetDetail.Add(new DailyTimesheetDetail
                 {
-                    IsActiveDay = false,
-                    TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
-                    AttendanceDay = startDate,
-                    TimesheetId = 0,
-                    AttendenceStatus = (int)ItemStatus.Pending,
-                    BillingHours = 480,
+                    EmployeeId = timesheetDetail.EmployeeId,
                     ClientId = timesheetDetail.ClientId,
-                    DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
-                    EmployeeUid = timesheetDetail.EmployeeUid,
-                    ForMonth = startDate.Month,
-                    ForYear = startDate.Year,
-                    TotalMinutes = 480,
-                    IsHoliday = (startDate.DayOfWeek == DayOfWeek.Saturday
+                    TimesheetId = 0,
+                    TotalMinutes = 8 * 60,
+                    TimesheetStatus = ItemStatus.Pending,
+                    PresentDate = startDate,
+                    IsHoliday = false,
+                    IsWeekEnd = (startDate.DayOfWeek == DayOfWeek.Saturday
                                     ||
                                 startDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
-                    IsOnLeave = false,
-                    LeaveId = 0,
                     UserComments = string.Empty,
-                    UserTypeId = (int)UserType.Employee,
-                    IsOpen = isOpen == 1 ? true : false
+                    UserTypeId = (int)UserType.Employee
                 });
 
                 startDate = startDate.AddDays(1);
             }
 
-            return timesheetDetails;
+            return dailyTimesheetDetail;
         }
 
         private int IsRegisteredOnPresentWeek(DateTime RegistratedOn)
@@ -187,6 +150,245 @@ namespace ServiceLayer.Code
             }
 
             return 0;
+        }
+
+        private void ValidateDateOfTimesheetSubmission(DateTime firstDate, DateTime lastDate)
+        {
+            DateTime now = DateTime.Now;
+            DateTime presentDate = _timezoneConverter.GetUtcDateTime(now.Year, now.Month, now.Day);
+
+            // handling future date
+            if (presentDate.Subtract(lastDate).TotalDays > 0)
+            {
+                throw new HiringBellException("Future date's are not allowed.");
+            }
+            // handling past date
+            else if (presentDate.Subtract(firstDate).TotalDays < 0)
+            {
+                if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
+                {
+                    throw new HiringBellException("Past week's are not allowed.");
+                }
+            }
+        }
+
+        private string UpdateOrInsertTimesheetDetail(List<DailyTimesheetDetail> finalDailyTimesheetDetails, TimesheetDetail currentTimesheet, string procedure)
+        {
+            var firstAttn = finalDailyTimesheetDetails.FirstOrDefault();
+
+            var TimesheetDetail = JsonConvert.SerializeObject(finalDailyTimesheetDetails);
+
+            decimal MonthsMinutes = 0;
+            currentTimesheet.DaysAbsent = 0;
+            finalDailyTimesheetDetails.ForEach(x =>
+            {
+                MonthsMinutes += x.TotalMinutes;
+                if ((int)x.TimesheetStatus == 8)
+                    currentTimesheet.DaysAbsent++;
+            });
+
+            currentTimesheet.TimesheetMonthJson = JsonConvert.SerializeObject(finalDailyTimesheetDetails);
+            var result = _db.Execute<TimesheetDetail>(procedure, new
+            {
+                currentTimesheet.TimesheetId,
+                currentTimesheet.EmployeeId,
+                currentTimesheet.ClientId,
+                currentTimesheet.UserTypeId,
+                currentTimesheet.TimesheetMonthJson,
+                currentTimesheet.TotalDays,
+                currentTimesheet.DaysAbsent,
+                currentTimesheet.ExpectedBurnedMinutes,
+                currentTimesheet.ActualBurnedMinutes,
+                currentTimesheet.TotalWeekDays,
+                currentTimesheet.TotalWorkingDays,
+                currentTimesheet.TotalHolidays,
+                currentTimesheet.MonthTimesheetApprovalState,
+                currentTimesheet.ForYear,
+                currentTimesheet.ForMonth,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                return null;
+            return result;
+        }
+
+        public List<DailyTimesheetDetail> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        {
+            string result = string.Empty;
+            var firstItem = dailyTimesheetDetails.FirstOrDefault();
+            if (firstItem == null)
+                throw new HiringBellException("Invalid TimesheetDetail submitted.");
+
+            var invalidAttendaceData = dailyTimesheetDetails.FindAll(x => x.EmployeeId <= 0 || x.ClientId <= 0);
+            if (invalidAttendaceData.Count > 0)
+                throw new HiringBellException("Invalid Employee/Client Id passed.");
+            DateTime firstDate = firstItem.PresentDate;
+            DateTime lastDate = firstItem.PresentDate;
+            int j = 0;
+            while (j < dailyTimesheetDetails.Count)
+            {
+                var x = dailyTimesheetDetails.ElementAt(j);
+                if (x.PresentDate.Subtract(firstDate).TotalDays <= 0)
+                    firstDate = x.PresentDate;
+
+                if (x.PresentDate.Subtract(lastDate).TotalDays >= 0)
+                    lastDate = x.PresentDate;
+
+                j++;
+            }
+
+            ValidateDateOfTimesheetSubmission(firstDate, lastDate);
+
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(firstItem.EmployeeId, typeof(int), "_EmployeeId"),
+                new DbParam(firstItem.ClientId, typeof(int), "_ClientId"),
+                new DbParam(firstItem.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(firstDate.Year, typeof(int), "_ForYear"),
+                new DbParam(firstDate.Month, typeof(int), "_ForMonth")
+            };
+
+            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
+            if (Result.Tables.Count != 2 && Result.Tables[0].Rows.Count == 0)
+            {
+                throw new HiringBellException("Timesheet detail is invalid.");
+            }
+
+            List<DailyTimesheetDetail> otherMonthTimesheetDetail = new List<DailyTimesheetDetail>();
+            List<DailyTimesheetDetail> finalTimesheetSet = new List<DailyTimesheetDetail>();
+
+            TimesheetDetail currentTimesheetDetail = null;
+            if (Result.Tables[0].Rows.Count > 0)
+            {
+                currentTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
+                if (!string.IsNullOrEmpty(currentTimesheetDetail.TimesheetMonthJson))
+                    finalTimesheetSet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
+                this.IsGivenDateAllowed(firstDate, lastDate);
+            }
+            else
+            {
+                var currentMonthDateTime = _timezoneConverter.ToIstTime(DateTime.UtcNow);
+                int totalDays = DateTime.DaysInMonth(currentMonthDateTime.Year, currentMonthDateTime.Month);
+                currentTimesheetDetail = new TimesheetDetail
+                {
+                    EmployeeId = firstItem.EmployeeId,
+                    TimesheetId = 0,
+                    ForYear = currentMonthDateTime.Year,
+                    TimesheetMonthJson = "[]",
+                    UserTypeId = (int)UserType.Employee,
+                    TotalDays = totalDays,
+                    DaysAbsent = totalDays,
+                    ForMonth = currentMonthDateTime.Month,
+                    TimesheetFromDate = firstDate,
+                    TimesheetToDate = lastDate,
+                    ClientId = firstItem.ClientId,
+                    ExpectedBurnedMinutes = 0,
+                    ActualBurnedMinutes = 0,
+                    TotalWeekDays = 0,
+                    TotalWorkingDays = 0,
+                    TotalHolidays = 0,
+                    MonthTimesheetApprovalState = (int)ItemStatus.Pending
+                };
+
+                finalTimesheetSet = this.GenerateWeekAttendaceData(currentTimesheetDetail);
+            }
+
+            Employee employee = new Employee();
+            if (Result.Tables[1].Rows.Count > 0)
+                employee = Converter.ToType<Employee>(Result.Tables[1]);
+            else
+                throw new HiringBellException("User detail not found.");
+
+            if (finalTimesheetSet == null)
+                throw new HiringBellException("Unable to get record. Please contact to admin.");
+
+            int i = 0;
+            DateTime clientKindDateTime = DateTime.Now;
+            while (i < dailyTimesheetDetails.Count)
+            {
+                var x = dailyTimesheetDetails.ElementAt(i);
+
+                var item = finalTimesheetSet.Find(i => i.PresentDate.Subtract(x.PresentDate).TotalDays == 0);
+                if (item != null)
+                {
+                    clientKindDateTime = _timezoneConverter.ToIstTime(x.PresentDate);
+                    item.TotalMinutes = x.TotalMinutes;
+                    item.UserTypeId = x.UserTypeId;
+                    item.EmployeeId = x.EmployeeId;
+                    item.TimesheetId = firstItem.TimesheetId;
+                    item.UserComments = x.UserComments;
+                    item.TimesheetStatus = x.TimesheetStatus;
+                    item.ClientId = x.ClientId;
+                }
+                else
+                {
+                    if (x.PresentDate.Month != currentTimesheetDetail.ForMonth)
+                    {
+                        x.TimesheetId = -1;
+                        otherMonthTimesheetDetail.Add(x);
+                    }
+                    else
+                    {
+                        finalTimesheetSet.Add(new DailyTimesheetDetail
+                        {
+                            TotalMinutes = x.TotalMinutes,
+                            UserTypeId = x.UserTypeId,
+                            EmployeeId = x.EmployeeId,
+                            TimesheetId = firstItem.TimesheetId,
+                            UserComments = x.UserComments,
+                            TimesheetStatus = x.TimesheetStatus,
+                            ClientId = x.ClientId
+                        });
+                    }
+                }
+
+                i++;
+            }
+
+            if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+            {
+                finalTimesheetSet = finalTimesheetSet.Where(x => employee.CreatedOn.Date.Subtract(x.PresentDate.Date).TotalDays <= 0).ToList();
+            }
+
+            result = this.UpdateOrInsertTimesheetDetail(finalTimesheetSet, currentTimesheetDetail, ApplicationConstants.InsertUpdateTimesheet);
+            if (string.IsNullOrEmpty(result))
+            {
+                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
+            }
+
+            List<DailyTimesheetDetail> dailyTimesheetDetail = new List<DailyTimesheetDetail>();
+            finalTimesheetSet.ForEach(x =>
+            {
+                if (x.PresentDate >= TimeZoneInfo.ConvertTimeToUtc(firstDate) && x.PresentDate <= TimeZoneInfo.ConvertTimeToUtc(lastDate))
+                {
+                    dailyTimesheetDetail.Add(x);
+                }
+            });
+
+            if (otherMonthTimesheetDetail.Count > 0)
+            {
+                if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+                {
+                    otherMonthTimesheetDetail = otherMonthTimesheetDetail.Where(x => employee.CreatedOn.Date.Subtract(x.PresentDate.Date).TotalDays <= 0).ToList();
+                }
+
+                result = this.UpdateOrInsertTimesheetDetail(otherMonthTimesheetDetail, currentTimesheetDetail, ApplicationConstants.InsertUpdateTimesheet);
+                if (string.IsNullOrEmpty(result))
+                {
+                    throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
+                }
+
+                otherMonthTimesheetDetail.ForEach(x =>
+                {
+                    if (x.PresentDate >= TimeZoneInfo.ConvertTimeToUtc(firstDate) && x.PresentDate <= TimeZoneInfo.ConvertTimeToUtc(lastDate))
+                    {
+                        dailyTimesheetDetail.Add(x);
+                    }
+                });
+            }
+
+            return dailyTimesheetDetail;
         }
     }
 }
