@@ -25,6 +25,7 @@ namespace ModalLayer.Modal.Accounts
         public string HousingProperty { get; set; }
         public Dictionary<string, decimal> IncomeTaxSlab { get; set; }
         public decimal SurChargesAndCess { get; set; }
+        public dynamic HRADeatils { get; set; }
     }
 
     public class DeclarationReport
