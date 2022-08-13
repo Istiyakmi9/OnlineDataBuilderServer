@@ -82,7 +82,7 @@ namespace ServiceLayer.Code
             {
                 EmployeeId,
             });
-            
+
             if (result == null || result.Tables.Count != 2)
                 throw new HiringBellException("Unable to get data.");
             else
@@ -288,7 +288,18 @@ namespace ServiceLayer.Code
                     CTC = employee.CTC
                 }
             };
-            EmployeeSalaryDetail employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
+
+            EmployeeSalaryDetail employeeSalaryDetail = new EmployeeSalaryDetail
+            {
+                CTC = 0,
+                GrossIncome = 0,
+                NetSalary = 0,
+                CompleteSalaryDetail = "[]",
+                TaxDetail = "[]",
+            };
+
+            if (employee.EmployeeUid > 0 || employee.CTC > 0)
+                employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
 
             return await Task.Run(() =>
             {

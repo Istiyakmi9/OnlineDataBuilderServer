@@ -479,84 +479,119 @@ namespace ServiceLayer.Code
         //        employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
         //}
 
-        public CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
+        private decimal GetEmployeeContributionAmount(List<SalaryComponents> salaryComponents, decimal CTC)
+        {
+            decimal finalAmount = 0;
+            var gratutity = salaryComponents.Find(x => x.ComponentId.ToUpper() == "GRA");
+            if (gratutity != null && !string.IsNullOrEmpty(gratutity.Formula))
             {
-            CompleteSalaryBreakup completeSalaryBreakup = new CompleteSalaryBreakup();
+                if (gratutity.Formula.Contains("[CTC]"))
+                    gratutity.Formula = gratutity.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+
+                finalAmount += this.calculateExpressionUsingInfixDS(gratutity.Formula, gratutity.DeclaredValue);
+            }
+
+            var employeePF = salaryComponents.Find(x => x.ComponentId.ToUpper() == "EPER-PF");
+            if (employeePF != null && !string.IsNullOrEmpty(employeePF.Formula))
+            {
+                if (employeePF.Formula.Contains("[CTC]"))
+                    employeePF.Formula = employeePF.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+
+                finalAmount += this.calculateExpressionUsingInfixDS(employeePF.Formula, employeePF.DeclaredValue);
+            }
+
+            var employeeInsurance = salaryComponents.Find(x => x.ComponentId.ToUpper() == "ECI");
+            if (employeeInsurance != null && !string.IsNullOrEmpty(employeeInsurance.Formula))
+            {
+                if (employeeInsurance.Formula.Contains("[CTC]"))
+                    employeeInsurance.Formula = employeeInsurance.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+
+                finalAmount += this.calculateExpressionUsingInfixDS(employeeInsurance.Formula, employeeInsurance.DeclaredValue);
+            }
+
+            return finalAmount;
+        }
+
+        private decimal GetBaiscAmountValue(List<SalaryComponents> salaryComponents, decimal grossAmount, decimal CTC)
+        {
+            decimal finalAmount = 0;
+            var basicComponent = salaryComponents.Find(x => x.ComponentId.ToUpper() == "BS");
+            if (basicComponent != null)
+            {
+                if (!string.IsNullOrEmpty(basicComponent.Formula))
+                {
+                    if (basicComponent.Formula.Contains("[CTC]"))
+                        basicComponent.Formula = basicComponent.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+                    else if (basicComponent.Formula.Contains("[GROSS]"))
+                        basicComponent.Formula = basicComponent.Formula.Replace("[GROSS]", grossAmount.ToString());
+                }
+
+                finalAmount = this.calculateExpressionUsingInfixDS(basicComponent.Formula, basicComponent.DeclaredValue);
+            }
+
+            if (finalAmount == 0)
+                throw new HiringBellException("Basic component formula or Declared value cannot be 0 or empty. Please contact to admin.");
+            return finalAmount;
+        }
+
+        public List<CalculatedSalaryBreakupDetail> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
+        {
+            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
+
             if (EmployeeId < 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
             if (CTCAnnually <= 0)
                 throw new HiringBellException("Invalid CTCAnnually");
 
+
             List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
-            List<SalaryComponents> fixedComponents = salaryComponents.FindAll(x => x.IsOpted == true); //change percentagevalue to IsOpted == true
-            completeSalaryBreakup.CTCAnnually = CTCAnnually;
-            foreach (SalaryComponents component in fixedComponents)
+
+            decimal EmployeeContributionAmount = GetEmployeeContributionAmount(salaryComponents, CTCAnnually);
+            decimal grossAmount = Convert.ToDecimal(CTCAnnually - EmployeeContributionAmount);
+            decimal basicAmountValue = GetBaiscAmountValue(salaryComponents, grossAmount, CTCAnnually);
+
+            // replace all abbreviation i.e. [BASIC] [GROSS] etc
+            int i = 0;
+            while (i < salaryComponents.Count)
             {
-                switch (component.ComponentId.ToUpper())
+                var item = salaryComponents.ElementAt(i);
+                if (!string.IsNullOrEmpty(item.Formula))
                 {
-                    case "GRA":
-                        completeSalaryBreakup.GratuityAnnually = component.DeclaredValue;
-                        break;
-                    case "CA":
-                        completeSalaryBreakup.ConveyanceAnnually = Convert.ToDecimal(this.calculateExpressionUsingInfixDS(component.Formula));
-                        break;
-                    case "EPER-PF":
-                        completeSalaryBreakup.PFAnnually = component.DeclaredValue;
-                        break;
-                    case "MA":
-                        completeSalaryBreakup.MedicalAnnually = component.DeclaredValue;
-                        break;
-                    case "SHA":
-                        completeSalaryBreakup.ShiftAnnually = component.DeclaredValue;
-                        break;
-                    case "ECI":
-                        completeSalaryBreakup.InsuranceAnnually = component.DeclaredValue;
-                        break;
+                    if (item.Formula.Contains("[BASIC]"))
+                        item.Formula = item.Formula.Replace("[BASIC]", basicAmountValue.ToString());
+                    else if (item.Formula.Contains("[CTC]"))
+                        item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(CTCAnnually)).ToString());
+                    else if (item.Formula.Contains("[GROSS]"))
+                        item.Formula = item.Formula.Replace("[GROSS]", grossAmount.ToString());
                 }
+
+                i++;
             }
-            var gross = completeSalaryBreakup.CTCAnnually - (completeSalaryBreakup.InsuranceAnnually + completeSalaryBreakup.PFAnnually + completeSalaryBreakup.GratuityAnnually);
-            if (gross > 0)
-                completeSalaryBreakup.GrossAnnually = gross;
-            else
-                throw new HiringBellException("invalid gross salary");
+
+            CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
             foreach (var item in salaryComponents)
             {
-                var formula = item.Formula;
-                var componentId = item.ComponentId;
-                decimal finalvalue = 0;
-                if (!string.IsNullOrEmpty(formula))
-                {
-                    if (formula.Contains("[BASIC]"))
-                    {
-                        formula = formula.Replace("[BASIC]", (Convert.ToInt32(completeSalaryBreakup.BasicAnnually)).ToString());
-                    }
-                    else if (formula.Contains("[CTC]"))
-                    {
-                        formula = formula.Replace("[CTC]", (Convert.ToInt32(completeSalaryBreakup.CTCAnnually)).ToString());
-                    }
-                    else if (formula.Contains("[GROSS]"))
-                    {
-                        formula = formula.Replace("[GROSS]", (Convert.ToInt32(completeSalaryBreakup.GrossAnnually)).ToString());
-                    }
-                    if (formula.Contains('+') || formula.Contains('-') || formula.Contains('*') || formula.Contains('/') || formula.Contains('%'))
-                    {
-                        finalvalue = this.calculateExpressionUsingInfixDS(formula);
-                    }
+                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
 
-                    switch (componentId.ToUpper())
-                    {
-                        case "BS":
-                            completeSalaryBreakup.BasicAnnually = finalvalue;
-                            break;
-                        case "HRA":
-                            completeSalaryBreakup.HRAAnnually = finalvalue;
-                            break;
-                    }
-                }
+                calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
+                calculatedSalaryBreakupDetail.Formula = item.Formula;
+                calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
+                calculatedSalaryBreakupDetail.FinalAmount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+
+                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
             }
-            completeSalaryBreakup.SpecialAnnually = completeSalaryBreakup.GrossAnnually - (completeSalaryBreakup.BasicAnnually + completeSalaryBreakup.ConveyanceAnnually + completeSalaryBreakup.HRAAnnually + completeSalaryBreakup.MedicalAnnually + completeSalaryBreakup.ShiftAnnually);
-            return completeSalaryBreakup;
+
+            calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+            {
+                ComponentId = ComponentNames.Gross,
+                Formula = null,
+                ComponentName = ComponentNames.Gross,
+                FinalAmount = CTCAnnually - EmployeeContributionAmount
+            };
+
+            calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+            return calculatedSalaryBreakupDetails;
         }
 
         public EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId)
@@ -572,12 +607,15 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
             return salaryGroup;
         }
-        private decimal calculateExpressionUsingInfixDS(string expression)
+
+        private decimal calculateExpressionUsingInfixDS(string expression, decimal declaredAmount)
         {
+            if (string.IsNullOrEmpty(expression))
+                return declaredAmount;
+
             if (!expression.Contains("()"))
-            {
                 expression = string.Format("({0})", expression);
-            }
+
             List<string> operatorStact = new List<string>();
             var expressionStact = new List<object>();
             int index = 0;

@@ -1,6 +1,6 @@
 ﻿namespace ModalLayer.Modal.Accounts
 {
-    public class  CompleteSalaryBreakup
+    public class CompleteSalaryBreakup
     {
         public decimal BasicAnnually { get; set; }
         public decimal ConveyanceAnnually { get; set; }
@@ -17,5 +17,13 @@
         public decimal GratuityAnnually { get; set; }
         public decimal CTCAnnually { get; set; }
         public decimal FoodAnnually { get; set; }
+    }
+
+    public class CalculatedSalaryBreakupDetail
+    {
+        public string ComponentId { set; get; }
+        public string ComponentName { set; get; }
+        public string Formula { set; get; }
+        public decimal FinalAmount { set; get; }
     }
 }
