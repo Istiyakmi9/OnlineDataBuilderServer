@@ -120,7 +120,7 @@ namespace ServiceLayer.Code
             };
 
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 9)
+            if (resultset.Tables.Count == 8)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
@@ -128,9 +128,8 @@ namespace ServiceLayer.Code
                 resultset.Tables[3].TableName = "Roles";
                 resultset.Tables[4].TableName = "SalaryDetail";
                 resultset.Tables[5].TableName = "Company";
-                resultset.Tables[6].TableName = "SalaryGroup";
-                resultset.Tables[7].TableName = "EmployeesList";
-                resultset.Tables[8].TableName = "LeavePlans";
+                resultset.Tables[6].TableName = "EmployeesList";
+                resultset.Tables[7].TableName = "LeavePlans";
 
 
                 finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Client).Copy());
@@ -147,7 +146,6 @@ namespace ServiceLayer.Code
                 finalResultSet.Tables.Add(resultset.Tables[5].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[6].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[7].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[8].Copy());
             }
             return finalResultSet;
         }

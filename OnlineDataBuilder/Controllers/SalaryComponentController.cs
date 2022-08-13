@@ -146,5 +146,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _salaryComponentService.GetSalaryBreakupByEmpIdService(EmployeeId);
             return BuildResponse(result);
         }
+
+        [HttpGet("GetSalaryGroupByCTC/{CTC}")]
+        public IResponse<ApiResponse> GetSalaryGroupByCTC(decimal CTC)
+        {
+            var result = _salaryComponentService.GetSalaryGroupByCTC(CTC);
+            return BuildResponse(result);
+        }
     }
 }

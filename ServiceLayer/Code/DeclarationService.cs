@@ -331,13 +331,6 @@ namespace ServiceLayer.Code
             if (component != null)
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
 
-            var hra = this.HRACalculation(completeSalaryBreakup, employeeDeclaration);
-            if (hra != null)
-            {
-                var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
-                if (hraComponent != null)
-                    hraComponent.DeclaredValue = hra.HRAAmount;
-            }    
             decimal totalDeduction = 0;
             foreach (var item in employeeDeclaration.Declarations)
             {
@@ -360,7 +353,13 @@ namespace ServiceLayer.Code
             employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
             employeeDeclaration.IncomeTaxSlab = incomeTaxDetails.GetType().GetProperty("IncomeTaxSlab").GetValue(incomeTaxDetails, null);
             employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(employeeDeclaration.IncomeTaxSlab["Gross Income Tax"], completeSalaryBreakup.GrossAnnually);
-            
+            var hra = this.HRACalculation(completeSalaryBreakup, employeeDeclaration);
+            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
+            var hraAmount = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
+            if (hraAmount != null)
+                hraComponent.DeclaredValue = hraAmount.TotalAmountDeclared;
+            employeeDeclaration.HRADeatils = hra;
+
             bool IsBuildTaxDetail = false;
             List<TaxDetails> taxdetails = null;
             if (salaryBreakup.TaxDetail != null)
@@ -511,7 +510,7 @@ namespace ServiceLayer.Code
             decimal HRA3 = 0;
             decimal HRAAmount = 0;
             var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
-            if (houseProperty != null)
+            if (houseProperty != null && houseProperty.TotalAmountDeclared > 0)
             {
                 decimal declaredValue = houseProperty.TotalAmountDeclared;
                 HRA3 = declaredValue - (completeSalaryBreakup.BasicAnnually / 10);
@@ -556,6 +555,9 @@ namespace ServiceLayer.Code
 
             decimal tax = 0;
             decimal value = 0;
+            decimal secondSalab = 0;
+            decimal thirdSlab = 0;
+            decimal fourthSlab = 0;
             decimal remainingAmount = TaxableIncome;
             var taxSlab = new Dictionary<string, decimal>();
             taxSlab.Add("0% Tax on income up to 250000", 0);
@@ -568,7 +570,7 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 5) / 100;
-                    taxSlab.Add("5% Tax on income between 250001 and 500000", (value * 5) / 100);
+                    secondSalab = (value * 5) / 100;
                 }
                 else if (remainingAmount > 500000 && remainingAmount <= 1000000)
                 {
@@ -576,7 +578,7 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 20) / 100;
-                    taxSlab.Add("20% Tax on income between 500001 and 1000000", (value * 20) / 100);
+                    thirdSlab = (value * 20) / 100;
                 }
                 else if (remainingAmount > 1000000)
                 {
@@ -584,10 +586,13 @@ namespace ServiceLayer.Code
                     if (value < 0) value = value * -1;
                     remainingAmount = remainingAmount - value;
                     tax += (value * 30) / 100;
-                    taxSlab.Add("30% Tax on income above 1000000", (value * 30) / 100);
+                    fourthSlab = (value * 30) / 100;
                 }
             }
 
+            taxSlab.Add("5% Tax on income between 250001 and 500000", secondSalab);
+            taxSlab.Add("20% Tax on income between 500001 and 1000000", thirdSlab);
+            taxSlab.Add("30% Tax on income above 1000000", fourthSlab);
             decimal cess = this.SurchargeAndCess(tax, GrossIncome); //(tax * 4) / 100;
             taxSlab.Add("Gross Income Tax", tax);
             return new { TotalTax = tax + cess, IncomeTaxSlab = taxSlab };
