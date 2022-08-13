@@ -23,5 +23,6 @@ namespace ServiceLayer.Interface
         CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
         List<SalaryComponents> GetSalaryGroupComponentsByCTC(decimal CTC);
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
+        SalaryGroup GetSalaryGroupByCTC(decimal CTC);
     }
 }

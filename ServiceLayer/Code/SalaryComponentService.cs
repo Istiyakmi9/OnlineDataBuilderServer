@@ -489,7 +489,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid CTCAnnually");
 
             List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
-            List<SalaryComponents> fixedComponents = salaryComponents.FindAll(x => x.PercentageValue == 0);
+            List<SalaryComponents> fixedComponents = salaryComponents.FindAll(x => x.IsOpted == true); //change percentagevalue to IsOpted == true
             completeSalaryBreakup.CTCAnnually = CTCAnnually;
             foreach (SalaryComponents component in fixedComponents)
             {
@@ -565,6 +565,13 @@ namespace ServiceLayer.Code
             return completeSalaryBreakup;
         }
 
+        public SalaryGroup GetSalaryGroupByCTC(decimal CTC)
+        {
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC });
+            if (salaryGroup == null)
+                throw new HiringBellException("Unable to get salary group. Please contact admin");
+            return salaryGroup;
+        }
         private decimal calculateExpressionUsingInfixDS(string expression)
         {
             if (!expression.Contains("()"))
