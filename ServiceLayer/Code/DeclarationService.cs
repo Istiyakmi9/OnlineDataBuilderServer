@@ -165,7 +165,8 @@ namespace ServiceLayer.Code
                 {
                     if (employeeDeclaration.SalaryComponentItems.Find(i => i.ComponentId == x.ComponentId) == null)
                         employeeDeclaration.SalaryComponentItems.Add(x);
-                } else
+                }
+                else
                 {
                     employeeDeclaration.SalaryComponentItems = salaryComponents;
                 }
@@ -284,10 +285,7 @@ namespace ServiceLayer.Code
 
             var resultSet = _db.GetDataset("sp_salary_components_group_by_employeeid", param);
             if (resultSet == null || resultSet.Tables.Count != 2)
-            {
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
-            }
-
 
             SalaryGroup salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[0]);
             if (salaryGroup == null)
@@ -308,7 +306,7 @@ namespace ServiceLayer.Code
             {
                 salaryBreakup = new EmployeeSalaryDetail
                 {
-                    CompleteSalaryDetail = "{}",
+                    CompleteSalaryDetail = "[]",
                     CTC = employeeDeclaration.SalaryDetail.CTC,
                     EmployeeId = EmployeeId,
                     GrossIncome = 0,
@@ -318,8 +316,12 @@ namespace ServiceLayer.Code
                 };
             }
 
-            CompleteSalaryBreakup completeSalaryBreakup = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.CTC);
-            employeeDeclaration.TotalAmount = completeSalaryBreakup.GrossAnnually;
+            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.CTC);
+            var grossComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Gross);
+            if (grossComponent == null)
+                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
+
+            employeeDeclaration.TotalAmount = grossComponent.FinalAmount;
             decimal StandardDeduction = 50000;
 
             SalaryComponents component = null;
@@ -345,15 +347,15 @@ namespace ServiceLayer.Code
                 totalDeduction += value;
             }
 
-            salaryBreakup.GrossIncome = completeSalaryBreakup.GrossAnnually;
-            salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakup);
+            salaryBreakup.GrossIncome = grossComponent.FinalAmount;
+            salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(calculatedSalaryBreakupDetails);
             employeeDeclaration.SalaryDetail = salaryBreakup;
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
             var incomeTaxDetails = this.OldTaxRegimeCalculation(employeeDeclaration.TotalAmount, salaryBreakup.GrossIncome);
             employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
             employeeDeclaration.IncomeTaxSlab = incomeTaxDetails.GetType().GetProperty("IncomeTaxSlab").GetValue(incomeTaxDetails, null);
-            employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(employeeDeclaration.IncomeTaxSlab["Gross Income Tax"], completeSalaryBreakup.GrossAnnually);
-            var hra = this.HRACalculation(completeSalaryBreakup, employeeDeclaration);
+            employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(employeeDeclaration.IncomeTaxSlab["Gross Income Tax"], grossComponent.FinalAmount);
+            var hra = this.HRACalculation(calculatedSalaryBreakupDetails, employeeDeclaration);
             var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
             var hraAmount = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
             if (hraAmount != null)
@@ -503,17 +505,25 @@ namespace ServiceLayer.Code
             });
         }
 
-        private dynamic HRACalculation(CompleteSalaryBreakup completeSalaryBreakup, EmployeeDeclaration employeeDeclaration)
+        private dynamic HRACalculation(List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails, EmployeeDeclaration employeeDeclaration)
         {
-            decimal HRA1 = completeSalaryBreakup.HRAAnnually;
-            decimal HRA2 = completeSalaryBreakup.BasicAnnually / 2;
+            var hraComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);
+            if (hraComponent == null)
+                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
+
+            var basicComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Basic);
+            if (basicComponent == null)
+                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
+
+            decimal HRA1 = hraComponent.FinalAmount;
+            decimal HRA2 = basicComponent.FinalAmount / 2;
             decimal HRA3 = 0;
             decimal HRAAmount = 0;
             var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
             if (houseProperty != null && houseProperty.TotalAmountDeclared > 0)
             {
                 decimal declaredValue = houseProperty.TotalAmountDeclared;
-                HRA3 = declaredValue - (completeSalaryBreakup.BasicAnnually / 10);
+                HRA3 = declaredValue - (basicComponent.FinalAmount / 10);
                 if (HRA3 < HRA1 && HRA3 < HRA2)
                     HRAAmount = HRA3;
                 else if (HRA2 < HRA1 && HRA2 < HRA3)
@@ -526,7 +536,6 @@ namespace ServiceLayer.Code
             {
                 return null;
             }
-
         }
 
         private decimal SurchargeAndCess(decimal GrossIncomeTax, decimal GrossIncome)
@@ -536,7 +545,7 @@ namespace ServiceLayer.Code
             if (GrossIncomeTax > 0)
                 Cess = (4 * GrossIncomeTax) / 100;
 
-            if (GrossIncome > 5000000 && GrossIncome <=10000000)
+            if (GrossIncome > 5000000 && GrossIncome <= 10000000)
                 Surcharges = (10 * GrossIncome) / 100;
             else if (GrossIncome > 10000000 && GrossIncome <= 20000000)
                 Surcharges = (15 * GrossIncome) / 100;
@@ -545,7 +554,7 @@ namespace ServiceLayer.Code
             else if (GrossIncome > 50000000)
                 Surcharges = (37 * GrossIncome) / 100;
 
-            return (Cess+ Surcharges);
+            return (Cess + Surcharges);
         }
 
         private dynamic OldTaxRegimeCalculation(decimal TaxableIncome, decimal GrossIncome)

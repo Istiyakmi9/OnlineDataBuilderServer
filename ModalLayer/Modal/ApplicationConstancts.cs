@@ -31,6 +31,14 @@ public class ApplicationConstants
     }
 }
 
+public class ComponentNames
+{
+    public static string Gross = "GR";
+    public static string CTC = "ANNUALCTC";
+    public static string HRA = "HRA";
+    public static string Basic = "BS";
+}
+
 public enum FileSystemType
 {
     User = 1,

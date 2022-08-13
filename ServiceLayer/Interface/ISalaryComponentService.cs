@@ -20,7 +20,7 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
         string SalaryDetailService(long EmployeeId, EmployeeSalaryDetail salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail);
-        CompleteSalaryBreakup SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
+        List<CalculatedSalaryBreakupDetail> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
         List<SalaryComponents> GetSalaryGroupComponentsByCTC(decimal CTC);
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
         SalaryGroup GetSalaryGroupByCTC(decimal CTC);
