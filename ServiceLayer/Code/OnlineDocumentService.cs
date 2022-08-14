@@ -340,12 +340,14 @@ namespace ServiceLayer.Code
             };
 
             var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
-            if (Result.Tables.Count == 4)
+            if (Result.Tables.Count == 6)
             {
                 Result.Tables[0].TableName = "fileDetail";
                 Result.Tables[1].TableName = "clients";
                 Result.Tables[2].TableName = "employees";
-                Result.Tables[3].TableName = "allocatedClients";
+                Result.Tables[3].TableName = "roles";
+                Result.Tables[4].TableName = "companys";
+                Result.Tables[5].TableName = "allocatedClients";
             }
             return Result;
         }
