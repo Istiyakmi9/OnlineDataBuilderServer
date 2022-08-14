@@ -577,6 +577,7 @@ namespace ServiceLayer.Code
                 calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
                 calculatedSalaryBreakupDetail.Formula = item.Formula;
                 calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
+                calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
                 calculatedSalaryBreakupDetail.FinalAmount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
 
                 calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);

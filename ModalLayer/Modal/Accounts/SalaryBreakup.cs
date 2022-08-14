@@ -25,5 +25,6 @@
         public string ComponentName { set; get; }
         public string Formula { set; get; }
         public decimal FinalAmount { set; get; }
+        public decimal ComponentTypeId { set; get; }
     }
 }
