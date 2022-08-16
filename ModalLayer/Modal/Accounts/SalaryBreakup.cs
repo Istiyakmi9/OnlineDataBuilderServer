@@ -1,4 +1,7 @@
-﻿namespace ModalLayer.Modal.Accounts
+﻿using System;
+using System.Collections.Generic;
+
+namespace ModalLayer.Modal.Accounts
 {
     public class CompleteSalaryBreakup
     {
@@ -25,5 +28,14 @@
         public string ComponentName { set; get; }
         public string Formula { set; get; }
         public decimal FinalAmount { set; get; }
+        public decimal ComponentTypeId { set; get; }
+    }
+
+    public class AnnualSalaryBreakup
+    {
+        public string MonthName { set; get; }
+        public int MonthNumber { set; get; }
+        public DateTime MonthFirstDate { set; get; }
+        public List<CalculatedSalaryBreakupDetail> SalaryBreakupDetails { get; set; }
     }
 }

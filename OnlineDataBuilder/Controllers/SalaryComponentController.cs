@@ -118,16 +118,14 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("InsertUpdateSalaryBreakUp/{EmployeeId}")]
-        public IResponse<ApiResponse> SalaryDetail(long EmployeeId)
+        [HttpPost("InsertUpdateSalaryBreakUp/{EmployeeId}/{PresentMonth}/{PresentYear}")]
+        public IResponse<ApiResponse> SalaryDetail(long EmployeeId, int PresentMonth, int PresentYear)
         {
             _httpContext.Request.Form.TryGetValue("completesalarydetail", out StringValues compSalaryDetail);
-            _httpContext.Request.Form.TryGetValue("salarydeatil", out StringValues salaryDetail);
-            if (compSalaryDetail.Count > 0 && salaryDetail.Count > 0)
+            if (compSalaryDetail.Count > 0)
             {
-                var fullSalaryDetail = JsonConvert.DeserializeObject<CompleteSalaryBreakup>(compSalaryDetail);
-                var SalaryDetail = JsonConvert.DeserializeObject<EmployeeSalaryDetail>(salaryDetail);
-                var result = _salaryComponentService.SalaryDetailService(EmployeeId, SalaryDetail, fullSalaryDetail);
+                var fullSalaryDetail = JsonConvert.DeserializeObject<List<CalculatedSalaryBreakupDetail>>(compSalaryDetail);
+                var result = _salaryComponentService.SalaryDetailService(EmployeeId, fullSalaryDetail, PresentMonth, PresentYear);
                 return BuildResponse(result);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

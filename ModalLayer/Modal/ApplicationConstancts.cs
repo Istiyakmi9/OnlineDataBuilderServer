@@ -33,8 +33,9 @@ public class ApplicationConstants
 
 public class ComponentNames
 {
-    public static string Gross = "GR";
+    public static string Gross = "GROSS";
     public static string CTC = "ANNUALCTC";
+    public static string Special = "SPECIAL ALLOWANCE";
     public static string HRA = "HRA";
     public static string Basic = "BS";
 }
