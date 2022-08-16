@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OnlineDataBuilder.MiddlewareServices.Src;
 
 namespace OnlineDataBuilder
 {
@@ -15,7 +17,7 @@ namespace OnlineDataBuilder
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
-                //.ConfigureServices(x => x.AddHostedService<SchedulerJob>());
+                })
+                .ConfigureServices(x => x.AddHostedService<EmailSchedulerJob>());
     }
 }

@@ -78,10 +78,10 @@ namespace EMailService.Service
         public string SendMail(EmailSenderModal emailSenderModal)
         {
             string status = string.Empty;
-            emailSenderModal.CC.Add("marghub12@gmail.com");
-            emailSenderModal.CC.Add("marghub12@rediffmail.com");
-            emailSenderModal.BCC.Add("marghub.rahman96@gmail.com");
-            emailSenderModal.BCC.Add("marghub12@exdonuts.com");
+
+            if (emailSenderModal.To == null || emailSenderModal.To.Count == 0)
+                throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
+
             var fromEmail = new
             {
                 Id = emailSenderModal.From,
@@ -91,7 +91,6 @@ namespace EMailService.Service
             };
 
             var fromAddress = new System.Net.Mail.MailAddress(fromEmail.Id, emailSenderModal.Title);
-            var toAddress = new System.Net.Mail.MailAddress(emailSenderModal.To, emailSenderModal.UserName);
 
             var smtp = new SmtpClient
             {
@@ -102,36 +101,41 @@ namespace EMailService.Service
                 UseDefaultCredentials = false,
                 Credentials = new NetworkCredential(fromAddress.Address, fromEmail.Pwd)
             };
-            using (var message = new MailMessage(fromAddress, toAddress)
-            {
-                Subject = emailSenderModal.Title,
-                Body = this.GetClientBillingBody(),
-                IsBodyHtml = true
-            })
-            {
+
+            var message = new MailMessage();
+            message.Subject = emailSenderModal.Title;
+            message.Body = this.GetClientBillingBody();
+            message.IsBodyHtml = true;
+            message.From = fromAddress;
+
+            foreach (var emailAddress in emailSenderModal.To)
+                message.To.Add(emailAddress);
+
+            if (emailSenderModal.CC != null && emailSenderModal.CC.Count > 0)
                 foreach (var emailAddress in emailSenderModal.CC)
                     message.CC.Add(emailAddress);
 
+            if (emailSenderModal.BCC != null && emailSenderModal.BCC.Count > 0)
                 foreach (var emailAddress in emailSenderModal.BCC)
                     message.Bcc.Add(emailAddress);
 
-                try
+            try
+            {
+            if (emailSenderModal.FileDetails != null && emailSenderModal.FileDetails.Count > 0)
+                foreach (var files in emailSenderModal.FileDetails)
                 {
-                    foreach (var files in emailSenderModal.FileDetails)
-                    {
-                        message.Attachments.Add(
-                            new System.Net.Mail.Attachment(Path.Combine(_fileLocationDetail.RootPath, files.FilePath, files.FileName + ".pdf"))
-                        );
-                    }
+                    message.Attachments.Add(
+                        new System.Net.Mail.Attachment(Path.Combine(_fileLocationDetail.RootPath, files.FilePath, files.FileName + ".pdf"))
+                    );
+                }
 
-                    smtp.Send(message);
-                    status = "success";
-                }
-                catch (Exception ex)
-                {
-                    var _e = ex;
-                    throw;
-                }
+                smtp.Send(message);
+                status = "success";
+            }
+            catch (Exception ex)
+            {
+                var _e = ex;
+                throw;
             }
             return status;
         }

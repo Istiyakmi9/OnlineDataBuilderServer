@@ -4,7 +4,7 @@ namespace ModalLayer.Modal
 {
     public class EmailSenderModal
     {
-        public string To { set; get; }
+        public List<string> To { set; get; }
         public string From { set; get; }
         public string UserName { set; get; }
         public string Title { set; get; }
