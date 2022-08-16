@@ -585,6 +585,20 @@ namespace ServiceLayer.Code
             return finalAmount;
         }
 
+        private decimal GetPerquisiteAmount(List<SalaryComponents> salaryComponents)
+        {
+            decimal finalAmount = 0;
+            var prequisiteComponents = salaryComponents.FindAll(x => x.ComponentTypeId == 6);
+            if (prequisiteComponents.Count > 0)
+            {
+                foreach (var item in prequisiteComponents)
+                {
+                    finalAmount += this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                }
+            }
+            return finalAmount;
+        }
+
         private decimal GetBaiscAmountValue(List<SalaryComponents> salaryComponents, decimal grossAmount, decimal CTC)
         {
             decimal finalAmount = 0;
@@ -625,7 +639,8 @@ namespace ServiceLayer.Code
             List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
 
             string stringifySalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-            decimal EmployeeContributionAmount = GetEmployeeContributionAmount(salaryComponents, CTCAnnually);
+            decimal perquisiteAmount = GetPerquisiteAmount(salaryComponents);
+            decimal EmployeeContributionAmount = (GetEmployeeContributionAmount(salaryComponents, CTCAnnually)) + perquisiteAmount;
             decimal grossAmount = Convert.ToDecimal(CTCAnnually - EmployeeContributionAmount);
             decimal basicAmountValue = GetBaiscAmountValue(salaryComponents, grossAmount, CTCAnnually);
 
@@ -672,12 +687,14 @@ namespace ServiceLayer.Code
                     }
                 }
 
+                var value = calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount);
+
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     ComponentId = nameof(ComponentNames.Special),
                     Formula = null,
                     ComponentName = ComponentNames.Special,
-                    FinalAmount = grossAmount - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount),
+                    FinalAmount = (grossAmount/12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount)),
                     ComponentTypeId = 102
                 };
 
@@ -688,7 +705,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
-                    FinalAmount = CTCAnnually - EmployeeContributionAmount,
+                    FinalAmount = (CTCAnnually - EmployeeContributionAmount) /12,
                     ComponentTypeId = 100
                 };
 
@@ -699,7 +716,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.CTC),
                     Formula = null,
                     ComponentName = ComponentNames.CTC,
-                    FinalAmount = CTCAnnually,
+                    FinalAmount = CTCAnnually/12,
                     ComponentTypeId = 101
                 };
 
