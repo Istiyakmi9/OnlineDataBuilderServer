@@ -9,6 +9,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.Data;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 
 namespace ServiceLayer.Code
 {
@@ -17,11 +18,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
-        public SalaryComponentService(IDb db, CurrentSession currentSession, IEvaluationPostfixExpression postfixToInfixConversion)
+        private readonly ITimezoneConverter _timezoneConverter;
+
+        public SalaryComponentService(IDb db, CurrentSession currentSession, 
+            IEvaluationPostfixExpression postfixToInfixConversion,
+            ITimezoneConverter timezoneConverter
+            )
         {
             _db = db;
             _currentSession = currentSession;
             _postfixToInfixConversion = postfixToInfixConversion;
+            _timezoneConverter = timezoneConverter;
         }
 
         public SalaryComponents GetSalaryComponentByIdService()
@@ -223,7 +230,7 @@ namespace ServiceLayer.Code
         public List<SalaryComponents> AddUpdateRecurringComponents(SalaryStructure recurringComponent)
         {
             if (string.IsNullOrEmpty(recurringComponent.ComponentName))
-                    throw new HiringBellException("Invalid component name.");
+                throw new HiringBellException("Invalid component name.");
 
             if (recurringComponent.ComponentTypeId <= 0)
                 throw new HiringBellException("Invalid component type.");
@@ -267,6 +274,9 @@ namespace ServiceLayer.Code
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
             foreach (var item in salaryGroups)
             {
+                if (string.IsNullOrEmpty(item.SalaryComponents))
+                    throw new HiringBellException("Salary component not found");
+
                 List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(item.SalaryComponents);
                 var component = salaryComponents.Find(x => x.ComponentId == recurringComponent.ComponentName);
                 if (component != null)
@@ -463,26 +473,77 @@ namespace ServiceLayer.Code
             return salaryGroup.GroupComponents;
         }
 
-        public string SalaryDetailService(long EmployeeId, EmployeeSalaryDetail salaryDetail, CompleteSalaryBreakup ComplcompSalaryDetail)
+        private bool CompareFieldsValue(AnnualSalaryBreakup matchedSalaryBreakup, List<CalculatedSalaryBreakupDetail> completeSalaryBreakup)
+        {
+            bool flag = false;
+            int i = 0;
+            while(i < matchedSalaryBreakup.SalaryBreakupDetails.Count)
+            {
+                var item = matchedSalaryBreakup.SalaryBreakupDetails.ElementAt(i);
+                var elem = completeSalaryBreakup.Find(x => x.ComponentId == item.ComponentId);
+                if (elem == null)
+                    break;
+
+                if(item.FinalAmount != elem.FinalAmount)
+                {
+                    flag = true;
+                    break;
+                }
+
+                i++;
+            }
+
+            return flag;
+        }
+
+        private void UpdateIfChangeFound(List<AnnualSalaryBreakup> annualSalaryBreakups, List<CalculatedSalaryBreakupDetail> salaryBreakup, int presentMonth, int PresentYear)
+        {
+            DateTime present = new DateTime(PresentYear, presentMonth, 1);
+            if (_currentSession.TimeZone != null)
+                present = _timezoneConverter.ToIstTime(present);
+
+            AnnualSalaryBreakup matchedSalaryBreakups = annualSalaryBreakups.Where(x => x.MonthFirstDate.Subtract(present).TotalDays >= 0).FirstOrDefault<AnnualSalaryBreakup>();
+            if (matchedSalaryBreakups == null)
+                throw new HiringBellException("Invalid data found in salary detail. Please contact to admin.");
+            else
+            {
+                var flag = CompareFieldsValue(matchedSalaryBreakups, salaryBreakup);
+                if (flag)
+                {
+                    List<AnnualSalaryBreakup> affectedSalaryBreakups = annualSalaryBreakups.Where(x => x.MonthFirstDate.Subtract(present).TotalDays >= 0).ToList<AnnualSalaryBreakup>();
+
+                    int i = 0;
+                    while(i < affectedSalaryBreakups.Count)
+                    {
+                        affectedSalaryBreakups.ElementAt(i).SalaryBreakupDetails = salaryBreakup;
+                        i++;
+                    }
+                }
+            }
+        }
+
+        private void ValidateCorrectnessOfSalaryDetail(List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail)
+        {
+            // implement code to check the correctness of the modal on value level.
+        }
+
+        public string SalaryDetailService(long EmployeeId, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, int PresentMonth, int PresentYear)
         {
             EmployeeSalaryDetail salaryBreakup = new EmployeeSalaryDetail();
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
-            List<EmployeeSalaryDetail> allSalaryBreakups = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
-            if (allSalaryBreakups == null)
-            {
-                salaryBreakup = salaryDetail;
-                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
-            }
-            else
-            {
-                salaryBreakup = allSalaryBreakups.FirstOrDefault(x => x.EmployeeId == EmployeeId);
-                salaryBreakup.CTC = salaryDetail.CTC;
-                salaryBreakup.GrossIncome = salaryDetail.GrossIncome;
-                salaryBreakup.GroupId = salaryDetail.GroupId;
-                salaryBreakup.NetSalary = salaryDetail.NetSalary;
-                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(ComplcompSalaryDetail);
-            }
+
+            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
+            if (employeeSalaryDetail == null)
+                throw new HiringBellException("Fail to get salary detail. Please contact to admin.");
+
+            List<AnnualSalaryBreakup> annualSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(employeeSalaryDetail.CompleteSalaryDetail);
+
+            // implement code to check the correctness of the modal on value level.
+            ValidateCorrectnessOfSalaryDetail(calculatedSalaryBreakupDetail);
+
+            UpdateIfChangeFound(annualSalaryBreakups, calculatedSalaryBreakupDetail, PresentMonth, PresentYear);
+            
             var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
@@ -490,25 +551,6 @@ namespace ServiceLayer.Code
                 result = "Inserted/Updated successfully";
             return result;
         }
-
-        //public void CalculateBreakup(long employeeId, CompleteSalaryBreakup complcompSalaryDetail)
-        //{
-        //    EmployeeDeclaration employeeDeclaration = default;
-        //    DbParam[] param = new DbParam[]
-        //    {
-        //        new DbParam(employeeId, typeof(long), "_EmployeeId"),
-        //        new DbParam(UserType.Compnay, typeof(int), "_UserTypeId")
-        //    };
-
-        //    DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
-        //    if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
-        //        throw new HiringBellException("Unable to get the detail");
-
-        //    employeeDeclaration = BottomhalfCore.Services.Code.Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
-
-        //    if (resultSet.Tables[2].Rows.Count == 1)
-        //        employeeDeclaration.SalaryDetail = BottomhalfCore.Services.Code.Converter.ToType<SalaryBreakup>(resultSet.Tables[2]);
-        //}
 
         private decimal GetEmployeeContributionAmount(List<SalaryComponents> salaryComponents, decimal CTC)
         {
@@ -565,65 +607,178 @@ namespace ServiceLayer.Code
             return finalAmount;
         }
 
-        public List<CalculatedSalaryBreakupDetail> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
+        public List<AnnualSalaryBreakup> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
         {
-            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
-
             if (EmployeeId < 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
             if (CTCAnnually <= 0)
-                throw new HiringBellException("Invalid CTCAnnually");
+                return this.CreateSalaryBreakUpWithZeroCTC(EmployeeId, CTCAnnually);
+            else
+                return this.CreateSalaryBreakupWithValue(EmployeeId, CTCAnnually);
+        }
 
-
+        public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(long EmployeeId, decimal CTCAnnually)
+        {
+            List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
+            DateTime startDate = new DateTime(DateTime.Now.Year, 4, 1);
             List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
 
+            string stringifySalaryComponents = JsonConvert.SerializeObject(salaryComponents);
             decimal EmployeeContributionAmount = GetEmployeeContributionAmount(salaryComponents, CTCAnnually);
             decimal grossAmount = Convert.ToDecimal(CTCAnnually - EmployeeContributionAmount);
             decimal basicAmountValue = GetBaiscAmountValue(salaryComponents, grossAmount, CTCAnnually);
 
-            // replace all abbreviation i.e. [BASIC] [GROSS] etc
-            int i = 0;
-            while (i < salaryComponents.Count)
+            int index = 0;
+            while (index < 12)
             {
-                var item = salaryComponents.ElementAt(i);
-                if (!string.IsNullOrEmpty(item.Formula))
+                salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(stringifySalaryComponents);
+                List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
+
+                int i = 0;
+                while (i < salaryComponents.Count)
                 {
-                    if (item.Formula.Contains("[BASIC]"))
-                        item.Formula = item.Formula.Replace("[BASIC]", basicAmountValue.ToString());
-                    else if (item.Formula.Contains("[CTC]"))
-                        item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(CTCAnnually)).ToString());
-                    else if (item.Formula.Contains("[GROSS]"))
-                        item.Formula = item.Formula.Replace("[GROSS]", grossAmount.ToString());
+                    var item = salaryComponents.ElementAt(i);
+                    if (!string.IsNullOrEmpty(item.Formula))
+                    {
+                        if (item.Formula.Contains("[BASIC]"))
+                            item.Formula = item.Formula.Replace("[BASIC]", basicAmountValue.ToString());
+                        else if (item.Formula.Contains("[CTC]"))
+                            item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(CTCAnnually)).ToString());
+                        else if (item.Formula.Contains("[GROSS]"))
+                            item.Formula = item.Formula.Replace("[GROSS]", grossAmount.ToString());
+                    }
+
+                    i++;
                 }
 
-                i++;
+                decimal amount = 0;
+                CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
+                foreach (var item in salaryComponents)
+                {
+                    if (!string.IsNullOrEmpty(item.ComponentId))
+                    {
+                        calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
+
+                        amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+
+                        calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
+                        calculatedSalaryBreakupDetail.Formula = item.Formula;
+                        calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
+                        calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
+                        calculatedSalaryBreakupDetail.FinalAmount = amount / 12;
+
+                        calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                    }
+                }
+
+                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                {
+                    ComponentId = nameof(ComponentNames.Special),
+                    Formula = null,
+                    ComponentName = ComponentNames.Special,
+                    FinalAmount = grossAmount - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount),
+                    ComponentTypeId = 102
+                };
+
+                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+
+                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                {
+                    ComponentId = nameof(ComponentNames.Gross),
+                    Formula = null,
+                    ComponentName = ComponentNames.Gross,
+                    FinalAmount = CTCAnnually - EmployeeContributionAmount,
+                    ComponentTypeId = 100
+                };
+
+                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+
+                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                {
+                    ComponentId = nameof(ComponentNames.CTC),
+                    Formula = null,
+                    ComponentName = ComponentNames.CTC,
+                    FinalAmount = CTCAnnually,
+                    ComponentTypeId = 101
+                };
+
+                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+
+                annualSalaryBreakups.Add(new AnnualSalaryBreakup
+                {
+                    MonthName = startDate.ToString("MMM"),
+                    MonthNumber = startDate.Month,
+                    MonthFirstDate = startDate,
+                    SalaryBreakupDetails = calculatedSalaryBreakupDetails
+                });
+
+                startDate = startDate.AddMonths(1);
+                index++;
             }
+
+            return annualSalaryBreakups;
+        }
+
+        private List<AnnualSalaryBreakup> CreateSalaryBreakUpWithZeroCTC(long EmployeeId, decimal CTCAnnually)
+        {
+            List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
+
+
+            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
+            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
 
             CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
             foreach (var item in salaryComponents)
             {
-                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
+                if (!string.IsNullOrEmpty(item.ComponentId))
+                {
+                    calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
 
-                calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
-                calculatedSalaryBreakupDetail.Formula = item.Formula;
-                calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
-                calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
-                calculatedSalaryBreakupDetail.FinalAmount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                    calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
+                    calculatedSalaryBreakupDetail.Formula = item.Formula;
+                    calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
+                    calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
+                    calculatedSalaryBreakupDetail.FinalAmount = 0;
 
-                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                    calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                }
             }
 
             calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
             {
-                ComponentId = ComponentNames.Gross,
+                ComponentId = nameof(ComponentNames.Special),
                 Formula = null,
-                ComponentName = ComponentNames.Gross,
-                FinalAmount = CTCAnnually - EmployeeContributionAmount
+                ComponentName = ComponentNames.Special,
+                FinalAmount = 0,
+                ComponentTypeId = 102
             };
 
             calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
-            return calculatedSalaryBreakupDetails;
+
+            calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+            {
+                ComponentId = nameof(ComponentNames.Gross),
+                Formula = null,
+                ComponentName = ComponentNames.Gross,
+                FinalAmount = 0,
+                ComponentTypeId = 100
+            };
+
+            calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+
+            calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+            {
+                ComponentId = nameof(ComponentNames.CTC),
+                Formula = null,
+                ComponentName = ComponentNames.CTC,
+                FinalAmount = 0,
+                ComponentTypeId = 101
+            };
+
+            calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+
+            return annualSalaryBreakups;
         }
 
         public EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId)
