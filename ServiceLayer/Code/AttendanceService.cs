@@ -728,11 +728,13 @@ namespace ServiceLayer.Code
                     List<CompleteLeaveDetail> leaveDetails = null;
                     foreach (var i in leavePlanTypes)
                     {
-                        leaveDetails = completeLeaveDetails.Where(x => x.LeaveType == i.LeavePlanTypeId).ToList();
-                        if (leaveDetails.Count > 0)
-                            i.AvailableLeave = i.MaxLeaveLimit - (leaveDetails.Sum(x => x.NumOfDays));
-                        else
-                            i.AvailableLeave = i.MaxLeaveLimit;
+                        //leaveDetails = completeLeaveDetails.Where(x => x.LeaveType == i.LeavePlanTypeId).ToList();
+                        //if (leaveDetails.Count > 0)
+                        //    i.AvailableLeave = i.MaxLeaveLimit - (leaveDetails.Sum(x => x.NumOfDays));
+                        //else
+                        //    i.AvailableLeave = i.MaxLeaveLimit;
+
+                        i.AvailableLeave = GetLeaveBalanceByEmpId(i.LeavePlanTypeId, EmployeeId, completeLeaveDetails);
                     }
 
                     leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
@@ -740,6 +742,63 @@ namespace ServiceLayer.Code
             }
 
             return new { EmployeeLeaveDetail = employeeLeaveDetail, LeavePlan = leavePlan, Employees = employees };
+        }
+
+        private decimal GetLeaveBalanceByEmpId(int leavePlanTypeId, long EmployeeId, List<CompleteLeaveDetail> completeLeaveDetails)
+        {
+            decimal leaveCount = 0;
+            int joiningMonth = 0;
+            decimal applyLeave = 0;
+
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan id supplied");
+
+            LeavePlanConfiguration leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            if (leavePlanConfiguration.leaveDetail.IsLeaveDaysLimit == true)
+            {
+                var leaveLimit = leavePlanConfiguration.leaveDetail.LeaveLimit;
+                if (leaveLimit <= 0)
+                    throw new HiringBellException("leave limit is null or empty");
+
+                var leaveAccrual = leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave;
+                if (leaveAccrual == true)
+                    leaveCount = leaveLimit;
+                else
+                {
+                    var employees = _cacheManager.Get(ServiceLayer.Caching.Table.Employee).ToList<Employee>();
+                    var dateofJoining = employees.Find(x => x.EmployeeUid == EmployeeId).CreatedOn;
+                    if (dateofJoining == null)
+                        throw new HiringBellException("Date of Joining is null or empty");
+                    else
+                        joiningMonth = dateofJoining.Month; //DateTime(dateofJoining).Month;
+
+                    if (completeLeaveDetails.Count > 0)
+                        applyLeave = completeLeaveDetails.FindAll(x => x.LeaveType == leavePlanTypeId).Sum(x => x.NumOfDays);
+
+                    var leaveDistributedSeq = leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
+                    switch (leaveDistributedSeq)
+                    {
+                        case "1":
+                            int remainingMonth = 0;
+                            var currentMonth = DateTime.Now.Month;
+                            if (joiningMonth < currentMonth)
+                                remainingMonth = currentMonth - joiningMonth;
+                            else
+                                remainingMonth = currentMonth;
+
+                            if (leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom <= 0)
+                                throw new HiringBellException("Leave applied rate is empty");
+
+                            var leaveRate = leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom;
+                            leaveCount = (leaveRate * remainingMonth) - applyLeave;
+                            break;
+                    }
+                }
+            }
+
+            return leaveCount;
         }
 
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen, DateTime? monthFirstDate = null)
