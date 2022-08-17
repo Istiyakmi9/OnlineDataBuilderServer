@@ -121,13 +121,13 @@ namespace EMailService.Service
 
             try
             {
-            if (emailSenderModal.FileDetails != null && emailSenderModal.FileDetails.Count > 0)
-                foreach (var files in emailSenderModal.FileDetails)
-                {
-                    message.Attachments.Add(
-                        new System.Net.Mail.Attachment(Path.Combine(_fileLocationDetail.RootPath, files.FilePath, files.FileName + ".pdf"))
-                    );
-                }
+                if (emailSenderModal.FileDetails != null && emailSenderModal.FileDetails.Count > 0)
+                    foreach (var files in emailSenderModal.FileDetails)
+                    {
+                        message.Attachments.Add(
+                            new System.Net.Mail.Attachment(Path.Combine(_fileLocationDetail.RootPath, files.FilePath, files.FileName + ".pdf"))
+                        );
+                    }
 
                 smtp.Send(message);
                 status = "success";
