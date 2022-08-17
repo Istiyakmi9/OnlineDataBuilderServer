@@ -626,7 +626,7 @@ namespace ServiceLayer.Code
                 var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
                 EmailSenderModal emailSenderModal = new EmailSenderModal
                 {
-                    To = "istiyaq.mi9@gmail.com", //receiver.Email,
+                    To = new List<string> { "istiyaq.mi9@gmail.com" }, //receiver.Email,
                     From = "info@bottomhalf.in", //sender.Email,
                     UserName = "BottomHalf",
                     CC = new List<string>(),
@@ -654,7 +654,7 @@ namespace ServiceLayer.Code
                 if (!string.IsNullOrEmpty(receiver.OtherEmail_4))
                     emailSenderModal.CC.Add(receiver.OtherEmail_4);
 
-               result = _eMailManager.SendMail(emailSenderModal);
+                result = _eMailManager.SendMail(emailSenderModal);
             }
 
             return result;

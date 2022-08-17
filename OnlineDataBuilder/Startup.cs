@@ -109,7 +109,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
             services.AddScoped<PdfGenerateHelper>();
-            services.AddScoped<IEMailManager, EMailManager>();
+            services.AddSingleton<IEMailManager, EMailManager>();
             services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
             services.AddScoped<IMediaService, GooogleService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
