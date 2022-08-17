@@ -41,5 +41,9 @@ namespace ModalLayer.Modal
         public int AccessLevelId { set; get; }
         public int UserTypeId { set; get; } = 2;
         public int LeavePlanId { get; set; }
+        public int ProbationPeriodDaysLimit { get; set; }
+        public int NoticePeriodDaysLimit { get; set; }
+        public int PayrollGroupId { get; set; }
+        public DateTime? NoticePeriodAppriedOn { get; set; }
     }
 }
