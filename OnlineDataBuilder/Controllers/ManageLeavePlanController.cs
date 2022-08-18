@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
@@ -75,9 +76,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("AddUpdateEmpLeavePlan/{leavePlanId}")]
-        public IResponse<ApiResponse> AddUpdateEmpLeavePlan([FromRoute] int leavePlanId, [FromBody] List<EmpLeavePlanMapping> empLeavePlanMapping)
+        public IResponse<ApiResponse> AddUpdateEmpLeavePlan([FromRoute] int leavePlanId, [FromBody] List<Employee> employees)
         {
-            var result = _manageLeavePlanService.AddUpdateEmpLeavePlanService(leavePlanId, empLeavePlanMapping);
+            var result = _manageLeavePlanService.AddUpdateEmpLeavePlanService(leavePlanId, employees);
             return BuildResponse(result);
         }
 
