@@ -44,6 +44,8 @@ namespace ModalLayer.Modal
         public int ProbationPeriodDaysLimit { get; set; }
         public int NoticePeriodDaysLimit { get; set; }
         public int PayrollGroupId { get; set; }
-        public DateTime? NoticePeriodAppriedOn { get; set; }
+        public int SalaryGroupId { get; set; }
+        public int NoticePeriodId { get; set; }
+        public DateTime? NoticePeriodAppliedOn { get; set; }
     }
 }
