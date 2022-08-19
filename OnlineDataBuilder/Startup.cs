@@ -157,6 +157,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IManageLeavePlanService, ManageLeavePlanService>();
             services.AddScoped<ITimesheetService, TimesheetService>();
             services.AddScoped<IComponentsCalculationService, ComponentsCalculationService>();
+            services.AddScoped<ILeaveCalculation, LeaveCalculation>();
 
             services.AddCors(options =>
             {
