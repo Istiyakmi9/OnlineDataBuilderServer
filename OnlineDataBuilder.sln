@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31005.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OnlineDataBuilder", "OnlineDataBuilder\OnlineDataBuilder.csproj", "{C396E12B-B263-45FD-8EA5-BC482BE17C41}"
 EndProject
@@ -30,6 +30,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenXmlPowerTools", "DocxToHtml\OpenXmlPowerTools\OpenXmlPowerTools.csproj", "{D24247B4-15A2-4AE6-8404-CD706042451D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.DOMConverter", "Bot.DOMConverter\Bot.DOMConverter\Bot.DOMConverter.csproj", "{9D571B0F-00AE-4661-85B5-7782603DBBAF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Db_Script", "Db_Script", "{620B2E91-075A-4282-A511-3F7BB038DA3B}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\SQL\MYSQL\leave_plan_script.sql = ..\..\SQL\MYSQL\leave_plan_script.sql
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

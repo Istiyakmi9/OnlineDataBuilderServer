@@ -6,9 +6,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +18,10 @@ namespace ServiceLayer.Code
         private Employee _employee;
         private Leave _employeeLeaveDetail;
         private LeavePlan _leavePlan;
+        private List<LeavePlanType> _leavePlanTypes;
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly DateTime now = DateTime.UtcNow;
+        private CompanySetting _companySetting;
 
         public LeaveCalculation(IDb db)
         {
@@ -176,64 +176,38 @@ namespace ServiceLayer.Code
             return availableLeaves;
         }
 
-        private LeavePlanConfiguration FetchLeavePlanConfigurationById(int leavePlanTypeId)
+        private void ValidateAndGetLeavePlanConfiguration(LeavePlanType leavePlanType)
         {
-            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
-            if (leavePlanType == null || string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
-                throw new HiringBellException("Invalid plan id supplied");
-
-            LeavePlanConfiguration leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
-            return leavePlanConfiguration;
+            // fetching data from database using leaveplantypeId
+            _leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+            if (_leavePlanConfiguration == null)
+                throw new HiringBellException("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
         }
 
-        private int GetEmployeeType(long EmployeeId)
+        private int LoadCalculationData(long EmployeeId)
         {
-            var employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId, IsActive = 1 });
-            if (employee == null)
+            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new { EmployeeId, IsActive = 1, Year = now.Year }, false);
+            if (ds != null && ds.Tables.Count == 4)
+            {
+                if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
+                    throw new HiringBellException("Fail to get employee related details. Please contact to admin.");
+
+                _employee = Converter.ToType<Employee>(ds.Tables[0]);
+                _leavePlanTypes = Converter.ToList<LeavePlanType>(ds.Tables[1]);
+                _employeeLeaveDetail = Converter.ToType<Leave>(ds.Tables[2]);
+                _companySetting = Converter.ToType<CompanySetting>(ds.Tables[3]);
+            }
+            else
                 throw new HiringBellException("Employee does not exist. Please contact to admin.");
 
             int type = 0;
-            if (now.Subtract(employee.CreatedOn).TotalDays <= employee.ProbationPeriodDaysLimit)
+            if (now.Subtract(_employee.CreatedOn).TotalDays <= _employee.ProbationPeriodDaysLimit)
                 type = 1;
 
-            if (employee.NoticePeriodAppliedOn != null && now.Subtract((DateTime)employee.NoticePeriodAppliedOn).TotalDays <= employee.NoticePeriodDaysLimit)
+            if (_employee.NoticePeriodAppliedOn != null && now.Subtract((DateTime)_employee.NoticePeriodAppliedOn).TotalDays <= _employee.NoticePeriodDaysLimit)
                 type = 2;
 
-            _employee = employee;
             return type;
-        }
-
-        private void BuildLeaveCalculationInstances(long EmployeeId)
-        {
-            // List<Employee> employees = null;
-            DataSet result = _db.FetchDataSet("sp_employee_leave_request_detail", new { EmployeeId = EmployeeId, Year = now.Year });
-
-            if (result.Tables.Count != 3)
-                throw new HiringBellException("Unable to get employee leave deatils");
-            else
-            {
-                _employeeLeaveDetail = Converter.ToType<Leave>(result.Tables[0]);
-                if (_employeeLeaveDetail == null)
-                    throw new HiringBellException("Unable to find leave detail for the current employee. Please contact to admin.");
-
-                _leavePlan = Converter.ToType<LeavePlan>(result.Tables[1]);
-                if (_leavePlan == null)
-                    throw new HiringBellException("Unable to find leave plan for the current employee. Please contact to admin.");
-
-                // employees = Converter.ToList<Employee>(result.Tables[2]);
-            }
-        }
-
-        private void ValidateAndGetLeavePlanConfiDetail(List<LeavePlanType> leavePlanTypes)
-        {
-            var leavePlanTypeId = leavePlanTypes.First().LeavePlanTypeId;
-            if (leavePlanTypeId <= 0)
-                throw new HiringBellException("Leave plan type detail is not configured properly.");
-
-            // fetching data from database using leaveplantypeId
-            _leavePlanConfiguration = FetchLeavePlanConfigurationById(leavePlanTypeId);
-            if (_leavePlanConfiguration == null)
-                throw new HiringBellException("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
         }
 
         public async Task<List<LeavePlanType>> GetBalancedLeave(long EmployeeId)
@@ -241,27 +215,17 @@ namespace ServiceLayer.Code
             CancellationTokenSource cts = new CancellationTokenSource();
 
             // get employee detail and store it in class level variable
-            int type = this.GetEmployeeType(EmployeeId);
-
-            // creating leave plan and detail objects for calculation
-            BuildLeaveCalculationInstances(EmployeeId);
-
-            if (_leavePlan.AssociatedPlanTypes == null)
-                throw new HiringBellException("No plan is associated into your account. Please contact to admin.");
-
-            List<LeavePlanType> leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(_leavePlan.AssociatedPlanTypes);
-            if (leavePlanTypes == null || leavePlanTypes.Count == 0)
-                throw new HiringBellException("No plan is associated into your account. Please contact to admin.");
-
-            this.ValidateAndGetLeavePlanConfiDetail(leavePlanTypes);
+            int type = LoadCalculationData(EmployeeId);
 
             return await Task.Run<List<LeavePlanType>>(() =>
             {
                 LeavePlanType leavePlanType = null;
                 int i = 0;
-                while (i < leavePlanTypes.Count)
+                while (i < _leavePlanTypes.Count)
                 {
-                    leavePlanType = leavePlanTypes[i];
+                    leavePlanType = _leavePlanTypes[i];
+                    ValidateAndGetLeavePlanConfiguration(leavePlanType);
+
                     if (_leavePlanConfiguration.leaveDetail.IsLeaveDaysLimit == true)
                     {
                         var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
@@ -283,9 +247,11 @@ namespace ServiceLayer.Code
                     }
                     else
                         leavePlanType.AvailableLeave = -1;
+
+                    i++;
                 }
 
-                return leavePlanTypes;
+                return _leavePlanTypes;
             }, cts.Token);
         }
     }
