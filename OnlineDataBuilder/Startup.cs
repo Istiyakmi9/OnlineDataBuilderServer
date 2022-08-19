@@ -93,6 +93,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IDb, Db>(x => new Db(connectionString));
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IEvaluationPostfixExpression, EvaluationPostfixExpression>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IRolesAndMenuService, RolesAndMenuService>();
             services.AddScoped<IOnlineDocumentService, OnlineDocumentService>();

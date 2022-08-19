@@ -14,10 +14,11 @@ namespace ServiceLayer.Code
     public class ManageLeavePlanService : IManageLeavePlanService
     {
         private readonly IDb _db;
-
-        public ManageLeavePlanService(IDb db)
+        private readonly CurrentSession _currentSession;
+        public ManageLeavePlanService(IDb db, CurrentSession currentSession)
         {
             _db = db;
+            _currentSession = currentSession;
         }
 
         public LeavePlanConfiguration UpdateLeaveAccrual(int leavePlanTypeId, LeaveAccrual leaveAccrual)
@@ -505,14 +506,20 @@ namespace ServiceLayer.Code
             return leavePlanConfiguration;
         }
 
-        public string AddUpdateEmpLeavePlanService(int leavePlanId, List<EmpLeavePlanMapping> empLeavePlanMapping)
+        public string AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees)
         {
             string status = string.Empty;
             if (leavePlanId <= 0)
                 throw new Exception("Invalid plan selected.");
-
-            var table = Converter.ToDataTable(empLeavePlanMapping);
-            var result = _db.BatchInsert("sp_employee_leaveplan_mapping_insupd", table, true);
+            var employeeInfo = (from employee in employees
+                                select new
+                                {
+                                    EmployeeId = employee.EmployeeUid,
+                                    LeavePlanId = employee.LeavePlanId,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                                });
+            var table = Converter.ToDataTable(employeeInfo);
+            var result = _db.BatchInsert("sp_employee_leaveplan_upd", table, true);
 
             if (result <= 0)
                 throw new HiringBellException("Fail to insert or update employee leave plan deatils.");
