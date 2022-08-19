@@ -196,7 +196,7 @@ namespace ServiceLayer.Code
             if (now.Subtract(employee.CreatedOn).TotalDays <= employee.ProbationPeriodDaysLimit)
                 type = 1;
 
-            if (employee.NoticePeriodAppriedOn != null && now.Subtract((DateTime)employee.NoticePeriodAppriedOn).TotalDays <= employee.NoticePeriodDaysLimit)
+            if (employee.NoticePeriodAppliedOn != null && now.Subtract((DateTime)employee.NoticePeriodAppliedOn).TotalDays <= employee.NoticePeriodDaysLimit)
                 type = 2;
 
             _employee = employee;
