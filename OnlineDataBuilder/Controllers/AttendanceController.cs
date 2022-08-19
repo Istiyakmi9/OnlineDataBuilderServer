@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -77,9 +79,16 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("GetAllLeavesByEmpId/{EmployeeId}/{Year}")]
-        public IResponse<ApiResponse> GetAllLeavesByEmpId(long EmployeeId, int Year)
+        public async Task<ApiResponse> GetAllLeavesByEmpId(ApplyLeave applyLeave)
         {
-            var result = _attendanceService.GetAllLeavesByEmpIdService(EmployeeId, Year);
+            var result = await _attendanceService.GetEmployeeLeaveDetail(applyLeave);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("ApplyLeaveService_Testing")]
+        public async Task<ApiResponse> ApplyForLeave(ApplyLeave applyLeave)
+        {
+            var result = await _attendanceService.ApplyLeaveService_Testing(applyLeave);
             return BuildResponse(result);
         }
     }
