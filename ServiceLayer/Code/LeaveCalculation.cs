@@ -170,7 +170,7 @@ namespace ServiceLayer.Code
                         break;
                 }
 
-                availableLeaves = leaveLimit - (availableLeaves - alreadyAppliedLeave);
+                availableLeaves = availableLeaves - alreadyAppliedLeave;
             }
 
             return availableLeaves;
