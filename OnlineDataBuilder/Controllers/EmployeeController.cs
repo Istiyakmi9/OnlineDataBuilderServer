@@ -110,7 +110,5 @@ namespace OnlineDataBuilder.Controllers
                 return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
             }
         }
-
-
     }
 }

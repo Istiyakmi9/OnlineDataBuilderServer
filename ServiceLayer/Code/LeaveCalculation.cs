@@ -22,6 +22,9 @@ namespace ServiceLayer.Code
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly DateTime now = DateTime.UtcNow;
         private CompanySetting _companySetting;
+        private DateTime _fromDate;
+        private DateTime _toDate;
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
         public LeaveCalculation(IDb db)
         {
@@ -66,6 +69,16 @@ namespace ServiceLayer.Code
         {
             decimal firstMonthProrateCount = 0;
 
+            List<AllocateTimeBreakup> allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution;
+            if (allocateTimeBreakup != null && allocateTimeBreakup.Count > 0)
+            {
+                foreach (var rule in allocateTimeBreakup)
+                {
+                    if (now.Day >= rule.FromDate)
+                        firstMonthProrateCount += (rule.AllocatedLeave * perMonthLeaves);
+                }
+            }
+
             return firstMonthProrateCount;
         }
 
@@ -89,6 +102,27 @@ namespace ServiceLayer.Code
             return firstMonthProrateCount;
         }
 
+        public decimal NoticePeriodDistinctLeavesCalculation(decimal perMonthLeaves)
+        {
+            decimal days = 0;
+            if (_leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution != null
+                && _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count > 0)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.ElementAt(i);
+                    if (now.Day >= allocateTimeBreakup.FromDate)
+                        days += (allocateTimeBreakup.AllocatedLeave + perMonthLeaves);
+
+                    i++;
+                }
+            }
+
+            return days;
+        }
+
         private decimal CalculatePresentMonthProrateCount(decimal perMonthLeaves)
         {
             decimal presentMonthDays = 0;
@@ -102,24 +136,51 @@ namespace ServiceLayer.Code
             return presentMonthDays;
         }
 
-        private decimal CalculateWhenAccralMonthly(decimal alreadyAppliedLeave)
+        private int GetLeaveProjectedLastMonth()
+        {
+            int month = 0;
+            if (_leavePlanConfiguration.leaveAccrual.CanApplyForFutureDate)
+                month = _fromDate.Month;
+            else
+                month = now.Month;
+
+            return month;
+        }
+
+        private int GetNumOfMonthExceptFirstAndLast()
+        {
+            int remaningMonths = 0;
+            int firstMonth = 1;
+            int lastMonth = GetLeaveProjectedLastMonth();
+
+            if (_employee.CreatedOn.Year == now.Year)
+                firstMonth = _employee.CreatedOn.Month;
+
+            if (lastMonth - firstMonth >= 2)
+                remaningMonths = lastMonth - firstMonth - 1;
+
+            return remaningMonths;
+        }
+
+        private decimal CalculateWhenAccralMonthly(decimal alreadyAppliedLeave, decimal perMonthLeaves)
         {
             decimal availableLeaves = 0;
+            decimal presentMonthLeaves = 0;
 
-            decimal perMonthLeaves = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12;
-            decimal presentMonthLeaves = CalculatePresentMonthProrateCount(perMonthLeaves);
-            int mounthCount = 0;
+            if (_leavePlanConfiguration.leaveAccrual.IsLeavesProratedOnNotice)
+                presentMonthLeaves = CalculatePresentMonthProrateCount(perMonthLeaves);
+            else
+                presentMonthLeaves = NoticePeriodDistinctLeavesCalculation(perMonthLeaves);
 
+            int mounthCount = GetNumOfMonthExceptFirstAndLast();
             if (_employee.CreatedOn.Year == now.Year)
             {
                 decimal firstMonthCalculation = CalculateFirstMonthProrateCount(perMonthLeaves);
-                mounthCount = now.Month - _employee.CreatedOn.Month;
-                mounthCount = mounthCount >= 2 ? mounthCount - 1 : 0;
                 availableLeaves = (mounthCount * perMonthLeaves) + firstMonthCalculation + presentMonthLeaves;
             }
             else
             {
-                availableLeaves = (now.Month - 1) * perMonthLeaves + presentMonthLeaves;
+                availableLeaves = mounthCount * perMonthLeaves + presentMonthLeaves;
             }
 
             return availableLeaves;
@@ -139,6 +200,70 @@ namespace ServiceLayer.Code
             return availableLeaves;
         }
 
+        private decimal LeaveAccrualInProbationForExperienced(decimal perMonthLeaves)
+        {
+            return 0;
+        }
+
+        private decimal CheckWeekOffRuleApplication(decimal perMonthLeaves)
+        {
+            return 0;
+        }
+
+        private decimal CheckHolidayRuleApplication(decimal perMonthLeaves)
+        {
+            return 0;
+        }
+
+        private decimal LeaveAccrualForExperienceInProbation(decimal perMonthLeaves)
+        {
+            decimal days = 0;
+            if (_leavePlanConfiguration.leaveAccrual.IsVaryOnProbationOrExprience)
+                days = LeaveAccrualInProbationForExperienced(perMonthLeaves);
+
+            return days;
+        }
+
+        private bool CheckIfAlreadyOnLeaveForMoreThen(decimal leaveCount)
+        {
+            return true;
+        }
+
+        private decimal CheckAddExtraAccrualLeaveBalance(decimal perMonthLeaves, decimal leaveBalance)
+        {
+            if (_leavePlanConfiguration.leaveAccrual.IsExtraLeaveBeyondAccruedBalance)
+            {
+                // yes can apply leave beyond their quota.
+                if (_leavePlanConfiguration.leaveAccrual.IsAccrueIfHavingLeaveBalance)
+                {
+                    if (_leavePlanConfiguration.leaveAccrual.AllowOnlyIfAccrueBalanceIsAlleast < leaveBalance)
+                    {
+                        return leaveBalance + _leavePlanConfiguration.leaveAccrual.NoOfDaysForExtraLeave;
+                    }
+                }
+
+                if (_leavePlanConfiguration.leaveAccrual.IsAccrueIfOnOtherLeave)
+                {
+                    if (!CheckIfAlreadyOnLeaveForMoreThen(_leavePlanConfiguration.leaveAccrual.NotAllowIfAlreadyOnLeaveMoreThan))
+                    {
+                        return leaveBalance + _leavePlanConfiguration.leaveAccrual.NoOfDaysForExtraLeave;
+                    }
+                }
+            }
+
+            return leaveBalance;
+        }
+
+        private decimal RoundUpTheLeaves(decimal availableLeaves)
+        {
+            return availableLeaves;
+        }
+
+        private decimal UpdateLeaveIfSetForExpiry(decimal availableLeaves)
+        {
+            return availableLeaves;
+        }
+
         private decimal CalculateLeaveIfRegularEmployement(int leavePlanTypeId)
         {
             decimal alreadyAppliedLeave = 0;
@@ -150,6 +275,8 @@ namespace ServiceLayer.Code
                 alreadyAppliedLeave = completeLeaveDetails.FindAll(x => x.LeaveType == leavePlanTypeId && x.LeaveStatus == (int)ItemStatus.Approved).Sum(x => x.NumOfDays);
 
             leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+            decimal perMonthLeaves = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12;
+
             if (_leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave)
             {
                 availableLeaves = leaveLimit - alreadyAppliedLeave;
@@ -160,7 +287,7 @@ namespace ServiceLayer.Code
                 switch (leaveDistributedSeq)
                 {
                     case "1":
-                        availableLeaves = this.CalculateWhenAccralMonthly(alreadyAppliedLeave);
+                        availableLeaves = this.CalculateWhenAccralMonthly(alreadyAppliedLeave, perMonthLeaves);
                         break;
                     case "2":
                         availableLeaves = this.CalculateWhenAccralQuaterly(alreadyAppliedLeave);
@@ -172,6 +299,29 @@ namespace ServiceLayer.Code
 
                 availableLeaves = availableLeaves - alreadyAppliedLeave;
             }
+
+            decimal extraLeaveLimit = 0;
+
+            // calculate leave for experienced people and allowed accrual in probation
+            extraLeaveLimit = LeaveAccrualForExperienceInProbation(perMonthLeaves);
+            availableLeaves = availableLeaves + extraLeaveLimit;
+
+            // check weekoff as absent if rule applicable
+            extraLeaveLimit = CheckWeekOffRuleApplication(perMonthLeaves);
+            availableLeaves = availableLeaves - extraLeaveLimit;
+
+            // check weekoff as absent if rule applicable
+            extraLeaveLimit = CheckHolidayRuleApplication(perMonthLeaves);
+            availableLeaves = availableLeaves - extraLeaveLimit;
+
+            // check weather can apply for leave based on future date projected balance
+            availableLeaves = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, availableLeaves);
+
+            // round up decimal value of available as per rule defined
+            availableLeaves = RoundUpTheLeaves(availableLeaves);
+
+            // check leave expiry
+            availableLeaves = UpdateLeaveIfSetForExpiry(availableLeaves);
 
             return availableLeaves;
         }
@@ -204,15 +354,31 @@ namespace ServiceLayer.Code
             if (now.Subtract(_employee.CreatedOn).TotalDays <= _employee.ProbationPeriodDaysLimit)
                 type = 1;
 
-            if (_employee.NoticePeriodAppliedOn != null && now.Subtract((DateTime)_employee.NoticePeriodAppliedOn).TotalDays <= _employee.NoticePeriodDaysLimit)
-                type = 2;
+            //if (_employee.NoticePeriodId > 0)
+            //    type = 2;
 
             return type;
         }
 
-        public async Task<List<LeavePlanType>> GetBalancedLeave(long EmployeeId)
+        private bool IsMinimunGapBeforAffectedDate()
         {
-            CancellationTokenSource cts = new CancellationTokenSource();
+            return false;
+        }
+
+        private bool DoesLeaveRequiredComments()
+        {
+            return false;
+        }
+
+        private bool RequiredDocumentForExtending()
+        {
+            return false;
+        }
+
+        public async Task<List<LeavePlanType>> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
+        {
+            _fromDate = FromDate;
+            _toDate = ToDate;
 
             // get employee detail and store it in class level variable
             int type = LoadCalculationData(EmployeeId);
@@ -231,6 +397,9 @@ namespace ServiceLayer.Code
                         var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                         if (leaveLimit <= 0)
                             throw new HiringBellException("leave limit is null or empty");
+
+                        if (_leavePlanConfiguration.leaveAccrual.IsNoLeaveOnNoticePeriod)
+                            type = 2;
 
                         switch (type)
                         {
@@ -252,6 +421,30 @@ namespace ServiceLayer.Code
                 }
 
                 return _leavePlanTypes;
+            }, cts.Token);
+        }
+
+        public async Task<bool> CanApplyForHalfDay(long EmployeeId, DateTime FromDate, DateTime ToDate)
+        {
+            return await Task.Run<bool>(() =>
+            {
+                return false;
+            }, cts.Token);
+        }
+
+        public async Task<bool> AllowToSeeAndApply(long EmployeeId, DateTime FromDate, DateTime ToDate)
+        {
+            return await Task.Run<bool>(() =>
+            {
+                return false;
+            }, cts.Token);
+        }
+
+        public async Task<bool> CanApplyBackDatedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
+        {
+            return await Task.Run<bool>(() =>
+            {
+                return false;
             }, cts.Token);
         }
     }

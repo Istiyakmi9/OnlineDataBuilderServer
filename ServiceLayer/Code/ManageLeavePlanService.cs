@@ -123,9 +123,9 @@ namespace ServiceLayer.Code
                 LeaveDistributionSequence = leaveAccrual.LeaveDistributionSequence,
                 leaveAccrual.LeaveDistributionAppliedFrom,
                 leaveAccrual.IsLeavesProratedForJoinigMonth,
-                leaveAccrual.IsLeavesProratedOnProbation,
-                leaveAccrual.IsNotAllowProratedOnProbation,
-                leaveAccrual.IsNoLeaveOnProbationPeriod,
+                leaveAccrual.IsLeavesProratedOnNotice,
+                leaveAccrual.IsNotAllowProratedOnNotice,
+                leaveAccrual.IsNoLeaveOnNoticePeriod,
                 leaveAccrual.IsVaryOnProbationOrExprience,
                 leaveAccrual.IsAccrualStartsAfterJoining,
                 leaveAccrual.IsAccrualStartsAfterProbationEnds,
@@ -167,7 +167,7 @@ namespace ServiceLayer.Code
 
         private void ValidateAndPreFillValue(LeaveAccrual leaveAccrual)
         {
-            if (!leaveAccrual.IsNotAllowProratedOnProbation)
+            if (!leaveAccrual.IsNotAllowProratedOnNotice)
                 leaveAccrual.ExitMonthLeaveDistribution = new List<AllocateTimeBreakup>();
 
             if (leaveAccrual.IsLeavesProratedForJoinigMonth)

@@ -22,5 +22,18 @@ namespace ServiceLayer.Code
             employeeTable.TableName = "Employee";
             return employeeTable;
         }
+
+        public bool IsEmptyJson(string json)
+        {
+            if (!string.IsNullOrEmpty(json))
+            {
+                if (json == "" || json == "{}" || json == "[]")
+                    return true;
+            }
+            else
+                return true;
+
+            return false;
+        }
     }
 }
