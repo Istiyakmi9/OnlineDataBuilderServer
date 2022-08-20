@@ -15,12 +15,14 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
+        private readonly ICommonService _commonService;
 
-        public LeaveService(IDb db, CurrentSession currentSession, IEmployeeService employeeService)
+        public LeaveService(IDb db, CurrentSession currentSession, IEmployeeService employeeService, ICommonService commonService)
         {
             _db = db;
             _currentSession = currentSession;
             _employeeService = employeeService;
+            _commonService = commonService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -59,8 +61,8 @@ namespace ServiceLayer.Code
         {
             List<LeavePlanType> leavePlanTypes = default(List<LeavePlanType>);
             ValidateLeavePlanToInsert(leavePlanType);
+            BuildConfigurationDetailObject(leavePlanType);
 
-            leavePlanType.PlanConfigurationDetail = "{}";
             string result = _db.Execute<LeavePlanType>("sp_leave_plans_type_insupd", new
             {
                 leavePlanType.IsPaidLeave,
@@ -121,18 +123,62 @@ namespace ServiceLayer.Code
             return new { LeavePlan = leavePlans, Employees = employees };
         }
 
+        private void BuildConfigurationDetailObject(LeavePlanType leavePlanType)
+        {
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            if (!_commonService.IsEmptyJson(leavePlanType.PlanConfigurationDetail))
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            if (leavePlanConfiguration.leaveDetail == null)
+                leavePlanConfiguration.leaveDetail = new LeaveDetail();
+
+            if (leavePlanConfiguration.leaveAccrual == null)
+                leavePlanConfiguration.leaveAccrual = new LeaveAccrual();
+
+            if (leavePlanConfiguration.leaveApplyDetail == null)
+                leavePlanConfiguration.leaveApplyDetail = new LeaveApplyDetail();
+
+            if (leavePlanConfiguration.leaveEndYearProcessing == null)
+                leavePlanConfiguration.leaveEndYearProcessing = new LeaveEndYearProcessing();
+
+            if (leavePlanConfiguration.leaveHolidaysAndWeekoff == null)
+                leavePlanConfiguration.leaveHolidaysAndWeekoff = new LeaveHolidaysAndWeekoff();
+
+            if (leavePlanConfiguration.leavePlanRestriction == null)
+                leavePlanConfiguration.leavePlanRestriction = new LeavePlanRestriction();
+
+            if (leavePlanConfiguration.leaveApproval == null)
+                leavePlanConfiguration.leaveApproval = new LeaveApproval();
+
+            leavePlanType.PlanConfigurationDetail = JsonConvert.SerializeObject(leavePlanConfiguration);
+        }
+
         public List<LeavePlanType> UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType)
         {
             if (leavePlanType.LeavePlanTypeId <= 0)
                 throw new HiringBellException("Leave plan type id not found. Please add one plan first.");
 
             ValidateLeavePlanToInsert(leavePlanType);
+
             LeavePlanType record = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
             if (record == null || record.LeavePlanTypeId != leavePlanTypeId)
                 throw new HiringBellException("Trying to udpate invalid leave plan type");
 
-            return this.AddLeavePlanTypeService(leavePlanType);
+            record.IsPaidLeave = leavePlanType.IsPaidLeave;
+            record.AvailableLeave = leavePlanType.AvailableLeave;
+            record.IsSickLeave = leavePlanType.IsSickLeave;
+            record.MaxLeaveLimit = leavePlanType.MaxLeaveLimit;
+            record.LeavePlanCode = leavePlanType.LeavePlanCode;
+            record.AdminId = _currentSession.CurrentUserDetail.UserId;
+            record.IsMale = leavePlanType.IsMale;
+            record.IsMarried = leavePlanType.IsMarried;
+            record.IsRestrictOnGender = leavePlanType.IsRestrictOnGender;
+            record.IsRestrictOnMaritalStatus = leavePlanType.IsRestrictOnMaritalStatus;
+            record.IsStatutoryLeave = leavePlanType.IsStatutoryLeave;
+            record.PlanDescription = leavePlanType.PlanDescription;
+
+            return this.AddLeavePlanTypeService(record);
         }
 
         public string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail)
