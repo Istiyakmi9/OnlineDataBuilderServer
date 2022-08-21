@@ -358,7 +358,7 @@ namespace ServiceLayer.Code
             if (grossComponent == null)
                 throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
 
-            employeeDeclaration.TotalAmount = grossComponent.FinalAmount;
+            employeeDeclaration.TotalAmount = grossComponent.FinalAmount * 12;
 
             decimal StandardDeduction = _componentsCalculationService.StandardDeductionComponent(employeeDeclaration);
 
@@ -373,13 +373,14 @@ namespace ServiceLayer.Code
             // check and apply 1.5 lakhs components
             decimal totalDeduction = _componentsCalculationService.OneAndHalfLakhsComponent(employeeDeclaration);
 
-            salaryBreakup.GrossIncome = grossComponent.FinalAmount;
+            salaryBreakup.GrossIncome = grossComponent.FinalAmount * 12;
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups);
             employeeDeclaration.SalaryDetail = salaryBreakup;
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
 
             // Calculate income detail based on old regime
             _componentsCalculationService.OldTaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome);
+            //employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
 
             // Calculate hra and apply on deduction
             _componentsCalculationService.HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
