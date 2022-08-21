@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.Services.Interface;
+using ModalLayer.Modal;
 using System;
 using TimeZoneConverter;
 
@@ -179,6 +180,105 @@ namespace BottomhalfCore.Services.Code
             DateTime workingDate = this.FirstDayOfWeekIST(now);
             workingDate = workingDate.AddDays(6).AddSeconds(-1);
             return workingDate;
+        }
+
+        public int TotalWeekEndsBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null)
+        {
+            int totalWeekDays = 0;
+
+            if (toDate.Subtract(fromDate).TotalDays > 0)
+                throw new HiringBellException("ToDate must be greater then the FromDate.");
+
+            if (timeZoneInfo != null)
+            {
+                fromDate = TimeZoneInfo.ConvertTimeFromUtc(fromDate, timeZoneInfo);
+                toDate = TimeZoneInfo.ConvertTimeToUtc(toDate, timeZoneInfo);
+            }
+
+            while (toDate.Subtract(fromDate).TotalDays <= 0)
+            {
+                if (toDate.DayOfWeek == DayOfWeek.Sunday)
+                    totalWeekDays++;
+
+                if (toDate.DayOfWeek == DayOfWeek.Saturday)
+                    totalWeekDays++;
+
+                toDate = toDate.AddDays(1);
+            }
+
+            return totalWeekDays;
+        }
+
+        public int TotalWeekDaysBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null)
+        {
+            int totalWeekDays = 0;
+
+            if (toDate.Subtract(fromDate).TotalDays > 0)
+                throw new HiringBellException("ToDate must be greater then the FromDate.");
+
+            if (timeZoneInfo != null)
+            {
+                fromDate = TimeZoneInfo.ConvertTimeFromUtc(fromDate, timeZoneInfo);
+                toDate = TimeZoneInfo.ConvertTimeToUtc(toDate, timeZoneInfo);
+            }
+
+            while (toDate.Subtract(fromDate).TotalDays <= 0)
+            {
+                if (toDate.DayOfWeek != DayOfWeek.Sunday && toDate.DayOfWeek != DayOfWeek.Saturday)
+                    totalWeekDays++;
+
+                toDate = toDate.AddDays(1);
+            }
+
+            return totalWeekDays;
+        }
+
+        public int TotalSaturdayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null)
+        {
+            int totalWeekDays = 0;
+
+            if (toDate.Subtract(fromDate).TotalDays > 0)
+                throw new HiringBellException("ToDate must be greater then the FromDate.");
+
+            if (timeZoneInfo != null)
+            {
+                fromDate = TimeZoneInfo.ConvertTimeFromUtc(fromDate, timeZoneInfo);
+                toDate = TimeZoneInfo.ConvertTimeToUtc(toDate, timeZoneInfo);
+            }
+
+            while (toDate.Subtract(fromDate).TotalDays <= 0)
+            {
+                if (toDate.DayOfWeek == DayOfWeek.Saturday)
+                    totalWeekDays++;
+
+                toDate = toDate.AddDays(1);
+            }
+
+            return totalWeekDays;
+        }
+
+        public int TotalSundayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null)
+        {
+            int totalWeekDays = 0;
+
+            if (toDate.Subtract(fromDate).TotalDays > 0)
+                throw new HiringBellException("ToDate must be greater then the FromDate.");
+
+            if (timeZoneInfo != null)
+            {
+                fromDate = TimeZoneInfo.ConvertTimeFromUtc(fromDate, timeZoneInfo);
+                toDate = TimeZoneInfo.ConvertTimeToUtc(toDate, timeZoneInfo);
+            }
+
+            while (toDate.Subtract(fromDate).TotalDays <= 0)
+            {
+                if (toDate.DayOfWeek == DayOfWeek.Sunday)
+                    totalWeekDays++;
+
+                toDate = toDate.AddDays(1);
+            }
+
+            return totalWeekDays;
         }
     }
 }

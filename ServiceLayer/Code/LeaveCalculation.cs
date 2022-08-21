@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -24,11 +25,15 @@ namespace ServiceLayer.Code
         private CompanySetting _companySetting;
         private DateTime _fromDate;
         private DateTime _toDate;
+        private readonly TimezoneConverter _timezoneConverter;
+        private readonly CurrentSession _currentSession;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
-        public LeaveCalculation(IDb db)
+        public LeaveCalculation(IDb db, TimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
+            _timezoneConverter = timezoneConverter;
+            _currentSession = currentSession;
         }
 
         private decimal CalculateLeaveIfInProbationPeriond(int leavePlanTypeId)
@@ -180,7 +185,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                availableLeaves = mounthCount * perMonthLeaves + presentMonthLeaves;
+                availableLeaves = (mounthCount + 1) * perMonthLeaves + presentMonthLeaves;
             }
 
             return availableLeaves;
@@ -205,14 +210,52 @@ namespace ServiceLayer.Code
             return 0;
         }
 
-        private decimal CheckWeekOffRuleApplication(decimal perMonthLeaves)
+        private decimal CheckWeekOffRuleApplicable(decimal perMonthLeaves)
         {
-            return 0;
+            int totalWeekEnds = 0;
+            // check two condition here
+            // 1. WeekOffAsAbsentIfAttendaceLessThen must be greater then 0
+            // 2. Employee should not exceed leave or absent for the present month more then WeekOffAsAbsentIfAttendaceLessThen value.
+            if (_leavePlanConfiguration.leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen > 0 /* && [Put 2nd condition here]*/)
+            {
+                if (_fromDate.Year == now.Year && _fromDate.Month == now.Month && _companySetting.IsUseInternationalWeekDays)
+                {
+                    TimeZoneInfo timeZoneInfo = TimeZoneInfo.Utc;
+                    if (!string.IsNullOrEmpty(_currentSession.Culture))
+                    {
+                        switch (_currentSession.Culture)
+                        {
+                            case "ist":
+                                timeZoneInfo = TZConvert.GetTimeZoneInfo("India Standard Time");
+                                break;
+                        }
+                    }
+
+                    totalWeekEnds = _timezoneConverter.TotalWeekEndsBetweenDates(Convert.ToDateTime($"{_toDate.Year}-{_toDate.Month}-1"), _toDate, timeZoneInfo);
+
+                    // get all leaves or absent data of present employee and then place logic to calculate leave
+                    totalWeekEnds = 0;
+                }
+            }
+
+            return totalWeekEnds;
         }
 
-        private decimal CheckHolidayRuleApplication(decimal perMonthLeaves)
+        private decimal CheckHolidayRuleApplicable(decimal perMonthLeaves)
         {
-            return 0;
+            int totalWeekEnds = 0;
+            // check two condition here
+            // 1. WeekOffAsAbsentIfAttendaceLessThen must be greater then 0
+            // 2. Employee should not exceed leave or absent for the present month more then WeekOffAsAbsentIfAttendaceLessThen value.
+            if (_leavePlanConfiguration.leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen > 0 /* && [Put 2nd condition here]*/)
+            {
+                if (_fromDate.Year == now.Year && _fromDate.Month == now.Month)
+                {
+                    // get holiday list for present month and then put logic here.
+                }
+            }
+
+            return totalWeekEnds;
         }
 
         private decimal LeaveAccrualForExperienceInProbation(decimal perMonthLeaves)
@@ -256,6 +299,52 @@ namespace ServiceLayer.Code
 
         private decimal RoundUpTheLeaves(decimal availableLeaves)
         {
+            decimal fractionValue = 0;
+            int integralValue = 0;
+            if (!_leavePlanConfiguration.leaveAccrual.RoundOffLeaveBalance)
+            {
+                fractionValue = availableLeaves % 1.0m;
+                integralValue = Convert.ToInt32(integralValue);
+                if (!_leavePlanConfiguration.leaveAccrual.ToNearestHalfDay)
+                {
+                    if (fractionValue >= 0.1m && fractionValue <= 0.2m)
+                        availableLeaves = (decimal)integralValue;
+                    else if (fractionValue > 0.2m && fractionValue <= 0.5m)
+                        availableLeaves += (decimal)integralValue + 0.5m;
+                    else if (fractionValue < 0.8m)
+                        availableLeaves += (decimal)integralValue + 0.5m;
+                    else
+                        availableLeaves += (decimal)integralValue++;
+                }
+
+                if (!_leavePlanConfiguration.leaveAccrual.ToNearestFullDay)
+                {
+                    if (fractionValue >= 0.5m)
+                        availableLeaves += (decimal)integralValue++;
+                }
+
+                if (!_leavePlanConfiguration.leaveAccrual.ToNextAvailableHalfDay)
+                {
+                    if (fractionValue >= 0.1m && fractionValue < 0.5m)
+                        availableLeaves += (decimal)integralValue + 0.5m;
+                    else
+                        availableLeaves += (decimal)integralValue++;
+                }
+
+                if (!_leavePlanConfiguration.leaveAccrual.ToNextAvailableFullDay)
+                {
+                    if (fractionValue >= 0.1m)
+                        availableLeaves += (decimal)integralValue++;
+                }
+
+                if (!_leavePlanConfiguration.leaveAccrual.ToPreviousHalfDay)
+                {
+                    if (fractionValue < 0.5m)
+                        availableLeaves += (decimal)integralValue;
+                    else if (fractionValue > 0.5m && fractionValue <= 0.9m)
+                        availableLeaves += (decimal)integralValue + 0.5m;
+                }
+            }
             return availableLeaves;
         }
 
@@ -307,12 +396,10 @@ namespace ServiceLayer.Code
             availableLeaves = availableLeaves + extraLeaveLimit;
 
             // check weekoff as absent if rule applicable
-            extraLeaveLimit = CheckWeekOffRuleApplication(perMonthLeaves);
-            availableLeaves = availableLeaves - extraLeaveLimit;
+            CheckWeekOffRuleApplicable(perMonthLeaves);
 
             // check weekoff as absent if rule applicable
-            extraLeaveLimit = CheckHolidayRuleApplication(perMonthLeaves);
-            availableLeaves = availableLeaves - extraLeaveLimit;
+            CheckHolidayRuleApplicable(perMonthLeaves);
 
             // check weather can apply for leave based on future date projected balance
             availableLeaves = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, availableLeaves);
@@ -375,15 +462,25 @@ namespace ServiceLayer.Code
             return false;
         }
 
+        private async Task LeaveEligibilityCheck()
+        {
+            await Task.Run<bool>(() =>
+            {
+                return false;
+            }, cts.Token);
+        }
+
         public async Task<List<LeavePlanType>> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
             _fromDate = FromDate;
             _toDate = ToDate;
 
+            bool flag = false;
+
             // get employee detail and store it in class level variable
             int type = LoadCalculationData(EmployeeId);
 
-            return await Task.Run<List<LeavePlanType>>(() =>
+            return await Task.Run<List<LeavePlanType>>(async () =>
             {
                 LeavePlanType leavePlanType = null;
                 int i = 0;
@@ -392,30 +489,34 @@ namespace ServiceLayer.Code
                     leavePlanType = _leavePlanTypes[i];
                     ValidateAndGetLeavePlanConfiguration(leavePlanType);
 
-                    if (_leavePlanConfiguration.leaveDetail.IsLeaveDaysLimit == true)
+                    await AllowToSeeAndApply(EmployeeId, FromDate, ToDate);
+                    if (flag)
                     {
-                        var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                        if (leaveLimit <= 0)
-                            throw new HiringBellException("leave limit is null or empty");
-
-                        if (_leavePlanConfiguration.leaveAccrual.IsNoLeaveOnNoticePeriod)
-                            type = 2;
-
-                        switch (type)
+                        if (_leavePlanConfiguration.leaveDetail.IsLeaveDaysLimit == true)
                         {
-                            case 1:
-                                leavePlanType.AvailableLeave = CalculateLeaveIfInProbationPeriond(leavePlanType.LeavePlanTypeId);
-                                break;
-                            case 2:
-                                leavePlanType.AvailableLeave = CalculateLeaveIfInNoticePeriond(leavePlanType.LeavePlanTypeId);
-                                break;
-                            default:
-                                leavePlanType.AvailableLeave = CalculateLeaveIfRegularEmployement(leavePlanType.LeavePlanTypeId);
-                                break;
+                            var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+                            if (leaveLimit <= 0)
+                                throw new HiringBellException("leave limit is null or empty");
+
+                            if (_leavePlanConfiguration.leaveAccrual.IsNoLeaveOnNoticePeriod)
+                                type = 2;
+
+                            switch (type)
+                            {
+                                case 1:
+                                    leavePlanType.AvailableLeave = CalculateLeaveIfInProbationPeriond(leavePlanType.LeavePlanTypeId);
+                                    break;
+                                case 2:
+                                    leavePlanType.AvailableLeave = CalculateLeaveIfInNoticePeriond(leavePlanType.LeavePlanTypeId);
+                                    break;
+                                default:
+                                    leavePlanType.AvailableLeave = CalculateLeaveIfRegularEmployement(leavePlanType.LeavePlanTypeId);
+                                    break;
+                            }
                         }
+                        else
+                            leavePlanType.AvailableLeave = -1;
                     }
-                    else
-                        leavePlanType.AvailableLeave = -1;
 
                     i++;
                 }
@@ -436,6 +537,9 @@ namespace ServiceLayer.Code
         {
             return await Task.Run<bool>(() =>
             {
+                if (_leavePlanConfiguration.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
+                    return true;
+
                 return false;
             }, cts.Token);
         }
