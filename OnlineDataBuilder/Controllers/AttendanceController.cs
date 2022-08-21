@@ -78,7 +78,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetAllLeavesByEmpId/{EmployeeId}/{Year}")]
+        [HttpPost("GetAllLeavesByEmpId")]
         public async Task<ApiResponse> GetAllLeavesByEmpId(ApplyLeave applyLeave)
         {
             var result = await _attendanceService.GetEmployeeLeaveDetail(applyLeave);
