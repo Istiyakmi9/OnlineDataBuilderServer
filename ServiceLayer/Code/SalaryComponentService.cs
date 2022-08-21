@@ -20,7 +20,7 @@ namespace ServiceLayer.Code
         private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
         private readonly ITimezoneConverter _timezoneConverter;
 
-        public SalaryComponentService(IDb db, CurrentSession currentSession, 
+        public SalaryComponentService(IDb db, CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
             ITimezoneConverter timezoneConverter
             )
@@ -477,14 +477,14 @@ namespace ServiceLayer.Code
         {
             bool flag = false;
             int i = 0;
-            while(i < matchedSalaryBreakup.SalaryBreakupDetails.Count)
+            while (i < matchedSalaryBreakup.SalaryBreakupDetails.Count)
             {
                 var item = matchedSalaryBreakup.SalaryBreakupDetails.ElementAt(i);
                 var elem = completeSalaryBreakup.Find(x => x.ComponentId == item.ComponentId);
                 if (elem == null)
                     break;
 
-                if(item.FinalAmount != elem.FinalAmount)
+                if (item.FinalAmount != elem.FinalAmount)
                 {
                     flag = true;
                     break;
@@ -513,7 +513,7 @@ namespace ServiceLayer.Code
                     List<AnnualSalaryBreakup> affectedSalaryBreakups = annualSalaryBreakups.Where(x => x.MonthFirstDate.Subtract(present).TotalDays >= 0).ToList<AnnualSalaryBreakup>();
 
                     int i = 0;
-                    while(i < affectedSalaryBreakups.Count)
+                    while (i < affectedSalaryBreakups.Count)
                     {
                         affectedSalaryBreakups.ElementAt(i).SalaryBreakupDetails = salaryBreakup;
                         i++;
@@ -543,7 +543,7 @@ namespace ServiceLayer.Code
             ValidateCorrectnessOfSalaryDetail(calculatedSalaryBreakupDetail);
 
             UpdateIfChangeFound(annualSalaryBreakups, calculatedSalaryBreakupDetail, PresentMonth, PresentYear);
-            
+
             var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
@@ -694,7 +694,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.Special),
                     Formula = null,
                     ComponentName = ComponentNames.Special,
-                    FinalAmount = (grossAmount/12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount)),
+                    FinalAmount = (grossAmount / 12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount)),
                     ComponentTypeId = 102
                 };
 
@@ -705,7 +705,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
-                    FinalAmount = (CTCAnnually - EmployeeContributionAmount) /12,
+                    FinalAmount = (CTCAnnually - EmployeeContributionAmount) / 12,
                     ComponentTypeId = 100
                 };
 
@@ -716,7 +716,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.CTC),
                     Formula = null,
                     ComponentName = ComponentNames.CTC,
-                    FinalAmount = CTCAnnually/12,
+                    FinalAmount = CTCAnnually / 12,
                     ComponentTypeId = 101
                 };
 
