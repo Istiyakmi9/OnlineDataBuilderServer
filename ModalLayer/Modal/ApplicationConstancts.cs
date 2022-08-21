@@ -21,6 +21,8 @@ public class ApplicationConstants
 
     public const string Inserted = "inserted";
     public const string Updated = "updated";
+    public const string EmptyJsonObject = "{}";
+    public const string EmptyJsonArray = "[]";
 
 
     public static bool IsExecuted(string Result)
