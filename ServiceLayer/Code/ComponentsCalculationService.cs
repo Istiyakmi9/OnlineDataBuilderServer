@@ -85,9 +85,9 @@ namespace ServiceLayer.Code
             var taxSlab = new Dictionary<string, decimal>();
             taxSlab.Add("0% Tax on income up to 250000", 0);
 
-            while (remainingAmount > 250000)
+            while (remainingAmount > (decimal)250000)
             {
-                if (remainingAmount > 250000 && remainingAmount <= 500000)
+                if (remainingAmount > (decimal)250000 && remainingAmount <= (decimal)500000)
                 {
                     value = (250000 - remainingAmount);
                     if (value < 0) value = value * -1;
@@ -95,7 +95,7 @@ namespace ServiceLayer.Code
                     tax += (value * 5) / 100;
                     secondSalab = (value * 5) / 100;
                 }
-                else if (remainingAmount > 500000 && remainingAmount <= 1000000)
+                else if (remainingAmount > (decimal)500000 && remainingAmount <= (decimal)1000000)
                 {
                     value = (500000 - remainingAmount);
                     if (value < 0) value = value * -1;
@@ -103,7 +103,7 @@ namespace ServiceLayer.Code
                     tax += (value * 20) / 100;
                     thirdSlab = (value * 20) / 100;
                 }
-                else if (remainingAmount > 1000000)
+                else if (remainingAmount > (decimal)1000000)
                 {
                     value = (1000000 - remainingAmount);
                     if (value < 0) value = value * -1;

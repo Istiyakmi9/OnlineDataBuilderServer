@@ -67,9 +67,9 @@ namespace ServiceLayer.Code
             List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
             {
                 filterModel.SearchString,
+                filterModel.SortBy,
                 filterModel.PageIndex,
                 filterModel.PageSize,
-                filterModel.SortBy,
                 IsActive = IsActiveState
             });
 
