@@ -19,5 +19,9 @@ namespace BottomhalfCore.Services.Interface
         DateTime FirstDayOfWeekUTC(Nullable<DateTime> now = null);
         DateTime LastDayOfWeekIST(Nullable<DateTime> now = null);
         DateTime FirstDayOfWeekIST(Nullable<DateTime> now = null);
+        int TotalWeekEndsBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
+        int TotalWeekDaysBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
+        int TotalSaturdayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
+        int TotalSundayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
     }
 }

@@ -709,7 +709,7 @@ namespace ServiceLayer.Code
             if (applyLeave.EmployeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            List<LeavePlanType> leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-15-10"));
+            List<LeavePlanType> leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
 
             return leavePlanTypes;
         }
