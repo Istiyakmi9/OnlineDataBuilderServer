@@ -18,5 +18,7 @@
         public bool IsMarried { set; get; }
         public string Reasons { set; get; }
         public string PlanConfigurationDetail { set; get; }
+        public bool IsApplicable { set; get; }
+        public string Reason { set; get; }
     }
 }

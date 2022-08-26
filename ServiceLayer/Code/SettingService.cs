@@ -430,6 +430,7 @@ namespace ServiceLayer.Code
             var status = string.Empty;
             if (groupId <= 0)
                 throw new HiringBellException("Invalid groupId");
+
             if (string.IsNullOrEmpty(componentId))
                 throw new HiringBellException("Invalid component passed.");
 
@@ -446,6 +447,9 @@ namespace ServiceLayer.Code
             }
             else
             {
+                if (string.IsNullOrEmpty(component.Formula))
+                    throw new HiringBellException("Given formula is not correct or unable to submit. Please try again or contact to admin");
+
                 if (component.Formula.Contains('%'))
                 {
                     int result = 0;

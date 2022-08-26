@@ -506,20 +506,7 @@ namespace ServiceLayer.Code
             if (matchedSalaryBreakups == null)
                 throw new HiringBellException("Invalid data found in salary detail. Please contact to admin.");
             else
-            {
-                var flag = CompareFieldsValue(matchedSalaryBreakups, salaryBreakup);
-                if (flag)
-                {
-                    List<AnnualSalaryBreakup> affectedSalaryBreakups = annualSalaryBreakups.Where(x => x.MonthFirstDate.Subtract(present).TotalDays >= 0).ToList<AnnualSalaryBreakup>();
-
-                    int i = 0;
-                    while (i < affectedSalaryBreakups.Count)
-                    {
-                        affectedSalaryBreakups.ElementAt(i).SalaryBreakupDetails = salaryBreakup;
-                        i++;
-                    }
-                }
-            }
+                matchedSalaryBreakups.SalaryBreakupDetails = salaryBreakup;
         }
 
         private void ValidateCorrectnessOfSalaryDetail(List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail)
@@ -529,7 +516,6 @@ namespace ServiceLayer.Code
 
         public string SalaryDetailService(long EmployeeId, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, int PresentMonth, int PresentYear)
         {
-            EmployeeSalaryDetail salaryBreakup = new EmployeeSalaryDetail();
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
@@ -544,6 +530,16 @@ namespace ServiceLayer.Code
 
             UpdateIfChangeFound(annualSalaryBreakups, calculatedSalaryBreakupDetail, PresentMonth, PresentYear);
 
+            EmployeeSalaryDetail salaryBreakup = new EmployeeSalaryDetail
+            {
+                CompleteSalaryDetail = JsonConvert.SerializeObject(calculatedSalaryBreakupDetail),
+                CTC = employeeSalaryDetail.CTC,
+                EmployeeId = EmployeeId,
+                GrossIncome = employeeSalaryDetail.GrossIncome,
+                GroupId = employeeSalaryDetail.GroupId,
+                NetSalary = employeeSalaryDetail.NetSalary,
+                TaxDetail = employeeSalaryDetail.TaxDetail
+            };
             var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
@@ -616,8 +612,6 @@ namespace ServiceLayer.Code
                 finalAmount = this.calculateExpressionUsingInfixDS(basicComponent.Formula, basicComponent.DeclaredValue);
             }
 
-            if (finalAmount == 0)
-                throw new HiringBellException("Basic component formula or Declared value cannot be 0 or empty. Please contact to admin.");
             return finalAmount;
         }
 

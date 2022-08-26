@@ -45,6 +45,9 @@ namespace ServiceLayer.Code
                         value = item.TotalAmountDeclared;
                 }
 
+                if (item.DeclarationName == "House Property")
+                    continue;
+
                 totalDeduction += value;
             }
 
