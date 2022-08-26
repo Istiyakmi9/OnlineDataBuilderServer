@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -25,11 +26,11 @@ namespace ServiceLayer.Code
         private CompanySetting _companySetting;
         private DateTime _fromDate;
         private DateTime _toDate;
-        private readonly TimezoneConverter _timezoneConverter;
+        private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
-        public LeaveCalculation(IDb db, TimezoneConverter timezoneConverter, CurrentSession currentSession)
+        public LeaveCalculation(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -462,12 +463,47 @@ namespace ServiceLayer.Code
             return false;
         }
 
-        private async Task LeaveEligibilityCheck()
+        private bool LeaveEligibilityCheck(DateTime FromDate, LeavePlanType leavePlanType)
         {
-            await Task.Run<bool>(() =>
+            if (FromDate.Subtract(now).TotalDays <= _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
+                return true;
+            else
             {
-                return false;
-            }, cts.Token);
+                leavePlanType.IsApplicable = false;
+                leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
+            }
+            return false;
+        }
+
+        private bool NewJoineeIsEligibleForThisLeave(LeavePlanType leavePlanType)
+        {
+            bool flag = false;
+            if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation)
+            {
+                var daysAfterProbation = (decimal)now.Subtract(_employee.CreatedOn.AddDays(_companySetting.ProbationPeriodInDays)).TotalDays;
+                if (daysAfterProbation >= _leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation)
+                    flag = true;
+                else
+                {
+                    flag = false;
+                    leavePlanType.IsApplicable = false;
+                    leavePlanType.Reason = "Days restriction after Probation period is not completed to apply this leave.";
+                }
+            }
+            else if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterJoining)
+            {
+                var daysAfterProbation = (decimal)now.Subtract(_employee.CreatedOn).TotalDays;
+                if (daysAfterProbation >= _leavePlanConfiguration.leavePlanRestriction.DaysAfterJoining)
+                    flag = true;
+                else
+                {
+                    flag = false;
+                    leavePlanType.IsApplicable = false;
+                    leavePlanType.Reason = "Days restriction after Joining period is not completed to apply this leave.";
+                }
+            }
+
+            return flag;
         }
 
         public async Task<List<LeavePlanType>> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
@@ -489,6 +525,12 @@ namespace ServiceLayer.Code
                     leavePlanType = _leavePlanTypes[i];
                     ValidateAndGetLeavePlanConfiguration(leavePlanType);
 
+                    if (!LeaveEligibilityCheck(FromDate, leavePlanType))
+                    {
+                        i++;
+                        continue;
+                    }
+
                     await AllowToSeeAndApply(EmployeeId, FromDate, ToDate);
                     if (flag)
                     {
@@ -504,7 +546,8 @@ namespace ServiceLayer.Code
                             switch (type)
                             {
                                 case 1:
-                                    leavePlanType.AvailableLeave = CalculateLeaveIfInProbationPeriond(leavePlanType.LeavePlanTypeId);
+                                    if (NewJoineeIsEligibleForThisLeave(leavePlanType))
+                                        leavePlanType.AvailableLeave = CalculateLeaveIfInProbationPeriond(leavePlanType.LeavePlanTypeId);
                                     break;
                                 case 2:
                                     leavePlanType.AvailableLeave = CalculateLeaveIfInNoticePeriond(leavePlanType.LeavePlanTypeId);

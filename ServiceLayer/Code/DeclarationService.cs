@@ -373,17 +373,21 @@ namespace ServiceLayer.Code
             // check and apply 1.5 lakhs components
             decimal totalDeduction = _componentsCalculationService.OneAndHalfLakhsComponent(employeeDeclaration);
 
+            var hraAmount = 0;
             salaryBreakup.GrossIncome = grossComponent.FinalAmount * 12;
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups);
             employeeDeclaration.SalaryDetail = salaryBreakup;
-            employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
-
-            // Calculate income detail based on old regime
-            _componentsCalculationService.OldTaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome);
-            //employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", incomeTaxDetails.GetType().GetProperty("TotalTax").GetValue(incomeTaxDetails, null)));
 
             // Calculate hra and apply on deduction
             _componentsCalculationService.HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+
+            Convert.ToDecimal(string.Format("{0:0.00}", employeeDeclaration.HRADeatils.TryGetValue("HRAAmount", out hraAmount)));
+            employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
+
+
+            // Calculate income detail based on old regime
+            _componentsCalculationService.OldTaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome);
+            //employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", HRADeatils.GetType().GetProperty("HRAAmount").GetValue(incomeTaxDetails, null)));
 
             //Tac Calculation for every month
             TaxDetailsCalculation(EmployeeId, salaryBreakup, employeeDeclaration);
