@@ -149,7 +149,7 @@ namespace ServiceLayer.Code
             if (houseProperty != null && houseProperty.TotalAmountDeclared > 0)
             {
                 decimal declaredValue = houseProperty.TotalAmountDeclared;
-                HRA3 = declaredValue - (basicComponent.FinalAmount / 10);
+                HRA3 = (declaredValue - (basicComponent.FinalAmount / 10))/12;
                 if (HRA3 < HRA1 && HRA3 < HRA2)
                     HRAAmount = HRA3;
                 else if (HRA2 < HRA1 && HRA2 < HRA3)

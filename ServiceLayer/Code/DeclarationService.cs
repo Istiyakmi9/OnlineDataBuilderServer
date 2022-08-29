@@ -373,7 +373,7 @@ namespace ServiceLayer.Code
             // check and apply 1.5 lakhs components
             decimal totalDeduction = _componentsCalculationService.OneAndHalfLakhsComponent(employeeDeclaration);
 
-            var hraAmount = 0;
+            decimal hraAmount = 0;
             salaryBreakup.GrossIncome = grossComponent.FinalAmount * 12;
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups);
             employeeDeclaration.SalaryDetail = salaryBreakup;
@@ -381,8 +381,10 @@ namespace ServiceLayer.Code
             // Calculate hra and apply on deduction
             _componentsCalculationService.HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
 
-            Convert.ToDecimal(string.Format("{0:0.00}", employeeDeclaration.HRADeatils.TryGetValue("HRAAmount", out hraAmount)));
-            employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction))));
+            //Convert.ToDecimal(string.Format("{0:0.00}", employeeDeclaration.HRADeatils.TryGetValue("HRAAmount", out hraAmount)));
+            hraAmount = (employeeDeclaration.HRADeatils.HRAAmount * 12);
+
+            employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction + hraAmount))));
 
 
             // Calculate income detail based on old regime
