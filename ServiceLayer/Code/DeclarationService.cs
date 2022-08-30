@@ -382,7 +382,8 @@ namespace ServiceLayer.Code
             _componentsCalculationService.HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
 
             //Convert.ToDecimal(string.Format("{0:0.00}", employeeDeclaration.HRADeatils.TryGetValue("HRAAmount", out hraAmount)));
-            hraAmount = (employeeDeclaration.HRADeatils.HRAAmount * 12);
+            if (employeeDeclaration.HRADeatils != null)
+                hraAmount = (employeeDeclaration.HRADeatils.HRAAmount * 12);
 
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction + hraAmount))));
 
@@ -459,8 +460,25 @@ namespace ServiceLayer.Code
                         });
                         i++;
                     }
+                } else
+                {
+                    taxdetails = new List<TaxDetails>();
+                    DateTime financialYearMonth = new DateTime(DateTime.Now.Year, 4, 1);
+                    int i = 0;
+                    while (i <= 11)
+                    {
+                        taxdetails.Add(new TaxDetails
+                        {
+                            Month = financialYearMonth.AddMonths(i).Month,
+                            Year = financialYearMonth.AddMonths(i).Year,
+                            EmployeeId = EmployeeId,
+                            TaxDeducted = 0,
+                            TaxPaid = 0
+                        });
+                        i++;
+                    }
                 }
-                employeeDeclaration.TaxPaid = 0;
+                
             }
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
         }
