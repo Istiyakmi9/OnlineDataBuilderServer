@@ -93,21 +93,28 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("employeeregistration/{IsUpdating}")]
         public async Task<ApiResponse> EmployeeRegistration(bool IsUpdating)
         {
-            StringValues UserInfoData = default(string);
-            StringValues Clients = default(string);
-            _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
-            _httpContext.Request.Form.TryGetValue("allocatedClients", out Clients);
-            if (UserInfoData.Count > 0)
+            try
             {
-                Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
-                List<AssignedClients> assignedClients = JsonConvert.DeserializeObject<List<AssignedClients>>(Clients);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                var resetSet = await _employeeService.RegisterEmployee(employee, assignedClients, files, IsUpdating);
-                return BuildResponse(resetSet);
+                StringValues UserInfoData = default(string);
+                StringValues Clients = default(string);
+                _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
+                _httpContext.Request.Form.TryGetValue("allocatedClients", out Clients);
+                if (UserInfoData.Count > 0)
+                {
+                    Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
+                    List<AssignedClients> assignedClients = JsonConvert.DeserializeObject<List<AssignedClients>>(Clients);
+                    IFormFileCollection files = _httpContext.Request.Form.Files;
+                    var resetSet = await _employeeService.RegisterEmployee(employee, assignedClients, files, IsUpdating);
+                    return BuildResponse(resetSet);
+                }
+                else
+                {
+                    return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                }
             }
-            else
+            catch
             {
-                return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                throw;
             }
         }
     }
