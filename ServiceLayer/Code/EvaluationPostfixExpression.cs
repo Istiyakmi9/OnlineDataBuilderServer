@@ -83,7 +83,11 @@ namespace ServiceLayer.Code
                     }
                 }
             }
-            return stack.Pop();
+
+            if (stack.Count > 0)
+                return stack.Pop();
+            else
+                return 0;
         }
     }
 }
