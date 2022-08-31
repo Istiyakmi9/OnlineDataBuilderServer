@@ -601,7 +601,7 @@ namespace ServiceLayer.Code
                             DbParam[] dbParams = new DbParam[]
                             {
                             new DbParam(file.UserId, typeof(long), "_EmployeeId"),
-                            new DbParam(-1, typeof(int), "_IsActive")
+                            new DbParam(1, typeof(int), "_IsActive")
                             };
 
                             DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
