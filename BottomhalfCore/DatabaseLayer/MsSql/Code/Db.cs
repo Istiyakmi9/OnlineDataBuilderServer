@@ -711,6 +711,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public Task<string> BatchUpdateAsync(string ProcedureName, DataTable table, bool OutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }

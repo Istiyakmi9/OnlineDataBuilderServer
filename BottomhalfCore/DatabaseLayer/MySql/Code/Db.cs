@@ -905,6 +905,48 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
+        public async Task<string> BatchUpdateAsync(string ProcedureName, DataTable table, Boolean OutParam = false)
+        {
+            try
+            {
+                string state = "";
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = ProcedureName;
+                cmd.UpdatedRowSource = UpdateRowSource.None;
+                cmd.Parameters.Clear();
+
+                foreach (DataColumn column in table.Columns)
+                {
+                    var DbType = this.GetType(column.DataType);
+                    cmd.Parameters.Add("_" + column.ColumnName, DbType.DbType, DbType.Size, column.ColumnName);
+                }
+
+                if (OutParam)
+                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.Int32).Direction = ParameterDirection.Output;
+
+                da = new MySqlDataAdapter();
+                da.InsertCommand = cmd;
+                da.UpdateBatchSize = 2;
+                con.Open();
+                int Count = await da.UpdateAsync(table);
+                if (OutParam)
+                    state = cmd.Parameters["_ProcessingResult"].Value.ToString();
+                else if (Count > 0)
+                    state = "Successfull";
+                return state;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                    con.Close();
+            }
+        }
+
         #endregion
 
         #region Common

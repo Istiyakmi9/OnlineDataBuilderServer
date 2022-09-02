@@ -145,19 +145,22 @@ namespace ServiceLayer.Code
             decimal HRA3 = 0;
             decimal HRAAmount = 0;
 
+            if (HRA1 < HRA2 && HRA1 > 0)
+                HRAAmount = HRA1;
+            else
+                HRAAmount = HRA2;
+
             var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
             if (houseProperty != null && houseProperty.TotalAmountDeclared > 0)
             {
                 decimal declaredValue = houseProperty.TotalAmountDeclared;
-                HRA3 = (declaredValue - (basicComponent.FinalAmount / 10))/12;
-                if (HRA3 < HRA1 && HRA3 < HRA2)
+                HRA3 = declaredValue - (basicComponent.FinalAmount / 10) / 12;
+
+                if (HRA3 > 0 && HRA3 < HRAAmount)
                     HRAAmount = HRA3;
-                else if (HRA2 < HRA1 && HRA2 < HRA3)
-                    HRAAmount = HRA2;
-                else
-                    HRAAmount = HRA1;
-                employeeDeclaration.HRADeatils = new { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
             }
+
+            employeeDeclaration.HRADeatils = new { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
 
             if (employeeDeclaration.SalaryComponentItems != null)
             {
