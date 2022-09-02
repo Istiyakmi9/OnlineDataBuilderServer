@@ -146,6 +146,14 @@ namespace BottomhalfCore.Services.Code
         }
 
         /// <summary>
+        /// Convert datetime into specific timezone
+        /// </summary>
+        public DateTime ToTimeZoneDateTime(DateTime now, TimeZoneInfo timeZoneInfo)
+        {
+            return TimeZoneInfo.ConvertTimeFromUtc(now, timeZoneInfo);
+        }
+
+        /// <summary>
         /// Get first day of the present week or specified date.
         /// </summary>
         public DateTime LastDayOfWeekUTC(Nullable<DateTime> now = null)
@@ -178,6 +186,34 @@ namespace BottomhalfCore.Services.Code
         public DateTime LastDayOfWeekIST(Nullable<DateTime> now = null)
         {
             DateTime workingDate = this.FirstDayOfWeekIST(now);
+            workingDate = workingDate.AddDays(6).AddSeconds(-1);
+            return workingDate;
+        }
+
+        /// <summary>
+        /// Get first day of the present week or specified date.
+        /// </summary>
+        public DateTime FirstDayOfPresentWeek(DateTime now, TimeZoneInfo timeZoneInfo)
+        {
+            DateTime workingDate = DateTime.UtcNow;
+            if (now != null)
+                workingDate = (DateTime)now;
+
+            int day = (int)workingDate.DayOfWeek;
+            if (day == 0)
+                day = 7;
+            day--;
+            workingDate = workingDate.AddDays(-day);
+            workingDate = TimeZoneInfo.ConvertTimeFromUtc(workingDate, timeZoneInfo);
+            return workingDate;
+        }
+
+        /// <summary>
+        /// Get first day of the present week or specified date.
+        /// </summary>
+        public DateTime LastDayOfPresentWeek(DateTime now, TimeZoneInfo timeZoneInfo)
+        {
+            DateTime workingDate = this.FirstDayOfPresentWeek(now, timeZoneInfo);
             workingDate = workingDate.AddDays(6).AddSeconds(-1);
             return workingDate;
         }

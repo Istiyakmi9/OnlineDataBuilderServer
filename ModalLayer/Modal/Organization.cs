@@ -37,5 +37,11 @@ namespace ModalLayer.Modal
         public bool IsActive { set; get; }
         public int Total { get; set; }
         public long FileId { set; get; }
+        public int CompanyId { get; set; }
+        public string CompanyName { get; set; }
+        public string OrganizationName { get; set; }
+        public string CompantDetail { get; set; }
+        public int SectorType { get; set; }
+        public string FullAddress { get; set; }
     }
 }

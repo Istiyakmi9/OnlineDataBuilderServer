@@ -20,6 +20,6 @@ namespace ServiceLayer.Interface
         Employee GetEmployeeByIdService(int EmployeeId, int IsActive);
         List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive);
         Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating);
-
+        dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
     }
 }

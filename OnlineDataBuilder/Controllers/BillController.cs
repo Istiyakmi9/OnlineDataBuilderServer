@@ -6,6 +6,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
@@ -19,11 +20,13 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly IBillService _billService;
         private readonly HttpContext _httpContext;
+        private readonly IEmployeeService _employeeService;
 
-        public BillController(IBillService billService, IHttpContextAccessor httpContext)
+        public BillController(IBillService billService, IEmployeeService employeeService, IHttpContextAccessor httpContext)
         {
             _billService = billService;
             _httpContext = httpContext.HttpContext;
+            _employeeService = employeeService;
         }
 
         [HttpPost("UpdateGstStatus/{BillNo}")]
@@ -51,6 +54,14 @@ namespace OnlineDataBuilder.Controllers
         public ApiResponse SendBillToClient(GenerateBillFileDetail generateBillFileDetail)
         {
             var Result = _billService.SendBillToClientService(generateBillFileDetail);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [Route("GetBillDetailForEmployee")]
+        public ApiResponse GetEmployees([FromBody] FilterModel filterModel)
+        {
+            var Result = _employeeService.GetBillDetailForEmployeeService(filterModel);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
     }

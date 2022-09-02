@@ -114,7 +114,7 @@ namespace ServiceLayer.Code
                 company.FirstAddress = companyInfo.FirstAddress;
                 company.SecondAddress = companyInfo.SecondAddress;
                 company.ThirdAddress = companyInfo.ThirdAddress;
-                company.FourthAddress = companyInfo.FourthAddress;
+                company.ForthAddress = companyInfo.ForthAddress;
                 company.Email = companyInfo.Email;
                 company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
                 company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
@@ -189,7 +189,7 @@ namespace ServiceLayer.Code
                     company.FirstAddress,
                     company.SecondAddress,
                     company.ThirdAddress,
-                    company.FourthAddress,
+                    company.ForthAddress,
                     company.FullAddress,
                     company.MobileNo,
                     company.Email,

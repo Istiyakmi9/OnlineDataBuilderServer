@@ -31,7 +31,7 @@ namespace ModalLayer.Modal.Accounts
         public string FirstAddress { get; set; }
         public string SecondAddress { get; set; }
         public string ThirdAddress { get; set; }
-        public string FourthAddress { get; set; }
+        public string ForthAddress { get; set; }
         public int Pincode { get; set; }
         public long FileId { set; get; }
     }

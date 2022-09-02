@@ -64,7 +64,7 @@ namespace ServiceLayer.Code
                 org.FirstAddress = organizationSettings.FirstAddress;
                 org.SecondAddress = organizationSettings.SecondAddress;
                 org.ThirdAddress = organizationSettings.ThirdAddress;
-                org.FourthAddress = organizationSettings.FourthAddress;
+                org.ForthAddress = organizationSettings.ForthAddress;
                 org.Email = organizationSettings.Email;
                 org.PrimaryPhoneNo = organizationSettings.PrimaryPhoneNo;
                 org.SecondaryPhoneNo = organizationSettings.SecondaryPhoneNo;
@@ -132,7 +132,7 @@ namespace ServiceLayer.Code
                     org.FirstAddress,
                     org.SecondAddress,
                     org.ThirdAddress,
-                    org.FourthAddress,
+                    org.ForthAddress,
                     org.Email,
                     org.PrimaryPhoneNo,
                     org.SecondaryPhoneNo,
