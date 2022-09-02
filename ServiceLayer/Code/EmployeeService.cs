@@ -53,6 +53,18 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _declarationService = declarationService;
         }
+
+        public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
+        {
+            List<Employee> employees = GetEmployees(filterModel);
+            List<Organization> organizations = _db.GetList<Organization>("sp_company_get");
+
+            if (employees.Count == 0 || organizations.Count == 0)
+                throw new HiringBellException("Unable to get employee and company detail. Please contact to admin.");
+
+            return new { Employees = employees, Organizations = organizations };
+        }
+
         public List<Employee> GetEmployees(FilterModel filterModel)
         {
             int IsActiveState = -1;

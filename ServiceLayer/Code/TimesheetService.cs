@@ -100,10 +100,18 @@ namespace ServiceLayer.Code
 
         private void IsGivenDateAllowed(DateTime From, DateTime To)
         {
-            var firstDayOfMonth = _timezoneConverter.GetUtcFirstDay(From.Year, From.Month);
-            var lastDayOfMonth = _timezoneConverter.GetUtcLastDay(To.Year, To.Month);
-            if (firstDayOfMonth.Date.Subtract(From.Date).TotalDays < 0 || lastDayOfMonth.Date.Subtract(To.Date).TotalDays > 0)
-                throw new HiringBellException("Only current month timesheet allowed.");
+            TimeZoneInfo timeZoneInfo = _currentSession.TimeZone;
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime(From, timeZoneInfo);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime(To, timeZoneInfo);
+
+            var lastDayOfPresentWeek = _timezoneConverter.LastDayOfPresentWeek(DateTime.UtcNow, timeZoneInfo);
+            var firstDayOfPreviousForthWeek = toDate.AddDays((-1) * 5 * 7);
+
+            if (firstDayOfPreviousForthWeek.Date.Subtract(fromDate.Date).TotalDays > 0)
+                throw new HiringBellException("Before 5 weeks date not allowed");
+
+            if (lastDayOfPresentWeek.Date.Subtract(toDate.Date).TotalDays < 0)
+                throw new HiringBellException("Before 5 weeks date not allowed");
         }
 
         private List<DailyTimesheetDetail> GenerateWeekAttendaceData(TimesheetDetail timesheetDetail, DateTime? monthFirstDate = null)
@@ -150,26 +158,6 @@ namespace ServiceLayer.Code
             }
 
             return 0;
-        }
-
-        private void ValidateDateOfTimesheetSubmission(DateTime firstDate, DateTime lastDate)
-        {
-            DateTime now = DateTime.Now;
-            DateTime presentDate = _timezoneConverter.GetUtcDateTime(now.Year, now.Month, now.Day);
-
-            // handling future date
-            if (presentDate.Subtract(lastDate).TotalDays > 0)
-            {
-                throw new HiringBellException("Future date's are not allowed.");
-            }
-            // handling past date
-            else if (presentDate.Subtract(firstDate).TotalDays < 0)
-            {
-                if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
-                {
-                    throw new HiringBellException("Past week's are not allowed.");
-                }
-            }
         }
 
         private string UpdateOrInsertTimesheetDetail(List<DailyTimesheetDetail> finalDailyTimesheetDetails, TimesheetDetail currentTimesheet, string procedure)
@@ -238,8 +226,6 @@ namespace ServiceLayer.Code
                 j++;
             }
 
-            ValidateDateOfTimesheetSubmission(firstDate, lastDate);
-
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(firstItem.EmployeeId, typeof(int), "_EmployeeId"),
@@ -264,6 +250,7 @@ namespace ServiceLayer.Code
                 currentTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
                 if (!string.IsNullOrEmpty(currentTimesheetDetail.TimesheetMonthJson))
                     finalTimesheetSet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
+            
                 this.IsGivenDateAllowed(firstDate, lastDate);
             }
             else

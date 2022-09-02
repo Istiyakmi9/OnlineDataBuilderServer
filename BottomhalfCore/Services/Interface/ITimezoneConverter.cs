@@ -5,6 +5,7 @@ namespace BottomhalfCore.Services.Interface
     public interface ITimezoneConverter
     {
         DateTime ToUtcTime(DateTime now);
+        DateTime ToTimeZoneDateTime(DateTime now, TimeZoneInfo timeZoneInfo);
         DateTime UpdateToUTCTimeZoneOnly(DateTime now);
         DateTime ToIstTime(DateTime now);
         DateTime ZeroTime(DateTime now);
@@ -23,5 +24,7 @@ namespace BottomhalfCore.Services.Interface
         int TotalWeekDaysBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
         int TotalSaturdayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
         int TotalSundayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
+        DateTime FirstDayOfPresentWeek(DateTime now, TimeZoneInfo timeZoneInfo);
+        DateTime LastDayOfPresentWeek(DateTime now, TimeZoneInfo timeZoneInfo);
     }
 }

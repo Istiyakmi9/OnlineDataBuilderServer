@@ -340,14 +340,11 @@ namespace ServiceLayer.Code
             };
 
             var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
-            if (Result.Tables.Count == 6)
+            if (Result.Tables.Count == 3)
             {
                 Result.Tables[0].TableName = "fileDetail";
-                Result.Tables[1].TableName = "clients";
-                Result.Tables[2].TableName = "employees";
-                Result.Tables[3].TableName = "roles";
-                Result.Tables[4].TableName = "companys";
-                Result.Tables[5].TableName = "allocatedClients";
+                Result.Tables[1].TableName = "Employees";
+                Result.Tables[2].TableName = "Organizations";
             }
             return Result;
         }
@@ -429,11 +426,11 @@ namespace ServiceLayer.Code
                         workingDay = billDetail.NoOfDays - (int)billDetail.NoOfDaysAbsent,
                         packageAmount = billDetail.PaidAmount,
                         grandTotalAmount = Converter.TwoDecimalValue(billDetail.PaidAmount + (billDetail.PaidAmount * (billDetail.CGST + billDetail.SGST + billDetail.IGST)) / 100),
-                        senderCompanyName = organization.ClientName,
+                        senderCompanyName = organization.CompanyName,
                         receiverFirstAddress = receiverOrganization.FirstAddress,
                         receiverCompanyId = receiverOrganization.ClientId,
                         receiverCompanyName = receiverOrganization.ClientName,
-                        senderClientId = organization.ClientId,
+                        senderId = organization.CompanyId,
                         developerName = billDetail.DeveloperName,
                         receiverSecondAddress = receiverOrganization.SecondAddress,
                         receiverThirdAddress = receiverOrganization.ThirdAddress,

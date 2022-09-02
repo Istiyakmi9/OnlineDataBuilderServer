@@ -1175,149 +1175,6 @@ DELIMITER ;
 
 DELIMITER $$
 
-drop procedure if exists SP_Employee_GetAll $$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_Employee_GetAll`(
-/*	
-
-	Call SP_Employee_GetAll(' 1=1', '', 1, 10, -1);
-
-*/
-
-	_SearchString varchar(500),
-    _SortBy varchar(100),
-    _PageIndex int,
-    _PageSize int,
-    _IsActive int
-)
-Begin
-    Begin
-		Declare exit handler for sqlexception
-		Begin
-		
-			GET DIAGNOSTICS CONDITION 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-										
-			Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
-			Call sp_LogException(@Message, '', 'SP_Employee_GetAll', 1, 0, @Result);
-		End;
-
-        Begin
-        
-			if(_SortBy is null Or _SortBy = '') then
-				Set _SortBy = ' UpdatedOn Desc, CreatedOn Desc ';
-			end if;
-            
-            Set @activeQuery = Concat('
-				Select emp.EmployeeUid, 
-					emp.FirstName,
-					emp.LastName,
-					emp.Mobile,
-					emp.Email,
-                    emp.LeavePlanId,
-                    emp.IsActive,
-					eprof.AadharNo,
-					eprof.PANNo,
-					eprof.AccountNumber,
-					eprof.BankName,
-					eprof.IFSCCode,
-					eprof.Domain,
-					eprof.Specification,
-					eprof.ExprienceInYear,
-					eper.ActualPackage,
-					eper.FinalPackage,
-					eper.TakeHomeByCandidate,
-					(
-						Select 
-							JSON_ARRAYAGG(ClientUid)
-						from employeemappedclients 
-						where EmployeeUid = emp.EmployeeUid
-					) as ClientJson,
-                    emp.UpdatedOn, 
-                    emp.CreatedOn
-				from employees emp
-				Left Join employeepersonaldetail eper on emp.EmployeeUid = eper.EmployeeUid
-				left join employeeprofessiondetail eprof on emp.EmployeeUid = eprof.EmployeeUid
-				where ', _SearchString, '
-			');
-                
-                
-			Set @inActiveQuery = Concat('
-				Select emp.EmployeeUid, 
-					emp.FirstName,
-					emp.LastName,
-					emp.Mobile,
-					emp.Email,
-                    emp.IsActive,
-					eprof.AadharNo,
-					eprof.PANNo,
-					eprof.AccountNumber,
-					eprof.BankName,
-					eprof.IFSCCode,
-					eprof.Domain,
-					eprof.Specification,
-					eprof.ExprienceInYear,
-					eper.ActualPackage,
-					eper.FinalPackage,
-					eper.TakeHomeByCandidate,
-					(
-						Select 
-							JSON_ARRAYAGG(ClientUid)
-						from employeemappedclients 
-						where EmployeeUid = emp.EmployeeUid
-					) as ClientJson,
-                    emp.UpdatedOn, 
-                    emp.CreatedOn
-				from employee_archive emp
-				Left Join employeepersonaldetail_archive eper on emp.EmployeeUid = eper.EmployeeUid
-				left join employeeprofessiondetail_archive eprof on emp.EmployeeUid = eprof.EmployeeUid
-				where ', _SearchString, '
-			');			
-            
-            Set @SelectQuery = '';
-            if(_IsActive = -1) then
-            begin
-				Set @SelectQuery = Concat('
-					select *, Count(1) Over() as Total from (
-						', @activeQuery ,'
-						union all
-						', @inActiveQuery ,'
-					)T Order by ', _SortBy ,' limit ', _PageSize ,' offset ', (_PageIndex - 1) * 10
-				);
-            end;
-            else
-            begin
-				if(_IsActive = 1) then
-					Set @SelectQuery = Concat('
-						select *, Count(1) Over() as Total from (
-							', @activeQuery ,'
-						)T Order by ', _SortBy ,' limit ', _PageSize ,' offset ', (_PageIndex - 1) * 10
-					);
-				else
-					Set @SelectQuery = Concat('
-						select *, Count(1) Over() as Total  from (
-							', @inActiveQuery ,'
-						)T Order by ', _SortBy ,' limit ', _PageSize ,' offset ', (_PageIndex - 1) * 10
-					);
-				end if;
-            end;
-            end if;
-        
-
-            
-		# select @SelectQuery;
-		prepare SelectQuery from @SelectQuery;
-		execute SelectQuery;
-		End;
-	End;
-end$$
-DELIMITER ;
-
-
-
-DELIMITER $$
-
 drop procedure if exists SP_ApplicationData_Get $$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ApplicationData_Get`(
@@ -1534,53 +1391,6 @@ Begin
 			
 			set _ProcessingResult = 'updated';
         commit;
-	End;
-End$$
-DELIMITER ;
-
-
-
-
-DELIMITER $$
-
-drop procedure if exists sp_leave_page_getby_employeeId $$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_leave_detail_getby_employeeId`(
-/*
-	
-    Call sp_leave_detail_getby_employeeId(1);
-    
-    
-*/
-
-	_EmployeeId bigint
-)
-Begin
-    Begin
-		Declare Exit handler for sqlexception
-        Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-                                        
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-            Call sp_LogException (@Message, '', 'sp_leave_page_getby_employeeId', 1, 0, @Result);
-		end;
-
-		select * from employees
-        where DesignationId = 1 Or DesignationId = 4;			
-        
-        if exists(select 1 from employee_leaveplan_mapping where EmployeeId = _EmployeeId) then
-        begin
-			select lp.* from leave_plan lp
-            inner join employee_leaveplan_mapping lm on lp.LeavePlanId = lm.LeavePlanId;
-        end;
-        else
-        begin
-			select * from leave_plan
-            where IsDefaultPlan = 1;
-        end;
-        end if;
 	End;
 End$$
 DELIMITER ;
@@ -1850,65 +1660,6 @@ Begin
 	End;
 End$$
 DELIMITER ;
-
-
-
-
-DELIMITER $$
-
-drop procedure if exists sp_employee_leave_request_detail $$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_employee_leave_request_detail`(
-	_EmployeeId bigint,
-	_Year int
-/*	
-
-	Call sp_employee_leave_request_detail(4, 2022);
-
-*/
-
-)
-Begin
-	Declare exit handler for sqlexception
-	Begin
-	
-		GET DIAGNOSTICS CONDITION 1 @sqlstate = RETURNED_SQLSTATE,
-									@errorno = MYSQL_ERRNO,
-									@errortext = MESSAGE_TEXT;
-									
-		Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
-		Call sp_LogException(@Message, '', 'sp_employee_leave_request_detail', 1, 0, @Result);
-	End;
-									
-	select * from employee_leave_request
-	where EmployeeId = _EmployeeId and 
-	`Year` = _Year;
-    
-    Set @LeavePlanId = 0;
-    if exists (select 1 from employee_leaveplan_mapping where EmployeeId = _EmployeeId) then
-    begin
-		Select LeavePlanId into @LeavePlanId from employee_leaveplan_mapping
-		where EmployeeId = _EmployeeId;
-    end;
-    end if;
-    
-    if (@LeavePlanId = 0) then
-    begin
-		Select * from leave_plan
-        where IsDefaultPlan = 1;
-    end;
-    else
-    begin
-		Select * from leave_plan
-        where LeavePlanId = @LeavePlanId;
-    end;
-    end if;
-    
-	select * from employees
-	where DesignationId = 1 Or DesignationId = 4;	
-end$$
-DELIMITER ;
-
 
 
 
@@ -4145,3 +3896,16 @@ Begin
 	End;
 End$$
 DELIMITER ;
+
+
+alter table company 
+add column AccountNo varchar(25);
+
+alter table company 
+add column BankName varchar(100);
+
+alter table company 
+add column BranchName varchar(100);
+
+alter table company 
+add column IFSC varchar(15);

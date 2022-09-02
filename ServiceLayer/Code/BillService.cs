@@ -128,7 +128,7 @@ namespace ServiceLayer.Code
                 Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
                 Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
                 Replace("[[bankName]]", sender.BankName).
-                Replace("[[clientName]]", sender.ClientName).
+                Replace("[[clientName]]", sender.CompanyName).
                 Replace("[[accountNumber]]", sender.AccountNo).
                 Replace("[[iFSCCode]]", sender.IFSC).
                 Replace("[[city]]", sender.City).
@@ -173,7 +173,29 @@ namespace ServiceLayer.Code
             return html;
         }
 
-        public FileDetail GenerateDocument(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
+        private void FillSenderDetail(Organization organization, PdfModal pdfModal)
+        {
+            pdfModal.senderCompanyName = organization.CompanyName;
+            pdfModal.senderGSTNo = organization.GSTNO;
+            pdfModal.senderEmail = organization.Email;
+            pdfModal.senderFirstAddress = organization.FirstAddress;
+            pdfModal.senderPrimaryContactNo = organization.PrimaryPhoneNo;
+            pdfModal.senderSecondAddress = organization.SecondAddress;
+        }
+
+        private void FillReceiverDetail(Organization organization, PdfModal pdfModal)
+        {
+            pdfModal.receiverCompanyId = organization.ClientId;
+            pdfModal.receiverCompanyName = organization.ClientName;
+            pdfModal.receiverEmail = organization.Email;
+            pdfModal.receiverFirstAddress = organization.FirstAddress;
+            pdfModal.receiverPrimaryContactNo = organization.PrimaryPhoneNo;
+            pdfModal.receiverSecondAddress = organization.SecondAddress;
+            pdfModal.receiverThirdAddress = organization.ThirdAddress;
+            pdfModal.receiverGSTNo = organization.GSTNO;
+        }
+
+        public FileDetail GenerateDocument(PdfModal pdfModal)
         {
             FileDetail fileDetail = new FileDetail();
             try
@@ -181,7 +203,6 @@ namespace ServiceLayer.Code
                 TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
                 pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
                 pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
-                this.ValidateBillModal(pdfModal);
 
                 Bills bill = this.GetBillData();
                 if (string.IsNullOrEmpty(pdfModal.billNo))
@@ -221,8 +242,8 @@ namespace ServiceLayer.Code
                 DataSet ds = new DataSet();
                 DbParam[] dbParams = new DbParam[]
                 {
-                    new DbParam(pdfModal.ClientId, typeof(long), "_receiver"),
-                    new DbParam(pdfModal.senderClientId, typeof(long), "_sender"),
+                    new DbParam(pdfModal.receiverCompanyId, typeof(long), "_receiver"),
+                    new DbParam(pdfModal.senderId, typeof(long), "_sender"),
                     new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
                     new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
                     new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
@@ -233,10 +254,15 @@ namespace ServiceLayer.Code
                 ds = this.db.GetDataset("sp_Billing_detail", dbParams);
                 if (ds.Tables.Count == 5)
                 {
-                    List<Organization> SenderDetails = Converter.ToList<Organization>(ds.Tables[0]);
-                    List<Organization> ReceiverDetails = Converter.ToList<Organization>(ds.Tables[1]);
+                    sender = Converter.ToType<Organization>(ds.Tables[0]);
+                    receiver = Converter.ToType<Organization>(ds.Tables[1]);
                     List<Employee> EmployeeMappedClient = Converter.ToList<Employee>(ds.Tables[2]);
-                    fileDetail = Converter.ToList<FileDetail>(ds.Tables[3]).FirstOrDefault();
+                    fileDetail = Converter.ToType<FileDetail>(ds.Tables[3]);
+
+                    this.FillReceiverDetail(receiver, pdfModal);
+                    this.FillSenderDetail(sender, pdfModal);
+
+                    this.ValidateBillModal(pdfModal);
 
                     if (fileDetail == null)
                     {
@@ -246,8 +272,6 @@ namespace ServiceLayer.Code
                         };
                     }
 
-                    sender = SenderDetails.Single();
-                    receiver = ReceiverDetails.Single();
                     employeeMappedClient = EmployeeMappedClient.Single();
 
                     List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
@@ -326,7 +350,7 @@ namespace ServiceLayer.Code
                         dbParams = new DbParam[]
                         {
                             new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                            new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                            new DbParam(pdfModal.receiverCompanyId, typeof(long), "_ClientId"),
                             new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
                             new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
                             new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
@@ -410,8 +434,8 @@ namespace ServiceLayer.Code
             if (pdfModal.EmployeeId <= 0)
                 throw new HiringBellException { UserMessage = "Invalid Employee", FieldName = nameof(pdfModal.EmployeeId), FieldValue = pdfModal.EmployeeId.ToString() };
 
-            if (pdfModal.senderClientId <= 0)
-                throw new HiringBellException { UserMessage = "Invalid Sender", FieldName = nameof(pdfModal.senderClientId), FieldValue = pdfModal.senderClientId.ToString() };
+            if (pdfModal.senderId <= 0)
+                throw new HiringBellException { UserMessage = "Invalid Sender", FieldName = nameof(pdfModal.senderId), FieldValue = pdfModal.senderId.ToString() };
 
             if (pdfModal.packageAmount <= 0)
                 throw new HiringBellException { UserMessage = "Invalid Package Amount", FieldName = nameof(pdfModal.packageAmount), FieldValue = pdfModal.packageAmount.ToString() };
@@ -475,20 +499,10 @@ namespace ServiceLayer.Code
 
         private Bills GetBillData()
         {
-            Bills bill = default;
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(1, typeof(long), "_BillTypeUid")
-            };
-            DataSet ds = db.GetDataset("sp_billdata_get", param);
-            if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
-            {
-                var bills = Converter.ToList<Bills>(ds.Tables[0]);
-                if (bills != null && bills.Count > 0)
-                {
-                    bill = bills[0];
-                }
-            }
+            Bills bill = db.Get<Bills>("sp_billdata_get", new { BillTypeUid = 1 });
+            if (bill == null)
+                throw new HiringBellException("Unable to get bill detail for current employee.");
+
             return bill;
         }
 
