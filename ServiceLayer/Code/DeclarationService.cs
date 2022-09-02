@@ -280,13 +280,14 @@ namespace ServiceLayer.Code
             empDeclaration.SalaryComponentItems = salaryComponents;
             empDeclaration.HousingProperty = housingTax;
             this.BuildSectionWiseComponents(empDeclaration);
+
             EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(DeclarationDetail.EmployeeId, empDeclaration);
 
             result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
 
-            return empDeclaration;
+            return this.GetEmployeeDeclarationDetailById(DeclarationDetail.EmployeeId);
         }
 
         private (EmployeeSalaryDetail, SalaryGroup) GetEmployeeSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
