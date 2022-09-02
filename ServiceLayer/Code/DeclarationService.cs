@@ -132,6 +132,16 @@ namespace ServiceLayer.Code
                     File.Delete(declarationDoc);
                 throw;
             }
+
+            empDeclaration.SalaryComponentItems = salaryComponents;
+            this.BuildSectionWiseComponents(empDeclaration);
+            EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
+
+            result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert or update salary breakup");
+
+            return this.GetEmployeeDeclarationDetailById(EmployeeDeclarationId);
         }
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
@@ -286,13 +296,14 @@ namespace ServiceLayer.Code
             empDeclaration.SalaryComponentItems = salaryComponents;
             empDeclaration.HousingProperty = housingTax;
             this.BuildSectionWiseComponents(empDeclaration);
+
             EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(DeclarationDetail.EmployeeId, empDeclaration);
 
             result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
 
-            return empDeclaration;
+            return this.GetEmployeeDeclarationDetailById(DeclarationDetail.EmployeeId);
         }
 
         private (EmployeeSalaryDetail, SalaryGroup) GetEmployeeSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
@@ -380,14 +391,17 @@ namespace ServiceLayer.Code
             decimal totalDeduction = _componentsCalculationService.OneAndHalfLakhsComponent(employeeDeclaration);
 
             decimal hraAmount = 0;
-            salaryBreakup.GrossIncome = employeeDeclaration.TotalAmount;
+            salaryBreakup.GrossIncome = grossComponent.FinalAmount * 12;
             salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups);
             employeeDeclaration.SalaryDetail = salaryBreakup;
 
             // Calculate hra and apply on deduction
             _componentsCalculationService.HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
 
-            hraAmount = (employeeDeclaration.HRADeatils.HRAAmount * 12);
+            //Convert.ToDecimal(string.Format("{0:0.00}", employeeDeclaration.HRADeatils.TryGetValue("HRAAmount", out hraAmount)));
+            if (employeeDeclaration.HRADeatils != null)
+                hraAmount = (employeeDeclaration.HRADeatils.HRAAmount * 12);
+
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction + hraAmount))));
 
             if (employeeDeclaration.TotalAmount < 0)
@@ -462,8 +476,25 @@ namespace ServiceLayer.Code
                         });
                         i++;
                     }
+                } else
+                {
+                    taxdetails = new List<TaxDetails>();
+                    DateTime financialYearMonth = new DateTime(DateTime.Now.Year, 4, 1);
+                    int i = 0;
+                    while (i <= 11)
+                    {
+                        taxdetails.Add(new TaxDetails
+                        {
+                            Month = financialYearMonth.AddMonths(i).Month,
+                            Year = financialYearMonth.AddMonths(i).Year,
+                            EmployeeId = EmployeeId,
+                            TaxDeducted = 0,
+                            TaxPaid = 0
+                        });
+                        i++;
+                    }
                 }
-                employeeDeclaration.TaxPaid = 0;
+                
             }
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
         }
