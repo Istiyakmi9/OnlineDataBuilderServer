@@ -34,7 +34,7 @@ Begin
         And b.ClientId = _ClientId
         And b.FileDetailId = _FileId;
         
-        Call SP_Employee_GetAll(' 1=1 ', null, 1, 10, 1);
+        Call SP_Employee_GetAll(' 1=1 ', null, 1, 10);
         
         select * from company;
 	End;

@@ -1,16 +1,25 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Spreadsheet;
+using iText.Html2pdf.Attach;
+using iText.StyledXmlParser.Node;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
+using Org.BouncyCastle.Asn1.X509;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO.Packaging;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -65,25 +74,78 @@ namespace ServiceLayer.Code
             return new { Employees = employees, Organizations = organizations };
         }
 
-        public List<Employee> GetEmployees(FilterModel filterModel)
+        private List<Employee> FilterActiveEmployees(FilterModel filterModel)
         {
-            int IsActiveState = -1;
-            if (filterModel.IsActive != null)
-            {
-                IsActiveState = (filterModel.IsActive == true ? 1 : 0);
-            }
-
-            if (string.IsNullOrEmpty(filterModel.SearchString))
-                filterModel.SearchString = "1=1";
-
             List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
                 filterModel.PageIndex,
-                filterModel.PageSize,
-                IsActive = IsActiveState
+                filterModel.PageSize
             });
+            return employees;
+        }
+
+        private List<Employee> FilterInActiveEmployees(FilterModel filterModel)
+        {
+            List<Employee> employees = new List<Employee>();
+
+            List<EmployeeArchiveModal> employeeArchiveModal = _db.GetList<EmployeeArchiveModal>("SP_Employee_GetAllInActive", new
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
+            });
+
+            if (employeeArchiveModal == null || employeeArchiveModal.Count == 0)
+                return employees;
+
+            EmployeeCompleteDetailModal employeeJson = null;
+            foreach (var item in employeeArchiveModal)
+            {
+                employeeJson = JsonConvert.DeserializeObject<EmployeeCompleteDetailModal>(item.EmployeeCompleteJsonData);
+                if (employeeJson != null)
+                {
+                    employees.Add(new Employee
+                    {
+                        FirstName = employeeJson.EmployeeDetail.FirstName,
+                        LastName = employeeJson.EmployeeDetail.LastName,
+                        Mobile = employeeJson.EmployeeDetail.Mobile,
+                        Email = employeeJson.EmployeeDetail.Email,
+                        LeavePlanId = employeeJson.EmployeeDetail.LeavePlanId,
+                        IsActive = employeeJson.EmployeeDetail.IsActive,
+                        AadharNo = employeeJson.EmployeeProfessionalDetail.AadharNo,
+                        PANNo = employeeJson.EmployeeProfessionalDetail.PANNo,
+                        AccountNumber = employeeJson.EmployeeProfessionalDetail.AccountNumber,
+                        BankName = employeeJson.EmployeeProfessionalDetail.BankName,
+                        IFSCCode = employeeJson.EmployeeProfessionalDetail.IFSCCode,
+                        Domain = employeeJson.EmployeeProfessionalDetail.Domain,
+                        Specification = employeeJson.EmployeeProfessionalDetail.Specification,
+                        ExprienceInYear = employeeJson.EmployeeProfessionalDetail.ExperienceInYear,
+                        ActualPackage = employeeJson.EmployeeDetail.ActualPackage,
+                        FinalPackage = employeeJson.EmployeeDetail.FinalPackage,
+                        TakeHomeByCandidate = employeeJson.EmployeeDetail.TakeHomeByCandidate,
+                        ClientJson = employeeJson.EmployeeDetail.ClientJson,
+                        Total = employeeJson.EmployeeDetail.Total,
+                        UpdatedOn = employeeJson.EmployeeProfessionalDetail.UpdatedOn,
+                        CreatedOn = employeeJson.EmployeeProfessionalDetail.CreatedOn
+                    });
+                }
+            }
+            return employees;
+        }
+
+        public List<Employee> GetEmployees(FilterModel filterModel)
+        {
+            List<Employee> employees = null;
+            if (string.IsNullOrEmpty(filterModel.SearchString))
+                filterModel.SearchString = "1=1";
+
+            if (filterModel.IsActive != null && filterModel.IsActive == true)
+                employees = FilterActiveEmployees(filterModel);
+            else
+                employees = FilterInActiveEmployees(filterModel);
 
             return employees;
         }
@@ -215,32 +277,181 @@ namespace ServiceLayer.Code
             return employee;
         }
 
-        public List<Employee> DeleteEmployeeById(int EmployeeId, bool IsActive)
+        public EmployeeCompleteDetailModal GetEmployeeCompleteDetail(int EmployeeId)
+        {
+            DataSet ds = _db.FetchDataSet("sp_Employee_GetCompleteDetail", new { EmployeeId = EmployeeId });
+            if (ds.Tables.Count != 10)
+                throw new HiringBellException("Unable to get employee completed detail");
+
+            EmployeeCompleteDetailModal employeeCompleteDetailModal = new EmployeeCompleteDetailModal
+            {
+                EmployeeDetail = Converter.ToType<Employee>(ds.Tables[0]),
+                PersonalDetail = Converter.ToType<EmployeePersonalDetail>(ds.Tables[1]),
+                EmployeeProfessionalDetail = Converter.ToType<EmployeeProfessionDetail>(ds.Tables[2]),
+                EmployeeLoginDetail = Converter.ToType<LoginDetail>(ds.Tables[3]),
+                EmployeeDeclarations = Converter.ToType<EmployeeDeclaration>(ds.Tables[4]),
+                LeaveRequestDetail = Converter.ToType<Leave>(ds.Tables[5]),
+                NoticePeriod = Converter.ToType<EmployeeNoticePeriod>(ds.Tables[6]),
+                SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ds.Tables[7]),
+                TimesheetDetails = Converter.ToType<TimesheetDetail>(ds.Tables[8]),
+                MappedClient = Converter.ToType<EmployeeMappedClient>(ds.Tables[9])
+            };
+
+            return employeeCompleteDetailModal;
+        }
+
+        private EmployeeArchiveModal GetEmployeeArcheiveCompleteDetail(long EmployeeId)
+        {
+            EmployeeArchiveModal employeeArcheiveDeatil = _db.Get<EmployeeArchiveModal>("sp_Employee_GetArcheiveCompleteDetail", new { EmployeeId  = EmployeeId });
+            return employeeArcheiveDeatil;
+        }
+
+        private string DeActivateEmployee(int EmployeeId)
+        {
+            EmployeeCompleteDetailModal employeeCompleteDetailModal = GetEmployeeCompleteDetail(EmployeeId);
+            var result = _db.Execute<EmployeeArchiveModal>("sp_Employee_DeActivate", new
+            {
+                EmployeeId,
+                FullName = string.Concat(employeeCompleteDetailModal.EmployeeDetail.FirstName, " ", employeeCompleteDetailModal.EmployeeDetail.LastName),
+                Mobile = employeeCompleteDetailModal.EmployeeDetail.Mobile,
+                Email = employeeCompleteDetailModal.EmployeeDetail.Email,
+                Package = employeeCompleteDetailModal.EmployeeDetail.FinalPackage,
+                DateOfJoining = employeeCompleteDetailModal.EmployeeDetail.CreatedOn,
+                DateOfLeaving = DateTime.UtcNow,
+                EmployeeCompleteDetailModal = JsonConvert.SerializeObject(employeeCompleteDetailModal),
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            return result;
+        }
+
+        private string ActivateEmployee(int EmployeeId)
+        {
+            EmployeeArchiveModal employeeArchiveDetail = GetEmployeeArcheiveCompleteDetail(EmployeeId);
+            if (employeeArchiveDetail == null)
+                throw new HiringBellException("No record found");
+
+            EmployeeCompleteDetailModal employeeCompleteDetailModal = JsonConvert.DeserializeObject<EmployeeCompleteDetailModal>(employeeArchiveDetail.EmployeeCompleteJsonData);
+            var result = _db.Execute<EmployeeCompleteDetailModal>("sp_Employee_Activate", new
+            {
+                EmployeeId = employeeArchiveDetail.EmployeeId,
+                FirstName = employeeCompleteDetailModal.EmployeeDetail.FirstName,
+                LastName = employeeCompleteDetailModal.EmployeeDetail.LastName,
+                Mobile = employeeCompleteDetailModal.EmployeeDetail.Mobile,
+                Email = employeeCompleteDetailModal.EmployeeDetail.Email,
+                IsActive = employeeCompleteDetailModal.EmployeeDetail.IsActive,
+                ReportingManagerId = employeeCompleteDetailModal.EmployeeDetail.ReportingManagerId,
+                DesignationId = employeeCompleteDetailModal.EmployeeDetail.DesignationId,
+                UserTypeId = employeeCompleteDetailModal.EmployeeDetail.UserTypeId,
+                LeavePlanId = employeeCompleteDetailModal.EmployeeDetail.LeavePlanId,
+                PayrollGroupId = employeeCompleteDetailModal.EmployeeDetail.PayrollGroupId,
+                SalaryGroupId = employeeCompleteDetailModal.EmployeeDetail.SalaryGroupId,
+                CompanyId = employeeCompleteDetailModal.EmployeeDetail.CompanyId,
+                NoticePeriodId = employeeCompleteDetailModal.EmployeeDetail.NoticePeriodId,
+                SecondaryMobile = employeeCompleteDetailModal.EmployeeDetail.SecondaryMobile,
+                PANNo = employeeCompleteDetailModal.EmployeeProfessionalDetail.PANNo,
+                AadharNo = employeeCompleteDetailModal.EmployeeProfessionalDetail.AadharNo,
+                AccountNumber = employeeCompleteDetailModal.EmployeeProfessionalDetail.AccountNumber,
+                BankName = employeeCompleteDetailModal.EmployeeProfessionalDetail.BankName,
+                BranchName = employeeCompleteDetailModal.EmployeeProfessionalDetail.BranchName,
+                IFSCCode = employeeCompleteDetailModal.EmployeeProfessionalDetail.IFSCCode,
+                Domain = employeeCompleteDetailModal.EmployeeProfessionalDetail.Domain,
+                Specification = employeeCompleteDetailModal.EmployeeProfessionalDetail.Specification,
+                ExprienceInYear = employeeCompleteDetailModal.EmployeeProfessionalDetail.ExperienceInYear,
+                LastCompanyName = employeeCompleteDetailModal.EmployeeProfessionalDetail.LastCompanyName,
+                ProfessionalDetail_Json = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeProfessionalDetail.ProfessionalDetail_Json) ? "{}" : employeeCompleteDetailModal.EmployeeProfessionalDetail.ProfessionalDetail_Json,
+                Gender = employeeCompleteDetailModal.PersonalDetail.Gender,
+                FatherName = employeeCompleteDetailModal.PersonalDetail.FatherName,
+                SpouseName = employeeCompleteDetailModal.PersonalDetail.SpouseName,
+                MotherName = employeeCompleteDetailModal.PersonalDetail.MotherName,
+                Address = employeeCompleteDetailModal.PersonalDetail.Address,
+                State = employeeCompleteDetailModal.PersonalDetail.State,
+                City = employeeCompleteDetailModal.PersonalDetail.City,
+                Pincode = employeeCompleteDetailModal.PersonalDetail.Pincode,
+                IsPermanent = employeeCompleteDetailModal.PersonalDetail.IsPermanent,
+                ActualPackage = employeeCompleteDetailModal.PersonalDetail.ActualPackage,
+                FinalPackage = employeeCompleteDetailModal.PersonalDetail.FinalPackage,
+                TakeHomeByCandidate = employeeCompleteDetailModal.PersonalDetail.TakeHomeByCandidate,
+                AccessLevelId = employeeCompleteDetailModal.EmployeeLoginDetail.AccessLevelId,
+                Password = "welcome@$Bot_001",
+                EmployeeDeclarationId = employeeCompleteDetailModal.EmployeeDeclarations.EmployeeDeclarationId,
+                DocumentPath = employeeCompleteDetailModal.EmployeeDeclarations.DocumentPath,
+                DeclarationDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeDeclarations.DeclarationDetail) ? "[]" : employeeCompleteDetailModal.EmployeeDeclarations.DeclarationDetail,
+                HousingProperty = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeDeclarations.HousingProperty) ? "[]" : employeeCompleteDetailModal.EmployeeDeclarations.HousingProperty,
+                TotalDeclaredAmount = employeeCompleteDetailModal.EmployeeDeclarations.TotalAmount,
+                TotalApprovedAmount = 0,
+                LeaveRequestId = employeeCompleteDetailModal.LeaveRequestDetail.LeaveRequestId,
+                LeaveDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveDetail,
+                Year = employeeCompleteDetailModal.LeaveRequestDetail.Year,
+                EmployeeNoticePeriodId = employeeCompleteDetailModal.NoticePeriod.EmployeeNoticePeriodId,
+                ApprovedOn = employeeCompleteDetailModal.NoticePeriod.ApprovedOn,
+                ApplicableFrom = employeeCompleteDetailModal.NoticePeriod.ApplicableFrom,
+                ApproverManagerId = employeeCompleteDetailModal.NoticePeriod.ApproverManagerId,
+                ManagerDescription = employeeCompleteDetailModal.NoticePeriod.ManagerDescription,
+                AttachmentPath = employeeCompleteDetailModal.NoticePeriod.AttachmentPath,
+                EmailTitle = employeeCompleteDetailModal.NoticePeriod.EmailTitle,
+                OtherApproverManagerIds = string.IsNullOrEmpty(employeeCompleteDetailModal.NoticePeriod.OtherApproverManagerIds) ? "[]" : employeeCompleteDetailModal.NoticePeriod.OtherApproverManagerIds,
+                ITClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ITClearanceStatus,
+                ReportingManagerClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ReportingManagerClearanceStatus,
+                CanteenClearanceStatus = employeeCompleteDetailModal.NoticePeriod.CanteenClearanceStatus,
+                ClientClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ClientClearanceStatus,
+                HRClearanceStatus = employeeCompleteDetailModal.NoticePeriod.HRClearanceStatus,
+                OfficialLastWorkingDay = employeeCompleteDetailModal.NoticePeriod.OfficialLastWorkingDay,
+                PeriodDuration = employeeCompleteDetailModal.NoticePeriod.PeriodDuration,
+                EarlyLeaveStatus = employeeCompleteDetailModal.NoticePeriod.EarlyLeaveStatus,
+                Reason = employeeCompleteDetailModal.NoticePeriod.Reason,
+                CTC = employeeCompleteDetailModal.SalaryDetail.CTC,
+                GrossIncome = employeeCompleteDetailModal.SalaryDetail.GrossIncome,
+                NetSalary = employeeCompleteDetailModal.SalaryDetail.NetSalary,
+                CompleteSalaryDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.CompleteSalaryDetail) ? "[]" : employeeCompleteDetailModal.SalaryDetail.CompleteSalaryDetail,
+                GroupId = employeeCompleteDetailModal.SalaryDetail.GroupId,
+                TaxDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.TaxDetail) ? "[]" : employeeCompleteDetailModal.SalaryDetail.TaxDetail,
+                TimesheetId = employeeCompleteDetailModal.TimesheetDetails.TimesheetId,
+                ClientId = employeeCompleteDetailModal.TimesheetDetails.ClientId,
+                TimesheetMonthJson = string.IsNullOrEmpty(employeeCompleteDetailModal.TimesheetDetails.TimesheetMonthJson) ? "[]" : employeeCompleteDetailModal.TimesheetDetails.TimesheetMonthJson,
+                TotalDays = employeeCompleteDetailModal.TimesheetDetails.TotalDays,
+                DaysAbsent = employeeCompleteDetailModal.TimesheetDetails.DaysAbsent,
+                ExpectedBurnedMinutes = employeeCompleteDetailModal.TimesheetDetails.ExpectedBurnedMinutes,
+                ActualBurnedMinutes = employeeCompleteDetailModal.TimesheetDetails.ActualBurnedMinutes,
+                TotalWeekDays = employeeCompleteDetailModal.TimesheetDetails.TotalWeekDays,
+                TotalWorkingDays = employeeCompleteDetailModal.TimesheetDetails.TotalWorkingDays,
+                TotalHolidays = employeeCompleteDetailModal.TimesheetDetails.TotalHolidays,
+                MonthTimesheetApprovalState = employeeCompleteDetailModal.TimesheetDetails.MonthTimesheetApprovalState,
+                ForYear = employeeCompleteDetailModal.TimesheetDetails.ForYear,
+                ForMonth = employeeCompleteDetailModal.TimesheetDetails.ForMonth,
+                EmployeeMappedClientUid = employeeCompleteDetailModal.MappedClient.EmployeeMappedClientUid,
+                ClientName = employeeCompleteDetailModal.MappedClient.ClientName,
+                BillingHours = employeeCompleteDetailModal.MappedClient.BillingHours,
+                DaysPerWeek = employeeCompleteDetailModal.MappedClient.DaysPerWeek,
+                DateOfJoining = employeeCompleteDetailModal.MappedClient.DateOfJoining,
+                DateOfLeaving = employeeCompleteDetailModal.MappedClient.DateOfLeaving,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+
+            }, true);
+            return null;
+        }
+
+        public List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive)
         {
             List<Employee> employees = null;
             var status = string.Empty;
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(EmployeeId, typeof(int), "_employeeId"),
-            };
 
             if (!IsActive)
-                status = _db.ExecuteNonQuery("sp_Employee_DeActivate", param, false);
+                status = DeActivateEmployee(EmployeeId);
             else
-                status = _db.ExecuteNonQuery("sp_Employee_Activate", param, false);
+                status = ActivateEmployee(EmployeeId);
 
             if (!string.IsNullOrEmpty(status))
             {
-                // _loginService.BuildApplicationCache(true);
                 employees = _db.GetList<Employee>("SP_Employee_GetAll", new
                 {
                     SearchString = "1=1",
                     SortBy = "",
                     PageIndex = 1,
-                    PageSize = 10,
-                    IsActive = -1
+                    PageSize = 10
                 });
             }
+
             return employees;
         }
 

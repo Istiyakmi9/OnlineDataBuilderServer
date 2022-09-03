@@ -1,11 +1,11 @@
 ﻿DELIMITER $$
 
-drop procedure if exists SP_Employee_GetAll $$
+drop procedure if exists SP_Employee_GetAllInActive $$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_Employee_GetAll`(
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_Employee_GetAllInActive`(
 /*	
 
-	Call SP_Employee_GetAll(' 1=1', '', 1, 10);
+	Call SP_Employee_GetAllInActive(' 1=1', '', 1, 10);
 
 */
 
@@ -24,35 +24,22 @@ Begin
 										@errortext = MESSAGE_TEXT;
 										
 			Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
-			Call sp_LogException(@Message, '', 'SP_Employee_GetAll', 1, 0, @Result);
+			Call sp_LogException(@Message, '', 'SP_Employee_GetAllInActive', 1, 0, @Result);
 		End;
 
         Begin
         
 			if(_SortBy is null Or _SortBy = '') then
-				Set _SortBy = ' UpdatedOn Desc, CreatedOn Desc ';
+				Set _SortBy = ' CreatedOn Desc ';
 			end if;
             
             Set @activeQuery = Concat('
-				Select emp.EmployeeUid, 
-					emp.FirstName,
-					emp.LastName,
-					emp.Mobile,
-					emp.Email,
-                    emp.LeavePlanId,
-                    emp.IsActive,
-					eprof.AadharNo,
-					eprof.PANNo,
-					eprof.AccountNumber,
-					eprof.BankName,
-					eprof.IFSCCode,
-					eprof.Domain,
-					eprof.Specification,
-					eprof.ExprienceInYear,
-					eper.ActualPackage,
-					eper.FinalPackage,
-					eper.TakeHomeByCandidate,
-					(
+				Select 
+					emp.EmployeeId,
+					emp.EmployeeCompleteJsonData,
+                    emp.CreatedBy,
+                    emp.CreatedOn,
+                    (
 						Select 
 							JSON_ARRAYAGG(
 								json_object(
@@ -62,13 +49,9 @@ Begin
 								)
                             )
 						from employeemappedclients 
-						where EmployeeUid = emp.EmployeeUid
-					) as ClientJson,
-                    emp.UpdatedOn, 
-                    emp.CreatedOn
-				from employees emp
-				Left Join employeepersonaldetail eper on emp.EmployeeUid = eper.EmployeeUid
-				left join employeeprofessiondetail eprof on emp.EmployeeUid = eprof.EmployeeUid
+						where EmployeeUid = emp.EmployeeId
+					) as ClientJson
+				from employee_archive emp
 				where ', _SearchString, '
 			');	
             
