@@ -72,7 +72,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("ApplyLeave")]
-        public IResponse<ApiResponse> ApplyLeave(LeaveDetails leaveDetail)
+        public IResponse<ApiResponse> ApplyLeave(LeaveRequestDetail leaveDetail)
         {
             var result = _attendanceService.ApplyLeaveService(leaveDetail);
             return BuildResponse(result);

@@ -2813,29 +2813,31 @@ DELIMITER ;
 
 drop table if exists employee_notice_period;
 
-create table employee_notice_period (
-	EmployeeNoticePeriodId bigint primary key auto_increment,
-    EmployeeId bigint unique key,
-    ApprovedOn datetime,
-    ApplicableFrom datetime,
-    ApproverManagerId int,
-    ManagerDescription varchar(500),
-    AttachmentPath varchar(200),
-    EmailTitle varchar(100),
-    OtherApproverManagerIds text,
-    ITClearanceStatus int,
-    ReportingManagerClearanceStatus int,
-    CanteenClearanceStatus int,
-    ClientClearanceStatus int,
-    HRClearanceStatus int,
-    OfficialLastWorkingDay datetime,
-    PeriodDuration int,
-    EarlyLeaveStatus int,
-    Reason varchar(500),
-    CreatedBy bigint,
-    UpdatedBy bigint,
-    CreatedOn datetime,
-    UpdatedOn datetime
+CREATE TABLE `employee_notice_period` (
+  `EmployeeNoticePeriod` bigint NOT NULL AUTO_INCREMENT,
+  `EmployeeId` bigint DEFAULT NULL,
+  `ApprovedOn` datetime DEFAULT NULL,
+  `ApplicableFrom` datetime DEFAULT NULL,
+  `ApproverManagerId` int DEFAULT NULL,
+  `ManagerDescription` varchar(500) DEFAULT NULL,
+  `AttachmentPath` varchar(200) DEFAULT NULL,
+  `EmailTitle` varchar(100) DEFAULT NULL,
+  `OtherApproverManagerIds` json,
+  `ITClearanceStatus` int DEFAULT NULL,
+  `ReportingManagerClearanceStatus` int DEFAULT NULL,
+  `CanteenClearanceStatus` int DEFAULT NULL,
+  `ClientClearanceStatus` int DEFAULT NULL,
+  `HRClearanceStatus` int DEFAULT NULL,
+  `OfficialLastWorkingDay` datetime DEFAULT NULL,
+  `PeriodDuration` int DEFAULT NULL,
+  `EarlyLeaveStatus` int DEFAULT NULL,
+  `Reason` varchar(500) DEFAULT NULL,
+  `CreatedBy` bigint DEFAULT NULL,
+  `UpdatedBy` bigint DEFAULT NULL,
+  `CreatedOn` datetime DEFAULT NULL,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`EmployeeNoticePeriod`),
+  UNIQUE KEY `EmployeeId` (`EmployeeId`)
 );
 
 
@@ -2861,7 +2863,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_employee_notice_period_insupd`(
     _ManagerDescription varchar(500),
     _AttachmentPath varchar(200),
     _EmailTitle varchar(100),
-    _OtherApproverManagerIds text,
+    _OtherApproverManagerIds json,
     _ITClearanceStatus int,
     _ReportingManagerClearanceStatus int,
     _CanteenClearanceStatus int,
@@ -2959,7 +2961,7 @@ create table company_setting (
 
 DELIMITER $$
 
-drop procedure if exists sp_employee_notice_period_insupd $$
+drop procedure if exists sp_company_setting_insupd $$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_company_setting_insupd`(	
     _SettingId bigint,
@@ -3421,365 +3423,6 @@ DELIMITER ;
 
 
 
-DELIMITER $$
-
-drop procedure if exists sp_Employee_Activate $$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Employee_Activate`(
-
-/*
-
-	Call sp_Employee_Activate(11);
-
-*/
-	_EmployeeId bigint
-)
-Begin
-    Set @OperationStatus = '';
-	Begin
-		Declare Exit handler for sqlexception
-		Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-            
-            RollBack;
-            Set autocommit = 1;
-            Set sql_safe_updates = 1;
-            
-			Call sp_LogException (@Message, @OperationStatus, 'sp_Employee_Activate', 1, 0, @Result);
-		end;  
-	
-		set autocommit = 0;
-        Set @schemaName = 'onlinedatabuilder';
-        Set @employeeId = 0;
-		start transaction;
-        begin		            
-			if exists (Select 1 from employee_archive where EmployeeUid = _EmployeeId) then
-            begin				
-				Insert into employees
-				Select
-				  _EmployeeId,
-				  `FirstName`,
-				  `LastName`,
-				  `Mobile`,
-				  `Email`,
-				  `IsActive`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`,
-				  `ReportingManagerId`,
-				  `DesignationId`,
-				  `UserTypeId`,
-                  `DesignationId`,
-                  `UserTypeId`,
-                  `LeavePlanId`,
-                  `PayrollGroupId`,
-                  `SalaryGroupId`,
-                  `CompanyId`,
-                  `NoticePeriodId`
-				from employee_archive
-				where EmployeeUid = _EmployeeId;            
-            end;
-            end if;
-
-
-			if exists (Select 1 from employeeprofessiondetail_archive where EmployeeUid = _EmployeeId) then
-            begin
-				
-				Insert into employeeprofessiondetail (				  
-				  `EmployeeUid`,
-                  `FirstName`,
-				  `LastName`,
-				  `Mobile`,
-				  `SecondaryMobile`,
-				  `Email`,
-				  `PANNo`,
-				  `AadharNo`,
-				  `AccountNumber`,
-				  `BankName`,
-				  `BranchName`,
-				  `IFSCCode`,
-				  `Domain`,
-				  `Specification`,
-				  `ExprienceInYear`,
-				  `LastCompanyName`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`,
-				  `ProfessionalDetail_Json`)
-				Select 
-				  _EmployeeId,
-				  `FirstName`,
-				  `LastName`,
-				  `Mobile`,
-				  `SecondaryMobile`,
-				  `Email`,
-				  `PANNo`,
-				  `AadharNo`,
-				  `AccountNumber`,
-				  `BankName`,
-				  `BranchName`,
-				  `IFSCCode`,
-				  `Domain`,
-				  `Specification`,
-				  `ExprienceInYear`,
-				  `LastCompanyName`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`,
-				  `ProfessionalDetail_Json`
-				from employeeprofessiondetail_archive
-				where EmployeeUid = _EmployeeId;
-			end;
-            end if;
-
-			if exists (Select 1 from employeepersonaldetail_archive where EmployeeUid = _EmployeeId) then
-            begin
-				Insert into employeepersonaldetail (
-				  `EmployeeUid`,
-                  `Mobile`,
-				  `SecondaryMobile`,
-				  `Email`,
-				  `Gender`,
-				  `FatherName`,
-				  `SpouseName`,
-				  `MotherName`,
-				  `Address`,
-				  `State`,
-				  `City`,
-				  `Pincode`,
-				  `IsPermanent`,
-				  `ActualPackage`,
-				  `FinalPackage`,
-				  `TakeHomeByCandidate`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`
-                )
-				Select 
-				  _EmployeeId,
-				  `Mobile`,
-				  `SecondaryMobile`,
-				  `Email`,
-				  `Gender`,
-				  `FatherName`,
-				  `SpouseName`,
-				  `MotherName`,
-				  `Address`,
-				  `State`,
-				  `City`,
-				  `Pincode`,
-				  `IsPermanent`,
-				  `ActualPackage`,
-				  `FinalPackage`,
-				  `TakeHomeByCandidate`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`
-				from employeepersonaldetail_archive
-				where EmployeeUid = _EmployeeId;
-			end;
-            end if;
-            
-			if exists (Select 1 from employeelogin_archive where EmployeeId = _EmployeeId) then
-            begin            
-				Insert into employeelogin (EmployeeId, UserTypeId, AccessLevelId, Password, Email, Mobile, CreatedBy, UpdatedBy, CreatedOn, UpdatedOn)
-                Select 
-				  _EmployeeId,
-				  `UserTypeId`,
-				  `AccessLevelId`,
-				  `Password`,
-				  `Email`,
-				  `Mobile`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`
-				from employeelogin_archive
-                where EmployeeId = _EmployeeId;
-			end;
-            end if;
-            
-            Set sql_safe_updates = 0;
-            
-            delete from employeepersonaldetail_archive where EmployeeUid = _EmployeeId;
-            delete from employeeprofessiondetail_archive where EmployeeUid = _EmployeeId;
-			delete from employee_archive where EmployeeUid = _EmployeeId;
-			delete from employeelogin_archive where EmployeeId = _EmployeeId;
-        end;        
-        commit;
-        Set sql_safe_updates = 1;
-	End;
-End$$
-DELIMITER ;
-
-
-
-
-DELIMITER $$
-
-drop procedure if exists sp_Employee_DeActivate $$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Employee_DeActivate`(
-
-/*
-
-	Call sp_Employee_DeActivate(13);
-
-*/
-	_EmployeeId bigint
-)
-Begin
-    Set @OperationStatus = '';
-	Begin
-		Declare Exit handler for sqlexception
-		Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-            
-            RollBack;
-            Set autocommit = 1;
-            Set sql_safe_updates = 1;
-            
-			Call sp_LogException (@Message, @OperationStatus, 'sp_Employee_DeActivate', 1, 0, @Result);
-		end;  
-	
-		set autocommit = 0;
-
-		start transaction;
-        begin		
-			if exists (Select * from employees where EmployeeUid = _EmployeeId) then
-            begin
-				Insert into employee_archive 
-				Select 
-				  EmployeeUid,
-				  `FirstName`,
-				  `LastName`,
-				  `Mobile`,
-				  `Email`,
-				  `IsActive`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`,
-				  `ReportingManagerId`,
-				  `DesignationId`,
-				  `UserTypeId`,
-                  `LeavePlanId`,
-                  `PayrollGroupId`,
-                  `SalaryGroupId`,
-                  `CompanyId`,
-                  `NoticePeriodId`
-				from employees
-				where EmployeeUid = _EmployeeId;            
-            end;
-            end if;
-
-
-			if exists (Select 1 from employeeprofessiondetail where EmployeeUid = _EmployeeId) then
-            begin
-				Insert into employeeprofessiondetail_archive 
-				Select 
-				  EmployeeUid,
-				  `FirstName`,
-				  `LastName`,
-				  `Mobile`,
-				  `SecondaryMobile`,
-				  `Email`,
-				  `PANNo`,
-				  `AadharNo`,
-				  `AccountNumber`,
-				  `BankName`,
-				  `BranchName`,
-				  `IFSCCode`,
-				  `Domain`,
-				  `Specification`,
-				  `ExprienceInYear`,
-				  `LastCompanyName`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`,
-				  `ProfessionalDetail_Json`
-				from employeeprofessiondetail
-				where EmployeeUid = _EmployeeId;
-			end;
-            end if;
-
-			if exists (Select 1 from employeepersonaldetail where EmployeeUid = _EmployeeId) then
-            begin
-				Insert into employeepersonaldetail_archive
-				Select 
-				  EmployeeUid,
-				  `Mobile`,
-				  `SecondaryMobile`,
-				  `Email`,
-				  `Gender`,
-				  `FatherName`,
-				  `SpouseName`,
-				  `MotherName`,
-				  `Address`,
-				  `State`,
-				  `City`,
-				  `Pincode`,
-				  `IsPermanent`,
-				  `ActualPackage`,
-				  `FinalPackage`,
-				  `TakeHomeByCandidate`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`
-				from employeepersonaldetail
-				where EmployeeUid = _EmployeeId;
-			end;
-            end if;            
-            
-			if exists (Select 1 from employeelogin where EmployeeId = _EmployeeId) then
-            begin
-				Insert into employeelogin_archive 
-                Select 
-				  EmployeeId,
-				  `UserTypeId`,
-				  `AccessLevelId`,
-				  `Password`,
-				  `Email`,
-				  `Mobile`,
-				  `CreatedBy`,
-				  `UpdatedBy`,
-				  `CreatedOn`,
-				  `UpdatedOn`
-				from employeelogin
-                where EmployeeId = _EmployeeId;
-			end;
-            end if;
-            
-            Set sql_safe_updates = 0;
-            
-            delete from employeeprofessiondetail where EmployeeUid = _EmployeeId;
-            delete from employeepersonaldetail where EmployeeUid = _EmployeeId;
-			delete from employees where EmployeeUid = _EmployeeId;            
-            delete from employeelogin where EmployeeId = _EmployeeId;
-                 
-        end;        
-        commit;
-        Set sql_safe_updates = 1;
-	End;
-End$$
-DELIMITER ;
-
-
-
-
 
 DELIMITER $$
 
@@ -3909,3 +3552,8 @@ add column BranchName varchar(100);
 
 alter table company 
 add column IFSC varchar(15);
+
+ALTER TABLE `onlinedatabuilder`.`employeepersonaldetail` 
+DROP FOREIGN KEY `fk_EmployeePersonalDetail_EmployeeId`;
+ALTER TABLE `onlinedatabuilder`.`employeepersonaldetail` 
+DROP INDEX `fk_EmployeePersonalDetail_EmployeeId_idx` ;

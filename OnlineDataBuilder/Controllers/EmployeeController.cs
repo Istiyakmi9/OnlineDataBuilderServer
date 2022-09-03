@@ -83,10 +83,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
-        [HttpDelete("DeleteEmployeeById/{EmployeeId}/{IsActive}")]
+        [HttpDelete("ActivateOrDeActiveEmployee/{EmployeeId}/{IsActive}")]
         public ApiResponse DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
-            var Result = _employeeService.DeleteEmployeeById(EmployeeId, IsActive);
+            var Result = _employeeService.ActivateOrDeActiveEmployeeService(EmployeeId, IsActive);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 

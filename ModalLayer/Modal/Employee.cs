@@ -2,22 +2,12 @@
 
 namespace ModalLayer.Modal
 {
-    public class Employee : AssignedClients
+    public class Employee : EmployeePersonalDetail
     {
+        public long EmployeeLoginId { set; get; }
         public string FirstName { set; get; }
         public string LastName { set; get; }
-        public string Mobile { set; get; }
         public int CompanyId { set; get; }
-        public string Email { set; get; }
-        public string SecondaryMobile { set; get; }
-        public string FatherName { set; get; }
-        public string MotherName { set; get; }
-        public string SpouseName { set; get; }
-        public string State { set; get; }
-        public bool Gender { set; get; }
-        public string City { set; get; }
-        public int Pincode { set; get; }
-        public string Address { set; get; }
         public string PANNo { set; get; }
         public string AadharNo { set; get; }
         public string AccountNumber { set; get; }
@@ -26,7 +16,7 @@ namespace ModalLayer.Modal
         public string IFSCCode { set; get; }
         public string Domain { set; get; }
         public string Specification { set; get; }
-        public float ExprienceInYear { set; get; }
+        public decimal ExprienceInYear { set; get; }
         public string LastCompanyName { set; get; }
         public int Index { set; get; }
         public bool IsActive { set; get; }
@@ -47,5 +37,7 @@ namespace ModalLayer.Modal
         public int SalaryGroupId { get; set; }
         public int NoticePeriodId { get; set; }
         public DateTime? NoticePeriodAppliedOn { get; set; }
+        public DateTime? UpdatedOn { get; set; }
+
     }
 }

@@ -1,7 +1,4 @@
-﻿using ModalLayer.Modal.Profile;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 
 namespace ModalLayer.Modal
 {

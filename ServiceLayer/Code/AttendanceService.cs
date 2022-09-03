@@ -609,7 +609,7 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public dynamic ApplyLeaveService(LeaveDetails leaveDetail)
+        public dynamic ApplyLeaveService(LeaveRequestDetail leaveDetail)
         {
             if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
@@ -666,7 +666,7 @@ namespace ServiceLayer.Code
 
 
             leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-            var value = _db.Execute<LeaveDetails>("sp_employee_leave_request_InsUpdate", new
+            var value = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
             {
                 leaveDetail.LeaveRequestId,
                 leaveDetail.EmployeeId,
