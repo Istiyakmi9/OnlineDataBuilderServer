@@ -427,7 +427,7 @@ namespace ServiceLayer.Code
             return dailyTimesheetDetail;
         }
 
-        public List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, int UserTypeId, long clientId)
+        public List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId)
         {
             List<TimesheetDetail> timesheetDetail = new List<TimesheetDetail>();
             DateTime current = DateTime.UtcNow;
@@ -435,16 +435,17 @@ namespace ServiceLayer.Code
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(employeeId, typeof(long), "_EmployeeId"),
-                new DbParam(UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(clientId, typeof(int), "_ClientId"),
+                new DbParam(_currentSession.CurrentUserDetail.RoleId, typeof(int), "_UserTypeId"),
                 new DbParam(current.Year, typeof(int), "_ForYear"),
                 new DbParam(current.Month, typeof(int), "_ForMonth")
             };
 
-            var Result = _db.GetDataset("sp_attendance_detall_pending", dbParams);
+            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
             if (Result.Tables.Count == 1 && Result.Tables[0].Rows.Count > 0)
             {
-                var currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
-                timesheetDetail = JsonConvert.DeserializeObject<List<TimesheetDetail>>(currentAttendance.AttendanceDetail);
+                var currentTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
+                timesheetDetail = JsonConvert.DeserializeObject<List<TimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
             }
 
             return timesheetDetail;
