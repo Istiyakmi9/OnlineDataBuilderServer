@@ -123,8 +123,7 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(result))
                     throw new HiringBellException("Unable to insert or update salary breakup");
 
-                return empDeclaration;
-
+                return this.GetEmployeeDeclarationDetailById(EmployeeDeclarationId);
             }
             catch
             {
@@ -132,16 +131,6 @@ namespace ServiceLayer.Code
                     File.Delete(declarationDoc);
                 throw;
             }
-
-            empDeclaration.SalaryComponentItems = salaryComponents;
-            this.BuildSectionWiseComponents(empDeclaration);
-            EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
-
-            result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to insert or update salary breakup");
-
-            return this.GetEmployeeDeclarationDetailById(EmployeeDeclarationId);
         }
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
@@ -476,7 +465,8 @@ namespace ServiceLayer.Code
                         });
                         i++;
                     }
-                } else
+                }
+                else
                 {
                     taxdetails = new List<TaxDetails>();
                     DateTime financialYearMonth = new DateTime(DateTime.Now.Year, 4, 1);
@@ -494,7 +484,7 @@ namespace ServiceLayer.Code
                         i++;
                     }
                 }
-                
+
             }
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
         }

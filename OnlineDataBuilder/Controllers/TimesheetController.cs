@@ -34,5 +34,13 @@ namespace OnlineDataBuilder.Controllers
             var result = _timesheetService.InsertUpdateTimesheet(dailyTimesheetDetails);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+
+        [HttpGet("GetPendingTimesheetById/{EmployeeId}/{UserTypeId}/{clientId}")]
+        public IResponse<ApiResponse> GetPendingTimesheetById(long employeeId, int UserTypeId, long clientId)
+        {
+            var result = _timesheetService.GetPendingTimesheetByIdService(employeeId, UserTypeId, clientId);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
