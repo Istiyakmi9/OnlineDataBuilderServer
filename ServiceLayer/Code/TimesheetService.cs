@@ -28,9 +28,9 @@ namespace ServiceLayer.Code
         private List<DailyTimesheetDetail> BuildTimesheetTillDate(long EmployeeId, long ClientId)
         {
             List<DailyTimesheetDetail> timesheets = new List<DailyTimesheetDetail>();
-            DateTime now = DateTime.Now;
+            DateTime now = DateTime.UtcNow;
             DateTime monthFirstDate = _timezoneConverter.GetFirstDateOfMonth(now, _currentSession.TimeZone);
-            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(now, _currentSession.TimeZone);
             if (presentDate.DayOfWeek == DayOfWeek.Friday)
                 presentDate = presentDate.AddDays(2);
 
