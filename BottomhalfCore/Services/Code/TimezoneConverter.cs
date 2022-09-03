@@ -134,6 +134,26 @@ namespace BottomhalfCore.Services.Code
         }
 
         /// <summary>
+        /// This method will return the first day of given month and year.
+        /// </summary>
+        public DateTime GetFirstDateOfMonth(DateTime presentDate, TimeZoneInfo timeZoneInfo)
+        {
+            DateTime now = TimeZoneInfo.ConvertTime(presentDate, timeZoneInfo);
+            DateTime firstDate = new DateTime(now.Year, now.Month, 1);
+            return firstDate;
+        }
+
+        /// <summary>
+        /// This method will return the last day of given month and year.
+        /// </summary>
+        public DateTime GetLastDateOfMonth(DateTime presentDate, TimeZoneInfo timeZoneInfo)
+        {
+            DateTime now = TimeZoneInfo.ConvertTime(presentDate, timeZoneInfo);
+            DateTime lastDate = new DateTime(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month));
+            return lastDate;
+        }
+
+        /// <summary>
         /// Get first day of the present week or specified date.
         /// </summary>
         public DateTime FirstDayOfWeekUTC(Nullable<DateTime> now = null)

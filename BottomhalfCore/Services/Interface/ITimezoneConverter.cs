@@ -26,5 +26,7 @@ namespace BottomhalfCore.Services.Interface
         int TotalSundayBetweenDates(DateTime fromDate, DateTime toDate, TimeZoneInfo timeZoneInfo = null);
         DateTime FirstDayOfPresentWeek(DateTime now, TimeZoneInfo timeZoneInfo);
         DateTime LastDayOfPresentWeek(DateTime now, TimeZoneInfo timeZoneInfo);
+        DateTime GetFirstDateOfMonth(DateTime presentDate, TimeZoneInfo timeZoneInfo);
+        DateTime GetLastDateOfMonth(DateTime presentDate, TimeZoneInfo timeZoneInfo);
     }
 }

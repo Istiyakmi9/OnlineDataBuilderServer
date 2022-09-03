@@ -24,6 +24,43 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
+
+        private List<DailyTimesheetDetail> BuildTimesheetTillDate(long EmployeeId, long ClientId)
+        {
+            List<DailyTimesheetDetail> timesheets = new List<DailyTimesheetDetail>();
+            DateTime now = DateTime.Now;
+            DateTime monthFirstDate = _timezoneConverter.GetFirstDateOfMonth(now, _currentSession.TimeZone);
+            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            if (presentDate.DayOfWeek == DayOfWeek.Friday)
+                presentDate = presentDate.AddDays(2);
+
+            if (presentDate.DayOfWeek == DayOfWeek.Saturday)
+                presentDate = presentDate.AddDays(1);
+
+            while (presentDate.Subtract(monthFirstDate).TotalDays >= 0)
+            {
+                timesheets.Add(new DailyTimesheetDetail
+                {
+                    ClientId = ClientId,
+                    EmployeeId = EmployeeId,
+                    TimesheetId = 0,
+                    TotalMinutes = 8 * 60,
+                    TimesheetStatus = ItemStatus.Pending,
+                    PresentDate = presentDate,
+                    IsHoliday = false,
+                    IsWeekEnd = (presentDate.DayOfWeek == DayOfWeek.Saturday
+                                    ||
+                                presentDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
+                    UserComments = string.Empty,
+                    UserTypeId = (int)UserType.Employee
+                });
+
+                monthFirstDate = monthFirstDate.AddDays(1);
+            }
+
+            return timesheets;
+        }
+
         public dynamic GetTimesheetByUserIdService(TimesheetDetail timesheetDetail)
         {
             List<DailyTimesheetDetail> dailyTimesheetDetails = null;
@@ -56,37 +93,46 @@ namespace ServiceLayer.Code
                 if (Result.Tables[0].Rows.Count > 0 && employee != null)
                 {
                     var employeeTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
-                    dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(employeeTimesheetDetail.TimesheetMonthJson);
+                    var generatedTimesheet = BuildTimesheetTillDate(timesheetDetail.EmployeeId, timesheetDetail.ClientId);
 
-                    dailyTimesheetDetails.ForEach(x =>
+                    if (!string.IsNullOrEmpty(employeeTimesheetDetail.TimesheetMonthJson))
                     {
-                        x.TimesheetId = employeeTimesheetDetail.TimesheetId;
-                        x.ClientId = employeeTimesheetDetail.ClientId;
-                    });
+                        dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(employeeTimesheetDetail.TimesheetMonthJson);
 
-                    int i = 0;
-                    var generatedTimesheet = this.GenerateWeekAttendaceData(timesheetDetail);
-                    DailyTimesheetDetail attrDetail = null;
-                    foreach (var item in dailyTimesheetDetails)
-                    {
-                        i = 0;
-                        while (i < generatedTimesheet.Count)
+                        dailyTimesheetDetails.ForEach(x =>
                         {
-                            attrDetail = generatedTimesheet.ElementAt(i);
-                            if (attrDetail.PresentDate.Date.Subtract(item.PresentDate.Date).TotalDays == 0)
-                            {
-                                generatedTimesheet[i] = item;
-                                break;
-                            }
-                            i++;
-                        }
-                    }
+                            x.TimesheetId = employeeTimesheetDetail.TimesheetId;
+                            x.ClientId = employeeTimesheetDetail.ClientId;
+                        });
 
-                    dailyTimesheetDetails = generatedTimesheet;
+                        int i = 0;
+                        //var generatedTimesheet = this.GenerateWeekAttendaceData(timesheetDetail);
+                        DailyTimesheetDetail attrDetail = null;
+                        foreach (var item in dailyTimesheetDetails)
+                        {
+                            i = 0;
+                            while (i < generatedTimesheet.Count)
+                            {
+                                attrDetail = generatedTimesheet.ElementAt(i);
+                                if (attrDetail.PresentDate.Date.Subtract(item.PresentDate.Date).TotalDays == 0)
+                                {
+                                    generatedTimesheet[i] = item;
+                                    break;
+                                }
+                                i++;
+                            }
+                        }
+
+                        dailyTimesheetDetails = generatedTimesheet;
+
+                    } 
+                    else
+                        dailyTimesheetDetails = generatedTimesheet;
                 }
                 else
                 {
-                    dailyTimesheetDetails = this.GenerateWeekAttendaceData(timesheetDetail);
+                    //dailyTimesheetDetails = this.GenerateWeekAttendaceData(timesheetDetail);
+                    dailyTimesheetDetails = BuildTimesheetTillDate(timesheetDetail.EmployeeId, timesheetDetail.ClientId);
                 }
 
                 if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
@@ -250,7 +296,7 @@ namespace ServiceLayer.Code
                 currentTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
                 if (!string.IsNullOrEmpty(currentTimesheetDetail.TimesheetMonthJson))
                     finalTimesheetSet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
-            
+
                 this.IsGivenDateAllowed(firstDate, lastDate);
             }
             else
@@ -376,6 +422,29 @@ namespace ServiceLayer.Code
             }
 
             return dailyTimesheetDetail;
+        }
+
+        public List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, int UserTypeId, long clientId)
+        {
+            List<TimesheetDetail> timesheetDetail = new List<TimesheetDetail>();
+            DateTime current = DateTime.UtcNow;
+
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(employeeId, typeof(long), "_EmployeeId"),
+                new DbParam(UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(current.Year, typeof(int), "_ForYear"),
+                new DbParam(current.Month, typeof(int), "_ForMonth")
+            };
+
+            var Result = _db.GetDataset("sp_attendance_detall_pending", dbParams);
+            if (Result.Tables.Count == 1 && Result.Tables[0].Rows.Count > 0)
+            {
+                var currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
+                timesheetDetail = JsonConvert.DeserializeObject<List<TimesheetDetail>>(currentAttendance.AttendanceDetail);
+            }
+
+            return timesheetDetail;
         }
     }
 }

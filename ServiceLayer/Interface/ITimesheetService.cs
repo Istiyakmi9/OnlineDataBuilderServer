@@ -7,5 +7,6 @@ namespace ServiceLayer.Interface
     {
         dynamic GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
         List<DailyTimesheetDetail> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetail);
+        List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, int UserTypeId, long clientId);
     }
 }
