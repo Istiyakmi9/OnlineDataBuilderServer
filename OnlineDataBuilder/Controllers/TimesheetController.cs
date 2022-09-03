@@ -36,10 +36,10 @@ namespace OnlineDataBuilder.Controllers
         }
 
 
-        [HttpGet("GetPendingTimesheetById/{EmployeeId}/{UserTypeId}/{clientId}")]
-        public IResponse<ApiResponse> GetPendingTimesheetById(long employeeId, int UserTypeId, long clientId)
+        [HttpGet("GetPendingTimesheetById/{EmployeeId}/{clientId}")]
+        public IResponse<ApiResponse> GetPendingTimesheetById(long employeeId, long clientId)
         {
-            var result = _timesheetService.GetPendingTimesheetByIdService(employeeId, UserTypeId, clientId);
+            var result = _timesheetService.GetPendingTimesheetByIdService(employeeId, clientId);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }
