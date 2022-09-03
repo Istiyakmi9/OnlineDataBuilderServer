@@ -25,28 +25,30 @@ namespace ServiceLayer.Code
         }
 
 
-        private List<DailyTimesheetDetail> BuildTimesheetTillDate(long EmployeeId, long ClientId)
+        private List<DailyTimesheetDetail> BuildTimesheetTillDate(TimesheetDetail timesheetDetail)
         {
             List<DailyTimesheetDetail> timesheets = new List<DailyTimesheetDetail>();
             DateTime now = DateTime.UtcNow;
             DateTime monthFirstDate = _timezoneConverter.GetFirstDateOfMonth(now, _currentSession.TimeZone);
             DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(now, _currentSession.TimeZone);
-            if (presentDate.DayOfWeek == DayOfWeek.Friday)
+            DateTime monthLastDate = _timezoneConverter.GetLastDateOfMonth(now, _currentSession.TimeZone);
+
+            if (presentDate.DayOfWeek == DayOfWeek.Friday && monthLastDate.Subtract(presentDate.AddDays(2)).TotalDays >= 0)
                 presentDate = presentDate.AddDays(2);
 
-            if (presentDate.DayOfWeek == DayOfWeek.Saturday)
+            if (presentDate.DayOfWeek == DayOfWeek.Saturday && monthLastDate.Subtract(presentDate.AddDays(1)).TotalDays >= 0)
                 presentDate = presentDate.AddDays(1);
 
             while (presentDate.Subtract(monthFirstDate).TotalDays >= 0)
             {
                 timesheets.Add(new DailyTimesheetDetail
                 {
-                    ClientId = ClientId,
-                    EmployeeId = EmployeeId,
+                    ClientId = timesheetDetail.ClientId,
+                    EmployeeId = timesheetDetail.EmployeeId,
                     TimesheetId = 0,
                     TotalMinutes = 8 * 60,
                     TimesheetStatus = ItemStatus.Pending,
-                    PresentDate = presentDate,
+                    PresentDate = monthFirstDate,
                     IsHoliday = false,
                     IsWeekEnd = (presentDate.DayOfWeek == DayOfWeek.Saturday
                                     ||
@@ -93,7 +95,7 @@ namespace ServiceLayer.Code
                 if (Result.Tables[0].Rows.Count > 0 && employee != null)
                 {
                     var employeeTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
-                    var generatedTimesheet = BuildTimesheetTillDate(timesheetDetail.EmployeeId, timesheetDetail.ClientId);
+                    var generatedTimesheet = BuildTimesheetTillDate(timesheetDetail);
 
                     if (!string.IsNullOrEmpty(employeeTimesheetDetail.TimesheetMonthJson))
                     {
@@ -132,7 +134,7 @@ namespace ServiceLayer.Code
                 else
                 {
                     //dailyTimesheetDetails = this.GenerateWeekAttendaceData(timesheetDetail);
-                    dailyTimesheetDetails = BuildTimesheetTillDate(timesheetDetail.EmployeeId, timesheetDetail.ClientId);
+                    dailyTimesheetDetails = BuildTimesheetTillDate(timesheetDetail);
                 }
 
                 if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
@@ -324,7 +326,8 @@ namespace ServiceLayer.Code
                     MonthTimesheetApprovalState = (int)ItemStatus.Pending
                 };
 
-                finalTimesheetSet = this.GenerateWeekAttendaceData(currentTimesheetDetail);
+                //finalTimesheetSet = this.GenerateWeekAttendaceData(currentTimesheetDetail);
+                finalTimesheetSet = this.BuildTimesheetTillDate(currentTimesheetDetail);
             }
 
             Employee employee = new Employee();
