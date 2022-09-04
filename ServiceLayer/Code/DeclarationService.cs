@@ -297,6 +297,7 @@ namespace ServiceLayer.Code
 
         private (EmployeeSalaryDetail, SalaryGroup) GetEmployeeSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
         {
+            EmployeeSalaryDetail salaryBreakup = null;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(EmployeeId, typeof(long), "_EmployeeId"),
@@ -312,31 +313,30 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("No group found for the current employee salary package. Please create one.");
 
             if (!string.IsNullOrEmpty(salaryGroup.SalaryComponents))
+            {
                 salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-            else
-                salaryGroup.GroupComponents = new List<SalaryComponents>();
 
-            EmployeeSalaryDetail salaryBreakup = null;
-            if (resultSet.Tables[1].Rows.Count == 1)
-            {
-                salaryBreakup = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[1]);
-                if (salaryBreakup == null)
-                    throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
-                if (employeeDeclaration.SalaryDetail != null)
-                    salaryBreakup.CTC = employeeDeclaration.SalaryDetail.CTC;
-            }
-            else
-            {
-                salaryBreakup = new EmployeeSalaryDetail
+                if (resultSet.Tables[1].Rows.Count == 1)
                 {
-                    CompleteSalaryDetail = "[]",
-                    CTC = employeeDeclaration.SalaryDetail.CTC,
-                    EmployeeId = EmployeeId,
-                    GrossIncome = 0,
-                    GroupId = 0,
-                    NetSalary = 0,
-                    TaxDetail = "[]"
-                };
+                    salaryBreakup = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[1]);
+                    if (salaryBreakup == null)
+                        throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
+                    if (employeeDeclaration.SalaryDetail != null)
+                        salaryBreakup.CTC = employeeDeclaration.SalaryDetail.CTC;
+                }
+                else
+                {
+                    salaryBreakup = new EmployeeSalaryDetail
+                    {
+                        CompleteSalaryDetail = "[]",
+                        CTC = employeeDeclaration.SalaryDetail.CTC,
+                        EmployeeId = EmployeeId,
+                        GrossIncome = 0,
+                        GroupId = 0,
+                        NetSalary = 0,
+                        TaxDetail = "[]"
+                    };
+                }
             }
 
             return (salaryBreakup, salaryGroup);
@@ -345,6 +345,9 @@ namespace ServiceLayer.Code
         public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
         {
             (EmployeeSalaryDetail salaryBreakup, SalaryGroup salaryGroup) = GetEmployeeSalaryDetail(EmployeeId, employeeDeclaration, CTC);
+
+            if (salaryBreakup == null)
+                return null;
 
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
             var annualSalaryBreakups = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.CTC);
