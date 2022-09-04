@@ -311,7 +311,10 @@ namespace ServiceLayer.Code
             if (salaryGroup == null)
                 throw new HiringBellException("No group found for the current employee salary package. Please create one.");
 
-            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+            if (!string.IsNullOrEmpty(salaryGroup.SalaryComponents))
+                salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+            else
+                salaryGroup.GroupComponents = new List<SalaryComponents>();
 
             EmployeeSalaryDetail salaryBreakup = null;
             if (resultSet.Tables[1].Rows.Count == 1)
