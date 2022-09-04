@@ -664,7 +664,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Designation is a mandatory field.", FieldName = nameof(employee.DesignationId), FieldValue = employee.DesignationId.ToString() };
 
             if (employee.ReportingManagerId < 0)
-                throw new HiringBellException { UserMessage = "Reporting Manager is a mandatory field.", FieldName = nameof(employee.ReportingManagerId), FieldValue = employee.ReportingManagerId.ToString() };
+                employee.ReportingManagerId = 0;
 
             if (employee.UserTypeId <= 0)
                 throw new HiringBellException { UserMessage = "User Type is a mandatory field.", FieldName = nameof(employee.UserTypeId), FieldValue = employee.UserTypeId.ToString() };
