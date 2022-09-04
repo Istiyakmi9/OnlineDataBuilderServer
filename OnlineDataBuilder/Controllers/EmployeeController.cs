@@ -7,6 +7,7 @@ using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -112,9 +113,9 @@ namespace OnlineDataBuilder.Controllers
                     return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new HiringBellException(ex.Message, ex);
             }
         }
     }
