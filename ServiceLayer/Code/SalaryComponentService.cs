@@ -467,9 +467,16 @@ namespace ServiceLayer.Code
         {
             SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC });
             if (salaryGroup == null)
-                throw new HiringBellException("Unable to get salary group. Please contact admin");
+            {
+                salaryGroup = new SalaryGroup
+                {
+                    CTC = CTC,
+                    GroupComponents = new List<SalaryComponents>()
+                };
+            }
+            else
+                salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
 
-            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
             return salaryGroup.GroupComponents;
         }
 
