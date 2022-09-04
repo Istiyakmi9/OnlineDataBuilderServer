@@ -16,7 +16,7 @@ namespace ModalLayer.Modal.Accounts
         public string FullAddress { set; get; }
         public string PANNumber { set; get; }
         public string TradeLicenseNumber { set; get; }
-        public string GSTINNumber { set; get; }
+        public string GSTNO { set; get; }
         public string LegalDocumentPath { set; get; }
         public string LegalEntity { set; get; }
         public string LegalNameOfCompany { set; get; }
@@ -25,6 +25,10 @@ namespace ModalLayer.Modal.Accounts
         public DateTime UpdatedOn { set; get; }
         public string MobileNo { get; set; }
         public string Email { get; set; }
+        public string FirstEmail { set; get; }
+        public string SecondEmail { set; get; }
+        public string ThirdEmail { set; get; }
+        public string ForthEmail { set; get; }
         public string PrimaryPhoneNo { get; set; }
         public string SecondaryPhoneNo { get; set; }
         public string Fax { get; set; }
@@ -34,5 +38,9 @@ namespace ModalLayer.Modal.Accounts
         public string ForthAddress { get; set; }
         public int Pincode { get; set; }
         public long FileId { set; get; }
+        public string AccountNo { set; get; }
+        public string BankName { set; get; }
+        public string BranchName { set; get; }
+        public string IFSC { set; get; }
     }
 }

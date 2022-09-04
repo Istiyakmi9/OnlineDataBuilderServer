@@ -75,7 +75,7 @@ namespace ServiceLayer.Code
                 org.City = organizationSettings.City;
                 org.Country = organizationSettings.Country;
                 org.FullAddress = organizationSettings.FullAddress;
-                org.GSTINNumber = organizationSettings.GSTINNumber;
+                org.GSTNO = organizationSettings.GSTNO;
                 org.InCorporationDate = organizationSettings.InCorporationDate;
                 org.LegalDocumentPath = organizationSettings.LegalDocumentPath;
                 org.LegalEntity = organizationSettings.LegalEntity;
@@ -143,7 +143,7 @@ namespace ServiceLayer.Code
                     org.City,
                     org.Country,
                     org.FullAddress,
-                    org.GSTINNumber,
+                    org.GSTNO,
                     org.InCorporationDate,
                     org.LegalDocumentPath,
                     org.LegalEntity,
