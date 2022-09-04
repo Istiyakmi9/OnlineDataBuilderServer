@@ -125,7 +125,7 @@ namespace ServiceLayer.Code
                 company.City = companyInfo.City;
                 company.Country = companyInfo.Country;
                 company.FullAddress = companyInfo.FullAddress;
-                company.GSTINNumber = companyInfo.GSTINNumber;
+                company.GSTNO = companyInfo.GSTNO;
                 company.InCorporationDate = companyInfo.InCorporationDate;
                 company.LegalDocumentPath = companyInfo.LegalDocumentPath;
                 company.LegalEntity = companyInfo.LegalEntity;
@@ -200,7 +200,7 @@ namespace ServiceLayer.Code
                     company.FileId,
                     company.PANNumber,
                     company.TradeLicenseNumber,
-                    company.GSTINNumber,
+                    company.GSTNO,
                     company.LegalDocumentPath,
                     company.LegalEntity,
                     company.LegalNameOfCompany,
