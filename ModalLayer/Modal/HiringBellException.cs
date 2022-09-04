@@ -10,7 +10,7 @@ namespace ModalLayer.Modal
         public HttpStatusCode HttpStatusCode { set; get; } = HttpStatusCode.BadRequest;
         public string FieldName { set; get; } = null;
         public string FieldValue { set; get; } = null;
-        public string StackTrace { set; get; }
+        public override string StackTrace { set; get; }
 
         public HiringBellException() { }
         public HiringBellException(string Message, Exception InnerException) : base(Message, InnerException)
