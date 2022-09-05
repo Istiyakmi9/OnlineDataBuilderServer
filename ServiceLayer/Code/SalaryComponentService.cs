@@ -153,41 +153,46 @@ namespace ServiceLayer.Code
                 int count = _db.BatchInsert("sp_salary_components_insupd", table, true);
                 if (count > 0)
                 {
-                    foreach (var item in result)
+                    if (result.Count > 0)
                     {
-                        var modified = salaryComponents.Find(x => x.ComponentId == item.ComponentId);
-                        if (modified != null)
+                        finalResult = result;
+                        foreach (var newComponents in salaryComponents)
                         {
-                            item.ComponentFullName = modified.ComponentFullName;
-                            item.AdHocId = modified.AdHocId;
-                            item.AdminId = modified.AdminId;
-                            item.ComponentId = modified.ComponentId;
-                            item.ComponentDescription = modified.ComponentDescription;
-                            item.CalculateInPercentage = modified.CalculateInPercentage;
-                            item.TaxExempt = modified.TaxExempt;
-                            item.ComponentTypeId = modified.ComponentTypeId;
-                            item.ComponentCatagoryId = modified.ComponentCatagoryId;
-                            item.PercentageValue = modified.PercentageValue;
-                            item.MaxLimit = modified.MaxLimit;
-                            item.DeclaredValue = modified.DeclaredValue;
-                            item.Formula = modified.Formula;
-                            item.EmployeeContribution = modified.EmployeeContribution;
-                            item.EmployerContribution = modified.EmployerContribution;
-                            item.IncludeInPayslip = modified.IncludeInPayslip;
-                            item.IsAdHoc = modified.IsAdHoc;
-                            item.Section = modified.Section;
-                            item.SectionMaxLimit = modified.SectionMaxLimit;
-                            item.IsAffectInGross = modified.IsAffectInGross;
-                            item.RequireDocs = modified.RequireDocs;
-                            item.IsOpted = modified.IsOpted;
-                            item.IsActive = modified.IsActive;
+                            var existing = finalResult.Find(x => x.ComponentId == newComponents.ComponentId);
+                            if (existing != null)
+                            {
+                                existing.ComponentFullName = newComponents.ComponentFullName;
+                                existing.AdHocId = newComponents.AdHocId;
+                                existing.AdminId = newComponents.AdminId;
+                                existing.ComponentId = newComponents.ComponentId;
+                                existing.ComponentDescription = newComponents.ComponentDescription;
+                                existing.CalculateInPercentage = newComponents.CalculateInPercentage;
+                                existing.TaxExempt = newComponents.TaxExempt;
+                                existing.ComponentTypeId = newComponents.ComponentTypeId;
+                                existing.ComponentCatagoryId = newComponents.ComponentCatagoryId;
+                                existing.PercentageValue = newComponents.PercentageValue;
+                                existing.MaxLimit = newComponents.MaxLimit;
+                                existing.DeclaredValue = newComponents.DeclaredValue;
+                                existing.Formula = newComponents.Formula;
+                                existing.EmployeeContribution = newComponents.EmployeeContribution;
+                                existing.EmployerContribution = newComponents.EmployerContribution;
+                                existing.IncludeInPayslip = newComponents.IncludeInPayslip;
+                                existing.IsAdHoc = newComponents.IsAdHoc;
+                                existing.Section = newComponents.Section;
+                                existing.SectionMaxLimit = newComponents.SectionMaxLimit;
+                                existing.IsAffectInGross = newComponents.IsAffectInGross;
+                                existing.RequireDocs = newComponents.RequireDocs;
+                                existing.IsOpted = newComponents.IsOpted;
+                                existing.IsActive = newComponents.IsActive;
+                            }
+                            else
+                                finalResult.Add(newComponents);
+                        }
 
-                            finalResult.Add(item);
-                        }
-                        else
-                        {
-                            finalResult.Add(item);
-                        }
+                    }
+                    else
+                    {
+                        finalResult = salaryComponents;
                     }
                 }
                 else
