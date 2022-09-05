@@ -109,7 +109,6 @@ namespace ServiceLayer.Code
             {
                 company.OrganizationName = companyInfo.OrganizationName;
                 company.CompanyName = companyInfo.CompanyName;
-                company.CompanyId = companyInfo.CompanyId;
                 company.CompanyDetail = companyInfo.CompanyDetail;
                 company.FirstAddress = companyInfo.FirstAddress;
                 company.SecondAddress = companyInfo.SecondAddress;
@@ -119,6 +118,10 @@ namespace ServiceLayer.Code
                 company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
                 company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
                 company.Fax = companyInfo.Fax;
+                company.FirstEmail = companyInfo.FirstEmail;
+                company.SecondEmail = companyInfo.SecondEmail;
+                company.ThirdEmail = companyInfo.ThirdEmail;
+                company.ForthEmail = companyInfo.ForthEmail;
                 company.Pincode = companyInfo.Pincode;
                 company.FileId = companyInfo.FileId;
                 company.MobileNo = companyInfo.MobileNo;
@@ -135,6 +138,10 @@ namespace ServiceLayer.Code
                 company.State = companyInfo.State;
                 company.TradeLicenseNumber = companyInfo.TradeLicenseNumber;
                 company.TypeOfBusiness = companyInfo.TypeOfBusiness;
+                company.AccountNo = companyInfo.AccountNo;
+                company.BankName = companyInfo.BankName;
+                company.BranchName = companyInfo.BranchName;
+                company.IFSC = companyInfo.IFSC;
             }
             int i = 0;
             string signatureWithStamp = String.Empty;
@@ -164,7 +171,6 @@ namespace ServiceLayer.Code
                 File.Delete(signatureWithoutStamp);
                 File.Delete(signatureWithStamp);
                 File.Delete(companyLogo);
-
             }
             else
             {
@@ -193,6 +199,10 @@ namespace ServiceLayer.Code
                     company.FullAddress,
                     company.MobileNo,
                     company.Email,
+                    company.FirstEmail,
+                    company.SecondEmail,
+                    company.ThirdEmail,
+                    company.ForthEmail,
                     company.PrimaryPhoneNo,
                     company.SecondaryPhoneNo,
                     company.Fax,
@@ -205,7 +215,11 @@ namespace ServiceLayer.Code
                     company.LegalEntity,
                     company.LegalNameOfCompany,
                     company.TypeOfBusiness,
-                    company.InCorporationDate
+                    company.InCorporationDate,
+                    company.AccountNo,
+                    company.BankName,
+                    company.BranchName,
+                    company.IFSC
                 },
                 true
             );
