@@ -45,28 +45,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("InsertUpdateCompanyDetail")]
-        public IResponse<ApiResponse> InsertUpdateCompanyDetail()
-        {
-            StringValues compnyinfo = default(string);
-            OrganizationSettings org = null;
-            _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
-            if (compnyinfo.Count > 0)
-            {
-                OrganizationSettings organizationSettings = JsonConvert.DeserializeObject<OrganizationSettings>(compnyinfo);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                org = _settingService.InsertUpdateCompanyDetailService(organizationSettings, files);
-            }
-            return BuildResponse(org);
-        }
-
-        [HttpPut("UpdateCompanyAccounts")]
-        public IResponse<ApiResponse> UpdateCompanyAccounts(BankDetail bankDetail)
-        {
-            BankDetail org = _settingService.UpdateCompanyAccountsService(bankDetail);
-            return BuildResponse(org);
-        }
-
         [HttpPost("PfEsiSetting")]
         public IResponse<ApiResponse> PfEsiSetting()
         {

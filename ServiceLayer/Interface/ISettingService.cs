@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using ModalLayer.Modal.Accounts;
+﻿using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
@@ -8,10 +7,8 @@ namespace ServiceLayer.Interface
     {
         string AddUpdateComponentService(SalaryComponents salaryComponents);
         dynamic GetSalaryComponentService();
-        OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings, IFormFileCollection fileCollection);
-        BankDetail UpdateCompanyAccountsService(BankDetail bankDetail);
         string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting);
-        List<OrganizationSettings> GetOrganizationInfo();
+        List<OrganizationDetail> GetOrganizationInfo();
         BankDetail GetOrganizationBankDetailInfoService(int organizationId);
         string InsertUpdatePayrollSetting(Payroll payroll);
         Payroll GetPayrollSetting(int companyId);

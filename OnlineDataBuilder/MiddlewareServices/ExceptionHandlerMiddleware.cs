@@ -49,7 +49,7 @@ namespace SchoolInMindServer.MiddlewareServices
                 AuthenticationToken = string.Empty,
                 HttpStatusCode = e.HttpStatusCode,
                 HttpStatusMessage = e.UserMessage,
-                ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message }
+                ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message, e.StackTraceDetail }
             });
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;

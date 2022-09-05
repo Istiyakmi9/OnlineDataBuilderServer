@@ -302,7 +302,7 @@ namespace ServiceLayer.Code
 
         private EmployeeArchiveModal GetEmployeeArcheiveCompleteDetail(long EmployeeId)
         {
-            EmployeeArchiveModal employeeArcheiveDeatil = _db.Get<EmployeeArchiveModal>("sp_Employee_GetArcheiveCompleteDetail", new { EmployeeId  = EmployeeId });
+            EmployeeArchiveModal employeeArcheiveDeatil = _db.Get<EmployeeArchiveModal>("sp_Employee_GetArcheiveCompleteDetail", new { EmployeeId = EmployeeId });
             return employeeArcheiveDeatil;
         }
 
@@ -522,7 +522,20 @@ namespace ServiceLayer.Code
             };
 
             if (employee.EmployeeUid > 0 || employee.CTC > 0)
+            {
                 employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
+                if (employeeSalaryDetail == null)
+                {
+                    employeeSalaryDetail = new EmployeeSalaryDetail
+                    {
+                        CTC = 0,
+                        GrossIncome = 0,
+                        NetSalary = 0,
+                        CompleteSalaryDetail = "[]",
+                        TaxDetail = "[]",
+                    };
+                }
+            }
 
             return await Task.Run(() =>
             {
@@ -664,7 +677,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Designation is a mandatory field.", FieldName = nameof(employee.DesignationId), FieldValue = employee.DesignationId.ToString() };
 
             if (employee.ReportingManagerId < 0)
-                throw new HiringBellException { UserMessage = "Reporting Manager is a mandatory field.", FieldName = nameof(employee.ReportingManagerId), FieldValue = employee.ReportingManagerId.ToString() };
+                employee.ReportingManagerId = 0;
 
             if (employee.UserTypeId <= 0)
                 throw new HiringBellException { UserMessage = "User Type is a mandatory field.", FieldName = nameof(employee.UserTypeId), FieldValue = employee.UserTypeId.ToString() };

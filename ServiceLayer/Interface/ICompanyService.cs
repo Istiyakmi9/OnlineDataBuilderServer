@@ -6,11 +6,12 @@ namespace ServiceLayer.Interface
 {
     public interface ICompanyService
     {
-        List<OrganizationSettings> GetAllCompany();
-        List<OrganizationSettings> AddCompanyGroup(OrganizationSettings companyGroup);
-        List<OrganizationSettings> UpdateCompanyGroup(OrganizationSettings companyGroup, int companyId);
+        List<OrganizationDetail> GetAllCompany();
+        List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup);
+        List<OrganizationDetail> UpdateCompanyGroup(OrganizationDetail companyGroup, int companyId);
         dynamic GetCompanyById(int companyId);
-        OrganizationSettings UpdateCompanyDetails(OrganizationSettings companyInfo, IFormFileCollection fileCollection);
+        dynamic GetOrganizationDetailService();
+        OrganizationDetail InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
         BankDetail InsertUpdateCompanyAccounts(BankDetail bankDetail);
         BankDetail GetCompanyBankDetail(int OrganizationId, int CompanyId);
 

@@ -26,20 +26,20 @@ namespace ServiceLayer.Code
             _fileService = fileService;
             _currentSession = currentSession;
         }
-        public List<OrganizationSettings> GetAllCompany()
+        public List<OrganizationDetail> GetAllCompany()
         {
-            var result = _db.GetList<OrganizationSettings>("sp_company_get", false);
+            var result = _db.GetList<OrganizationDetail>("sp_company_get", false);
             return result;
         }
 
-        public List<OrganizationSettings> UpdateCompanyGroup(OrganizationSettings companyGroup, int companyId)
+        public List<OrganizationDetail> UpdateCompanyGroup(OrganizationDetail companyGroup, int companyId)
         {
             if (companyId <= 0)
             {
                 throw new HiringBellException("Invalid compnay id. Unable to update detail.");
             }
 
-            OrganizationSettings companyGrp = _db.Get<OrganizationSettings>("sp_company_getById", new { CompanyId = companyId });
+            OrganizationDetail companyGrp = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = companyId });
             if (companyGrp == null)
                 throw new HiringBellException("Compnay detail not found");
 
@@ -48,18 +48,18 @@ namespace ServiceLayer.Code
             companyGrp.CompanyDetail = companyGroup.CompanyDetail;
 
 
-            var value = _db.Execute<OrganizationSettings>("sp_company_intupd", companyGrp, true);
+            var value = _db.Execute<OrganizationDetail>("sp_company_intupd", companyGrp, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
             return this.GetAllCompany();
         }
 
-        public List<OrganizationSettings> AddCompanyGroup(OrganizationSettings companyGroup)
+        public List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup)
         {
-            List<OrganizationSettings> companyGrp = null;
-            companyGrp = _db.GetList<OrganizationSettings>("sp_company_get", false);
-            OrganizationSettings result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
+            List<OrganizationDetail> companyGrp = null;
+            companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
+            OrganizationDetail result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
             if (result != null)
             {
                 throw new HiringBellException("Company Already exist.");
@@ -69,7 +69,7 @@ namespace ServiceLayer.Code
                 result = companyGroup;
             }
 
-            var value = _db.Execute<OrganizationSettings>("sp_company_intupd", result, true);
+            var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
@@ -77,21 +77,28 @@ namespace ServiceLayer.Code
             return companyGrp;
         }
 
-
-
         public dynamic GetCompanyById(int CompanyId)
         {
-            OrganizationSettings result = _db.Get<OrganizationSettings>("sp_company_getById", new { CompanyId });
+            OrganizationDetail result = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId });
             List<Files> files = _db.GetList<Files>("sp_Files_GetBy_OwnerId", new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
             return new { OrganizationDetail = result, Files = files };
         }
 
-        public OrganizationSettings UpdateCompanyDetails(OrganizationSettings companyInfo, IFormFileCollection fileCollection)
+        public dynamic GetOrganizationDetailService()
         {
-            OrganizationSettings company = new OrganizationSettings();
-            if (companyInfo.CompanyId <= 0)
-                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+            var ResultSet = _db.GetDataset("sp_organization_detail_get");
+            if (ResultSet.Tables.Count != 2)
+                throw new HiringBellException("Unable to get organization detail.");
 
+            OrganizationDetail organizationDetail = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
+            FileDetail fileDetail = Converter.ToType<FileDetail>(ResultSet.Tables[1]);
+
+            return new { OrganizationDetail = organizationDetail, Files = fileDetail };
+        }
+
+        public OrganizationDetail InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        {
+            OrganizationDetail company = new OrganizationDetail();
             if (string.IsNullOrEmpty(companyInfo.Email))
                 throw new HiringBellException("Invalid organization email.");
 
@@ -101,11 +108,9 @@ namespace ServiceLayer.Code
             if (companyInfo.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
 
-            company = _db.Get<OrganizationSettings>("sp_company_getById", new { companyInfo.CompanyId });
+            company = _db.Get<OrganizationDetail>("sp_company_getById", new { companyInfo.CompanyId });
 
-            if (company == null)
-                throw new HiringBellException("Company doesn't exist.");
-            else
+            if (company != null)
             {
                 company.OrganizationName = companyInfo.OrganizationName;
                 company.CompanyName = companyInfo.CompanyName;
@@ -128,21 +133,153 @@ namespace ServiceLayer.Code
                 company.City = companyInfo.City;
                 company.Country = companyInfo.Country;
                 company.FullAddress = companyInfo.FullAddress;
-                company.GSTNO = companyInfo.GSTNO;
+                company.GSTNo = companyInfo.GSTNo;
                 company.InCorporationDate = companyInfo.InCorporationDate;
                 company.LegalDocumentPath = companyInfo.LegalDocumentPath;
                 company.LegalEntity = companyInfo.LegalEntity;
                 company.LegalNameOfCompany = companyInfo.LegalNameOfCompany;
-                company.PANNumber = companyInfo.PANNumber;
+                company.PANNo = companyInfo.PANNo;
                 company.SectorType = companyInfo.SectorType;
                 company.State = companyInfo.State;
-                company.TradeLicenseNumber = companyInfo.TradeLicenseNumber;
+                company.TradeLicenseNo = companyInfo.TradeLicenseNo;
                 company.TypeOfBusiness = companyInfo.TypeOfBusiness;
                 company.AccountNo = companyInfo.AccountNo;
                 company.BankName = companyInfo.BankName;
-                company.BranchName = companyInfo.BranchName;
+                company.Branch = companyInfo.Branch;
                 company.IFSC = companyInfo.IFSC;
             }
+            else
+                company = companyInfo;
+
+
+            company.IsPrimaryCompany = true;
+            company.FixedComponentsId = "[]";
+
+            var status = _db.Execute<OrganizationDetail>("sp_organization_intupd", company, true);
+
+            if (string.IsNullOrEmpty(status))
+                throw new HiringBellException("Fail to insert or update.");
+
+            if (fileCollection.Count == 1)
+            {
+                UpdateOrganizationLogo(companyInfo, fileCollection);
+            }
+
+            return company;
+        }
+
+        private void UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        {
+            string companyLogo = String.Empty;
+            try
+            {
+                if (fileCollection.Count == 1)
+                    companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[0].Name);
+
+                if (File.Exists(companyLogo))
+                    File.Delete(companyLogo);
+                else
+                {
+                    FileDetail fileDetailWSig = new FileDetail();
+                    fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, companyLogo);
+                }
+
+                var files = fileCollection.Select(x => new Files
+                {
+                    FileUid = companyInfo.FileId,
+                    FileName = x.Name,
+                    Email = companyInfo.Email,
+                    FileExtension = string.Empty
+                }).ToList<Files>();
+                _fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (companyInfo.OrganizationId).ToString());
+
+                var fileInfo = (from n in files
+                                select new
+                                {
+                                    FileId = n.FileUid,
+                                    FileOwnerId = companyInfo.CompanyId,
+                                    FilePath = n.FilePath,
+                                    FileName = n.FileName,
+                                    FileExtension = n.FileExtension,
+                                    ItemStatusId = 0,
+                                    PaidOn = DateTime.Now,
+                                    UserTypeId = (int)UserType.Compnay,
+                                    CreatedBy = _currentSession.CurrentUserDetail.UserId,
+                                    UpdatedBy = _currentSession.CurrentUserDetail.UserId,
+                                    CreatedOn = DateTime.Now,
+                                    UpdatedOn = DateTime.Now
+                                }); ;
+
+                DataTable table = Converter.ToDataTable(fileInfo);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                int insertedCount = _db.BatchInsert("sp_Files_InsUpd", table, false);
+                _db.Commit();
+            }
+            catch
+            {
+                _db.RollBack();
+                if (File.Exists(companyLogo))
+                    File.Delete(companyLogo);
+
+                throw;
+            }
+        }
+
+        public OrganizationDetail InsertUpdateCompanyDetails(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        {
+            OrganizationDetail company = new OrganizationDetail();
+            if (string.IsNullOrEmpty(companyInfo.Email))
+                throw new HiringBellException("Invalid organization email.");
+
+            if (string.IsNullOrEmpty(companyInfo.CompanyName))
+                throw new HiringBellException("Invalid company name.");
+
+            if (companyInfo.OrganizationName == null)
+                throw new HiringBellException("Invalid Orgznization Name");
+
+            company = _db.Get<OrganizationDetail>("sp_company_getById", new { companyInfo.CompanyId });
+
+            if (company != null)
+            {
+                company.OrganizationName = companyInfo.OrganizationName;
+                company.CompanyName = companyInfo.CompanyName;
+                company.CompanyDetail = companyInfo.CompanyDetail;
+                company.FirstAddress = companyInfo.FirstAddress;
+                company.SecondAddress = companyInfo.SecondAddress;
+                company.ThirdAddress = companyInfo.ThirdAddress;
+                company.ForthAddress = companyInfo.ForthAddress;
+                company.Email = companyInfo.Email;
+                company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
+                company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
+                company.Fax = companyInfo.Fax;
+                company.FirstEmail = companyInfo.FirstEmail;
+                company.SecondEmail = companyInfo.SecondEmail;
+                company.ThirdEmail = companyInfo.ThirdEmail;
+                company.ForthEmail = companyInfo.ForthEmail;
+                company.Pincode = companyInfo.Pincode;
+                company.FileId = companyInfo.FileId;
+                company.MobileNo = companyInfo.MobileNo;
+                company.City = companyInfo.City;
+                company.Country = companyInfo.Country;
+                company.FullAddress = companyInfo.FullAddress;
+                company.GSTNo = companyInfo.GSTNo;
+                company.InCorporationDate = companyInfo.InCorporationDate;
+                company.LegalDocumentPath = companyInfo.LegalDocumentPath;
+                company.LegalEntity = companyInfo.LegalEntity;
+                company.LegalNameOfCompany = companyInfo.LegalNameOfCompany;
+                company.PANNo = companyInfo.PANNo;
+                company.SectorType = companyInfo.SectorType;
+                company.State = companyInfo.State;
+                company.TradeLicenseNo = companyInfo.TradeLicenseNo;
+                company.TypeOfBusiness = companyInfo.TypeOfBusiness;
+                company.AccountNo = companyInfo.AccountNo;
+                company.BankName = companyInfo.BankName;
+                company.Branch = companyInfo.Branch;
+                company.IFSC = companyInfo.IFSC;
+            }
+            else
+                company = companyInfo;
+
             int i = 0;
             string signatureWithStamp = String.Empty;
             string signatureWithoutStamp = String.Empty;
@@ -181,48 +318,9 @@ namespace ServiceLayer.Code
                 fileDetailWOSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
             }
 
-            var status = _db.Execute<OrganizationSettings>("sp_company_intupd",
-                new
-                {
-                    company.CompanyId,
-                    company.OrganizationName,
-                    company.CompanyName,
-                    company.CompanyDetail,
-                    company.SectorType,
-                    company.Country,
-                    company.State,
-                    company.City,
-                    company.FirstAddress,
-                    company.SecondAddress,
-                    company.ThirdAddress,
-                    company.ForthAddress,
-                    company.FullAddress,
-                    company.MobileNo,
-                    company.Email,
-                    company.FirstEmail,
-                    company.SecondEmail,
-                    company.ThirdEmail,
-                    company.ForthEmail,
-                    company.PrimaryPhoneNo,
-                    company.SecondaryPhoneNo,
-                    company.Fax,
-                    company.Pincode,
-                    company.FileId,
-                    company.PANNumber,
-                    company.TradeLicenseNumber,
-                    company.GSTNO,
-                    company.LegalDocumentPath,
-                    company.LegalEntity,
-                    company.LegalNameOfCompany,
-                    company.TypeOfBusiness,
-                    company.InCorporationDate,
-                    company.AccountNo,
-                    company.BankName,
-                    company.BranchName,
-                    company.IFSC
-                },
-                true
-            );
+            company.IsPrimaryCompany = true;
+            company.FixedComponentsId = "[]";
+            var status = _db.Execute<OrganizationDetail>("sp_organization_intupd", company, true);
 
             if (string.IsNullOrEmpty(status))
             {
@@ -275,14 +373,14 @@ namespace ServiceLayer.Code
         {
             BankDetail bank = null;
 
-            if (bankDetail.OrganizationId <= 0)
+            if (bankDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid organization detail submitted. Please login again.");
             if (bankDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid company detail submitted. Please login again.");
-            if (string.IsNullOrEmpty(bankDetail.AccountNumber))
+            if (string.IsNullOrEmpty(bankDetail.AccountNo))
                 throw new HiringBellException("Invalid account number submitted.");
 
-            bank = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { OrganizationId = bankDetail.OrganizationId, CompanyId = bankDetail.CompanyId });
+            bank = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { CompanyId = bankDetail.CompanyId });
 
             if (bank == null)
                 bank = bankDetail;
@@ -290,18 +388,15 @@ namespace ServiceLayer.Code
             {
                 bank.BankAccountId = bankDetail.BankAccountId;
                 bank.CompanyId = bankDetail.CompanyId;
-                bank.AccountNumber = bankDetail.AccountNumber;
+                bank.AccountNo = bankDetail.AccountNo;
                 bank.BankName = bankDetail.BankName;
                 bank.Branch = bankDetail.Branch;
-                bank.IFSCCode = bankDetail.IFSCCode;
-                bank.IsUser = bankDetail.IsUser;
+                bank.IFSC = bankDetail.IFSC;
                 bank.OpeningDate = bankDetail.OpeningDate;
                 bank.BranchCode = bankDetail.BranchCode;
-                bank.UserId = bankDetail.UserId;
-                bank.OrganizationId = bankDetail.OrganizationId;
-                bank.PANNumber = bankDetail.PANNumber;
-                bank.GSTINNumber = bankDetail.GSTINNumber;
-                bank.TradeLiecenceNumber = bankDetail.TradeLiecenceNumber;
+                bank.PANNo = bankDetail.PANNo;
+                bank.GSTNo = bankDetail.GSTNo;
+                bank.TradeLicenseNo = bankDetail.TradeLicenseNo;
             }
 
             var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd", bank, true);
