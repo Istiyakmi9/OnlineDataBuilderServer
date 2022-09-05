@@ -1,14 +1,11 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -40,210 +37,6 @@ namespace ServiceLayer.Code
             PfEsiSetting pfEsiSettings = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get");
             var value = new { SalaryComponent = salaryComponents, PfEsiSettings = pfEsiSettings };
             return value;
-        }
-
-        public OrganizationSettings InsertUpdateCompanyDetailService(OrganizationSettings organizationSettings, IFormFileCollection fileCollection)
-        {
-            OrganizationSettings org = null;
-            if (organizationSettings.OrganizationId <= 0)
-                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
-
-            if (string.IsNullOrEmpty(organizationSettings.Email))
-                throw new HiringBellException("Invalid organization email.");
-
-            if (organizationSettings.OrganizationName == null)
-                throw new HiringBellException("Invalid Orgznization Name");
-
-            org = _db.Get<OrganizationSettings>("sp_organization_setting_getById", new { organizationSettings.OrganizationId, organizationSettings.OrganizationName });
-
-            if (org == null)
-                org = organizationSettings;
-            else
-            {
-                org.OrganizationName = organizationSettings.OrganizationName;
-                org.FirstAddress = organizationSettings.FirstAddress;
-                org.SecondAddress = organizationSettings.SecondAddress;
-                org.ThirdAddress = organizationSettings.ThirdAddress;
-                org.ForthAddress = organizationSettings.ForthAddress;
-                org.Email = organizationSettings.Email;
-                org.PrimaryPhoneNo = organizationSettings.PrimaryPhoneNo;
-                org.SecondaryPhoneNo = organizationSettings.SecondaryPhoneNo;
-                org.Fax = organizationSettings.Fax;
-                org.Pincode = organizationSettings.Pincode;
-                org.FileId = organizationSettings.FileId;
-                org.MobileNo = organizationSettings.MobileNo;
-                org.City = organizationSettings.City;
-                org.Country = organizationSettings.Country;
-                org.FullAddress = organizationSettings.FullAddress;
-                org.GSTNO = organizationSettings.GSTNO;
-                org.InCorporationDate = organizationSettings.InCorporationDate;
-                org.LegalDocumentPath = organizationSettings.LegalDocumentPath;
-                org.LegalEntity = organizationSettings.LegalEntity;
-                org.LegalNameOfCompany = organizationSettings.LegalNameOfCompany;
-                org.PANNumber = organizationSettings.PANNumber;
-                org.SectorType = organizationSettings.SectorType;
-                org.State = organizationSettings.State;
-                org.TradeLicenseNumber = organizationSettings.TradeLicenseNumber;
-                org.TypeOfBusiness = organizationSettings.TypeOfBusiness;
-            }
-            int i = 0;
-            string signatureWithStamp = String.Empty;
-            string signatureWithoutStamp = String.Empty;
-            string companyLogo = String.Empty;
-
-            while (i < fileCollection.Count)
-            {
-                if (fileCollection[i].Name == "signwithStamp")
-                {
-                    signatureWithStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                }
-                else if (fileCollection[i].Name == "signwithoutStamp")
-                {
-                    signatureWithoutStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                }
-                else
-                {
-                    companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                }
-
-                i++;
-            }
-
-            if (File.Exists(signatureWithStamp))
-            {
-                File.Delete(signatureWithoutStamp);
-                File.Delete(signatureWithStamp);
-                File.Delete(companyLogo);
-
-            }
-            else
-            {
-                FileDetail fileDetailWSig = new FileDetail();
-                fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
-
-                FileDetail fileDetailWOSig = new FileDetail();
-                fileDetailWOSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
-            }
-
-            var status = _db.Execute<OrganizationSettings>("sp_organization_detail_intupd",
-                new
-                {
-                    org.OrganizationName,
-                    org.FirstAddress,
-                    org.SecondAddress,
-                    org.ThirdAddress,
-                    org.ForthAddress,
-                    org.Email,
-                    org.PrimaryPhoneNo,
-                    org.SecondaryPhoneNo,
-                    org.Fax,
-                    org.Pincode,
-                    org.FileId,
-                    org.MobileNo,
-                    org.City,
-                    org.Country,
-                    org.FullAddress,
-                    org.GSTNO,
-                    org.InCorporationDate,
-                    org.LegalDocumentPath,
-                    org.LegalEntity,
-                    org.LegalNameOfCompany,
-                    org.OrganizationId,
-                    org.PANNumber,
-                    org.SectorType,
-                    org.State,
-                    org.TradeLicenseNumber,
-                    org.TypeOfBusiness
-                },
-                true
-            );
-
-            if (string.IsNullOrEmpty(status))
-            {
-                File.Delete(signatureWithoutStamp);
-                File.Delete(signatureWithStamp);
-                File.Delete(companyLogo);
-                throw new HiringBellException("Fail to insert or update.");
-            }
-            else
-            {
-                if (fileCollection.Count > 0)
-                {
-                    var files = fileCollection.Select(x => new Files
-                    {
-                        FileUid = organizationSettings.FileId,
-                        FileName = x.Name,
-                        Email = organizationSettings.Email,
-                        FileExtension = string.Empty
-                    }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (organizationSettings.OrganizationId).ToString());
-
-                    var fileInfo = (from n in files
-                                    select new
-                                    {
-                                        FileId = n.FileUid,
-                                        FileOwnerId = (organizationSettings.OrganizationId),
-                                        FilePath = n.FilePath,
-                                        FileName = n.FileName,
-                                        FileExtension = n.FileExtension,
-                                        ItemStatusId = 0,
-                                        PaidOn = DateTime.Now,
-                                        UserTypeId = (int)UserType.Admin,
-                                        CreatedBy = _currentSession.CurrentUserDetail.UserId,
-                                        UpdatedBy = _currentSession.CurrentUserDetail.UserId,
-                                        CreatedOn = DateTime.Now,
-                                        UpdatedOn = DateTime.Now
-                                    }); ;
-
-                    DataTable table = Converter.ToDataTable(fileInfo);
-                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_Files_InsUpd", table, false);
-                    _db.Commit();
-                }
-            }
-
-            return org;
-        }
-
-        public BankDetail UpdateCompanyAccountsService(BankDetail bankDetail)
-        {
-            BankDetail bank = null;
-
-            if (bankDetail.OrganizationId <= 0)
-                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
-
-
-            bank = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { bankDetail.OrganizationId });
-
-            if (bank == null)
-                bank = bankDetail;
-            else
-            {
-                bank.AccountNumber = bankDetail.AccountNumber;
-                bank.BankName = bankDetail.BankName;
-                bank.Branch = bankDetail.Branch;
-                bank.IFSCCode = bankDetail.IFSCCode;
-                bank.IsUser = bankDetail.IsUser;
-                bank.OpeningDate = bankDetail.OpeningDate;
-                bank.BranchCode = bankDetail.BranchCode;
-                bank.UserId = bankDetail.UserId;
-                bank.OrganizationId = bankDetail.OrganizationId;
-                bank.PANNumber = bankDetail.PANNumber;
-                bank.GSTINNumber = bankDetail.GSTINNumber;
-                bank.TradeLiecenceNumber = bankDetail.TradeLiecenceNumber;
-            }
-
-            var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd",
-                bank,
-                true
-            );
-
-            if (string.IsNullOrEmpty(status))
-            {
-                throw new HiringBellException("Fail to insert or update.");
-            }
-
-            return bank;
         }
 
         public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
@@ -369,9 +162,9 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public List<OrganizationSettings> GetOrganizationInfo()
+        public List<OrganizationDetail> GetOrganizationInfo()
         {
-            List<OrganizationSettings> organizations = _db.GetList<OrganizationSettings>("sp_organization_setting_get", false);
+            List<OrganizationDetail> organizations = _db.GetList<OrganizationDetail>("sp_organization_setting_get", false);
             return organizations;
         }
 

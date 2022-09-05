@@ -30,30 +30,30 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("AddCompanyGroup")]
-        public IResponse<ApiResponse> AddCompanyGroup(OrganizationSettings companyGroup)
+        public IResponse<ApiResponse> AddCompanyGroup(OrganizationDetail companyGroup)
         {
             var result = _companyService.AddCompanyGroup(companyGroup);
             return BuildResponse(result);
         }
 
         [HttpPut("UpdateCompanyGroup/{companyId}")]
-        public IResponse<ApiResponse> UpdateCompanyGroup([FromRoute] int companyId, [FromBody]OrganizationSettings companyGroup)
+        public IResponse<ApiResponse> UpdateCompanyGroup([FromRoute] int companyId, [FromBody]OrganizationDetail companyGroup)
         {
             var result = _companyService.UpdateCompanyGroup(companyGroup, companyId);
             return BuildResponse(result);
         }
 
-        [HttpPost("UpdateCompanyDetails")]
-        public IResponse<ApiResponse> UpdateCompanyDetails()
+        [HttpPost("InsertUpdateOrganizationDetail")]
+        public IResponse<ApiResponse> InsertUpdateOrganizationDetail()
         {
             StringValues compnyinfo = default(string);
-            OrganizationSettings org = null;
+            OrganizationDetail org = null;
             _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
             if (compnyinfo.Count > 0)
             {
-                OrganizationSettings organizationSettings = JsonConvert.DeserializeObject<OrganizationSettings>(compnyinfo);
+                OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                org = _companyService.UpdateCompanyDetails(organizationSettings, files);
+                org = _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
             }
             return BuildResponse(org);
         }
@@ -62,6 +62,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetCompanyById(int companyId)
         {
             var result = _companyService.GetCompanyById(companyId);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetOrganizationDetail")]
+        public IResponse<ApiResponse> GetOrganizationDetail()
+        {
+            var result = _companyService.GetOrganizationDetailService();
             return BuildResponse(result);
         }
 
