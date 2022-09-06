@@ -48,7 +48,7 @@ namespace OnlineDataBuilder.Controllers
         {
             StringValues compnyinfo = default(string);
             OrganizationDetail org = null;
-            _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
+            _httpContext.Request.Form.TryGetValue("OrganizationInfo", out compnyinfo);
             if (compnyinfo.Count > 0)
             {
                 OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);

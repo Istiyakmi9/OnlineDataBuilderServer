@@ -108,11 +108,19 @@ namespace ServiceLayer.Code
             if (companyInfo.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
 
-            company = _db.Get<OrganizationDetail>("sp_company_getById", new { companyInfo.CompanyId });
+            var ResultSet = _db.GetDataset("sp_organization_detail_get");
+            if (ResultSet.Tables.Count != 2)
+                throw new HiringBellException("Unable to get organization detail.");
 
+            company = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
             if (company != null)
             {
                 company.OrganizationName = companyInfo.OrganizationName;
+                company.OrgEmail = companyInfo.OrgEmail;
+                company.OrgFax = companyInfo.OrgFax;
+                company.OrgMobileNo = companyInfo.OrgMobileNo;
+                company.OrgPrimaryPhoneNo = companyInfo.OrgPrimaryPhoneNo;
+                company.OrgSecondaryPhoneNo = companyInfo.OrgSecondaryPhoneNo;
                 company.CompanyName = companyInfo.CompanyName;
                 company.CompanyDetail = companyInfo.CompanyDetail;
                 company.FirstAddress = companyInfo.FirstAddress;
@@ -147,6 +155,12 @@ namespace ServiceLayer.Code
                 company.BankName = companyInfo.BankName;
                 company.Branch = companyInfo.Branch;
                 company.IFSC = companyInfo.IFSC;
+                company.IsPrimaryCompany = companyInfo.IsPrimaryCompany;
+                company.FixedComponentsId = companyInfo.FixedComponentsId;
+                company.BranchCode=companyInfo.BranchCode;
+                company.OpeningDate= companyInfo.OpeningDate;
+                company.ClosingDate= companyInfo.ClosingDate;
+                company.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             else
                 company = companyInfo;
