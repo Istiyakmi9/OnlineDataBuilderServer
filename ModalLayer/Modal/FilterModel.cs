@@ -11,5 +11,6 @@ namespace ModalLayer.Modal
         public int PageIndex { get; set; }
         public int PageSize { get; set; }
         public string SortBy { get; set; }
+        public int CompanyId { get; set; }
     }
 }

@@ -105,19 +105,10 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(companyInfo.CompanyName))
                 throw new HiringBellException("Invalid company name.");
 
-            if (companyInfo.OrganizationName == null)
-                throw new HiringBellException("Invalid Orgznization Name");
-            if (companyInfo.InCorporationDate != null)
-            {
-                var date = companyInfo.InCorporationDate?.ToString("yyyy/MM/dd");
-                companyInfo.InCorporationDate = Convert.ToDateTime(date);
-
-            }
-
             var ResultSet = _db.GetDataset("sp_organization_detail_get");
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
-            
+
             company = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
             if (company != null)
             {
@@ -163,17 +154,18 @@ namespace ServiceLayer.Code
                 company.IFSC = companyInfo.IFSC;
                 company.IsPrimaryCompany = companyInfo.IsPrimaryCompany;
                 company.FixedComponentsId = companyInfo.FixedComponentsId;
-                company.BranchCode=companyInfo.BranchCode;
-                company.OpeningDate= companyInfo.OpeningDate;
-                company.ClosingDate= companyInfo.ClosingDate;
+                company.BranchCode = companyInfo.BranchCode;
+                company.OpeningDate = companyInfo.OpeningDate;
+                company.ClosingDate = companyInfo.ClosingDate;
                 company.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             else
+            {
                 company = companyInfo;
+                company.IsPrimaryCompany = true;
+                company.FixedComponentsId = "[]";
+            }
 
-
-            company.IsPrimaryCompany = true;
-            company.FixedComponentsId = "[]";
 
             var status = _db.Execute<OrganizationDetail>("sp_organization_intupd", company, true);
 

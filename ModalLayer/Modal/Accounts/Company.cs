@@ -32,7 +32,7 @@ namespace ModalLayer.Modal.Accounts
         public string LegalEntity { set; get; }
         public string LegalNameOfCompany { set; get; }
         public string TypeOfBusiness { set; get; }
-        public DateTime? InCorporationDate { set; get; }
+        public DateTime InCorporationDate { set; get; }
         public bool IsPrimaryCompany { set; get; } = false;
         public string FixedComponentsId { set; get; } = "[]";
     }

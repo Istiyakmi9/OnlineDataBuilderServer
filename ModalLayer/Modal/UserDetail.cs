@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ModalLayer.Modal.Accounts;
+using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace ModalLayer.Modal
@@ -40,5 +42,6 @@ namespace ModalLayer.Modal
     {
         public UserDetail UserDetail { set; get; }
         public DataTable Menu { set; get; }
+        public DataTable Companies { set; get; }
     }
 }
