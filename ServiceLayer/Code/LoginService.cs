@@ -229,6 +229,7 @@ namespace ServiceLayer.Code
 
                         loginResponse.Menu = ds.Tables[1];
                         loginResponse.UserDetail = userDetail;
+                        loginResponse.Companies = _cacheManager.Get(Table.Companies);
                     }
                 }
             }

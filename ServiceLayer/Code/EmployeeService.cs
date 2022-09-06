@@ -142,6 +142,9 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(filterModel.SearchString))
                 filterModel.SearchString = "1=1";
 
+            if (filterModel.CompanyId > 0)
+                filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+
             if (filterModel.IsActive != null && filterModel.IsActive == true)
                 employees = FilterActiveEmployees(filterModel);
             else
