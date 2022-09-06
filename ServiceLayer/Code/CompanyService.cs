@@ -107,11 +107,17 @@ namespace ServiceLayer.Code
 
             if (companyInfo.OrganizationName == null)
                 throw new HiringBellException("Invalid Orgznization Name");
+            if (companyInfo.InCorporationDate != null)
+            {
+                var date = companyInfo.InCorporationDate?.ToString("yyyy/MM/dd");
+                companyInfo.InCorporationDate = Convert.ToDateTime(date);
+
+            }
 
             var ResultSet = _db.GetDataset("sp_organization_detail_get");
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
-
+            
             company = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
             if (company != null)
             {
