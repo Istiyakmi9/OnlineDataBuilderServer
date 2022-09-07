@@ -24,10 +24,10 @@ namespace OnlineDataBuilder.Controllers
             _httpContext = httpContext.HttpContext;
         }
 
-        [HttpGet("GetSalaryComponents")]
-        public IResponse<ApiResponse> GetSalaryComponents()
+        [HttpGet("GetSalaryComponents/{CompanyId}")]
+        public IResponse<ApiResponse> GetSalaryComponents(int CompanyId)
         {
-            var result = _settingService.GetSalaryComponentService();
+            var result = _settingService.GetSalaryComponentService(CompanyId);
             return BuildResponse(result);
         }
 
@@ -45,25 +45,11 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("PfEsiSetting")]
-        public IResponse<ApiResponse> PfEsiSetting()
+        [HttpPut("PfEsiSetting/{CompanyId}")]
+        public IResponse<ApiResponse> PfEsiSetting([FromRoute] int CompanyId, [FromBody] PfEsiSetting pfesiSetting)
         {
-            StringValues pfSetting = default(string);
-            StringValues esiSetting = default(string);
-            StringValues pfesiSetting = default(string);
-            _httpContext.Request.Form.TryGetValue("PFSetting", out pfSetting);
-            _httpContext.Request.Form.TryGetValue("ESISetting", out esiSetting);
-            _httpContext.Request.Form.TryGetValue("PFESISetting", out pfesiSetting);
-
-            if (pfSetting.Count > 0 && esiSetting.Count > 0 && pfesiSetting.Count > 0)
-            {
-                var PfSetting = JsonConvert.DeserializeObject<SalaryComponents>(pfSetting);
-                var EsiSetting = JsonConvert.DeserializeObject<SalaryComponents>(esiSetting);
-                var PfesiSetting = JsonConvert.DeserializeObject<PfEsiSetting>(pfesiSetting);
-                var result = _settingService.PfEsiSetting(PfSetting, EsiSetting, PfesiSetting);
-                return BuildResponse(result);
-            }
-            return BuildResponse(null);
+            var result = _settingService.PfEsiSetting(CompanyId, pfesiSetting);
+            return BuildResponse(result);
         }
 
         [HttpPost("InsertUpdatePayrollSetting")]

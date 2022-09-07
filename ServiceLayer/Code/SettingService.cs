@@ -31,135 +31,54 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public dynamic GetSalaryComponentService()
+        public PfEsiSetting GetSalaryComponentService(int CompanyId)
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
-            PfEsiSetting pfEsiSettings = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get");
-            var value = new { SalaryComponent = salaryComponents, PfEsiSettings = pfEsiSettings };
-            return value;
+            PfEsiSetting pfEsiSettings = new PfEsiSetting();
+            var value= _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
+            if (value != null)
+                pfEsiSettings = value;
+
+            return pfEsiSettings;
         }
 
-        public string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting)
+        public PfEsiSetting PfEsiSetting(int CompanyId, PfEsiSetting pfesiSetting)
         {
             string value = string.Empty;
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
-            var pfsetting = salaryComponents.Find(x => x.ComponentId == PfSetting.ComponentId);
-            var esisetting = salaryComponents.Find(x => x.ComponentId == EsiSetting.ComponentId);
-
-            if (pfsetting == null)
-                pfsetting = PfSetting;
-            else
+            pfesiSetting.Admin = _currentSession.CurrentUserDetail.UserId;
+            var existing = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
+            if (existing != null)
             {
-                pfsetting.CalculateInPercentage = PfSetting.CalculateInPercentage;
-                pfsetting.EmployerContribution = PfSetting.EmployerContribution;
-                pfsetting.IsActive = PfSetting.IsActive;
-                pfsetting.MaxLimit = PfSetting.MaxLimit;
-                pfsetting.DeclaredValue = PfSetting.DeclaredValue;
-                pfsetting.IncludeInPayslip = PfSetting.IncludeInPayslip;
+                existing.PFEnable=pfesiSetting.PFEnable;
+                existing.IsPfAmountLimitStatutory=pfesiSetting.IsPfAmountLimitStatutory;
+                existing.IsPfCalculateInPercentage=pfesiSetting.IsPfCalculateInPercentage;
+                existing.IsAllowOverridingPf=pfesiSetting.IsAllowOverridingPf;
+                existing.IsPfEmployerContribution=pfesiSetting.IsPfEmployerContribution;
+                existing.IsHidePfEmployer=pfesiSetting.IsHidePfEmployer;
+                existing.IsPayOtherCharges=pfesiSetting.IsPayOtherCharges;
+                existing.IsAllowVPF=pfesiSetting.IsAllowVPF;
+                existing.EsiEnable=pfesiSetting.EsiEnable;
+                existing.IsAllowOverridingEsi=pfesiSetting.IsAllowOverridingEsi;
+                existing.IsHideEsiEmployer=pfesiSetting.IsHideEsiEmployer;
+                existing.IsEsiExcludeEmployerShare=pfesiSetting.IsEsiExcludeEmployerShare;
+                existing.IsEsiExcludeEmployeeGratuity=pfesiSetting.IsEsiExcludeEmployeeGratuity;
+                existing.IsEsiEmployerContributionOutside=pfesiSetting.IsEsiEmployerContributionOutside;
+                existing.IsRestrictEsi=pfesiSetting.IsRestrictEsi;
+                existing.IsIncludeBonusEsiEligibility=pfesiSetting.IsIncludeBonusEsiEligibility;
+                existing.IsIncludeBonusEsiContribution=pfesiSetting.IsIncludeBonusEsiContribution;
+                existing.IsEmployerPFLimitContribution=pfesiSetting.IsEmployerPFLimitContribution;
+                existing.EmployerPFLimit=pfesiSetting.EmployerPFLimit;
+                existing.MaximumGrossForESI=pfesiSetting.MaximumGrossForESI;
+                existing.EsiEmployeeContribution=pfesiSetting.EsiEmployeeContribution;
+                existing.EsiEmployerContribution = pfesiSetting.EsiEmployerContribution;
             }
-
-            if (esisetting == null)
-                esisetting = EsiSetting;
             else
-            {
-                esisetting.MaxLimit = EsiSetting.MaxLimit;
-                esisetting.EmployerContribution = EsiSetting.EmployerContribution;
-                esisetting.IsActive = EsiSetting.IsActive;
-                esisetting.MaxLimit = EsiSetting.MaxLimit;
-                esisetting.DeclaredValue = EsiSetting.DeclaredValue;
-                esisetting.EmployeeContribution = EsiSetting.EmployeeContribution;
-                esisetting.IncludeInPayslip = EsiSetting.IncludeInPayslip;
-            }
+                existing = pfesiSetting;
 
-            value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
-            {
-                pfsetting.ComponentId,
-                pfsetting.ComponentFullName,
-                pfsetting.CalculateInPercentage,
-                pfsetting.EmployeeContribution,
-                pfsetting.IsActive,
-                pfsetting.TaxExempt,
-                pfsetting.ComponentTypeId,
-                pfsetting.IncludeInPayslip,
-                pfsetting.ComponentDescription,
-                pfsetting.MaxLimit,
-                pfsetting.ComponentCatagoryId,
-                pfsetting.DeclaredValue,
-                pfsetting.AcceptedAmount,
-                pfsetting.RejectedAmount,
-                pfsetting.UploadedFileIds,
-                pfsetting.EmployerContribution,
-                pfsetting.IsOpted,
-                pfsetting.PercentageValue,
-                pfsetting.Formula,
-                pfsetting.IsAdHoc,
-                pfsetting.AdHocId,
-                pfsetting.Section,
-                pfsetting.SectionMaxLimit,
-                pfsetting.IsAffectInGross,
-                pfsetting.RequireDocs,
-                AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);
-
+            value = _db.Execute<PfEsiSetting>("sp_pf_esi_setting_insupd", existing, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
 
-
-            value = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
-            {
-                esisetting.ComponentId,
-                esisetting.CalculateInPercentage,
-                esisetting.EmployeeContribution,
-                esisetting.IsActive,
-                esisetting.TaxExempt,
-                esisetting.ComponentTypeId,
-                esisetting.ComponentCatagoryId,
-                esisetting.IncludeInPayslip,
-                esisetting.ComponentFullName,
-                esisetting.ComponentDescription,
-                esisetting.MaxLimit,
-                esisetting.DeclaredValue,
-                esisetting.AcceptedAmount,
-                esisetting.RejectedAmount,
-                esisetting.UploadedFileIds,
-                esisetting.EmployerContribution,
-                esisetting.IsOpted,
-                esisetting.PercentageValue,
-                esisetting.Formula,
-                esisetting.IsAdHoc,
-                esisetting.AdHocId,
-                esisetting.Section,
-                esisetting.SectionMaxLimit,
-                esisetting.IsAffectInGross,
-                esisetting.RequireDocs,
-                AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);
-
-            if (string.IsNullOrEmpty(value))
-                throw new HiringBellException("Unable to update PF Setting.");
-
-            var param = new DbParam[]
-            {
-                new DbParam (PfesiSetting.PfEsi_setting_Id, typeof(int), "_PfEsi_setting_Id"),
-                new DbParam (PfesiSetting.IsPF_Limit_Amount_Statutory, typeof(bool), "_IsPF_Limit_Amount_Statutory"),
-                new DbParam (PfesiSetting.IsPF_Allow_overriding, typeof(bool), "_IsPF_Allow_overriding"),
-                new DbParam (PfesiSetting.IsPF_EmployerContribution_Outside_GS, typeof(bool), "_IsPF_EmployerContribution_Outside_GS"),
-                new DbParam (PfesiSetting.IsPF_OtherChgarges, typeof(bool), "_IsPF_OtherChgarges"),
-                new DbParam (PfesiSetting.IsPFAllowVPF, typeof(bool), "_IsPFAllowVPF"),
-                new DbParam (PfesiSetting.IsESI_Allow_overriding, typeof(bool), "_IsESI_Allow_overriding"),
-                new DbParam (PfesiSetting.IsESI_EmployerContribution_Outside_GS, typeof(bool), "_IsESI_EmployerContribution_Outside_GS"),
-                new DbParam (PfesiSetting.IsESI_Exclude_EmployerShare, typeof(bool), "_IsESI_Exclude_EmployerShare"),
-                new DbParam (PfesiSetting.IsESI_Exclude_EmpGratuity, typeof(bool), "_IsESI_Exclude_EmpGratuity"),
-                new DbParam (PfesiSetting.IsESI_Restrict_Statutory, typeof(bool), "_IsESI_Restrict_Statutory"),
-                new DbParam (PfesiSetting.IsESI_IncludeBonuses_Eligibility, typeof(bool), "_IsESI_IncludeBonuses_Eligibility"),
-                new DbParam (PfesiSetting.IsESI_IncludeBonuses_Calculation, typeof(bool), "_IsESI_IncludeBonuses_Calculation"),
-                new DbParam (PfesiSetting.IsPF_Employer_LimitContribution, typeof(bool), "_IsPF_Employer_LimitContribution"),
-                new DbParam (_currentSession.CurrentUserDetail.UserId, typeof(long), "_Admin")
-            };
-            value = _db.ExecuteNonQuery("sp_pf_esi_setting_insupd", param, true);
-            if (string.IsNullOrEmpty(value))
-                throw new HiringBellException("Unable to update PF Setting.");
-            return value;
+            return existing;
         }
 
         public List<OrganizationDetail> GetOrganizationInfo()
@@ -177,15 +96,14 @@ namespace ServiceLayer.Code
         public Payroll GetPayrollSetting(int CompanyId)
         {
             var result = _db.Get<Payroll>("sp_payroll_cycle_setting_getById", new { CompanyId });
-
-            if (result == null)
-                throw new HiringBellException("No record found for given company.");
-
             return result;
         }
 
         public string InsertUpdatePayrollSetting(Payroll payroll)
         {
+            if (payroll.CompanyId <= 0)
+                throw new HiringBellException("Compnay is mandatory. Please selecte your company first.");
+
             var status = _db.Execute<Payroll>("sp_payroll_cycle_setting_intupd",
                 new
                 {
@@ -272,6 +190,7 @@ namespace ServiceLayer.Code
             status = _db.Execute<SalaryComponents>("sp_salary_group_insupd", new
             {
                 salaryGroup.SalaryGroupId,
+                salaryGroup.CompanyId,
                 salaryGroup.SalaryComponents,
                 salaryGroup.GroupName,
                 salaryGroup.GroupDescription,
