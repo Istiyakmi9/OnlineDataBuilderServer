@@ -6,8 +6,8 @@ namespace ServiceLayer.Interface
     public interface ISettingService
     {
         string AddUpdateComponentService(SalaryComponents salaryComponents);
-        dynamic GetSalaryComponentService();
-        string PfEsiSetting(SalaryComponents PfSetting, SalaryComponents EsiSetting, PfEsiSetting PfesiSetting);
+        PfEsiSetting GetSalaryComponentService(int CompanyId);
+        PfEsiSetting PfEsiSetting(int CompanyId, PfEsiSetting PfesiSetting);
         List<OrganizationDetail> GetOrganizationInfo();
         BankDetail GetOrganizationBankDetailInfoService(int organizationId);
         string InsertUpdatePayrollSetting(Payroll payroll);

@@ -4,6 +4,7 @@ namespace ModalLayer.Modal.Accounts
 {
     public class SalaryGroup : CreationInfo
     {
+        public int CompanyId { get; set; }
         public int SalaryGroupId { get; set; }
         public string SalaryComponents { get; set; }
         public List<SalaryComponents> GroupComponents { get; set; }

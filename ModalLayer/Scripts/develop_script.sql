@@ -84,229 +84,6 @@ CREATE TABLE `company` (
 
 
 
-
-Go
-
-DELIMITER $$
-
-drop procedure if exists sp_organization_intupd $$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_intupd`(
-	_CompanyId int,
-	_OrganizationId int,
-	_OrganizationName varchar(250),
-	_CompanyName varchar(150),
-	_CompanyDetail varchar(250),
-	_SectorType int,
-	_Country varchar(50),
-	_State varchar(100),
-	_City varchar(100),
-	_FirstAddress varchar(100),
-	_SecondAddress varchar(100),
-	_ThirdAddress varchar(100),
-	_ForthAddress varchar(100),
-	_FullAddress varchar(150),
-	_MobileNo varchar(20),
-	_Email varchar(50),
-	_FirstEmail varchar(100),
-	_SecondEmail varchar(100),
-	_ThirdEmail varchar(100),
-	_ForthEmail varchar(100),
-	_PrimaryPhoneNo varchar(20),
-	_SecondaryPhoneNo varchar(20),
-	_Fax varchar(50),
-	_Pincode int,
-	_FileId bigint,
-	_LegalDocumentPath varchar(250),
-	_LegalEntity varchar(50),
-	_LegalNameOfCompany varchar(100),
-	_TypeOfBusiness varchar(150),
-	_InCorporationDate datetime,
-	_IsPrimaryCompany bit(1),
-	_FixedComponentsId json,    
-	_BankAccountId int,
-	_BankName varchar(100),
-	_BranchCode varchar(20),
-	_Branch varchar(50),
-	_IFSC varchar(20),
-	_AccountNo varchar(45),
-	_OpeningDate datetime,
-	_ClosingDate datetime,
-	_PANNo varchar(20),
-	_GSTNo varchar(50),
-	_TradeLicenseNo varchar(50),
-	_OrgMobileNo varchar(20),
-	_OrgEmail varchar(50),
-	_OrgPrimaryPhoneNo varchar(20),
-	_OrgSecondaryPhoneNo varchar(20),
-	_OrgFax varchar(50),
-    _AdminId long,    
-	out _ProcessingResult varchar(50)
-    
-/*
-
-
-	set @outcome = '';
-    
-	Call sp_organization_intupd(0, 'BottomHlaf', 'BottomHalf Pvt. Ltd.', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-    null, null, null, null, null, null, @outcome);    
-    
-    select @outcome;
-    
-
-*/
-	
-)
-Begin
-    Set @OperationStatus = '';
-	Begin
-		Declare Exit handler for sqlexception
-		Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-                                        
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-            Rollback;
-			Call sp_LogException (@Message, @OperationStatus, 'sp_organization_intupd', 1, 0, @Result);
-		end;  
-        
-		Start Transaction;
-		begin
-			if not exists(select 1 from company where CompanyId = _CompanyId) then
-			begin
-				if exists(select 1 from company where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany)) then
-				begin
-					select CompanyId from company 
-					where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany) into _CompanyId;
-				end;
-				end if;
-			end;
-			end if;
-			
-            
-			if not exists(select * from organization_detail where OrganizationId = _OrganizationId) then
-			begin               
-				Set @@SESSION.information_schema_stats_expiry = 0;
-
-				SELECT AUTO_INCREMENT into _OrganizationId
-				FROM information_schema.tables
-				WHERE table_name = 'organization_detail'
-				AND table_schema = DATABASE();	
-				
-				insert into organization_detail values(
-					_OrganizationId,
-					_OrganizationName,
-					_OrgMobileNo,
-					_OrgEmail,
-					_OrgPrimaryPhoneNo,
-					_OrgSecondaryPhoneNo,
-					_OrgFax,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-			end;
-            else
-            begin
-				insert into organization_detail values(
-					_OrganizationId,
-					_OrganizationName,
-					_OrgMobileNo,
-					_OrgEmail,
-					_OrgPrimaryPhoneNo,
-					_OrgSecondaryPhoneNo,
-					_OrgFax,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-            end;
-			end if;
-					
-			if not exists(select 1 from company where CompanyId = _CompanyId) then
-			begin
-				Set @@SESSION.information_schema_stats_expiry = 0;
-
-				SELECT AUTO_INCREMENT into _CompanyId
-				FROM information_schema.tables
-				WHERE table_name = 'company'
-				AND table_schema = DATABASE();	
-				
-				Insert into company values(
-					_CompanyId,
-					_OrganizationId,
-					_OrganizationName,
-					_CompanyName,
-					_CompanyDetail,
-					_SectorType,
-					_Country,
-					_State,
-					_City,
-					_FirstAddress,
-					_SecondAddress,
-					_ThirdAddress,
-					_ForthAddress,
-					_FullAddress,
-					_MobileNo,
-					_Email,
-					_FirstEmail,
-					_SecondEmail,
-					_ThirdEmail,
-					_ForthEmail,
-					_PrimaryPhoneNo,
-					_SecondaryPhoneNo,
-					_Fax,
-					_Pincode,
-					_FileId,
-					_LegalDocumentPath,
-					_LegalEntity,
-					_LegalNameOfCompany,
-					_TypeOfBusiness,
-					_InCorporationDate,
-					_IsPrimaryCompany,
-					_FixedComponentsId,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-			end;
-			end if;
-			
-			if not exists(select 1 from bank_accounts where BankAccountId = _BankAccountId) then
-			begin
-				insert into bank_accounts value(
-					default,
-					_OrganizationId,
-					_CompanyId,
-					_BankName,
-					_BranchCode,
-					_Branch,
-					_IFSC,
-					_AccountNo,
-					_OpeningDate,
-					_ClosingDate,
-					_PANNo,
-					_GSTNo,
-					_TradeLicenseNo,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-			end;
-			end if;
-		end;
-		Commit;
-		Set _ProcessingResult = 'updated';
-	End;
-End$$
-DELIMITER ;
-
-
 Go
 
 DELIMITER $$
@@ -483,4 +260,813 @@ Begin
 		End;
 	End;
 end$$
+DELIMITER ;
+
+
+drop table if exists pf_esi_setting;
+
+CREATE TABLE `pf_esi_setting` (
+	`PfEsi_setting_Id` int primary key auto_increment,
+    CompanyId int,
+	PFEnable bit,
+	IsPfAmountLimitStatutory bit,
+	IsPfCalculateInPercentage bit,
+	IsAllowOverridingPf bit,
+	IsPfEmployerContribution bit,
+	EmployerPFLimit decimal,
+	IsHidePfEmployer bit,
+	IsPayOtherCharges bit,
+	IsAllowVPF bit,
+	EsiEnable bit,
+	MaximumGrossForESI decimal,
+	EsiEmployeeContribution decimal,
+	EsiEmployerContribution decimal,
+	IsAllowOverridingEsi bit,
+	IsHideEsiEmployer bit,
+	IsEsiExcludeEmployerShare bit,
+	IsEsiExcludeEmployeeGratuity bit,
+	IsEsiEmployerContributionOutside bit,
+	IsRestrictEsi bit,
+	IsIncludeBonusEsiEligibility bit,
+	IsIncludeBonusEsiContribution bit,
+	IsEmployerPFLimitContribution bit,
+	`CreatedOn` datetime DEFAULT NULL,
+	`UpdatedOn` datetime DEFAULT NULL,
+	`CreatedBy` bigint DEFAULT NULL,
+	`UpdatedBy` bigint DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_pf_esi_setting_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_pf_esi_setting_insupd`(
+
+/*
+
+	Call sp_pf_esi_setting_insupd('BS', 'BASIC SALARY', 40, null, 1);
+
+*/
+	_PfEsi_setting_Id int,
+    _CompanyId int,
+	_PFEnable bit,
+	_IsPfAmountLimitStatutory bit,
+	_IsPfCalculateInPercentage bit,
+	_IsAllowOverridingPf bit,
+	_IsPfEmployerContribution bit,
+	_EmployerPFLimit decimal,
+	_IsHidePfEmployer bit,
+	_IsPayOtherCharges bit,
+	_IsAllowVPF bit,
+	_EsiEnable bit,
+	_MaximumGrossForESI decimal,
+	_EsiEmployeeContribution decimal,
+	_EsiEmployerContribution decimal,
+	_IsAllowOverridingEsi bit,
+	_IsHideEsiEmployer bit,
+	_IsEsiExcludeEmployerShare bit,
+	_IsEsiExcludeEmployeeGratuity bit,
+	_IsEsiEmployerContributionOutside bit,
+	_IsRestrictEsi bit,
+	_IsIncludeBonusEsiEligibility bit,
+	_IsIncludeBonusEsiContribution bit,
+	_IsEmployerPFLimitContribution bit,
+    _Admin bigint,
+    out _ProcessingResult varchar(100)
+)
+Begin
+    Set @OperationStatus = '';
+		Begin
+			Declare Exit handler for sqlexception
+			Begin
+				Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+											@errorno = MYSQL_ERRNO,
+											@errortext = MESSAGE_TEXT;
+				Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+				Call sp_LogException (@Message, @OperationStatus, 'sp_pf_esi_setting_insupd', 1, 0, @Result);
+			end;  
+		
+		if not exists(select 1 from pf_esi_setting where PfEsi_setting_Id = _PfEsi_setting_Id) then
+        begin
+			insert into pf_esi_setting
+            values(
+				default,
+				_CompanyId,
+				_PFEnable,
+				_IsPfAmountLimitStatutory,
+				_IsPfCalculateInPercentage,
+				_IsAllowOverridingPf,
+				_IsPfEmployerContribution,
+				_EmployerPFLimit,
+				_IsHidePfEmployer,
+				_IsPayOtherCharges,
+				_IsAllowVPF,
+				_EsiEnable,
+				_MaximumGrossForESI,
+				_EsiEmployeeContribution,
+				_EsiEmployerContribution,
+				_IsAllowOverridingEsi,
+				_IsHideEsiEmployer,
+				_IsEsiExcludeEmployerShare,
+				_IsEsiExcludeEmployeeGratuity,
+				_IsEsiEmployerContributionOutside,
+				_IsRestrictEsi,
+				_IsIncludeBonusEsiEligibility,
+				_IsIncludeBonusEsiContribution,
+				_IsEmployerPFLimitContribution,
+				utc_date(),
+				null,
+				_Admin,
+				null
+            );
+            
+            Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update pf_esi_setting set				
+				PFEnable           						=       _PFEnable,
+				IsPfAmountLimitStatutory        	    =       _IsPfAmountLimitStatutory,
+				IsPfCalculateInPercentage       	    =       _IsPfCalculateInPercentage,
+				IsAllowOverridingPf        				=       _IsAllowOverridingPf,
+				IsPfEmployerContribution            	=       _IsPfEmployerContribution,
+				IsHidePfEmployer            			=       _IsHidePfEmployer,
+				IsPayOtherCharges           			=       _IsPayOtherCharges,
+				IsAllowVPF          					=       _IsAllowVPF,
+				EsiEnable         					  	=       _EsiEnable,
+				IsAllowOverridingEsi            		=       _IsAllowOverridingEsi,
+				IsHideEsiEmployer           			=       _IsHideEsiEmployer,
+				IsEsiExcludeEmployerShare           	=       _IsEsiExcludeEmployerShare,
+				IsEsiExcludeEmployeeGratuity            =       _IsEsiExcludeEmployeeGratuity,
+				IsEsiEmployerContributionOutside        =       _IsEsiEmployerContributionOutside,
+				IsRestrictEsi           				=       _IsRestrictEsi,
+				IsIncludeBonusEsiEligibility            =       _IsIncludeBonusEsiEligibility,
+				IsIncludeBonusEsiContribution           =       _IsIncludeBonusEsiContribution,
+				IsEmployerPFLimitContribution           =       _IsEmployerPFLimitContribution,
+				EmployerPFLimit         				=       _EmployerPFLimit,
+				MaximumGrossForESI          			=       _MaximumGrossForESI,
+				EsiEmployeeContribution         		=       _EsiEmployeeContribution,
+				EsiEmployerContribution             	= 		_EsiEmployerContribution,
+				UpdatedBy								=		_Admin,
+                UpdatedOn								=		utc_date()
+            where PfEsi_setting_Id = _PfEsi_setting_Id;
+            
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+
+drop procedure if exists sp_pf_esi_setting_get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_pf_esi_setting_get`(
+
+	_CompanyId int
+/*
+
+	Call sp_pf_esi_setting_get(1);
+
+*/
+	
+)
+Begin
+    Set @OperationStatus = '';
+		Begin
+			Declare Exit handler for sqlexception
+			Begin
+				Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+											@errorno = MYSQL_ERRNO,
+											@errortext = MESSAGE_TEXT;
+				Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+				Call sp_LogException (@Message, @OperationStatus, 'sp_pf_esi_setting_get', 1, 0, @Result);
+			end;  
+		
+		select * from pf_esi_setting
+        where CompanyId = _CompanyId;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_salary_group_getAll $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_salary_group_getAll`(
+
+/*
+
+	Call sp_salary_group_getAll();
+
+*/
+
+)
+Begin
+    Set @OperationStatus = '';
+		Begin
+			Declare Exit handler for sqlexception
+			Begin
+				Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+											@errorno = MYSQL_ERRNO,
+											@errortext = MESSAGE_TEXT;
+				Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+				Call sp_LogException (@Message, @OperationStatus, 'sp_salary_group_getAll', 1, 0, @Result);
+			end;  
+		
+		select * from salary_group;
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+
+drop procedure if exists sp_salary_group_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_salary_group_insupd`(
+
+/*
+
+
+
+	Set @result = '';
+	Call sp_salary_group_insupd(0, 1, 'A', 'For people having salary more than 24L', 0, 500000, 1, @result);
+    select @result;
+
+
+
+*/
+	_SalaryGroupId int,
+    _CompanyId int,
+    _SalaryComponents json,
+    _GroupName varchar(45),
+    _GroupDescription varchar(250),
+    _MinAmount decimal,
+    _MaxAmount decimal,
+    _AdminId bigint,
+    out _ProcessingResult varchar(100)
+)
+Begin
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, '', 'sp_salary_group_insupd', 1, 0, @Result);
+		end;  
+		
+		if not exists(select 1 from salary_group where SalaryGroupId = _SalaryGroupId) then
+        begin
+			insert into salary_group
+            values(
+				default,
+				_SalaryComponents,
+				_GroupName,
+				_GroupDescription,
+				_MinAmount,
+				_MaxAmount,
+				_AdminId,
+				now(),
+                _CompanyId
+            );
+            
+            Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update salary_group set				
+				SalaryComponents		=			_SalaryComponents,
+				GroupName				=			_GroupName,
+				GroupDescription		=			_GroupDescription,
+				MinAmount				=			_MinAmount,
+				MaxAMount				=			_MaxAmount,
+				CreatedBy				=			_AdminId,
+                CreatedOn				=			utc_date(),
+                CompanyId				=			_CompanyId
+            where SalaryGroupId = _SalaryGroupId;
+            
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_salary_group_getbyCompanyId $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_salary_group_getbyCompanyId`(
+
+/*
+
+	Call sp_salary_group_getbyCompanyId(1);
+
+*/
+
+	_CompanyId int
+)
+Begin
+    Set @OperationStatus = '';
+		Begin
+			Declare Exit handler for sqlexception
+			Begin
+				Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+											@errorno = MYSQL_ERRNO,
+											@errortext = MESSAGE_TEXT;
+				Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+				Call sp_LogException (@Message, @OperationStatus, 'sp_salary_group_getbyCompanyId', 1, 0, @Result);
+			end;  
+		
+		select * from salary_group
+        where CompanyId = _CompanyId;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_salary_group_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_salary_group_insupd`(
+
+/*
+
+
+
+	Set @result = '';
+	Call sp_salary_group_insupd(0, 1, 'A', 'For people having salary more than 24L', 0, 500000, 1, @result);
+    select @result;
+
+
+
+*/
+	_SalaryGroupId int,
+    _CompanyId int,
+    _SalaryComponents json,
+    _GroupName varchar(45),
+    _GroupDescription varchar(250),
+    _MinAmount decimal,
+    _MaxAmount decimal,
+    _AdminId bigint,
+    out _ProcessingResult varchar(100)
+)
+Begin
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, '', 'sp_salary_group_insupd', 1, 0, @Result);
+		end;  
+		
+		if not exists(select 1 from salary_group where SalaryGroupId = _SalaryGroupId) then
+        begin
+			insert into salary_group
+            values(
+				default,
+				_SalaryComponents,
+				_GroupName,
+				_GroupDescription,
+				_MinAmount,
+				_MaxAmount,
+				_AdminId,
+				now(),
+                _CompanyId
+            );
+            
+            Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update salary_group set				
+				SalaryComponents		=			_SalaryComponents,
+				GroupName				=			_GroupName,
+				GroupDescription		=			_GroupDescription,
+				MinAmount				=			_MinAmount,
+				MaxAMount				=			_MaxAmount,
+				CreatedBy				=			_AdminId,
+                CreatedOn				=			utc_date(),
+                CompanyId				=			_CompanyId
+            where SalaryGroupId 		= 			_SalaryGroupId;
+            
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists SP_ManageEmployeeDetail_Get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ManageEmployeeDetail_Get`(
+	_employeeId bigint
+/*	
+
+	Call SP_ManageEmployeeDetail_Get(0);
+
+*/
+
+)
+Begin
+    Begin
+		Declare exit handler for sqlexception
+		Begin
+		
+			GET DIAGNOSTICS CONDITION 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
+			Call sp_LogException(@Message, '', 'SP_ManageEmployeeDetail_Get', 1, 0, @Result);
+		End;
+
+        Begin
+			Set @UserTypeId = 0;
+            Set @AccessLevelId = 0;		
+
+			Select UserTypeId from employees 
+			Where EmployeeUid = _employeeId 
+			into @UserTypeId;
+		
+			Select AccessLevelId from employeelogin
+			where EmployeeId = _employeeId into @AccessLevelId;
+	
+			Select  e.EmployeeUid,
+				e.FirstName,
+				e.LastName,
+				e.Mobile,
+				e.Email,
+				e.ReportingManagerId,
+				e.DesignationId,
+				ep.SecondaryMobile,
+				e.IsActive,
+				ep.Gender,
+				ep.FatherName,
+				ep.SpouseName,
+				ep.MotherName,
+				ep.Address,
+				ep.State,
+				ep.City,
+				ep.Pincode,
+				ep.IsPermanent,
+				ep.ActualPackage,
+				ep.FinalPackage,
+				ep.TakeHomeByCandidate,
+				ef.PANNo,
+				ef.AadharNo,
+				ef.AccountNumber,
+				ef.BankName,
+				ef.BranchName,
+				ef.IFSCCode,
+				ef.Domain,
+				ef.Specification,
+				ef.ExprienceInYear,
+				ef.LastCompanyName,
+				@AccessLevelId AccessLevelId,
+				@UserTypeId UserTypeId,
+				e.LeavePlanId
+			from employees e 
+			Inner Join employeepersonaldetail ep on e.EmployeeUid = ep.EmployeeUid
+			Inner Join employeeprofessiondetail ef on e.EmployeeUid = ef.EmployeeUid
+			Where e.EmployeeUid = _employeeId;
+					
+			Select * from employeemappedclients 
+			where EmployeeUid = _employeeId; #and IsActive = 1;
+		
+			Select FileId, FilePath, FileName, FileExtension, UserTypeId from userfiledetail 
+			where FileOwnerId = _employeeId and FileName = 'profile';            
+            
+            Select * from accesslevel;
+            Call sp_employee_salary_detail_get_by_empid(_employeeId);
+            
+            select c.* from company c
+            Inner join employeelogin e
+            on c.CompanyId = e.CompanyId
+            where e.EmployeeId = _employeeId;
+            
+			select * from employees
+            where DesignationId = 1 Or DesignationId = 4;
+            
+			select * from leave_plan; 
+		End;
+	End;
+end$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_Employees_InsUpdate $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Employees_InsUpdate`(
+	_EmployeeUid bigint,
+	_FirstName varchar(50),
+	_LastName varchar(50),
+	_Mobile varchar(20),
+	_Email varchar(100),
+    _LeavePlanId int,
+    _PayrollGroupId int,
+    _SalaryGroupId int,
+    _CompanyId int,
+    _NoticePeriodId int,
+    _SecondaryMobile varchar(20),
+    _FatherName varchar(50),
+    _MotherName varchar(50),
+    _SpouseName varchar(50),
+    _Gender bit(1),
+    _State varchar(75),
+    _City varchar(75),
+    _Pincode int,
+    _Address varchar(100),
+    _PANNo varchar(20),
+    _AadharNo varchar(20),
+    _AccountNumber varchar(50),
+    _BankName varchar(100),
+    _BranchName varchar(100),
+    _IFSCCode varchar(20),
+    _Domain varchar(250),
+    _Specification varchar(250),
+    _ExprienceInYear float(5,2),
+    _LastCompanyName varchar(100),
+    _IsPermanent bit(1),
+	_ActualPackage float(10,2),
+    _FinalPackage float(10,2),
+    _TakeHomeByCandidate float(10,2),
+    _ReportingManagerId bigint,
+    _DesignationId int,
+    _ProfessionalDetail_Json json,
+    _Password varchar(150),
+    _AccessLevelId int,
+    _UserTypeId int,
+	_CTC decimal,
+	_GrossIncome decimal,
+	_NetSalary decimal,
+	_CompleteSalaryDetail Json,
+	_TaxDetail Json,
+	_AdminId bigint,
+    out _ProcessingResult varchar(100)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);  
+            
+            RollBack;
+            SET autocommit = 1;
+            Set sql_safe_updates = 1;
+            Call sp_LogException (@Message, '', 'sp_Employees_InsUpdate', 1, 0, @Result);
+		end;
+        
+        Set @msg = 'starting';
+        
+        SET autocommit = 0;
+        Set @EmpId = 0;
+        Start Transaction;
+		Begin 
+        
+			if(_UserTypeId = 0) then
+				Set _UserTypeId = 2;
+			end if;
+        
+			If not exists (Select 1 from employees Where EmployeeUid = _EmployeeUid) then
+			Begin
+				Set @EmpId = 0;
+				Select EmployeeUid from employees order by EmployeeUid desc limit 1 into @EmpId ;
+				Set @EmpId = @EmpId+1;
+			 
+				Set _ProcessingResult = @EmpId; 
+				/*
+				SELECT AUTO_INCREMENT
+				FROM information_schema.tables
+				WHERE table_name = 'employees'
+				AND table_schema = DATABASE() INTO @EmpId;
+				*/
+			
+				Insert into employees (EmployeeUid, FirstName, LastName, Mobile, 
+					Email, LeavePlanId, PayrollGroupId, IsActive, CreatedBy, UpdatedBy,  CreatedOn, UpdatedOn, 
+					ReportingManagerId, DesignationId, UserTypeId, SalaryGroupId, CompanyId, NoticePeriodId
+				) Values (
+					@EmpId,
+					_FirstName,
+					_LastName,
+					_Mobile,
+					_Email,
+					_LeavePlanId,
+					_PayrollGroupId,
+					1,
+					_AdminId,
+					null, 
+					now(),
+					null,
+					_ReportingManagerId,
+					_DesignationId,
+					_UserTypeId,
+					_SalaryGroupId,
+					_CompanyId,
+					_NoticePeriodId
+				);
+			
+				Insert into employeepersonaldetail (EmployeePersonalDetailId, EmployeeUid, Mobile, SecondaryMobile, Email, Gender, FatherName, SpouseName,
+					MotherName, Address,  State,  City, Pincode, IsPermanent, ActualPackage, FinalPackage, TakeHomeByCandidate, CreatedBy, UpdatedBy, CreatedOn, UpdatedOn
+				) Values (
+					default,
+					@EmpId,
+					_Mobile,
+					_SecondaryMobile,
+					_Email,
+					_Gender,
+					_FatherName,
+					_SpouseName,
+					_MotherName,
+					_Address,
+					_State,
+					_City,
+					_Pincode,
+					_IsPermanent,
+					_ActualPackage,
+					_FinalPackage,
+					_TakeHomeByCandidate,
+					_AdminId,
+					null,
+					now(),
+					null
+				);
+				
+				Insert into employeeprofessiondetail Values (
+					default,
+					@EmpId, 
+					_FirstName,
+					_LastName,
+					_Mobile,
+					_SecondaryMobile,
+					_Email, 
+					_PANNo,
+					_AadharNo,
+					_AccountNumber,
+					_BankName,
+					_BranchName,
+					_IFSCCode,
+					_Domain,
+					_Specification,
+					_ExprienceInYear,
+					_LastCompanyName,
+					_AdminId,
+					null,
+					now(),
+					null,
+					_ProfessionalDetail_Json
+				);
+			
+			set @msg = 'employeelogin';
+				Insert into employeelogin
+				Values(
+					default, 
+					@EmpId, 
+					2, 
+					_AccessLevelId, 
+					_Password, 
+					_Email, 
+					_Mobile,
+					_CompanyId,
+					_AdminId, 
+					null, 
+					utc_date(), 
+					null
+				);			
+			End;
+			Else
+			Begin
+				Set _ProcessingResult = '0';
+				Set @EmpId = _EmployeeUid;
+                set sql_safe_updates = 0;
+                Update employees SET 
+						FirstName				=		_FirstName,
+						LastName				=		_LastName,
+						Mobile					=		_Mobile,
+						Email					=		_Email,
+						UpdatedBy				=		_AdminId, 
+						UpdatedOn				=		now(),
+                        ReportingManagerId		=		_ReportingManagerId,
+                        DesignationId			=		_DesignationId,
+                        UserTypeId				=		_UserTypeId,
+                        LeavePlanId				=		_LeavePlanId,
+						PayrollGroupId			=		_PayrollGroupId,
+                        SalaryGroupId			=		_SalaryGroupId,
+						CompanyId				=		_CompanyId,
+						NoticePeriodId			=		_NoticePeriodId
+					Where 	EmployeeUid 	= _EmployeeUid;
+                
+					Update employeepersonaldetail Set
+						Mobile						=	_Mobile,
+						SecondaryMobile				=	_SecondaryMobile,
+						Email						=	_Email,
+						Gender						=	_Gender,
+						FatherName					=	_FatherName,
+						SpouseName					=	_SpouseName,
+						MotherName					=	_MotherName,
+						Address						=	_Address, 
+						State						=	_State, 
+						City						=	_City,
+						Pincode						=	_Pincode,
+						IsPermanent					=	_IsPermanent,
+						ActualPackage				=	_ActualPackage,
+						FinalPackage				=	_FinalPackage,
+						TakeHomeByCandidate			=	_TakeHomeByCandidate,
+						UpdatedBy					=	_AdminId,
+						UpdatedOn					=	now()
+					Where	EmployeeUid					=	_EmployeeUid;
+                
+					Update	employeeprofessiondetail Set
+							FirstName		=	_FirstName,
+							LastName		=	_LastName,
+							Mobile			=	_Mobile,
+							SecondaryMobile	=	_SecondaryMobile,
+							Email			=	_Email, 
+							PANNo			=	_PANNo,
+							AadharNo		=	_AadharNo,
+							AccountNumber	=	_AccountNumber,
+							BankName		=	_BankName,
+							BranchName		=	_BranchName, 
+							IFSCCode		=	_IFSCCode,
+							Domain			=	_Domain,
+                            Specification	=	_Specification,
+							ExprienceInYear	=	_ExprienceInYear,
+							LastCompanyName	=	_LastCompanyName,
+							UpdatedBy		=	_AdminId,
+							UpdatedOn		=	now(),
+                            ProfessionalDetail_Json = _ProfessionalDetail_Json
+					 Where	EmployeeUid		=	_EmployeeUid;
+
+					if(_UserTypeId = 1) then
+						Set _AccessLevelId = 1;
+					end if;
+                    
+                    Set sql_safe_updates = 0;
+					Update employeelogin
+						Set AccessLevelId = _AccessLevelId,
+						Email 		= 	_Email,
+                        UserTypeId 	=	_UserTypeId,
+						Mobile 		= 	_Mobile,
+                        CompanyId	= _CompanyId,
+						UpdatedBy 	= 	_AdminId,
+						UpdatedOn   = 	utc_date()
+					Where EmployeeId = _EmployeeUid;
+				End;
+				End if;
+			
+				set @EmpDecId = 0;
+				Set @result = '';
+                if not exists(Select 1 from employee_declaration where EmployeeId = @EmpId) then
+                begin
+					Insert into employee_declaration values(
+						default,
+						@EmpId,
+						'',
+						'[]',
+						'{}',
+						0,
+						0
+					);  
+                    
+					select EmployeeDeclarationId into @EmpDecId from employee_declaration  where EmployeeId =  @EmpId;
+                end;
+                else
+                begin
+					select EmployeeDeclarationId into @EmpDecId from employee_declaration  where EmployeeId =  @EmpId;
+                end;
+                end if;
+				
+				Call sp_employee_declaration_ins_json(@EmpDecId);
+
+                Set @groupId = 0;
+                select SalaryGroupId into @groupId from salary_group 
+                where _CTC >= MinAmount 
+				and _CTC < MaxAmount;
+                
+                Call sp_employee_salary_detail_InsUpd(@EmpId, _CTC, _GrossIncome, _NetSalary, _CompleteSalaryDetail, @groupId, _TaxDetail, _ProcessingResult);
+				Set _ProcessingResult =  @EmpId;
+            COMMIT;
+            Set sql_safe_updates = 1;
+		End;
+	End;
+End$$
 DELIMITER ;

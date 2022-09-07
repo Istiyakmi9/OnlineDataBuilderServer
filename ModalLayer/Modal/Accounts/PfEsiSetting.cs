@@ -1,26 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModalLayer.Modal.Accounts
+﻿namespace ModalLayer.Modal.Accounts
 {
     public class PfEsiSetting: CreationInfo
 	{
 		public int PfEsi_setting_Id { set; get; }
-        public bool IsPF_Limit_Amount_Statutory { set; get;}
-        public bool IsPF_Employer_LimitContribution { set; get;}
-	    public bool IsPF_Allow_overriding { set; get;}
-        public bool IsPF_EmployerContribution_Outside_GS { set; get;}
-        public bool IsPF_OtherChgarges { set; get;}
-        public bool IsPFAllowVPF { set; get;}
-        public bool IsESI_Allow_overriding { set; get;}
-        public bool IsESI_EmployerContribution_Outside_GS { set; get;}
-        public bool IsESI_Exclude_EmployerShare { set; get;}
-        public bool IsESI_Exclude_EmpGratuity { set; get;}
-        public bool IsESI_Restrict_Statutory { set; get;}
-        public bool IsESI_IncludeBonuses_Eligibility { set; get;}
-        public bool IsESI_IncludeBonuses_Calculation { set; get; }
-
-
+        public bool PFEnable { set; get; }
+        public bool IsPfAmountLimitStatutory { set; get; }
+        public bool IsPfCalculateInPercentage { set; get; }
+        public bool IsAllowOverridingPf { set; get; }
+        public bool IsPfEmployerContribution { set; get; }
+        public bool IsHidePfEmployer { set; get; }
+        public bool IsPayOtherCharges { set; get; }
+        public bool IsAllowVPF { set; get; }
+        public bool EsiEnable { set; get; }
+        public bool IsAllowOverridingEsi { set; get; }
+        public bool IsHideEsiEmployer { set; get; }
+        public bool IsEsiExcludeEmployerShare { set; get; }
+        public bool IsEsiExcludeEmployeeGratuity { set; get; }
+        public bool IsEsiEmployerContributionOutside { set; get; }
+        public bool IsRestrictEsi { set; get; }
+        public bool IsIncludeBonusEsiEligibility { set; get; }
+        public bool IsIncludeBonusEsiContribution { set; get; }
+        public bool IsEmployerPFLimitContribution { set; get; }
+        public decimal EmployerPFLimit { set; get; }
+        public decimal MaximumGrossForESI { set; get; }
+        public decimal EsiEmployeeContribution { set; get; }
+        public decimal EsiEmployerContribution { set; get; }
+        public int CompanyId { set; get; }
+        public long Admin { get; set; }
     }
 }

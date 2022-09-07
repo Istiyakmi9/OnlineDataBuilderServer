@@ -42,10 +42,17 @@ namespace ServiceLayer.Code
             return salaryComponents;
         }
 
-        public List<SalaryGroup> GetSalaryGroupService()
+        public List<SalaryGroup> GetSalaryGroupService(int CompanyId)
         {
-            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
+            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>("sp_salary_group_getbyCompanyId", new { CompanyId }, false);
             return salaryComponents;
+        }
+
+        public dynamic GetCustomSalryPageDataService(int CompanyId)
+        {
+            List<SalaryGroup> salaryGroups = this.GetSalaryGroupService(CompanyId);
+            List<SalaryComponents> salaryComponents = this.GetSalaryComponentsDetailService();
+            return new { SalaryComponents = salaryComponents, SalaryGroups = salaryGroups };
         }
 
         public SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId)
@@ -206,6 +213,9 @@ namespace ServiceLayer.Code
 
         public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
         {
+            if (salaryGroup.CompanyId <= 0)
+                throw new HiringBellException("Invalid data selected to create group. Please contact to admin.");
+
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
@@ -228,7 +238,7 @@ namespace ServiceLayer.Code
             var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-            List<SalaryGroup> value = this.GetSalaryGroupService();
+            List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
         }
 
@@ -421,18 +431,19 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Salary Group already exist.");
             else
             {
-                salaryGrp = salaryGroup;
                 if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
                     salaryGrp.SalaryComponents = "[]";
                 else
                     salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
+
+                salaryGrp = salaryGroup;
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
             var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-            List<SalaryGroup> value = this.GetSalaryGroupService();
+            List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
         }
 

@@ -9,7 +9,8 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> GetSalaryComponentsDetailService();
         List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents);
         List<SalaryComponents> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents);
-        List<SalaryGroup> GetSalaryGroupService();
+        List<SalaryGroup> GetSalaryGroupService(int CompanyId);
+        dynamic GetCustomSalryPageDataService(int CompanyId);
         SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId);
         List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup);
         List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup);

@@ -34,10 +34,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetSalaryGroups")]
-        public IResponse<ApiResponse> GetSalaryGroups()
+        [HttpGet("GetCustomSalryPageData/{CompanyId}")]
+        public IResponse<ApiResponse> GetCustomSalryPageData(int CompanyId)
         {
-            var result = _salaryComponentService.GetSalaryGroupService();
+            var result = _salaryComponentService.GetCustomSalryPageDataService(CompanyId);
             return BuildResponse(result);
         }
 
