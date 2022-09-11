@@ -5,6 +5,7 @@ namespace ModalLayer.Modal.Leaves
     public class LeavePlan
     {
         public int LeavePlanId { set; get; }
+        public int CompanyId { set; get; }
         public string PlanName { set; get; }
         public string PlanDescription { set; get; }
         public DateTime PlanStartCalendarDate { set; get; }

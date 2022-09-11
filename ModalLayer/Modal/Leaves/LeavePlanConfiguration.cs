@@ -9,5 +9,6 @@
         public LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff { get; set; }
         public LeavePlanRestriction leavePlanRestriction { get; set; }
         public LeaveApproval leaveApproval { get; set; }
+        public ManagementLeave managementLeave { get; set; }
     }
 }

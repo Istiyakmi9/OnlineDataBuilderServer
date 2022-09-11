@@ -78,6 +78,17 @@ namespace SchoolInMindServer.MiddlewareServices
                                 break;
                         }
 
+                        var orgId = securityToken.Claims
+                            .FirstOrDefault(x => x.Type == ApplicationConstants.OrganizationId).Value;
+
+                        var companyId = securityToken.Claims.
+                            FirstOrDefault(x => x.Type == ApplicationConstants.CompanyId).Value;
+
+                        if (string.IsNullOrEmpty(orgId) || string.IsNullOrEmpty(companyId))
+                            throw new HiringBellException("Invalid Organization id or Company id. Please contact to admin.");
+                            
+                        currentSession.CurrentUserDetail.OrganizationId = Convert.ToInt32(orgId);
+                        currentSession.CurrentUserDetail.CompanyId = Convert.ToInt32(companyId);
                         currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
                         currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
                     }

@@ -5,6 +5,7 @@ namespace ModalLayer.Modal.Accounts
     public class BankDetail : CreationInfo
     {
         public long BankAccountId { set; get; }
+        public int OrganizationId { set; get; }
         public string AccountNo { set; get; }
         public string BankName { set; get; }
         public string Branch { set; get; }
@@ -14,6 +15,7 @@ namespace ModalLayer.Modal.Accounts
         public string GSTNo { get; set; }
         public string TradeLicenseNo { get; set; }
         public int CompanyId { get; set; }
+        public bool IsPrimaryAccount { set; get; }
         public DateTime OpeningDate { set; get; }
         public DateTime ClosingDate { set; get; }
     }

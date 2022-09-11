@@ -7,6 +7,9 @@ public class ApplicationConstants
     public static int NotGenerated = 4;
     public static int Rejected = 5;
 
+    public static string OrganizationId = "OrganizationId";
+    public static string CompanyId = "CompanyId";
+
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
     public const string InsertUpdateTimesheet = "sp_timesheet_insupd";

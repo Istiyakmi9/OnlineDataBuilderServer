@@ -47,6 +47,7 @@ namespace ServiceLayer.Code
             }
             else
             {
+                leavePlan.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
                 leavePlan.AssociatedPlanTypes = "[]";
             }
             var value = _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);

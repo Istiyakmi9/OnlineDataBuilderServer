@@ -10,8 +10,6 @@
         public decimal DaysAfterJoining { set; get; }
         public bool IsAvailRestrictedLeavesInProbation { set; get; }
         public decimal LeaveLimitInProbation { set; get; }
-        public bool IsConsecutiveLeaveLimit { set; get; }
-        public decimal ConsecutiveDaysLimit { set; get; }
         public bool IsLeaveInNoticeExtendsNoticePeriod { set; get; }
         public decimal NoOfTimesNoticePeriodExtended { set; get; }
         public bool CanManageOverrideLeaveRestriction { set; get; }

@@ -10,7 +10,6 @@
         public int ExtraLeaveLimit { set; get; }
         public bool IsNoLeaveAfterDate { set; get; }
         public int LeaveNotAllocatedIfJoinAfter { set; get; }
-        public bool CanManagerAwardCausalLeave { set; get; }
         public bool CanCompoffAllocatedAutomatically { set; get; }
         public bool CanCompoffCreditedByManager { set; get; }
     }

@@ -76,7 +76,6 @@ namespace ServiceLayer.Code
                 leaveDetail.ExtraLeaveLimit,
                 leaveDetail.IsNoLeaveAfterDate,
                 leaveDetail.LeaveNotAllocatedIfJoinAfter,
-                leaveDetail.CanManagerAwardCausalLeave,
                 leaveDetail.CanCompoffAllocatedAutomatically,
                 leaveDetail.CanCompoffCreditedByManager
             }, true);
@@ -87,6 +86,44 @@ namespace ServiceLayer.Code
             {
                 leaveDetail.LeaveDetailId = Convert.ToInt32(result);
                 leavePlanConfiguration.leaveDetail = leaveDetail;
+                this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
+            }
+
+            return leavePlanConfiguration;
+        }
+
+        public LeavePlanConfiguration UpdateLeaveFromManagement(int leavePlanTypeId, int leavePlanId, ManagementLeave managementLeave)
+        {
+            if (leavePlanTypeId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            if (leavePlanId <= 0)
+                throw new HiringBellException("Invalid plan selected");
+
+            LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Invalid plan type id. No record found.");
+
+            if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
+            {
+                leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+            }
+
+            var result = _db.Execute<LeaveDetail>("sp_leave_from_management_insupd", new
+            {
+                managementLeave.LeaveManagementId,
+                managementLeave.LeavePlanTypeId,
+                managementLeave.CanManagerAwardCausalLeave
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update leave from management.");
+            else
+            {
+                managementLeave.LeaveManagementId = Convert.ToInt32(result);
+                leavePlanConfiguration.managementLeave = managementLeave;
                 this.UpdateLeavePlanConfigurationDetail(leavePlanTypeId, leavePlanId, leavePlanConfiguration);
             }
 
@@ -106,7 +143,6 @@ namespace ServiceLayer.Code
             if (leavePlanType == null)
                 throw new HiringBellException("Invalid plan type id. No record found.");
 
-
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
 
@@ -118,7 +154,9 @@ namespace ServiceLayer.Code
                 leaveAccrual.LeavePlanTypeId,
                 leaveAccrual.CanApplyEntireLeave,
                 leaveAccrual.IsLeaveAccruedPatternAvail,
+                leaveAccrual.IsLeaveAccruedProrateDefined,
                 JoiningMonthLeaveDistribution = JsonConvert.SerializeObject(leaveAccrual.JoiningMonthLeaveDistribution),
+                LeaveDistributionRateOnStartOfPeriod = JsonConvert.SerializeObject(leaveAccrual.LeaveDistributionRateOnStartOfPeriod),
                 ExitMonthLeaveDistribution = JsonConvert.SerializeObject(leaveAccrual.ExitMonthLeaveDistribution),
                 LeaveDistributionSequence = leaveAccrual.LeaveDistributionSequence,
                 leaveAccrual.LeaveDistributionAppliedFrom,
@@ -172,6 +210,9 @@ namespace ServiceLayer.Code
 
             if (leaveAccrual.IsLeavesProratedForJoinigMonth)
                 leaveAccrual.JoiningMonthLeaveDistribution = new List<AllocateTimeBreakup>();
+
+            if (!leaveAccrual.IsLeaveAccruedProrateDefined)
+                leaveAccrual.LeaveDistributionRateOnStartOfPeriod = new List<AllocateTimeBreakup>();
 
             if (leaveAccrual.IsLeaveAccruedPatternAvail == false)
             {
@@ -318,9 +359,6 @@ namespace ServiceLayer.Code
 
             if (leavePlanRestriction.CanApplyAfterJoining == false)
                 leavePlanRestriction.DaysAfterJoining = 0;
-
-            if (leavePlanRestriction.IsConsecutiveLeaveLimit == false)
-                leavePlanRestriction.ConsecutiveDaysLimit = 0;
 
             if (leavePlanRestriction.IsLeaveInNoticeExtendsNoticePeriod == false)
                 leavePlanRestriction.NoOfTimesNoticePeriodExtended = 0;
