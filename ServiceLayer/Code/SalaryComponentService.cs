@@ -235,7 +235,17 @@ namespace ServiceLayer.Code
             else
                 throw new HiringBellException("Salary Group already exist.");
 
-            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", new
+            {
+                salaryGrp.SalaryGroupId,
+                salaryGrp.CompanyId,
+                salaryGrp.SalaryComponents,
+                salaryGrp.GroupName,
+                salaryGrp.GroupDescription,
+                salaryGroup.MinAmount,
+                salaryGrp.MaxAmount,
+                salaryGroup.AdminId
+            }, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
             List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
