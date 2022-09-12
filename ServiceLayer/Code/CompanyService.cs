@@ -279,12 +279,9 @@ namespace ServiceLayer.Code
             return company;
         }
 
-        public BankDetail InsertUpdateCompanyAccounts(BankDetail bankDetail)
+        public List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail)
         {
-            BankDetail bank = null;
-
-            if (bankDetail.CompanyId <= 0)
-                throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+            List<BankDetail> bankDetails = null;
 
             if (bankDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid company detail submitted. Please login again.");
@@ -295,7 +292,7 @@ namespace ServiceLayer.Code
             if (bankDetail.OrganizationId <= 0)
                 throw new HiringBellException("Organizatin or compnay is not selected.");
 
-            bank = _db.Get<BankDetail>("sp_bank_accounts_getById", new { bankDetail.BankAccountId });
+            var bank = _db.Get<BankDetail>("sp_bank_accounts_getById", new { bankDetail.BankAccountId });
 
             if (bank == null)
                 bank = bankDetail;
@@ -311,21 +308,34 @@ namespace ServiceLayer.Code
                 bank.PANNo = bankDetail.PANNo;
                 bank.GSTNo = bankDetail.GSTNo;
                 bank.TradeLicenseNo = bankDetail.TradeLicenseNo;
+                bank.OpeningDate = bankDetail.OpeningDate;
+                bank.ClosingDate = bankDetail.ClosingDate;
+                bank.IsPrimaryAccount = bankDetail.IsPrimaryAccount;
             }
+            bank.AdminId = _currentSession.CurrentUserDetail.UserId;
 
             var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd", bank, true);
 
             if (string.IsNullOrEmpty(status))
             {
                 throw new HiringBellException("Fail to insert or update.");
+            } else
+            {
+                //bankDetails = this.GetCompanyBankDetail(bankDetail.OrganizationId, bankDetail.CompanyId);
             }
 
-            return bank;
+            return bankDetails;
         }
 
-        public BankDetail GetCompanyBankDetail(int OrganizationId, int CompanyId)
+        public List<BankDetail> GetCompanyBankDetail(FilterModel filterModel)
         {
-            BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { OrganizationId, CompanyId });
+            List<BankDetail> result = _db.GetList<BankDetail>("sp_bank_accounts_getby_cmpId", new
+                {
+                    filterModel.SearchString,
+                    filterModel.SortBy,
+                    filterModel.PageIndex,
+                    filterModel.PageSize
+                });
             return result;
         }
     }
