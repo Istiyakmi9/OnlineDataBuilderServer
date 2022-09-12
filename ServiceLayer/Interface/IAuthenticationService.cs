@@ -4,7 +4,7 @@ namespace ServiceLayer.Interface
 {
     public interface IAuthenticationService
     {
-        public RefreshTokenModal Authenticate(long userId, long managerId, int roleId);
+        public RefreshTokenModal Authenticate(UserDetail userDetail);
         RefreshTokenModal RenewAndGenerateNewToken(string Mobile, string Email, string UserRole);
         string ReadJwtToken();
         string Encrypt(string textOrPassword, string secretKey);

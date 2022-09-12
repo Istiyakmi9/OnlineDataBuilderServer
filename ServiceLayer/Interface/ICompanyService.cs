@@ -14,6 +14,6 @@ namespace ServiceLayer.Interface
         OrganizationDetail InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
         BankDetail InsertUpdateCompanyAccounts(BankDetail bankDetail);
         BankDetail GetCompanyBankDetail(int OrganizationId, int CompanyId);
-
+        OrganizationDetail InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
     }
 }

@@ -80,6 +80,7 @@ namespace ServiceLayer.Code
                 DbParam[] dbParams = new DbParam[]
                 {
                     new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
+                    new DbParam(employee.OrganizationId, typeof(int), "_OrganizationId"),
                     new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
                     new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
                     new DbParam(employee.FatherName, typeof(string), "_FatherName"),

@@ -35,9 +35,7 @@ namespace ServiceLayer.Code
         public List<OrganizationDetail> UpdateCompanyGroup(OrganizationDetail companyGroup, int companyId)
         {
             if (companyId <= 0)
-            {
                 throw new HiringBellException("Invalid compnay id. Unable to update detail.");
-            }
 
             OrganizationDetail companyGrp = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = companyId });
             if (companyGrp == null)
@@ -61,13 +59,10 @@ namespace ServiceLayer.Code
             companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
             OrganizationDetail result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
             if (result != null)
-            {
                 throw new HiringBellException("Company Already exist.");
-            }
-            else
-            {
-                result = companyGroup;
-            }
+
+            companyGroup.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+            result = companyGroup;
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
             if (string.IsNullOrEmpty(value))
@@ -237,146 +232,49 @@ namespace ServiceLayer.Code
             }
         }
 
-        public OrganizationDetail InsertUpdateCompanyDetails(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        public OrganizationDetail InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             OrganizationDetail company = new OrganizationDetail();
             if (string.IsNullOrEmpty(companyInfo.Email))
                 throw new HiringBellException("Invalid organization email.");
 
+            if (string.IsNullOrEmpty(companyInfo.PrimaryPhoneNo))
+                throw new HiringBellException("Invalid organization primary phone No#");
+
             if (string.IsNullOrEmpty(companyInfo.CompanyName))
                 throw new HiringBellException("Invalid company name.");
 
-            if (companyInfo.OrganizationName == null)
-                throw new HiringBellException("Invalid Orgznization Name");
-
             company = _db.Get<OrganizationDetail>("sp_company_getById", new { companyInfo.CompanyId });
 
-            if (company != null)
-            {
-                company.OrganizationName = companyInfo.OrganizationName;
-                company.CompanyName = companyInfo.CompanyName;
-                company.CompanyDetail = companyInfo.CompanyDetail;
-                company.FirstAddress = companyInfo.FirstAddress;
-                company.SecondAddress = companyInfo.SecondAddress;
-                company.ThirdAddress = companyInfo.ThirdAddress;
-                company.ForthAddress = companyInfo.ForthAddress;
-                company.Email = companyInfo.Email;
-                company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
-                company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
-                company.Fax = companyInfo.Fax;
-                company.FirstEmail = companyInfo.FirstEmail;
-                company.SecondEmail = companyInfo.SecondEmail;
-                company.ThirdEmail = companyInfo.ThirdEmail;
-                company.ForthEmail = companyInfo.ForthEmail;
-                company.Pincode = companyInfo.Pincode;
-                company.FileId = companyInfo.FileId;
-                company.MobileNo = companyInfo.MobileNo;
-                company.City = companyInfo.City;
-                company.Country = companyInfo.Country;
-                company.FullAddress = companyInfo.FullAddress;
-                company.GSTNo = companyInfo.GSTNo;
-                company.InCorporationDate = companyInfo.InCorporationDate;
-                company.LegalDocumentPath = companyInfo.LegalDocumentPath;
-                company.LegalEntity = companyInfo.LegalEntity;
-                company.LegalNameOfCompany = companyInfo.LegalNameOfCompany;
-                company.PANNo = companyInfo.PANNo;
-                company.SectorType = companyInfo.SectorType;
-                company.State = companyInfo.State;
-                company.TradeLicenseNo = companyInfo.TradeLicenseNo;
-                company.TypeOfBusiness = companyInfo.TypeOfBusiness;
-                company.AccountNo = companyInfo.AccountNo;
-                company.BankName = companyInfo.BankName;
-                company.Branch = companyInfo.Branch;
-                company.IFSC = companyInfo.IFSC;
-            }
-            else
-                company = companyInfo;
+            if (company == null)
+                throw new HiringBellException("Unable to find company. Please contact to admin.");
 
-            int i = 0;
-            string signatureWithStamp = String.Empty;
-            string signatureWithoutStamp = String.Empty;
-            string companyLogo = String.Empty;
+            company.CompanyName = companyInfo.CompanyName;
+            company.FirstAddress = companyInfo.FirstAddress;
+            company.SecondAddress = companyInfo.SecondAddress;
+            company.ThirdAddress = companyInfo.ThirdAddress;
+            company.ForthAddress = companyInfo.ForthAddress;
+            company.Email = companyInfo.Email;
+            company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
+            company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
+            company.Fax = companyInfo.Fax;
+            company.FirstEmail = companyInfo.FirstEmail;
+            company.SecondEmail = companyInfo.SecondEmail;
+            company.ThirdEmail = companyInfo.ThirdEmail;
+            company.ForthEmail = companyInfo.ForthEmail;
+            company.Pincode = companyInfo.Pincode;
+            company.FileId = companyInfo.FileId;
+            company.MobileNo = companyInfo.MobileNo;
+            company.City = companyInfo.City;
+            company.Country = companyInfo.Country;
+            company.State = companyInfo.State;
 
-            while (i < fileCollection.Count)
-            {
-                if (fileCollection[i].Name == "signwithStamp")
-                {
-                    signatureWithStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                }
-                else if (fileCollection[i].Name == "signwithoutStamp")
-                {
-                    signatureWithoutStamp = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                }
-                else
-                {
-                    companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[i].Name);
-                }
-
-                i++;
-            }
-
-            if (File.Exists(signatureWithStamp))
-            {
-                File.Delete(signatureWithoutStamp);
-                File.Delete(signatureWithStamp);
-                File.Delete(companyLogo);
-            }
-            else
-            {
-                FileDetail fileDetailWSig = new FileDetail();
-                fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
-
-                FileDetail fileDetailWOSig = new FileDetail();
-                fileDetailWOSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, signatureWithoutStamp);
-            }
-
-            company.IsPrimaryCompany = true;
-            company.FixedComponentsId = "[]";
-            var status = _db.Execute<OrganizationDetail>("sp_organization_intupd", company, true);
-
+            var status = _db.Execute<OrganizationDetail>("sp_company_intupd", company, true);
             if (string.IsNullOrEmpty(status))
-            {
-                File.Delete(signatureWithoutStamp);
-                File.Delete(signatureWithStamp);
-                File.Delete(companyLogo);
                 throw new HiringBellException("Fail to insert or update.");
-            }
-            else
-            {
-                if (fileCollection.Count > 0)
-                {
-                    var files = fileCollection.Select(x => new Files
-                    {
-                        FileUid = companyInfo.FileId,
-                        FileName = x.Name,
-                        Email = companyInfo.Email,
-                        FileExtension = string.Empty
-                    }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (companyInfo.OrganizationId).ToString());
 
-                    var fileInfo = (from n in files
-                                    select new
-                                    {
-                                        FileId = n.FileUid,
-                                        FileOwnerId = companyInfo.CompanyId,
-                                        FilePath = n.FilePath,
-                                        FileName = n.FileName,
-                                        FileExtension = n.FileExtension,
-                                        ItemStatusId = 0,
-                                        PaidOn = DateTime.Now,
-                                        UserTypeId = (int)UserType.Compnay,
-                                        CreatedBy = _currentSession.CurrentUserDetail.UserId,
-                                        UpdatedBy = _currentSession.CurrentUserDetail.UserId,
-                                        CreatedOn = DateTime.Now,
-                                        UpdatedOn = DateTime.Now
-                                    }); ;
-
-                    DataTable table = Converter.ToDataTable(fileInfo);
-                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_Files_InsUpd", table, false);
-                    _db.Commit();
-                }
-            }
+            if (fileCollection.Count == 1)
+                UpdateOrganizationLogo(companyInfo, fileCollection);
 
             return company;
         }
@@ -387,18 +285,22 @@ namespace ServiceLayer.Code
 
             if (bankDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid organization detail submitted. Please login again.");
+
             if (bankDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid company detail submitted. Please login again.");
+
             if (string.IsNullOrEmpty(bankDetail.AccountNo))
                 throw new HiringBellException("Invalid account number submitted.");
 
-            bank = _db.Get<BankDetail>("sp_bank_accounts_getby_cmpId", new { CompanyId = bankDetail.CompanyId });
+            if (bankDetail.OrganizationId <= 0)
+                throw new HiringBellException("Organizatin or compnay is not selected.");
+
+            bank = _db.Get<BankDetail>("sp_bank_accounts_getById", new { bankDetail.BankAccountId });
 
             if (bank == null)
                 bank = bankDetail;
             else
             {
-                bank.BankAccountId = bankDetail.BankAccountId;
                 bank.CompanyId = bankDetail.CompanyId;
                 bank.AccountNo = bankDetail.AccountNo;
                 bank.BankName = bankDetail.BankName;

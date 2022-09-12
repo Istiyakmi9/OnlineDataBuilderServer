@@ -1,7 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.VariantTypes;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -19,13 +21,16 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private Employee _employee;
         private Leave _employeeLeaveDetail;
-        private LeavePlan _leavePlan;
         private List<LeavePlanType> _leavePlanTypes;
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly DateTime now = DateTime.UtcNow;
         private CompanySetting _companySetting;
         private DateTime _fromDate;
         private DateTime _toDate;
+        private decimal _availableLeaveLimit;
+        private decimal _totalNumOfLeaveApplied = 0;
+        private CompleteLeaveDetail _lastApprovedLeaveDetail = null;
+        private int _employeeType; // 1 = Probation period, 2 = Notice period, 0 = Normal
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
@@ -129,9 +134,38 @@ namespace ServiceLayer.Code
             return days;
         }
 
+        public decimal ProbationPeriodDistinctLeavesCalculation(decimal perMonthLeaves)
+        {
+            decimal days = 0;
+            if (_leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution != null
+                && _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count > 0)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.ElementAt(i);
+                    if (now.Day >= allocateTimeBreakup.FromDate)
+                        days += (allocateTimeBreakup.AllocatedLeave + perMonthLeaves);
+
+                    i++;
+                }
+            }
+
+            return days;
+        }
+
+        private decimal PresentMonthProrateCalculation()
+        {
+            return 0; //
+        }
+
         private decimal CalculatePresentMonthProrateCount(decimal perMonthLeaves)
         {
             decimal presentMonthDays = 0;
+
+            decimal presentMonthAccrualed = PresentMonthProrateCalculation();
+
             if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom - now.Day <= 0)
                 // if present month date is less then or equal to the date define for accrual
                 presentMonthDays = perMonthLeaves;
@@ -168,15 +202,30 @@ namespace ServiceLayer.Code
             return remaningMonths;
         }
 
-        private decimal CalculateWhenAccralMonthly(decimal alreadyAppliedLeave, decimal perMonthLeaves)
+        private decimal CalculateWhenAccralMonthly(decimal perMonthLeaves)
         {
             decimal availableLeaves = 0;
             decimal presentMonthLeaves = 0;
 
-            if (_leavePlanConfiguration.leaveAccrual.IsLeavesProratedOnNotice)
-                presentMonthLeaves = CalculatePresentMonthProrateCount(perMonthLeaves);
+            // calculate for notice period (not completed)
+            if (_employeeType == 2)
+            {
+                if (_leavePlanConfiguration.leaveAccrual.IsLeavesProratedOnNotice)
+                    presentMonthLeaves = CalculatePresentMonthProrateCount(perMonthLeaves);
+                else
+                    presentMonthLeaves = NoticePeriodDistinctLeavesCalculation(perMonthLeaves);
+            }
+            if (_employeeType == 1)
+            {
+                if (_leavePlanConfiguration.leaveAccrual.IsLeavesProratedOnNotice)
+                    presentMonthLeaves = CalculatePresentMonthProrateCount(perMonthLeaves);
+                else
+                    presentMonthLeaves = ProbationPeriodDistinctLeavesCalculation(perMonthLeaves);
+            }
             else
-                presentMonthLeaves = NoticePeriodDistinctLeavesCalculation(perMonthLeaves);
+            {
+                presentMonthLeaves = perMonthLeaves;
+            }
 
             int mounthCount = GetNumOfMonthExceptFirstAndLast();
             if (_employee.CreatedOn.Year == now.Year)
@@ -192,14 +241,14 @@ namespace ServiceLayer.Code
             return availableLeaves;
         }
 
-        private decimal CalculateWhenAccralQuaterly(decimal alreadyAppliedLeave)
+        private decimal CalculateWhenAccralQuaterly()
         {
             decimal availableLeaves = 0;
 
             return availableLeaves;
         }
 
-        private decimal CalculateWhenAccralYearly(decimal alreadyAppliedLeave)
+        private decimal CalculateWhenAccralYearly()
         {
             decimal availableLeaves = 0;
 
@@ -214,28 +263,34 @@ namespace ServiceLayer.Code
         private decimal CheckWeekOffRuleApplicable(decimal perMonthLeaves)
         {
             int totalWeekEnds = 0;
+            decimal presentMonthAttendance = 0;
             // check two condition here
             // 1. WeekOffAsAbsentIfAttendaceLessThen must be greater then 0
             // 2. Employee should not exceed leave or absent for the present month more then WeekOffAsAbsentIfAttendaceLessThen value.
-            if (_leavePlanConfiguration.leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen > 0 /* && [Put 2nd condition here]*/)
+
+            if (presentMonthAttendance > 0)
             {
-                if (_fromDate.Year == now.Year && _fromDate.Month == now.Month && _companySetting.IsUseInternationalWeekDays)
+                decimal percentageValueForCurrentMonth = (now.Day / presentMonthAttendance) * 100;
+                if (_leavePlanConfiguration.leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen > 0 /* && [Put 2nd condition here]*/)
                 {
-                    TimeZoneInfo timeZoneInfo = TimeZoneInfo.Utc;
-                    if (!string.IsNullOrEmpty(_currentSession.Culture))
+                    if (_fromDate.Year == now.Year && _fromDate.Month == now.Month && _companySetting.IsUseInternationalWeekDays)
                     {
-                        switch (_currentSession.Culture)
+                        TimeZoneInfo timeZoneInfo = TimeZoneInfo.Utc;
+                        if (!string.IsNullOrEmpty(_currentSession.Culture))
                         {
-                            case "ist":
-                                timeZoneInfo = TZConvert.GetTimeZoneInfo("India Standard Time");
-                                break;
+                            switch (_currentSession.Culture)
+                            {
+                                case "ist":
+                                    timeZoneInfo = TZConvert.GetTimeZoneInfo("India Standard Time");
+                                    break;
+                            }
                         }
+
+                        totalWeekEnds = _timezoneConverter.TotalWeekEndsBetweenDates(Convert.ToDateTime($"{_toDate.Year}-{_toDate.Month}-1"), _toDate, timeZoneInfo);
+
+                        // get all leaves or absent data of present employee and then place logic to calculate leave
+                        totalWeekEnds = 0;
                     }
-
-                    totalWeekEnds = _timezoneConverter.TotalWeekEndsBetweenDates(Convert.ToDateTime($"{_toDate.Year}-{_toDate.Month}-1"), _toDate, timeZoneInfo);
-
-                    // get all leaves or absent data of present employee and then place logic to calculate leave
-                    totalWeekEnds = 0;
                 }
             }
 
@@ -351,67 +406,82 @@ namespace ServiceLayer.Code
 
         private decimal UpdateLeaveIfSetForExpiry(decimal availableLeaves)
         {
+            if (_leavePlanConfiguration.leaveAccrual.DoesLeaveExpireAfterSomeTime)
+            {
+            }
             return availableLeaves;
+        }
+
+        private decimal LeaveLimitForCurrentType(int leavePlanTypeId)
+        {
+            decimal alreadyAppliedLeave = 0;
+            decimal leaveLimit = 0;
+
+            _availableLeaveLimit = 0;
+            List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(_employeeLeaveDetail.LeaveDetail);
+            if (completeLeaveDetails.Count > 0)
+            {
+                alreadyAppliedLeave = completeLeaveDetails.FindAll(x => x.LeaveType == leavePlanTypeId && x.LeaveStatus == (int)ItemStatus.Approved).Sum(x => x.NumOfDays);
+                _lastApprovedLeaveDetail = completeLeaveDetails.Where(x => x.LeaveStatus == (int)ItemStatus.Approved)
+                                                                .OrderByDescending(x => x.LeaveToDay).FirstOrDefault();
+            }
+
+            leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+            //if (_leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave)
+            _availableLeaveLimit = leaveLimit - alreadyAppliedLeave;
+
+            return alreadyAppliedLeave;
         }
 
         private decimal CalculateLeaveIfRegularEmployement(int leavePlanTypeId)
         {
-            decimal alreadyAppliedLeave = 0;
-            decimal availableLeaves = 0;
-            decimal leaveLimit = 0;
-
-            List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(_employeeLeaveDetail.LeaveDetail);
-            if (completeLeaveDetails.Count > 0)
-                alreadyAppliedLeave = completeLeaveDetails.FindAll(x => x.LeaveType == leavePlanTypeId && x.LeaveStatus == (int)ItemStatus.Approved).Sum(x => x.NumOfDays);
-
-            leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
             decimal perMonthLeaves = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12;
 
-            if (_leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave)
+            var leaveDistributedSeq = _leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
+            switch (leaveDistributedSeq)
             {
-                availableLeaves = leaveLimit - alreadyAppliedLeave;
+                case "1":
+                    _availableLeaveLimit = this.CalculateWhenAccralMonthly(perMonthLeaves);
+                    break;
+                case "2":
+                    _availableLeaveLimit = this.CalculateWhenAccralQuaterly();
+                    break;
+                case "3":
+                    _availableLeaveLimit = this.CalculateWhenAccralYearly();
+                    break;
             }
-            else
-            {
-                var leaveDistributedSeq = _leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
-                switch (leaveDistributedSeq)
-                {
-                    case "1":
-                        availableLeaves = this.CalculateWhenAccralMonthly(alreadyAppliedLeave, perMonthLeaves);
-                        break;
-                    case "2":
-                        availableLeaves = this.CalculateWhenAccralQuaterly(alreadyAppliedLeave);
-                        break;
-                    case "3":
-                        availableLeaves = this.CalculateWhenAccralYearly(alreadyAppliedLeave);
-                        break;
-                }
 
-                availableLeaves = availableLeaves - alreadyAppliedLeave;
-            }
 
             decimal extraLeaveLimit = 0;
 
-            // calculate leave for experienced people and allowed accrual in probation
-            extraLeaveLimit = LeaveAccrualForExperienceInProbation(perMonthLeaves);
-            availableLeaves = availableLeaves + extraLeaveLimit;
+            if (_employeeType == 1)
+            {
+                // calculate leave for experienced people and allowed accrual in probation
+                extraLeaveLimit = LeaveAccrualForExperienceInProbation(perMonthLeaves);
+                _availableLeaveLimit = _availableLeaveLimit + extraLeaveLimit;
+            }
 
+            /* -------------------------------------  this condition will be use for attendance -------------------------
+            
             // check weekoff as absent if rule applicable
             CheckWeekOffRuleApplicable(perMonthLeaves);
 
             // check weekoff as absent if rule applicable
             CheckHolidayRuleApplicable(perMonthLeaves);
+            
+            -----------------------------------------------------------------------------------------------------------*/
+
 
             // check weather can apply for leave based on future date projected balance
-            availableLeaves = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, availableLeaves);
+            // _availableLeaveLimit = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, _availableLeaveLimit);
 
             // round up decimal value of available as per rule defined
-            availableLeaves = RoundUpTheLeaves(availableLeaves);
+            _availableLeaveLimit = RoundUpTheLeaves(_availableLeaveLimit);
 
             // check leave expiry
-            availableLeaves = UpdateLeaveIfSetForExpiry(availableLeaves);
+            _availableLeaveLimit = UpdateLeaveIfSetForExpiry(_availableLeaveLimit);
 
-            return availableLeaves;
+            return _availableLeaveLimit;
         }
 
         private void ValidateAndGetLeavePlanConfiguration(LeavePlanType leavePlanType)
@@ -463,16 +533,46 @@ namespace ServiceLayer.Code
             return false;
         }
 
+        private void CheckForProbationPeriod(DateTime FromDate)
+        {
+            _employeeType = 0;
+            if ((_employee.CreatedOn.AddDays(_companySetting.ProbationPeriodInDays)).Subtract(FromDate).TotalDays > 0)
+                _employeeType = 1;
+        }
+
+        private void CheckForNoticePeriod()
+        {
+            if (_employee.NoticePeriodId != 0 && _employee.NoticePeriodAppliedOn != null)
+                _employeeType = 2;
+        }
+
         private bool LeaveEligibilityCheck(DateTime FromDate, LeavePlanType leavePlanType)
         {
-            if (FromDate.Subtract(now).TotalDays <= _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
-                return true;
-            else
+            bool flag = false;
+            // if future date then > 0 else < 0
+            if (now.Subtract(FromDate).TotalDays > 0) // past date
             {
-                leavePlanType.IsApplicable = false;
-                leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
+                if (_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays != 0 &&
+                    FromDate.Subtract(now).TotalDays <= _leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays)
+                    flag = true;
+                else
+                {
+                    leavePlanType.IsApplicable = false;
+                    leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
+                }
             }
-            return false;
+            else // future date
+            {
+                if (FromDate.Subtract(now).TotalDays >= _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
+                    flag = true;
+                else
+                {
+                    leavePlanType.IsApplicable = false;
+                    leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
+                }
+            }
+
+            return flag;
         }
 
         private bool NewJoineeIsEligibleForThisLeave(LeavePlanType leavePlanType)
@@ -506,6 +606,43 @@ namespace ServiceLayer.Code
             return flag;
         }
 
+        private bool CheckProbationLeaveRestriction(LeavePlanType leavePlanType)
+        {
+            bool flag = true;
+            // if employee completed probation period
+            if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation && _employeeType == 0)
+            {
+                var totalDays = Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation) +
+                                _employee.ProbationPeriodDaysLimit;
+
+                if (_fromDate.Subtract(_employee.CreatedOn.AddDays(totalDays)).TotalDays < 0)
+                {
+                    flag = false;
+                    leavePlanType.IsApplicable = false;
+                    leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
+                }
+            }
+            else if (_employeeType == 1) // if employee currently serving probation period
+            {
+                DateTime afterJoiningDate = _employee.CreatedOn.AddDays(Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterJoining));
+                if (afterJoiningDate.Subtract(_employee.CreatedOn.AddDays(_employee.ProbationPeriodDaysLimit)).TotalDays <= 0)
+                {
+                    var totalNumOfDays = _toDate.Subtract(_fromDate).TotalDays;
+                    if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation)
+                    {
+                        if (Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation) - totalNumOfDays > 0)
+                        {
+                            flag = false;
+                            leavePlanType.IsApplicable = false;
+                            leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
+                        }
+                    }
+                }
+            }
+
+            return flag;
+        }
+
         public async Task<List<LeavePlanType>> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
             _fromDate = FromDate;
@@ -515,6 +652,12 @@ namespace ServiceLayer.Code
 
             // get employee detail and store it in class level variable
             int type = LoadCalculationData(EmployeeId);
+
+            // Check employee is in probation period
+            CheckForProbationPeriod(FromDate);
+
+            // Check employee is in notice period
+            CheckForNoticePeriod();
 
             return await Task.Run<List<LeavePlanType>>(async () =>
             {
@@ -531,34 +674,54 @@ namespace ServiceLayer.Code
                         continue;
                     }
 
-                    await AllowToSeeAndApply(EmployeeId, FromDate, ToDate);
+                    // check leave restriction related to probation period
+                    if (!CheckProbationLeaveRestriction(leavePlanType))
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    // can employee see and apply for current leave type
+                    flag = await AllowToSeeAndApply(EmployeeId, FromDate, ToDate);
                     if (flag)
                     {
-                        if (_leavePlanConfiguration.leaveDetail.IsLeaveDaysLimit == true)
+                        _lastApprovedLeaveDetail = null;
+                        // get leave quota after deducting already applied leaves
+                        LeaveLimitForCurrentType(leavePlanType.LeavePlanTypeId);
+
+                        // calculate num of days applied
+                        CalculateLeaveDays();
+
+                        // get leave quota after deducting already applied leaves
+                        flag = CheckAllRestrictionForCurrentLeaveType(leavePlanType);
+                        if (flag)
                         {
-                            var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                            if (leaveLimit <= 0)
-                                throw new HiringBellException("leave limit is null or empty");
-
-                            if (_leavePlanConfiguration.leaveAccrual.IsNoLeaveOnNoticePeriod)
-                                type = 2;
-
-                            switch (type)
+                            if (_leavePlanConfiguration.leaveDetail.IsLeaveDaysLimit == true)
                             {
-                                case 1:
-                                    if (NewJoineeIsEligibleForThisLeave(leavePlanType))
-                                        leavePlanType.AvailableLeave = CalculateLeaveIfInProbationPeriond(leavePlanType.LeavePlanTypeId);
-                                    break;
-                                case 2:
-                                    leavePlanType.AvailableLeave = CalculateLeaveIfInNoticePeriond(leavePlanType.LeavePlanTypeId);
-                                    break;
-                                default:
-                                    leavePlanType.AvailableLeave = CalculateLeaveIfRegularEmployement(leavePlanType.LeavePlanTypeId);
-                                    break;
+                                var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+                                if (leaveLimit <= 0)
+                                    throw new HiringBellException("leave limit is null or empty");
+
+                                if (_leavePlanConfiguration.leaveAccrual.IsNoLeaveOnNoticePeriod)
+                                    type = 2;
+
+                                switch (type)
+                                {
+                                    case 1:
+                                        if (NewJoineeIsEligibleForThisLeave(leavePlanType))
+                                            leavePlanType.AvailableLeave = CalculateLeaveIfInProbationPeriond(leavePlanType.LeavePlanTypeId);
+                                        break;
+                                    case 2:
+                                        leavePlanType.AvailableLeave = CalculateLeaveIfInNoticePeriond(leavePlanType.LeavePlanTypeId);
+                                        break;
+                                    default:
+                                        leavePlanType.AvailableLeave = CalculateLeaveIfRegularEmployement(leavePlanType.LeavePlanTypeId);
+                                        break;
+                                }
                             }
+                            else
+                                leavePlanType.AvailableLeave = -1;
                         }
-                        else
-                            leavePlanType.AvailableLeave = -1;
                     }
 
                     i++;
@@ -566,6 +729,91 @@ namespace ServiceLayer.Code
 
                 return _leavePlanTypes;
             }, cts.Token);
+        }
+
+        private void CalculateLeaveDays()
+        {
+            _totalNumOfLeaveApplied = 0;
+            if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.AdJoiningHolidayIsConsiderAsLeave)
+            {
+
+            }
+
+            if (!_leavePlanConfiguration.leaveHolidaysAndWeekoff.AdjoiningWeekOffIsConsiderAsLeave)
+            {
+                var fromDate = _fromDate;
+                while (_toDate.Subtract(fromDate).TotalDays >= 0)
+                {
+                    if (fromDate.DayOfWeek != DayOfWeek.Saturday && fromDate.DayOfWeek != DayOfWeek.Sunday)
+                        _totalNumOfLeaveApplied++;
+
+                    fromDate = fromDate.AddDays(1);
+                }
+            }
+        }
+
+        private bool CheckAllRestrictionForCurrentLeaveType(LeavePlanType leavePlanType)
+        {
+            bool flag = true;
+
+            // check leave gap between previous and new leave date
+            if (_lastApprovedLeaveDetail != null)
+            {
+                if (_fromDate.Subtract(_lastApprovedLeaveDetail.LeaveToDay).TotalDays <
+                    Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates))
+                {
+                    flag = false;
+                    leavePlanType.IsApplicable = false;
+                    leavePlanType.Reason = $"Gap between previous leave and applied leave must be greater then or equal to {_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days";
+                }
+            }
+
+            // check total leave applied and restrict for current year
+            if (_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear > 0 &&
+                _totalNumOfLeaveApplied > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear)
+            {
+                flag = false;
+                leavePlanType.IsApplicable = false;
+                leavePlanType.Reason = $"Only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear} days are allowed for calendar year.";
+            }
+
+            // check total leave applied and restrict for current month
+            if (_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth > 0 &&
+                _totalNumOfLeaveApplied > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth)
+            {
+                flag = false;
+                leavePlanType.IsApplicable = false;
+                leavePlanType.Reason = $"Only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth} days are allowed for calendar month.";
+            }
+
+            // check total leave applied and restrict for entire tenure
+            if (_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure > 0 &&
+                _totalNumOfLeaveApplied > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure)
+            {
+                flag = false;
+                leavePlanType.IsApplicable = false;
+                leavePlanType.Reason = $"Only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure} days are allowed for entire tenure.";
+            }
+
+            // check available if any restrict minimun leave to be appllied
+            if (_availableLeaveLimit >= _leavePlanConfiguration.leavePlanRestriction.AvailableLeaves &&
+                _totalNumOfLeaveApplied < _leavePlanConfiguration.leavePlanRestriction.MinLeaveToApplyDependsOnAvailable)
+            {
+                flag = false;
+                leavePlanType.IsApplicable = false;
+                leavePlanType.Reason = $"Only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure} days are allowed for entire tenure.";
+            }
+
+            // restrict leave date every month
+            if (_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth > 0 &&
+                _fromDate.Day <= _leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth)
+            {
+                flag = false;
+                leavePlanType.IsApplicable = false;
+                leavePlanType.Reason = $"Can apply leave after {_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth} date of every month.";
+            }
+
+            return flag;
         }
 
         public async Task<bool> CanApplyForHalfDay(long EmployeeId, DateTime FromDate, DateTime ToDate)

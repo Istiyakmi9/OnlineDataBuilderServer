@@ -430,23 +430,47 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                 {
                                     try
                                     {
-                                        switch (x.PropertyType.Name)
+                                        if (x.PropertyType.IsGenericType)
                                         {
-                                            case nameof(Boolean):
-                                                x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
-                                                break;
-                                            case nameof(Int32):
-                                                x.SetValue(t, Convert.ToInt32(reader[x.Name]));
-                                                break;
-                                            case nameof(Int64):
-                                                x.SetValue(t, Convert.ToInt64(reader[x.Name]));
-                                                break;
-                                            case nameof(Decimal):
-                                                x.SetValue(t, Convert.ToDecimal(reader[x.Name]));
-                                                break;
-                                            default:
-                                                x.SetValue(t, reader[x.Name]);
-                                                break;
+                                            switch (x.PropertyType.GenericTypeArguments.First().Name)
+                                            {
+                                                case nameof(Boolean):
+                                                    x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
+                                                    break;
+                                                case nameof(Int32):
+                                                    x.SetValue(t, Convert.ToInt32(reader[x.Name]));
+                                                    break;
+                                                case nameof(Int64):
+                                                    x.SetValue(t, Convert.ToInt64(reader[x.Name]));
+                                                    break;
+                                                case nameof(Decimal):
+                                                    x.SetValue(t, Convert.ToDecimal(reader[x.Name]));
+                                                    break;
+                                                default:
+                                                    x.SetValue(t, reader[x.Name]);
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            switch (x.PropertyType.Name)
+                                            {
+                                                case nameof(Boolean):
+                                                    x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
+                                                    break;
+                                                case nameof(Int32):
+                                                    x.SetValue(t, Convert.ToInt32(reader[x.Name]));
+                                                    break;
+                                                case nameof(Int64):
+                                                    x.SetValue(t, Convert.ToInt64(reader[x.Name]));
+                                                    break;
+                                                case nameof(Decimal):
+                                                    x.SetValue(t, Convert.ToDecimal(reader[x.Name]));
+                                                    break;
+                                                default:
+                                                    x.SetValue(t, reader[x.Name]);
+                                                    break;
+                                            }
                                         }
                                     }
                                     catch (Exception ex)

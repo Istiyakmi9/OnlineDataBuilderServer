@@ -19,5 +19,6 @@ namespace ServiceLayer.Interface
         LeavePlanConfiguration GetLeaveConfigurationDetail(int leavePlanTypeId);
         string AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees);
         List<EmpLeavePlanMapping> GetEmpMappingByLeavePlanIdService(int leavePlanId);
+        LeavePlanConfiguration UpdateLeaveFromManagement(int leavePlanTypeId, int leavePlanId, ManagementLeave managementLeave);
     }
 }

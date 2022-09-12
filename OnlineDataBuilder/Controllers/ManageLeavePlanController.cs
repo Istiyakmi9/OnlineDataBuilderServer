@@ -33,6 +33,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPut("UpdateLeaveFromManagement/{leavePlanTypeId}/{leavePlanId}")]
+        public IResponse<ApiResponse> UpdateLeaveFromManagement([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] ManagementLeave management)
+        {
+            var result = _manageLeavePlanService.UpdateLeaveFromManagement(leavePlanTypeId, leavePlanId, management);
+            return BuildResponse(result);
+        }
+
         [HttpPut("UpdateLeaveAccrual/{leavePlanTypeId}/{leavePlanId}")]
         public IResponse<ApiResponse> UpdateLeaveAccrual([FromRoute] int leavePlanTypeId, [FromRoute] int leavePlanId, [FromBody] LeaveAccrual leaveAccrual)
         {

@@ -59,10 +59,10 @@ namespace ServiceLayer.Code
             return userId;
         }
 
-        public RefreshTokenModal Authenticate(long userId, long managerId, int roleId)
+        public RefreshTokenModal Authenticate(UserDetail userDetail)
         {
             string role = string.Empty;
-            switch (roleId)
+            switch (userDetail.UserTypeId)
             {
                 case 1:
                     role = Role.Admin;
@@ -80,25 +80,27 @@ namespace ServiceLayer.Code
                     role = Role.Other;
                     break;
             }
-            string generatedToken = GenerateAccessToken(userId.ToString(), managerId.ToString(), role);
+            string generatedToken = GenerateAccessToken(userDetail, role);
             var refreshToken = GenerateRefreshToken(null);
             refreshToken.Token = generatedToken;
-            SaveRefreshToken(refreshToken, userId);
+            SaveRefreshToken(refreshToken, userDetail.UserId);
             return refreshToken;
         }
 
-        private string GenerateAccessToken(string userId, string managerId, string role)
+        private string GenerateAccessToken(UserDetail userDetail, string role)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new System.Security.Claims.ClaimsIdentity(new Claim[] {
-                    new Claim(JwtRegisteredClaimNames.Sub, userId),
+                    new Claim(JwtRegisteredClaimNames.Sub, userDetail.UserId.ToString()),
                     new Claim(ClaimTypes.Role, role),
-                    new Claim(ClaimTypes.Name, userId),
+                    new Claim(ApplicationConstants.OrganizationId, userDetail.OrganizationId.ToString()),
+                    new Claim(ApplicationConstants.CompanyId, userDetail.CompanyId.ToString()),
+                    new Claim(ClaimTypes.Name, userDetail.UserId.ToString()),
                     new Claim(ClaimTypes.Version, "1.0.0"),
-                    new Claim(ClaimTypes.Sid, managerId),
+                    new Claim(ClaimTypes.Sid, userDetail.ReportingManagerId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 }),
 
@@ -140,7 +142,7 @@ namespace ServiceLayer.Code
                         var currentModal = Result.FirstOrDefault();
                         refreshTokenModal = new RefreshTokenModal
                         {
-                            Token = GenerateAccessToken(UserId.ToString(), "0", UserRole),
+                            Token = null, // GenerateAccessToken(UserId.ToString(), "0", UserRole),
                             Expires = currentModal.ExpiryTime
                         };
                     }
