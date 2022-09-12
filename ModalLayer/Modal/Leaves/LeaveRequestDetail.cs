@@ -18,6 +18,7 @@ namespace ModalLayer.Modal.Leaves
         public int Year { get; set; }
         public string LeaveDetail { get; set; }
         public long LeaveRequestId { set; get; }
-
+        public decimal PresentMonthLeaveAccrualed { set; get; }
+        public decimal TotalLeaveBalanceTillNow { set; get; }
     }
 }
