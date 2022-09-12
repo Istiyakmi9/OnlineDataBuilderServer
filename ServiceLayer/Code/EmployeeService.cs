@@ -482,6 +482,7 @@ namespace ServiceLayer.Code
                 };
             }
 
+            employee.OrganizationId = employeeDetail.OrganizationId;
             var professionalDetail = new EmployeeProfessionDetail
             {
                 AadharNo = employee.AadharNo,
@@ -553,6 +554,7 @@ namespace ServiceLayer.Code
                 var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
                 {
                     employee.EmployeeUid,
+                    employee.OrganizationId,
                     employee.FirstName,
                     employee.LastName,
                     employee.Mobile,
@@ -607,7 +609,6 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Fail to insert or update record. Contact to admin.");
                 }
 
-                _loginService.BuildApplicationCache(true);
                 long currentEmployeeId = Convert.ToInt64(employeeId);
                 if (fileCollection.Count > 0)
                 {

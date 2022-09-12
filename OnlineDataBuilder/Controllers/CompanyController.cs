@@ -58,6 +58,21 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(org);
         }
 
+        [HttpPost("UpdateCompanyDetails")]
+        public IResponse<ApiResponse> UpdateCompanyDetails()
+        {
+            StringValues compnyinfo = default(string);
+            OrganizationDetail org = null;
+            _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
+            if (compnyinfo.Count > 0)
+            {
+                OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                org = _companyService.InsertUpdateCompanyDetailService(organizationSettings, files);
+            }
+            return BuildResponse(org);
+        }
+
         [HttpGet("GetCompanyById/{companyId}")]
         public IResponse<ApiResponse> GetCompanyById(int companyId)
         {

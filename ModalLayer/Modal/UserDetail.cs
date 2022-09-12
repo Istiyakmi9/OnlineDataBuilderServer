@@ -15,7 +15,6 @@ namespace ModalLayer.Modal
         public string Token { set; get; }
         public DateTime? TokenExpiryDuration { set; get; }
         public string RefreshToken { set; get; }
-        public string Password { get; set; }
         public string MediaName { set; get; }
         public string AccessToken { set; get; }
         public int AdminId { get; set; }
@@ -25,6 +24,9 @@ namespace ModalLayer.Modal
     public class LoginDetail
     {
         public long UserId { set; get; }
+        public long EmployeeId { set; get; }
+        public int OrganizationId { set; get; }
+        public int CompanyId { set; get; }
         public string FirstName { set; get; }
         public string LastName { set; get; }
         public string Mobile { set; get; }
@@ -35,6 +37,7 @@ namespace ModalLayer.Modal
         public int RoleId { set; get; }
         public int AccessLevelId { set; get; }
         public int UserTypeId { set; get; }
+        public string Password { set; get; }
         public long ReportingManagerId { set; get; }
     }
 

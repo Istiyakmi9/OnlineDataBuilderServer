@@ -5,7 +5,7 @@ namespace ModalLayer.Modal.Accounts
     public class Company : BankDetail
     {
         public new int CompanyId { set; get; }
-        public int OrganizationId { set; get; }
+        public new int OrganizationId { set; get; }
         public string CompanyName { set; get; }
         public string CompanyDetail { get; set; }
         public int SectorType { set; get; }

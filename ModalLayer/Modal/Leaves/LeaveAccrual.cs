@@ -6,11 +6,13 @@ namespace ModalLayer.Modal.Leaves
     {
         public List<AllocateTimeBreakup> ExitMonthLeaveDistribution { set; get; }
         public List<AllocateTimeBreakup> JoiningMonthLeaveDistribution { set; get; }
+        public List<AllocateTimeBreakup> LeaveDistributionRateOnStartOfPeriod { set; get; }
         public List<AccrualProrate> AccrualProrateDetail { set; get; }
         public int LeaveAccrualId { get; set; }
         public int LeavePlanTypeId { get; set; }
         public bool CanApplyEntireLeave { get; set; }
         public bool IsLeaveAccruedPatternAvail { get; set; }
+        public bool IsLeaveAccruedProrateDefined { get; set; }
         public string LeaveDistributionSequence { get; set; }
         public decimal LeaveDistributionAppliedFrom { get; set; }
         public bool IsLeavesProratedForJoinigMonth { get; set; }

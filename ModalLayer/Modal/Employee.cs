@@ -5,6 +5,7 @@ namespace ModalLayer.Modal
     public class Employee : EmployeePersonalDetail
     {
         public long EmployeeLoginId { set; get; }
+        public int OrganizationId { set; get; }
         public string FirstName { set; get; }
         public string LastName { set; get; }
         public int CompanyId { set; get; }

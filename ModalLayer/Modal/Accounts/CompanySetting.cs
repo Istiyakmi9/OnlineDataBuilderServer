@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace ModalLayer.Modal
+namespace ModalLayer.Modal.Accounts
 {
     public class CompanySetting
     {
@@ -18,9 +17,9 @@ namespace ModalLayer.Modal
             OfficialWeekOffDays.Add(DayOfWeek.Sunday);
         }
 
-        public int SettingId {set; get;}
-        public int CompanyId {set; get;}
-        public int ProbationPeriodInDays {set; get;}
+        public int SettingId { set; get; }
+        public int CompanyId { set; get; }
+        public int ProbationPeriodInDays { set; get; }
         public int NoticePeriodInDays { set; get; }
         public bool IsUseInternationalWeekDays { set; get; } = true;
         public List<DayOfWeek> OfficialWeekOffDays { set; get; }
