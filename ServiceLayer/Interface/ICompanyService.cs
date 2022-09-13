@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 
@@ -12,8 +13,8 @@ namespace ServiceLayer.Interface
         dynamic GetCompanyById(int companyId);
         dynamic GetOrganizationDetailService();
         OrganizationDetail InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
-        BankDetail InsertUpdateCompanyAccounts(BankDetail bankDetail);
-        BankDetail GetCompanyBankDetail(int OrganizationId, int CompanyId);
+        List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail);
+        List<BankDetail> GetCompanyBankDetail(FilterModel filterModel);
         OrganizationDetail InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
     }
 }
