@@ -18,5 +18,7 @@ namespace ModalLayer.Modal.Accounts
         public bool IsPrimaryAccount { set; get; }
         public DateTime OpeningDate { set; get; }
         public DateTime ClosingDate { set; get; }
+        public int Total { set; get; }
+
     }
 }
