@@ -152,6 +152,7 @@ namespace ServiceLayer.Code
                 company.BranchCode = companyInfo.BranchCode;
                 company.OpeningDate = companyInfo.OpeningDate;
                 company.ClosingDate = companyInfo.ClosingDate;
+                company.IsPrimaryAccount = true;
                 company.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             else
@@ -159,6 +160,7 @@ namespace ServiceLayer.Code
                 company = companyInfo;
                 company.IsPrimaryCompany = true;
                 company.FixedComponentsId = "[]";
+                company.IsPrimaryAccount = true;
             }
 
 
