@@ -257,8 +257,6 @@ namespace ServiceLayer.Code
             return result;
         }
 
-
-
         public ProfileDetail GetUserDetail(long userId, int UserTypeId)
         {
             if (UserTypeId <= 0)
@@ -285,8 +283,11 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
+                    string jsonData = String.Empty;
                     profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
-                    string jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
+                    if (Result.Tables[0].Rows.Count > 0)
+                        jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
+
                     if (!string.IsNullOrEmpty(jsonData))
                     {
                         profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(jsonData);

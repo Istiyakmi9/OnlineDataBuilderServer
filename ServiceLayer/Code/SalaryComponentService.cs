@@ -443,10 +443,16 @@ namespace ServiceLayer.Code
             {
                 if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
                     salaryGrp.SalaryComponents = "[]";
-                else
-                    salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
+                //else
+                //    if (salaryGroup.GroupComponents == null && salaryGroup.SalaryComponents == null)
+                //        salaryGroup.SalaryComponents = "[]";
+                //    else
+                //        salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
 
-                salaryGrp = salaryGroup;
+                salaryGrp.GroupName = salaryGroup.GroupName;
+                salaryGrp.GroupDescription = salaryGroup.GroupDescription;
+                salaryGrp.MinAmount = salaryGroup.MinAmount;
+                salaryGrp.MaxAmount = salaryGroup.MaxAmount;
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 

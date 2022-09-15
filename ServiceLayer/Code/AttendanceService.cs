@@ -204,10 +204,10 @@ namespace ServiceLayer.Code
             {
                 var x = attendenceDetail.ElementAt(j);
                 if ((x.AttendanceDay - firstDate).TotalDays < 0)
-                    firstDate = x.AttendanceDay;
+                    firstDate = _timezoneConverter.ToIstTime(x.AttendanceDay);
 
                 if ((x.AttendanceDay - lastDate).TotalDays > 0)
-                    lastDate = x.AttendanceDay;
+                    lastDate = _timezoneConverter.ToIstTime(x.AttendanceDay);
 
                 j++;
             }
@@ -287,7 +287,7 @@ namespace ServiceLayer.Code
             while (i < attendenceDetail.Count)
             {
                 var x = attendenceDetail.ElementAt(i);
-
+                x.AttendanceDay = _timezoneConverter.ToIstTime(x.AttendanceDay);
                 var item = finalAttendanceSet.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
                 if (item != null)
                 {

@@ -75,7 +75,7 @@ namespace EMailService.Service
                 sequence);
         }
 
-        public string SendMail(EmailSenderModal emailSenderModal)
+        public string SendMail(EmailSenderModal emailSenderModal, dynamic OtherDetails)
         {
             string status = string.Empty;
 
@@ -104,7 +104,7 @@ namespace EMailService.Service
 
             var message = new MailMessage();
             message.Subject = emailSenderModal.Title;
-            message.Body = this.GetClientBillingBody();
+            message.Body = this.GetClientBillingBody(OtherDetails);
             message.IsBodyHtml = true;
             message.From = fromAddress;
 
@@ -140,19 +140,18 @@ namespace EMailService.Service
             return status;
         }
 
-        private string GetClientBillingBody()
+        private string GetClientBillingBody(dynamic Details)
         {
-            string htmlBody = @"<!DOCTYPE html>            
+            string htmlBody = $@"<!DOCTYPE html>            
                     <html>
                         <head>
                             <title>STAFFING BILL</title> 
                          </head> 
                          <body>
                             <h4>Hi Sir/Madam, </h4> 
-                            <p>PFA bill for the month of July.</p> 
+                            <p>PFA bill for the month of JUly.</p> 
                             <p>Developer detail as follows:</p>
-                            <div style='margin-left:10px;'>1. FAHIM SHAIKH  [ROLE: SOFTWARE DEVELOPER]</div> 
-                            <div style='margin-left:10px;'>2. VANHAR BASHA  [ROLE: SOFTWARE DEVELOPER]</div> 
+                            <div style='margin-left:10px;'>1. {Details.FirstName} {Details.LastName}  [ROLE: SOFTWARE DEVELOPER]</div> 
                             
                             <p style='margin-top: 2rem;'>Thanks & Regards,</p>
                             <div>Team BottomHalf</div>
