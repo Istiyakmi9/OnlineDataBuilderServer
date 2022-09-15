@@ -269,7 +269,7 @@ namespace ServiceLayer.Code
 
             leavePlantype.PlanConfigurationDetail = "";
             List<LeavePlanType> leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
-            int workingPlanIndex = leavePlanTypes.FindLastIndex(x => x.LeavePlanTypeId == leavePlanTypeId);
+            int workingPlanIndex = leavePlanTypes.FindIndex(x => x.LeavePlanTypeId == leavePlanTypeId);
             if (workingPlanIndex == -1)
                 leavePlanTypes.Add(leavePlantype);
             else
@@ -335,7 +335,6 @@ namespace ServiceLayer.Code
 
             return leavePlanConfiguration;
         }
-
 
         public LeavePlanConfiguration UpdateLeaveRestrictionService(int leavePlanTypeId, int leavePlanId, LeavePlanRestriction leavePlanRestriction)
         {
