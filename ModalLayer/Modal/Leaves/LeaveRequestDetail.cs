@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal.Leaves
 {
@@ -22,5 +23,10 @@ namespace ModalLayer.Modal.Leaves
         public decimal AvailableLeaves { set; get; }
         public decimal TotalLeaveApplied { set; get; }
         public decimal TotalApprovedLeave { set; get; }
+        public string LeaveQuotaDetail { set; get; }
+        public decimal TotalLeaveQuota { set; get; }
+        public int RequestStatusId { get; set; }
+        public List<EmployeeLeaveQuota> EmployeeLeaveQuotaDetail { set; get; }
+
     }
 }

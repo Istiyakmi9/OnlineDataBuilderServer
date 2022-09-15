@@ -699,9 +699,9 @@ namespace ServiceLayer.Code
             if (applyLeave.EmployeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            List<LeavePlanType> leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, DateTime.Now, DateTime.Now);
+            await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, DateTime.Now, DateTime.Now);
 
-            return leavePlanTypes;
+            return null;
         }
 
         public async Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave)
@@ -709,7 +709,9 @@ namespace ServiceLayer.Code
             if (applyLeave.EmployeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            List<LeavePlanType> leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
+            List<LeavePlanType> leavePlanTypes = null;
+            //leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
+            await _leaveCalculation.CheckAndApplyForLeave(applyLeave.EmployeeId, 1, Convert.ToDateTime("2022-10-22"), Convert.ToDateTime("2022-10-25"));
 
             return leavePlanTypes;
         }
