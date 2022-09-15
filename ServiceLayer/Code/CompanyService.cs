@@ -152,6 +152,7 @@ namespace ServiceLayer.Code
                 company.BranchCode = companyInfo.BranchCode;
                 company.OpeningDate = companyInfo.OpeningDate;
                 company.ClosingDate = companyInfo.ClosingDate;
+                company.IsPrimaryAccount = true;
                 company.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             else
@@ -159,6 +160,7 @@ namespace ServiceLayer.Code
                 company = companyInfo;
                 company.IsPrimaryCompany = true;
                 company.FixedComponentsId = "[]";
+                company.IsPrimaryAccount = true;
             }
 
 
@@ -268,6 +270,11 @@ namespace ServiceLayer.Code
             company.City = companyInfo.City;
             company.Country = companyInfo.Country;
             company.State = companyInfo.State;
+            company.LegalNameOfCompany = companyInfo.LegalNameOfCompany;
+            company.TypeOfBusiness = companyInfo.TypeOfBusiness;
+            company.LegalEntity = companyInfo.LegalEntity;
+            company.FullAddress = companyInfo.FullAddress;
+            company.InCorporationDate = companyInfo.InCorporationDate;
 
             var status = _db.Execute<OrganizationDetail>("sp_company_intupd", company, true);
             if (string.IsNullOrEmpty(status))
@@ -321,7 +328,12 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
             } else
             {
-                //bankDetails = this.GetCompanyBankDetail(bankDetail.OrganizationId, bankDetail.CompanyId);
+                FilterModel filterModel = new FilterModel();
+                filterModel.SortBy = "";
+                filterModel.PageSize = 10;
+                filterModel.PageIndex = 1;
+                filterModel.SearchString = $"1=1 And CompanyId = {bankDetail.CompanyId}";
+                bankDetails = this.GetCompanyBankDetail(filterModel);
             }
 
             return bankDetails;

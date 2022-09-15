@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,7 @@ namespace ServiceLayer.Code
         private readonly IDocumentProcessing _documentProcessing;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IEMailManager _eMailManager;
+        private readonly ICacheManager _cacheManager;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
@@ -43,7 +45,7 @@ namespace ServiceLayer.Code
             ExcelWriter excelWriter,
             HtmlToPdfConverter htmlToPdfConverter,
             IEMailManager eMailManager,
-            IFileMaker fileMaker)
+            IFileMaker fileMaker, ICacheManager cacheManager)
         {
             this.db = db;
             _logger = logger;
@@ -56,6 +58,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileMaker = fileMaker;
             _excelWriter = excelWriter;
+            _cacheManager = cacheManager;
         }
 
         public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
@@ -635,7 +638,7 @@ namespace ServiceLayer.Code
             if (resultSet != null && resultSet.Tables.Count == 2)
             {
                 var organizations = Converter.ToList<Organization>(resultSet.Tables[0]);
-
+                var file = Converter.ToList<FileDetail>(resultSet.Tables[1]);
                 var receiver = organizations.Find(x => x.ClientId == generateBillFileDetail.ClientId);
                 var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
                 EmailSenderModal emailSenderModal = new EmailSenderModal
@@ -645,9 +648,9 @@ namespace ServiceLayer.Code
                     UserName = "BottomHalf",
                     CC = new List<string>(),
                     BCC = new List<string>(),
-                    Title = "STAFFING BILL FOR MONTH - JAN, 2022",
+                    Title = $"STAFFING BILL FOR MONTH - July, 2022",
                     Subject = "Staffing bill",
-                    FileDetails = Converter.ToList<FileDetail>(resultSet.Tables[1])
+                    FileDetails = file
                 };
 
                 if (!string.IsNullOrEmpty(sender.OtherEmail_1))
@@ -668,7 +671,9 @@ namespace ServiceLayer.Code
                 if (!string.IsNullOrEmpty(receiver.OtherEmail_4))
                     emailSenderModal.CC.Add(receiver.OtherEmail_4);
 
-                result = _eMailManager.SendMail(emailSenderModal);
+                var employees = (_cacheManager.Get(ServiceLayer.Caching.Table.Employee)).ToList<Employee>();
+                var employee = employees.Find(x => x.EmployeeUid == generateBillFileDetail.EmployeeId);
+                result = _eMailManager.SendMail(emailSenderModal, employee);
             }
 
             return result;

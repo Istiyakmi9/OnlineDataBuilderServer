@@ -59,7 +59,7 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
                 UserName = null
             };
 
-            _eMailManager.SendMail(emailSenderModal);
+            _eMailManager.SendMail(emailSenderModal, null);
         }
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);

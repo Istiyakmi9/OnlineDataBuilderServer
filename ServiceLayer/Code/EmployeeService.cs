@@ -598,6 +598,7 @@ namespace ServiceLayer.Code
                     employeeSalaryDetail.NetSalary,
                     employeeSalaryDetail.CompleteSalaryDetail,
                     employeeSalaryDetail.TaxDetail,
+                    employee.DOB,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true
@@ -688,7 +689,6 @@ namespace ServiceLayer.Code
 
             if (employee.AccessLevelId <= 0)
                 throw new HiringBellException { UserMessage = "Role is a mandatory field.", FieldName = nameof(employee.AccessLevelId), FieldValue = employee.AccessLevelId.ToString() };
-
 
         }
     }
