@@ -25,17 +25,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("ApprovalAction")]
-        public IResponse<ApiResponse> ApprovalAction(ApprovalRequest approvalRequest)
+        [HttpPut("ApprovalAction/{RequestId}")]
+        public IResponse<ApiResponse> ApprovalAction([FromRoute]int RequestId, [FromBody] ApprovalRequest approvalRequest)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved);
+            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved, RequestId);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
         public IResponse<ApiResponse> RejectAction(ApprovalRequest approvalRequest)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Rejected);
+            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Rejected, 1);
             return BuildResponse(result);
         }
 

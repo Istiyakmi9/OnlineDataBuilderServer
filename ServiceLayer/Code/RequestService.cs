@@ -23,7 +23,7 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
         }
 
-        public List<ApprovalRequest> FetchPendingRequestService(int employeeId, int requestTypeId)
+        public List<ApprovalRequest> FetchPendingRequestService(long employeeId, int requestTypeId)
         {
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
@@ -41,7 +41,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public string ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status)
+        public List<ApprovalRequest> ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status, int RequestId)
         {
             string message = string.Empty;
             DbParam[] param = new DbParam[]
@@ -115,12 +115,16 @@ namespace ServiceLayer.Code
                     };
 
                     message = _db.ExecuteNonQuery("sp_approval_request_attendace_InsUpdate", param, true);
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        return FetchPendingRequestService(existingRecord.UserId, RequestId);
+                    }
                 }
             }
-            return message;
+            return null;
         }
 
-        public string ReAssigneToOtherManagerService(ApprovalRequest approvalRequest)
+        public List<ApprovalRequest> ReAssigneToOtherManagerService(ApprovalRequest approvalRequest)
         {
             return null;
         }

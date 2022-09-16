@@ -694,14 +694,18 @@ namespace ServiceLayer.Code
 
         #region LeaveCalculation And Assignment
 
-        public async Task<List<LeavePlanType>> GetEmployeeLeaveDetail(ApplyLeave applyLeave)
+        public async Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave)
         {
             if (applyLeave.EmployeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, DateTime.Now, DateTime.Now);
+            var leaveCalculationModal = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, DateTime.Now, DateTime.Now);
 
-            return null;
+            return new {
+                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
+                EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
+                Employee = leaveCalculationModal.employee 
+            };
         }
 
         public async Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave)
