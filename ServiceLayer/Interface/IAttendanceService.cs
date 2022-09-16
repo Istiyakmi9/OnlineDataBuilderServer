@@ -15,7 +15,7 @@ namespace ServiceLayer.Interface
         string SubmitAttendanceService(AttendenceDetail commentDetails);
         dynamic ApplyLeaveService(LeaveRequestDetail leaveDetail);
         Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave);
-        Task<List<LeavePlanType>> GetEmployeeLeaveDetail(ApplyLeave applyLeave);
+        Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
         dynamic GetAttendamceById(AttendenceDetail attendenceDetail);
     }

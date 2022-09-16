@@ -7,8 +7,9 @@ namespace ServiceLayer.Interface
 {
     public interface ILeaveCalculation
     {
-        Task GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate);
+        Task<LeaveCalculationModal> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate);
         Task CheckAndApplyForLeave(long EmployeeId, int LeaveTypeId, DateTime FromDate, DateTime ToDate);
         Task<bool> CanApplyForHalfDay(long EmployeeId);
+        void RunLeaveCalculationCycle();
     }
 }

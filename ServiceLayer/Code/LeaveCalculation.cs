@@ -709,9 +709,9 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Employee does not exist. Please contact to admin.");
         }
 
-        public void RunLeaveCalculationCycle(Employee employee)
+        public void RunLeaveCalculationCycle()
         {
-            List<Company> companies = _db.GetList<Company>("");
+            List<Company> companies = _db.GetList<Company>("sp_company_get");
             int i = 0;
             while (companies.Count > 0)
             {
@@ -809,7 +809,7 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
-        public async Task GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
+        public async Task<LeaveCalculationModal> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
             var leaveCalculationModal = GetCalculationModal(EmployeeId, FromDate, ToDate);
 
@@ -822,6 +822,8 @@ namespace ServiceLayer.Code
                 await RunEmployeeLeaveAccrualCycle(leaveCalculationModal, leavePlanType);
                 i++;
             }
+
+            return leaveCalculationModal;
         }
 
         private void CanApplyEntireLeave(LeaveCalculationModal leaveCalculationModal, LeavePlanType leaveType)
