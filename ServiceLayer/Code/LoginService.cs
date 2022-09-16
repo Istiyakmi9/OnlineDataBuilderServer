@@ -201,7 +201,8 @@ namespace ServiceLayer.Code
                 {
                     loginResponse = new LoginResponse();
                     var loginDetail = Converter.ToType<LoginDetail>(ds.Tables[0]);
-
+                    var employees =(_cacheManager.Get(Table.Employee)).ToList<Employee>();
+                    var employee = employees.FirstOrDefault(x => x.EmployeeUid == loginDetail.UserId);
                     if (loginDetail != null)
                     {
                         var userDetail = new UserDetail
@@ -216,7 +217,8 @@ namespace ServiceLayer.Code
                             UserTypeId = loginDetail.UserTypeId,
                             OrganizationId = loginDetail.OrganizationId,
                             CompanyId = loginDetail.CompanyId,
-                            ReportingManagerId = loginDetail.ReportingManagerId
+                            ReportingManagerId = loginDetail.ReportingManagerId,
+                            CreatedOn = employee.UpdatedOn
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);
