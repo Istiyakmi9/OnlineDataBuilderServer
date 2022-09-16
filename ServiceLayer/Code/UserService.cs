@@ -50,7 +50,7 @@ namespace ServiceLayer.Code
             ProfileDetail profileDetail = new ProfileDetail();
             var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
 
-            if (UserTypeId == 3)
+            if (UserTypeId == 3 || UserTypeId == 2)
             {
                 DbParam[] dbParams = new DbParam[]
                 {
