@@ -15,6 +15,5 @@ namespace ServiceLayer.Interface
         Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave);
         Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
-        dynamic GetAttendamceById(AttendenceDetail attendenceDetail);
     }
 }
