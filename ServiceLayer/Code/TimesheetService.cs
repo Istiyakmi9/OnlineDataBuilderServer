@@ -127,7 +127,7 @@ namespace ServiceLayer.Code
 
                         dailyTimesheetDetails = generatedTimesheet;
 
-                    } 
+                    }
                     else
                         dailyTimesheetDetails = generatedTimesheet;
                 }
@@ -449,6 +449,41 @@ namespace ServiceLayer.Code
             }
 
             return timesheetDetail;
+        }
+
+        public dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail)
+        {
+            List<DateTime> missingDayList = new List<DateTime>();
+            List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
+
+            TimesheetDetail currentTimesheetDetail = _db.Get<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
+            {
+                timesheetDetail.EmployeeId,
+                timesheetDetail.UserTypeId,
+                timesheetDetail.ForMonth,
+                timesheetDetail.ForYear
+            });
+
+            if (currentTimesheetDetail != null)
+                dailyTimesheetDetails = JsonConvert
+                    .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
+            else
+                currentTimesheetDetail = new TimesheetDetail { ForMonth = timesheetDetail.ForMonth, ForYear = timesheetDetail.ForYear };
+
+            dailyTimesheetDetails.OrderBy(DateTime => DateTime);
+            int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
+            int i = 1;
+            while (i <= days)
+            {
+                var value = dailyTimesheetDetails.Where(x => x.PresentDate.Day == i).FirstOrDefault();
+                if (value == null)
+                {
+                    missingDayList.Add(new DateTime(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth, i));
+                }
+                i++;
+            }
+
+            return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
         }
     }
 }
