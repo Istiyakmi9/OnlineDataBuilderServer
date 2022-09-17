@@ -6,6 +6,7 @@ namespace ModalLayer.Modal
     {
         public List<string> To { set; get; }
         public string From { set; get; }
+        public string Body { set; get; }
         public string UserName { set; get; }
         public string Title { set; get; }
         public string Subject { set; get; }

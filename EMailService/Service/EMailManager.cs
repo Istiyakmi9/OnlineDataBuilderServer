@@ -17,12 +17,12 @@ namespace EMailService.Service
             _fileLocationDetail = fileLocationDetail;
         }
 
-        public void ReadMails()
+        public void ReadMails(EmailSettingDetail emailSettingDetail)
         {
             string localInbox = string.Format("{0}\\inbox", Directory.GetCurrentDirectory());
             MailServer oServer = new MailServer("pop.secureserver.net",
-                "info@bottomhalf.in",
-                "bottomhalf@mi9",
+                emailSettingDetail.EmailAddress, // "info@bottomhalf.in",
+                emailSettingDetail.Credentials, // "bottomhalf@mi9",
                 ServerProtocol.Pop3);
 
             // Enable SSL/TLS connection, most modern email server require SSL/TLS by default
