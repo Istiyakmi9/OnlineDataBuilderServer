@@ -51,13 +51,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [HttpPost("GetAttendamceById")]
-        public IResponse<ApiResponse> GetAttendamceById(AttendenceDetail attendenceDetail)
-        {
-            var result = _attendanceService.GetAttendamceById(attendenceDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
-        }
-
         [HttpPost("SubmitAttendance")]
         public IResponse<ApiResponse> SubmitAttendance(AttendenceDetail commentDetails)
         {
