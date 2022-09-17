@@ -485,5 +485,12 @@ namespace ServiceLayer.Code
 
             return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
         }
+
+        public List<DailyTimesheetDetail> UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, string comment)
+        {
+            List<DailyTimesheetDetail> timesheets = null;
+            return timesheets;
+        }
+
     }
 }
