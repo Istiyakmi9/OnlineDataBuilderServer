@@ -19,9 +19,9 @@ namespace ModalLayer.Modal.Accounts
         public string City { get; set; }
         public decimal TotalRent { get; set; }
         public string OwnerName { get; set; }
-        public string PanNumber { get; set; }
+        public string PANNo { get; set; }
         public string OwnerAddress { get; set; }
-        public bool IsPanNumber { get; set; }
+        public bool IsPANNo { get; set; }
         public bool IsOwnerAddressSame { get; set; }
         public string LandlordType { get; set; }
         public bool IsSignedDeclaration { get; set; }

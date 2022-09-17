@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Code;
 using ServiceLayer.Interface;
@@ -17,9 +19,11 @@ namespace OnlineDataBuilder.Controllers
     public class TimesheetController : BaseController
     {
         private readonly ITimesheetService _timesheetService;
-        public TimesheetController(ITimesheetService timesheetService)
+        private readonly HttpContext _httpContext;
+        public TimesheetController(ITimesheetService timesheetService, IHttpContextAccessor httpContext)
         {
             _timesheetService = timesheetService;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpPost("GetTimesheetByUserId")]
@@ -48,6 +52,17 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetEmployeeTimeSheet(TimesheetDetail timesheetDetail)
         {
             var result = _timesheetService.GetEmployeeTimeSheetService(timesheetDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("UpdateTimesheet")]
+        public IResponse<ApiResponse> UpdateTimesheet()
+        {
+            _httpContext.Request.Form.TryGetValue("comment", out StringValues comment);
+            _httpContext.Request.Form.TryGetValue("timesheet", out StringValues timesheet);
+            string Comment = JsonConvert.DeserializeObject<string>(comment);
+            List<DailyTimesheetDetail> dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timesheet);
+            var result = _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, Comment);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }
