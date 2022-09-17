@@ -609,85 +609,17 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public dynamic ApplyLeaveService(LeaveRequestDetail leaveDetail)
+        public async Task<dynamic> ApplyLeaveService(LeaveRequestDetail leaveDetail)
         {
             if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
-            List<CompleteLeaveDetail> completeLeaveDetails = null;
-            var result = _db.Get<Leave>("sp_employee_leave_request_GetById", new
-            {
-                leaveDetail.EmployeeId,
-                Year = leaveDetail.LeaveFromDay.Year
-            });
+            await _leaveCalculation.CheckAndApplyForLeave(leaveDetail);
 
-            Employee employee = _db.Get<Employee>("SP_Employees_ById", new
+            return this.GetEmployeeLeaveDetail(new ApplyLeave
             {
                 EmployeeId = _currentSession.CurrentUserDetail.UserId,
-                IsActive = 1
-            });
-
-            if (employee == null)
-                throw new HiringBellException("No employee found. Please login again.");
-
-            if (result != null)
-            {
-                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(result.LeaveDetail);
-
-                if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
-                {
-                    Parallel.ForEach(completeLeaveDetails, x =>
-                    {
-                        if (leaveDetail.LeaveFromDay.Subtract(x.LeaveFromDay).TotalDays == 0 ||
-                            leaveDetail.LeaveToDay.Subtract(x.LeaveToDay).TotalDays == 0)
-                            throw new HiringBellException("Incorrect From and To date applied. These dates are already used.");
-                    });
-                }
-            }
-            else
-                completeLeaveDetails = new List<CompleteLeaveDetail>();
-
-            completeLeaveDetails.Add(
-                    new CompleteLeaveDetail()
-                    {
-                        EmployeeId = leaveDetail.EmployeeId,
-                        EmployeeName = employee.FirstName + " " + employee.LastName,
-                        AssignTo = leaveDetail.AssignTo,
-                        Session = leaveDetail.Session,
-                        LeaveType = leaveDetail.LeaveType,
-                        LeaveFromDay = leaveDetail.LeaveFromDay,
-                        LeaveToDay = leaveDetail.LeaveToDay,
-                        NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
-                        LeaveStatus = (int)ItemStatus.Pending,
-                        Reason = leaveDetail.Reason,
-                        RequestedOn = DateTime.UtcNow
-                    }
-                );
-
-
-            leaveDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-            var value = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
-            {
-                leaveDetail.LeaveRequestId,
-                leaveDetail.EmployeeId,
-                leaveDetail.LeaveDetail,
-                leaveDetail.Reason,
-                leaveDetail.UserTypeId,
-                AssignTo = _currentSession.CurrentUserDetail.ReportingManagerId,
-                Year = leaveDetail.LeaveFromDay.Year,
-                leaveDetail.LeaveFromDay,
-                leaveDetail.LeaveToDay,
-                leaveDetail.LeaveType,
-                RequestStatusId = (int)ItemStatus.Pending,
-                leaveDetail.RequestType
-            }, true);
-
-            if (string.IsNullOrEmpty(value))
-                throw new HiringBellException("Unable to apply for leave. Please contact to admin.");
-
-            return this.GetEmployeeLeaveDetail(new ApplyLeave { 
-                EmployeeId = _currentSession.CurrentUserDetail.UserId, 
-                FromDate = leaveDetail.LeaveFromDay ,
+                FromDate = leaveDetail.LeaveFromDay,
                 ToDate = leaveDetail.LeaveToDay
             });
         }
@@ -701,10 +633,11 @@ namespace ServiceLayer.Code
 
             var leaveCalculationModal = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, DateTime.Now, DateTime.Now);
 
-            return new {
+            return new
+            {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
-                Employee = leaveCalculationModal.employee 
+                Employee = leaveCalculationModal.employee
             };
         }
 
@@ -715,7 +648,15 @@ namespace ServiceLayer.Code
 
             List<LeavePlanType> leavePlanTypes = null;
             //leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
-            await _leaveCalculation.CheckAndApplyForLeave(applyLeave.EmployeeId, 1, Convert.ToDateTime("2022-10-22"), Convert.ToDateTime("2022-10-25"));
+            LeaveRequestDetail leaveDetail = new LeaveRequestDetail
+            {
+                EmployeeId = 4,
+                LeaveType = 1,
+                LeaveFromDay = Convert.ToDateTime("2022-10-22"),
+                LeaveToDay = Convert.ToDateTime("2022-10-22")
+            };
+
+            await _leaveCalculation.CheckAndApplyForLeave(leaveDetail);
 
             return leavePlanTypes;
         }

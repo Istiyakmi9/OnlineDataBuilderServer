@@ -855,43 +855,48 @@ namespace ServiceLayer.Code
             return leaveType;
         }
 
-        public async Task CheckAndApplyForLeave(long EmployeeId, int leaveTypeId, DateTime FromDate, DateTime ToDate)
+        public async Task<string> CheckAndApplyForLeave(LeaveRequestDetail leaveDetail)
         {
-            var leaveCalculationModal = GetCalculationModal(EmployeeId, FromDate, ToDate);
-
-            LeavePlanType leavePlanType = default(LeavePlanType);
-            int i = 0;
-            while (i < leaveCalculationModal.leavePlanTypes.Count)
+            try
             {
-                leavePlanType = leaveCalculationModal.leavePlanTypes[i];
+                var leaveCalculationModal = GetCalculationModal(leaveDetail.EmployeeId, leaveDetail.LeaveFromDay, leaveDetail.LeaveToDay);
+
+                LeavePlanType leavePlanType = default(LeavePlanType);
+                leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveDetail.LeaveType);
+                if (leavePlanType == null)
+                    throw new HiringBellException("Request leave detail not found. Please contact to admin.");
+
                 ValidateAndGetLeavePlanConfiguration(leavePlanType);
                 await RunEmployeeLeaveAccrualCycle(leaveCalculationModal, leavePlanType);
-                i++;
+
+                //1. Check all leave restriction
+                CheckAllRestrictionForCurrentLeaveType(leaveCalculationModal, leavePlanType.AvailableLeave);
+
+                //2. can see and apply this leave
+                AllowToSeeAndApply();
+
+                //3. check befor and after how many days this leave can be applied for future and back dated leave
+                LeaveEligibilityCheck(leaveCalculationModal);
+
+                //4. check if leave required comments
+                DoesLeaveRequiredComments();
+
+                //5. check if required any document proof for this leave
+                RequiredDocumentForExtending();
+
+                //6. check total available leave quota till now            
+                leavePlanType = DoesRequestedLeaveAvailable(leaveDetail.LeaveType, leaveCalculationModal);
+
+                //7. save detail to employee leave request table and reaise leave request
+                return await ApplyAndSaveChanges(leaveCalculationModal, leavePlanType, leaveDetail);
             }
-
-            //1. Check all leave restriction
-            CheckAllRestrictionForCurrentLeaveType(leaveCalculationModal, leavePlanType.AvailableLeave);
-
-            //2. can see and apply this leave
-            AllowToSeeAndApply();
-
-            //3. check befor and after how many days this leave can be applied for future and back dated leave
-            LeaveEligibilityCheck(leaveCalculationModal);
-
-            //4. check if leave required comments
-            DoesLeaveRequiredComments();
-
-            //5. check if required any document proof for this leave
-            RequiredDocumentForExtending();
-
-            //6. check total available leave quota till now            
-            leavePlanType = DoesRequestedLeaveAvailable(leaveTypeId, leaveCalculationModal);
-
-            //7. save detail to employee leave request table and reaise leave request
-            ApplyAndSaveChanges(leaveCalculationModal, leavePlanType);
+            catch
+            {
+                throw;
+            }
         }
 
-        private void ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
+        private async Task<string> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType, LeaveRequestDetail leaveDetail)
         {
             decimal totalAllocatedLeave = leaveCalculationModal.leavePlanTypes.Sum(x => x.MaxLeaveLimit);
             LeaveRequestDetail leaveRequestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_GetById", new
@@ -903,37 +908,69 @@ namespace ServiceLayer.Code
             if (leaveRequestDetail == null)
                 throw new HiringBellException("Unable to find leave request for current employee.");
 
-            leaveRequestDetail.TotalLeaveApplied += leaveCalculationModal.totalNumOfLeaveApplied;
-            List<CompleteLeaveDetail> leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
-            CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail
+            string result = string.Empty;
+            await Task.Run(() =>
             {
-                Reason = "Health",
-                Session = "fullday",
-                AssignTo = 0,
-                LeaveType = leavePlanType.LeavePlanTypeId,
-                NumOfDays = leaveCalculationModal.totalNumOfLeaveApplied,
-                ProjectId = 0,
-                EmployeeId = leaveCalculationModal.employee.EmployeeUid,
-                LeaveToDay = leaveCalculationModal.toDate,
-                LeaveStatus = 9,
-                RequestedOn = DateTime.Now,
-                RespondedBy = 0,
-                EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                LeaveFromDay = leaveCalculationModal.fromDate
-            };
-            leaveDetails.Add(newLeaveDeatil);
-            leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
-            leaveRequestDetail.TotalLeaveQuota = totalAllocatedLeave;
-            leaveRequestDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(
-                leaveCalculationModal.leavePlanTypes.Select(x => new EmployeeLeaveQuota
-                {
-                    LeavePlanTypeId = x.LeavePlanTypeId,
-                    AvailableLeave = x.AvailableLeave
-                }));
-            var result = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", leaveRequestDetail, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("fail to insert or update");
+                leaveRequestDetail.TotalLeaveApplied += leaveCalculationModal.totalNumOfLeaveApplied;
+                List<CompleteLeaveDetail> leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
 
+                if (leaveDetails != null)
+                {
+                    CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
+                    {
+                        EmployeeId = leaveDetail.EmployeeId,
+                        EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
+                        AssignTo = leaveDetail.AssignTo,
+                        Session = leaveDetail.Session,
+                        LeaveType = leaveDetail.LeaveType,
+                        LeaveFromDay = leaveDetail.LeaveFromDay,
+                        LeaveToDay = leaveDetail.LeaveToDay,
+                        NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
+                        LeaveStatus = (int)ItemStatus.Pending,
+                        Reason = leaveDetail.Reason,
+                        RequestedOn = DateTime.UtcNow
+                    };
+
+                    leaveDetails.Add(newLeaveDeatil);
+                }
+                else
+                    leaveDetails = new List<CompleteLeaveDetail>();
+
+                leaveDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(
+                    leaveCalculationModal.leavePlanTypes.Select(x => new EmployeeLeaveQuota
+                    {
+                        LeavePlanTypeId = x.LeavePlanTypeId,
+                        AvailableLeave = x.AvailableLeave
+                    }));
+
+                leaveDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
+                result = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
+                {
+                    leaveDetail.LeaveRequestId,
+                    leaveDetail.EmployeeId,
+                    leaveDetail.LeaveDetail,
+                    leaveDetail.Reason,
+                    leaveDetail.UserTypeId,
+                    AssignTo = _currentSession.CurrentUserDetail.ReportingManagerId,
+                    Year = leaveDetail.LeaveFromDay.Year,
+                    leaveDetail.LeaveFromDay,
+                    leaveDetail.LeaveToDay,
+                    leaveDetail.LeaveType,
+                    RequestStatusId = (int)ItemStatus.Pending,
+                    leaveDetail.RequestType,
+                    leaveDetail.AvailableLeaves,
+                    leaveRequestDetail.TotalLeaveApplied,
+                    leaveDetail.TotalApprovedLeave,
+                    TotalLeaveQuota = totalAllocatedLeave,
+                    leaveDetail.LeaveQuotaDetail
+
+                }, true);
+
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("fail to insert or update");
+            });
+
+            return result;
         }
 
         private void LeaveRestrictionCheck(LeavePlanType leavePlanType, LeaveCalculationModal leaveCalculationModal, decimal availableLeaveLimit)
