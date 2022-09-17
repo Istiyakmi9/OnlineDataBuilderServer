@@ -8,6 +8,6 @@ namespace EMailService.Service
     public interface IEMailManager
     {
         string SendMail(EmailSenderModal emailSenderModal, dynamic? otherDetails);
-        void ReadMails();
+        void ReadMails(EmailSettingDetail emailSettingDetail);
     }
 }
