@@ -12,7 +12,6 @@ using System.Net;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [Authorize(Roles = Role.Admin)]
     [Route("api/[controller]")]
     [ApiController]
     public class SalaryComponentController : BaseController
@@ -48,6 +47,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("UpdateSalaryComponents")]
         public IResponse<ApiResponse> UpdateSalaryComponents(List<SalaryComponents> salaryComponents)
         {
@@ -55,6 +55,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateSalaryComponentsByExcel")]
         public IResponse<ApiResponse> InsertUpdateSalaryComponentsByExcel(List<SalaryComponents> salaryComponents)
         {
@@ -62,6 +63,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddSalaryGroup")]
         public IResponse<ApiResponse> AddSalaryGroup(SalaryGroup salaryGroup)
         {
@@ -69,6 +71,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("UpdateSalaryGroup")]
         public IResponse<ApiResponse> UpdateSalaryGroup(SalaryGroup salaryGroup)
         {
@@ -76,6 +79,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("UpdateSalaryGroupComponents")]
         public IResponse<ApiResponse> UpdateSalaryGroupComponents(SalaryGroup salaryGroup)
         {
@@ -83,6 +87,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddUpdateRecurringComponents")]
         public IResponse<ApiResponse> AddUpdateRecurringComponents(SalaryStructure salaryStructure)
         {
@@ -90,6 +95,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddAdhocComponents")]
         public IResponse<ApiResponse> AddAdhocComponents(SalaryStructure salaryStructure)
         {
@@ -97,6 +103,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddDeductionComponents")]
         public IResponse<ApiResponse> AddDeductionComponents(SalaryStructure salaryStructure)
         {
@@ -104,6 +111,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddBonusComponents")]
         public IResponse<ApiResponse> AddBonusComponents(SalaryStructure salaryStructure)
         {
@@ -118,6 +126,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateSalaryBreakUp/{EmployeeId}/{PresentMonth}/{PresentYear}")]
         public IResponse<ApiResponse> SalaryDetail(long EmployeeId, int PresentMonth, int PresentYear)
         {

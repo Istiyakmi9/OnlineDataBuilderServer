@@ -53,7 +53,6 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = Role.Admin)]
         [Route("GetAllManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetAllManageEmployeeDetail(long EmployeeId)
         {
@@ -70,6 +69,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = Role.Admin)]
         [Route("UpdateEmployeeDetail/{IsUpdating}")]
         public ApiResponse UpdateEmployeeDetail([FromBody] Employee employee, bool IsUpdating)
         {
@@ -84,6 +84,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpDelete("ActivateOrDeActiveEmployee/{EmployeeId}/{IsActive}")]
         public ApiResponse DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
@@ -91,6 +92,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("employeeregistration/{IsUpdating}")]
         public async Task<ApiResponse> EmployeeRegistration(bool IsUpdating)
         {
