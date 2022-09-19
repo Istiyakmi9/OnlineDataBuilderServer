@@ -20,13 +20,7 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
         private readonly ICacheManager _cacheManager;
-
-        public CompanyService(IDb db,
-            FileLocationDetail fileLocationDetail,
-            IFileService fileService,
-            CurrentSession currentSession,
-            ICacheManager cacheManager
-            )
+        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession, ICacheManager cacheManager)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
@@ -52,7 +46,7 @@ namespace ServiceLayer.Code
             companyGrp.Email = companyGroup.Email;
             companyGrp.InCorporationDate = companyGroup.InCorporationDate;
             companyGrp.CompanyDetail = companyGroup.CompanyDetail;
-
+            companyGrp.CompanyName = companyGroup.CompanyName;
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", companyGrp, true);
             if (string.IsNullOrEmpty(value))
@@ -65,13 +59,16 @@ namespace ServiceLayer.Code
 
         public List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup)
         {
+            if (companyGroup.OrganizationId == 0)
+                throw new HiringBellException("Invalid organization id.");
+
             List<OrganizationDetail> companyGrp = null;
             companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
             OrganizationDetail result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
             if (result != null)
                 throw new HiringBellException("Company Already exist.");
 
-            companyGroup.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+            //companyGroup.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
             result = companyGroup;
             companyGrp.Add(result);
 
@@ -184,7 +181,8 @@ namespace ServiceLayer.Code
             {
                 UpdateOrganizationLogo(companyInfo, fileCollection);
             }
-
+            List<OrganizationDetail> organizationDetails = this.GetAllCompany();
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
             return company;
         }
 
