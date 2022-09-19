@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -68,7 +67,7 @@ namespace ServiceLayer.Code
                     new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
                     new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
                 };
-                var msg = _db.ExecuteNonQuery("sp_professionaldetail_insetupdate", dbParams, true);
+                var msg = _db.ExecuteNonQuery("sp_professionaldetail_insupd", dbParams, true);
                 employeeId = Convert.ToInt64(msg);
             }
             else if (UserTypeId == 1)
