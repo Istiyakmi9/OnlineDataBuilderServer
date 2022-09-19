@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -16,13 +17,14 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
         private readonly ICommonService _commonService;
-
-        public LeaveService(IDb db, CurrentSession currentSession, IEmployeeService employeeService, ICommonService commonService)
+        private readonly ICacheManager _cacheManager;
+        public LeaveService(IDb db, CurrentSession currentSession, IEmployeeService employeeService, ICommonService commonService, ICacheManager cacheManager)
         {
             _db = db;
             _currentSession = currentSession;
             _employeeService = employeeService;
             _commonService = commonService;
+            _cacheManager = cacheManager;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -43,6 +45,7 @@ namespace ServiceLayer.Code
                 result.IsShowLeavePolicy = leavePlan.IsShowLeavePolicy;
                 result.IsUploadedCustomLeavePolicy = leavePlan.IsUploadedCustomLeavePolicy;
                 result.PlanStartCalendarDate = leavePlan.PlanStartCalendarDate;
+                result.IsDefaultPlan = leavePlan.IsDefaultPlan;
                 leavePlan = result;
             }
             else
@@ -55,6 +58,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to add or update leave plan");
 
             leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<LeavePlan>(leavePlans));
             return leavePlans;
         }
 

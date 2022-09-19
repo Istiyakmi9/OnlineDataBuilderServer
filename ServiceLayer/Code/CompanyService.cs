@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -18,13 +19,14 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
-
-        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession)
+        private readonly ICacheManager _cacheManager;
+        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession, ICacheManager cacheManager)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
+            _cacheManager = cacheManager;
         }
         public List<OrganizationDetail> GetAllCompany()
         {
@@ -44,13 +46,15 @@ namespace ServiceLayer.Code
             companyGrp.Email = companyGroup.Email;
             companyGrp.InCorporationDate = companyGroup.InCorporationDate;
             companyGrp.CompanyDetail = companyGroup.CompanyDetail;
-
+            companyGrp.CompanyName = companyGroup.CompanyName;
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", companyGrp, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
-            return this.GetAllCompany();
+            List<OrganizationDetail> organizationDetails = this.GetAllCompany();
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
+            return organizationDetails;
         }
 
         public List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup)
@@ -69,6 +73,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert company group.");
 
             companyGrp = this.GetAllCompany();
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
             return companyGrp;
         }
 
@@ -173,7 +178,8 @@ namespace ServiceLayer.Code
             {
                 UpdateOrganizationLogo(companyInfo, fileCollection);
             }
-
+            List<OrganizationDetail> organizationDetails = this.GetAllCompany();
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
             return company;
         }
 
