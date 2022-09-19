@@ -34,7 +34,6 @@ namespace ServiceLayer.Code
         private readonly IDocumentProcessing _documentProcessing;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IEMailManager _eMailManager;
-        private readonly ICacheManager _cacheManager;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             IHostingEnvironment hostingEnvironment,
@@ -45,7 +44,7 @@ namespace ServiceLayer.Code
             ExcelWriter excelWriter,
             HtmlToPdfConverter htmlToPdfConverter,
             IEMailManager eMailManager,
-            IFileMaker fileMaker, ICacheManager cacheManager)
+            IFileMaker fileMaker)
         {
             this.db = db;
             _logger = logger;
@@ -58,7 +57,6 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileMaker = fileMaker;
             _excelWriter = excelWriter;
-            _cacheManager = cacheManager;
         }
 
         public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
@@ -627,25 +625,28 @@ namespace ServiceLayer.Code
         public string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail)
         {
             string result = null;
-            DbParam[] param = new DbParam[]
+            var resultSet = db.FetchDataSet("sp_sendingbill_email_get_detail", new
             {
-                new DbParam(generateBillFileDetail.SenderId, typeof(long), "_SenderId"),
-                new DbParam(generateBillFileDetail.ClientId, typeof(long), "_ReceiverId"),
-                new DbParam(generateBillFileDetail.FileId, typeof(long), "_FileId")
-            };
+                generateBillFileDetail.SenderId,
+                generateBillFileDetail.ClientId,
+                generateBillFileDetail.FileId,
+                generateBillFileDetail.EmployeeId
+            });
 
-            var resultSet = this.db.GetDataset("SP_ClientsAndSender_Emails_By_Id", param);
-            if (resultSet != null && resultSet.Tables.Count == 2)
+            if (resultSet != null && resultSet.Tables.Count == 4)
             {
                 var organizations = Converter.ToList<Organization>(resultSet.Tables[0]);
                 var file = Converter.ToList<FileDetail>(resultSet.Tables[1]);
+                var employee = Converter.ToType<Employee>(resultSet.Tables[2]);
+                var emailSetting = Converter.ToType<EmailSettingDetail>(resultSet.Tables[3]);
+
                 var receiver = organizations.Find(x => x.ClientId == generateBillFileDetail.ClientId);
                 var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
                 EmailSenderModal emailSenderModal = new EmailSenderModal
                 {
                     To = new List<string> { "istiyaq.mi9@gmail.com" }, //receiver.Email,
-                    From = "info@bottomhalf.in", //sender.Email,
-                    UserName = "BottomHalf",
+                    From = emailSetting.EmailAddress, //sender.Email,
+                    UserName = emailSetting.EmailName,
                     CC = new List<string>(),
                     BCC = new List<string>(),
                     Title = $"STAFFING BILL FOR MONTH - July, 2022",
@@ -671,8 +672,6 @@ namespace ServiceLayer.Code
                 if (!string.IsNullOrEmpty(receiver.OtherEmail_4))
                     emailSenderModal.CC.Add(receiver.OtherEmail_4);
 
-                var employees = (_cacheManager.Get(ServiceLayer.Caching.Table.Employee)).ToList<Employee>();
-                var employee = employees.Find(x => x.EmployeeUid == generateBillFileDetail.EmployeeId);
                 result = _eMailManager.SendMail(emailSenderModal, employee);
             }
 

@@ -209,10 +209,10 @@ namespace ServiceLayer.Code
                 resultset.Tables[7].TableName = "LeavePlans";
 
 
-                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Client).Copy());
+                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.CacheTable.Client).Copy());
                 finalResultSet.Tables[0].TableName = "Clients";
 
-                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Companies).Copy());
+                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.CacheTable.Companies).Copy());
                 finalResultSet.Tables[1].TableName = "Companies";
 
                 finalResultSet.Tables.Add(resultset.Tables[0].Copy());

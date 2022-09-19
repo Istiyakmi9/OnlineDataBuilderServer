@@ -1,19 +1,36 @@
 using BottomhalfCore.DatabaseLayer.MySql.Code;
-using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
-using System;
 using System.Data;
 
 namespace ServiceLayer.Caching
 {
     public class CacheManager : ICacheManager
     {
-        private readonly Cache _cache;
+        private static readonly object _lock = new object();
+        private static CacheManager _cacheManager;
+
+        private readonly Cache _cache = null;
         private readonly string _connectionString;
-        public CacheManager(IConfiguration configuration)
+        private CacheManager(string connectionString)
         {
             _cache = Cache.GetInstance();
-            _connectionString = configuration.GetConnectionString("OnlinedatabuilderDb");
+            _connectionString = connectionString;
+            this.LoadApplicationData();
+        }
+
+        public static CacheManager GetInstance(string connectionString)
+        {
+            if (_cacheManager == null)
+            {
+                lock (_lock)
+                {
+                    if (_cacheManager == null)
+                    {
+                        _cacheManager = new CacheManager(connectionString);
+                    }
+                }
+            }
+            return _cacheManager;
         }
 
         public bool IsEmpty()
@@ -21,7 +38,7 @@ namespace ServiceLayer.Caching
             return _cache.IsEmpty();
         }
 
-        public void Add(Table key, DataTable value)
+        public void Add(CacheTable key, DataTable value)
         {
             _cache.Add(key, value);
         }
@@ -31,7 +48,7 @@ namespace ServiceLayer.Caching
             _cache.Clean();
         }
 
-        public DataTable Get(Table key)
+        public DataTable Get(CacheTable key)
         {
             if (_cache.IsEmpty())
             {
@@ -42,30 +59,25 @@ namespace ServiceLayer.Caching
             return _cache.Get(key);
         }
 
-        public void ReLoad(Func<DataTable> procFunc, Table tableName)
+        public void ReLoad(CacheTable tableName, DataTable table)
         {
-            _cache.ReLoad(procFunc, tableName);
+            _cache.ReLoad(tableName, table);
         }
 
-        public DataSet LoadApplicationData()
+        public void LoadApplicationData(bool isReload = false)
         {
-            var _db = new Db(_connectionString);
-            var Result = _db.GetDataset("SP_ApplicationData_Get", null);
-            if (Result.Tables.Count == 5)
+            if (IsEmpty() || isReload)
             {
-                Result.Tables[0].TableName = "clients";
-                Result.Tables[1].TableName = "employees";
-                Result.Tables[2].TableName = "accessLevel";
-                Result.Tables[3].TableName = "companies";
-                Result.Tables[4].TableName = "allocatedClients";
-
-                _cache.Clean();
-                _cache.Add(Table.Client, Result.Tables[0]);
-                _cache.Add(Table.Employee, Result.Tables[1]);
-                _cache.Add(Table.EmployeeRoles, Result.Tables[2]);
-                _cache.Add(Table.Companies, Result.Tables[3]);
+                var _db = new Db(_connectionString);
+                DataSet Result = _db.GetDataset("SP_ApplicationData_Get", null);
+                if (Result.Tables.Count == 5)
+                {
+                    _cache.Clean();
+                    _cache.Add(CacheTable.AccessLevel, Result.Tables[0]);
+                    _cache.Add(CacheTable.LeavePlan, Result.Tables[1]);
+                    _cache.Add(CacheTable.Company, Result.Tables[2]);
+                }
             }
-            return Result;
         }
     }
 }

@@ -19,13 +19,11 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly ICacheManager _cacheManager;
         private readonly ILeaveCalculation _leaveCalculation;
 
-        public AttendanceService(IDb db, ICacheManager cacheManager, ILeaveCalculation leaveCalculation, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        public AttendanceService(IDb db, ILeaveCalculation leaveCalculation, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
-            _cacheManager = cacheManager;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
             _leaveCalculation = leaveCalculation;

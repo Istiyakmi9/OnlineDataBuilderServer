@@ -1,25 +1,30 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using ServiceLayer.Caching;
+using ModalLayer.Modal;
 using ServiceLayer.Interface;
-using System.Data;
+using System.Collections.Generic;
 
 namespace ServiceLayer.Code
 {
     public class CommonService : ICommonService
     {
         private readonly IDb _db;
-        private readonly ICacheManager _cacheManager;
 
-        public CommonService(IDb db, ICacheManager cacheManager)
+        public CommonService(IDb db)
         {
             _db = db;
-            _cacheManager = cacheManager;
         }
 
-        public DataTable LoadEmployeeData()
+        public List<Employee> LoadEmployeeData()
         {
-            DataTable employeeTable = _cacheManager.Get(ServiceLayer.Caching.Table.Employee);
-            employeeTable.TableName = "Employee";
+            FilterModel filterModel = new FilterModel();
+            List<Employee> employeeTable = _db.GetList<Employee>("SP_Employees_Get", new
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
+            });
+
             return employeeTable;
         }
 

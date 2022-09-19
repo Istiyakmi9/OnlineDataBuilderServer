@@ -148,7 +148,10 @@ namespace OnlineDataBuilder
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
             services.AddScoped<HtmlToPdfConverter>();
-            services.AddSingleton<ICacheManager, CacheManager>();
+            services.AddSingleton<ICacheManager, CacheManager>(x =>
+            {
+                return CacheManager.GetInstance(connectionString);
+            });
             services.AddScoped<IRequestService, RequestService>();
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<ISalaryComponentService, SalaryComponentService>();

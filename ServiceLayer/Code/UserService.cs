@@ -24,7 +24,6 @@ namespace ServiceLayer.Code
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
-        private readonly ICacheManager _cacheManager;
 
         public UserService(
             IDb db,
@@ -32,11 +31,10 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             IHostingEnvironment hostingEnvironment,
             CurrentSession currentSession,
-            IEmployeeService employeeService,
-            ICacheManager cacheManager)
+            IEmployeeService employeeService
+            )
         {
             _db = db;
-            _cacheManager = cacheManager;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
@@ -383,35 +381,26 @@ namespace ServiceLayer.Code
         public async Task<DataSet> GetEmployeeAndChientListService()
         {
             DataSet ds = new DataSet();
-            if (!_cacheManager.IsEmpty())
+            await Task.Run(() =>
             {
-                await Task.Run(() =>
+                FilterModel filterModel = new FilterModel();
+                DbParam[] param = new DbParam[]
                 {
-                    DbParam[] param = new DbParam[]
-                    {
-                        new DbParam("1=1", typeof(string), "_SearchString"),
-                        new DbParam("", typeof(string), "_SortBy"),
-                        new DbParam(1, typeof(int), "_PageIndex"),
-                        new DbParam(10, typeof(int), "_PageSize"),
-                        new DbParam(1, typeof(int), "_IsActive")
-                    };
+                    new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
+                    new DbParam(filterModel.SortBy, typeof(string), "_SortBy"),
+                    new DbParam(filterModel.PageIndex, typeof(int), "_PageIndex"),
+                    new DbParam(filterModel.PageSize, typeof(int), "_PageSize"),
+                    new DbParam(filterModel.IsActive, typeof(int), "_IsActive")
+                };
 
-                    DataSet emps = _db.GetDataset("SP_Employee_GetAll", param);
+                ds = _db.GetDataset("sp_employee_and_all_clients_get", param);
 
-                    if (emps == null)
-                        throw new HiringBellException("Unable to find employees");
+                if (ds == null || ds.Tables.Count != 2)
+                    throw new HiringBellException("Unable to find employees");
 
-                    emps.Tables[0].TableName = "Employees";
-                    var clients = _cacheManager.Get(ServiceLayer.Caching.Table.Client);
-                    clients.TableName = "Clients";
-                    ds.Tables.Add(emps.Tables[0].Copy());
-                    ds.Tables.Add(clients.Copy());
-                });
-            }
-            else
-            {
-                throw new HiringBellException("Application data not found.", "ApplicationCache", null, System.Net.HttpStatusCode.Unauthorized);
-            }
+                ds.Tables[0].TableName = "Employees";
+                ds.Tables[1].TableName = "Clients";
+            });
             return ds;
         }
     }

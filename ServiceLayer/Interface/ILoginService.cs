@@ -11,7 +11,6 @@ namespace ServiceLayer.Interface
         Boolean RemoveUserDetailService(string Token);
         UserDetail GetUserDetail(AuthUser authUser);
         Task<LoginResponse> SignUpUser(UserDetail userDetail);
-        void BuildApplicationCache(bool isRelead = false);
         string ResetEmployeePassword (UserDetail authUser, string role);
     }
 }
