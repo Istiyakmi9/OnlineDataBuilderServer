@@ -70,7 +70,7 @@ namespace ServiceLayer.Caching
             {
                 var _db = new Db(_connectionString);
                 DataSet Result = _db.GetDataset("SP_ApplicationData_Get", null);
-                if (Result.Tables.Count == 5)
+                if (Result.Tables.Count == 3)
                 {
                     _cache.Clean();
                     _cache.Add(CacheTable.AccessLevel, Result.Tables[0]);

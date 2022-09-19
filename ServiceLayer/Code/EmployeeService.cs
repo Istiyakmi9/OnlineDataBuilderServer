@@ -209,7 +209,7 @@ namespace ServiceLayer.Code
                 finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.AccessLevel).Copy());
                 finalResultSet.Tables[0].TableName = "Roles";
 
-                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.AccessLevel).Copy());
+                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.LeavePlan).Copy());
                 finalResultSet.Tables[1].TableName = "LeavePlans";
 
                 finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.Company).Copy());
