@@ -163,11 +163,6 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public DataSet LoadApplicationData()
-        {
-            return _cacheManager.LoadApplicationData();
-        }
-
         public Bills GetBillData()
         {
             Bills bill = default;

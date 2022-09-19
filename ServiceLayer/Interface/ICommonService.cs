@@ -1,10 +1,11 @@
-﻿using System.Data;
+﻿using ModalLayer.Modal;
+using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
 {
     public interface ICommonService
     {
-        DataTable LoadEmployeeData();
+        List<Employee> LoadEmployeeData();
         bool IsEmptyJson(string json);
     }
 }

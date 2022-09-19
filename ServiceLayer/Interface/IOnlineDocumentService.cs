@@ -12,7 +12,6 @@ namespace ServiceLayer.Interface
         string DeleteFilesService(List<Files> fileDetails);
         string EditCurrentFileService(Files editFile);
         string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
-        DataSet LoadApplicationData();
         DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel);
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
         ResponseModel<FileDetail> InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);

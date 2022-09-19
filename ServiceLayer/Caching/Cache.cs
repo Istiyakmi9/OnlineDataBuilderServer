@@ -1,27 +1,26 @@
+using MySqlX.XDevAPI.Common;
 using System;
 using System.Collections.Concurrent;
 using System.Data;
 
 namespace ServiceLayer.Caching
 {
-    public enum Table
+    public enum CacheTable
     {
-        Employee = 1,
-        Client =2,
-        MappedOrganization = 3,
-        EmployeeRoles = 4,
-        Companies = 5
+        AccessLevel = 1,
+        LeavePlan = 2,
+        Company = 3
     }
 
     public class Cache
     {
-        private readonly ConcurrentDictionary<Table, DataTable> _table;
+        private readonly ConcurrentDictionary<CacheTable, DataTable> _table;
         private static readonly object _lock = new object();
         private static Cache _cache = null;
 
         private Cache()
         {
-            _table = new ConcurrentDictionary<Table, DataTable>();
+            _table = new ConcurrentDictionary<CacheTable, DataTable>();
         }
 
         public bool IsEmpty()
@@ -44,7 +43,7 @@ namespace ServiceLayer.Caching
             return _cache;
         }
 
-        public DataTable Get(Table key)
+        public DataTable Get(CacheTable key)
         {
             DataTable value = null;
             if (_table.ContainsKey(key))
@@ -55,7 +54,7 @@ namespace ServiceLayer.Caching
             return value;
         }
 
-        public void Add(Table key, DataTable value)
+        public void Add(CacheTable key, DataTable value)
         {
             DataTable oldValue = null;
             if (_table.ContainsKey(key))
@@ -74,19 +73,24 @@ namespace ServiceLayer.Caching
             _table.Clear();
         }
 
-        public void ReLoad(Func<DataTable> procFunc, Table tableName)
+        public void ReLoad(CacheTable tableName, DataTable table)
         {
-            DataTable result = procFunc.Invoke();
-            if (result != null)
+            if (table != null && table.Rows.Count > 0)
             {
+                DataTable oldTable = default(DataTable);
                 switch (tableName)
                 {
-                    case Table.MappedOrganization:
-                        _table.TryRemove(Table.MappedOrganization, out DataTable oldOrganizationSet);
+                    case CacheTable.AccessLevel:
+                        _table.TryRemove(CacheTable.AccessLevel, out oldTable);
+                        _table.TryAdd(CacheTable.AccessLevel, table);
                         break;
-                    case Table.Employee:
-                        _table.TryRemove(Table.Employee, out DataTable oldSet);
-                        _table.TryAdd(Table.Employee, result);
+                    case CacheTable.LeavePlan:
+                        _table.TryRemove(CacheTable.LeavePlan, out oldTable);
+                        _table.TryAdd(CacheTable.LeavePlan, table);
+                        break;
+                    case CacheTable.Company:
+                        _table.TryRemove(CacheTable.Company, out oldTable);
+                        _table.TryAdd(CacheTable.Company, table);
                         break;
                 }
             }

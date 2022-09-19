@@ -5,7 +5,7 @@ alter table employee_leave_request
 drop column AvailableLeaveQuota;
 
 alter table employee_leave_request
-add column  json;
+add column LeaveQuotaStatus json;
 
 
 alter table employee_leave_request

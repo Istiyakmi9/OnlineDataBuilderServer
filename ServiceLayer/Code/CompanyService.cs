@@ -177,6 +177,11 @@ namespace ServiceLayer.Code
             return company;
         }
 
+        private void UpdateCompanyCache()
+        {
+
+        }
+
         private void UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             string companyLogo = String.Empty;

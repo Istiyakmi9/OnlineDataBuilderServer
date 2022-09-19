@@ -197,19 +197,23 @@ namespace ServiceLayer.Code
             };
 
             var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
-            if (resultset.Tables.Count == 8)
+            if (resultset.Tables.Count == 6)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
                 resultset.Tables[2].TableName = "FileDetail";
-                resultset.Tables[3].TableName = "Roles";
-                resultset.Tables[4].TableName = "SalaryDetail";
-                resultset.Tables[5].TableName = "Clients";
-                resultset.Tables[6].TableName = "EmployeesList";
-                resultset.Tables[7].TableName = "LeavePlans";
+                resultset.Tables[3].TableName = "SalaryDetail";
+                resultset.Tables[4].TableName = "Clients";
+                resultset.Tables[5].TableName = "EmployeesList";
 
-                finalResultSet.Tables.Add(_cacheManager.Get(ServiceLayer.Caching.Table.Companies).Copy());
-                finalResultSet.Tables[0].TableName = "Companies";
+                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.AccessLevel).Copy());
+                finalResultSet.Tables[0].TableName = "Roles";
+
+                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.LeavePlan).Copy());
+                finalResultSet.Tables[1].TableName = "LeavePlans";
+
+                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.Company).Copy());
+                finalResultSet.Tables[2].TableName = "Companies";
 
                 finalResultSet.Tables.Add(resultset.Tables[0].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[1].Copy());
@@ -217,8 +221,6 @@ namespace ServiceLayer.Code
                 finalResultSet.Tables.Add(resultset.Tables[3].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[4].Copy());
                 finalResultSet.Tables.Add(resultset.Tables[5].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[6].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[7].Copy());
             }
             return finalResultSet;
         }
