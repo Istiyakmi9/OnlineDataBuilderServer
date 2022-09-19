@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -18,13 +19,20 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
+        private readonly ICacheManager _cacheManager;
 
-        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession)
+        public CompanyService(IDb db,
+            FileLocationDetail fileLocationDetail,
+            IFileService fileService,
+            CurrentSession currentSession,
+            ICacheManager cacheManager
+            )
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
+            _cacheManager = cacheManager;
         }
         public List<OrganizationDetail> GetAllCompany()
         {
@@ -50,7 +58,9 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
-            return this.GetAllCompany();
+            var companies = this.GetAllCompany();
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companies));
+            return companies;
         }
 
         public List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup)
@@ -63,12 +73,13 @@ namespace ServiceLayer.Code
 
             companyGroup.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
             result = companyGroup;
+            companyGrp.Add(result);
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
-            companyGrp = this.GetAllCompany();
+            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
             return companyGrp;
         }
 
@@ -331,7 +342,8 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(status))
             {
                 throw new HiringBellException("Fail to insert or update.");
-            } else
+            }
+            else
             {
                 FilterModel filterModel = new FilterModel();
                 filterModel.SortBy = "";
@@ -347,12 +359,12 @@ namespace ServiceLayer.Code
         public List<BankDetail> GetCompanyBankDetail(FilterModel filterModel)
         {
             List<BankDetail> result = _db.GetList<BankDetail>("sp_bank_accounts_getby_cmpId", new
-                {
-                    filterModel.SearchString,
-                    filterModel.SortBy,
-                    filterModel.PageIndex,
-                    filterModel.PageSize
-                });
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
+            });
             return result;
         }
     }
