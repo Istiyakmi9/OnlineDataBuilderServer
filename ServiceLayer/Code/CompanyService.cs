@@ -59,13 +59,16 @@ namespace ServiceLayer.Code
 
         public List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup)
         {
+            if (companyGroup.OrganizationId == 0)
+                throw new HiringBellException("Invalid organization id.");
+
             List<OrganizationDetail> companyGrp = null;
             companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
             OrganizationDetail result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
             if (result != null)
                 throw new HiringBellException("Company Already exist.");
 
-            companyGroup.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+            //companyGroup.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
             result = companyGroup;
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
