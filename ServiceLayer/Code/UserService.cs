@@ -51,21 +51,12 @@ namespace ServiceLayer.Code
             {
                 DbParam[] dbParams = new DbParam[]
                 {
-                    new DbParam(professionalUser.UserId, typeof(long), "_UserId"),
-                    new DbParam(professionalUser.FileId, typeof(long), "_FileId"),
-                    new DbParam(professionalUser.Mobile_Number, typeof(string), "_Mobile"),
+                    new DbParam(professionalUser.EmployeeId, typeof(long), "_UserId"),
+                    new DbParam(professionalUser.Mobile, typeof(string), "_Mobile"),
                     new DbParam(professionalUser.Email, typeof(string), "_Email"),
                     new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
                     new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
-                    new DbParam(professionalUser.Date_Of_Application, typeof(DateTime), "_Date_Of_Application"),
-                    new DbParam(professionalUser.Total_Experience_In_Months, typeof(int), "_Total_Experience_In_Months"),
-                    new DbParam(professionalUser.Salary_Package, typeof(double), "_Salary_Package"),
-                    new DbParam(professionalUser.Notice_Period, typeof(int), "_Notice_Period"),
-                    new DbParam(professionalUser.Expeceted_CTC, typeof(double), "_Expeceted_CTC"),
-                    new DbParam(professionalUser.Current_Location, typeof(string), "_Current_Location"),
-                    new DbParam(JsonConvert.SerializeObject(professionalUser.Preferred_Locations), typeof(string), "_Preferred_Location"),
                     new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
-                    new DbParam(IsProfileImageRequest, typeof(int), "_IsProfileImageRequest")
                 };
                 var msg = _db.ExecuteNonQuery("sp_professionaldetail_insupd", dbParams, true);
                 employeeId = Convert.ToInt64(msg);
@@ -124,7 +115,7 @@ namespace ServiceLayer.Code
                 var msg = _db.ExecuteNonQuery("sp_Employees_InsUpdate", dbParams, true);
                 employeeId = Convert.ToInt64(msg);
             }
-            profileDetail = this.GetUserDetail(employeeId, UserTypeId);
+            profileDetail = this.GetUserDetail(employeeId);
             return profileDetail;
         }
 
@@ -153,7 +144,7 @@ namespace ServiceLayer.Code
                                 select new
                                 {
                                     FileId = n.FileUid,
-                                    FileOwnerId = professionalUser.UserId,
+                                    FileOwnerId = professionalUser.EmployeeId,
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
@@ -196,7 +187,7 @@ namespace ServiceLayer.Code
                                 select new
                                 {
                                     FileId = n.FileUid,
-                                    FileOwnerId = professionalUser.UserId,
+                                    FileOwnerId = professionalUser.EmployeeId,
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
@@ -254,82 +245,20 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public ProfileDetail GetUserDetail(long userId, int UserTypeId)
+        public ProfileDetail GetUserDetail(long EmployeeId)
         {
-            if (UserTypeId <= 0)
-                throw new HiringBellException { UserMessage = "Invalid UserTypeId", FieldName = nameof(UserTypeId), FieldValue = UserTypeId.ToString() };
-
-            if (userId <= 0)
-                throw new HiringBellException { UserMessage = "Invalid Employee Id", FieldName = nameof(userId), FieldValue = userId.ToString() };
+            if (EmployeeId <= 0)
+                throw new HiringBellException { UserMessage = "Invalid UserTypeId", FieldName = nameof(EmployeeId), FieldValue = EmployeeId.ToString() };
 
             ProfileDetail profileDetail = new ProfileDetail();
+            (Employee employee, ProfessionalUser professionalUser) = _db.GetMulti<Employee, ProfessionalUser>("sp_professionaldetail_get_byid", new { EmployeeId });
+            if (employee == null)
+                throw new HiringBellException("Unable to get employee detail.");
 
-            if (UserTypeId == 3)
-            {
-                DbParam[] param = new DbParam[]
-                {
-                   new DbParam(userId, typeof(long), "_UserId"),
-                   new DbParam(null, typeof(string), "_Mobile"),
-                   new DbParam(null, typeof(string), "_Email")
-                };
-                var Result = _db.GetDataset("sp_professionaldetail_filter", param);
-
-                if (Result.Tables.Count == 0)
-                {
-                    throw new HiringBellException("Fail to get record.");
-                }
-                else
-                {
-                    string jsonData = String.Empty;
-                    profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
-                    if (Result.Tables[0].Rows.Count > 0)
-                        jsonData = Convert.ToString(Result.Tables[0].Rows[0][0]);
-
-                    if (!string.IsNullOrEmpty(jsonData))
-                    {
-                        profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(jsonData);
-                    }
-                    else
-                    {
-                        throw new HiringBellException("Fail to get record.");
-                    }
-                }
-            }
-            else
-            {
-                DbParam[] param = new DbParam[]
-                {
-                   new DbParam(userId, typeof(long), "_UserId"),
-                   new DbParam(null, typeof(string), "_Mobile"),
-                   new DbParam(null, typeof(string), "_Email"),
-                   new DbParam(UserTypeId, typeof(int), "_UserTypeId")
-                };
-                var Result = _db.GetDataset("sp_employee_profile", param);
-
-                if (Result.Tables.Count == 0)
-                {
-                    throw new HiringBellException("Fail to get record.");
-                }
-                else
-                {
-                    profileDetail.profileDetail = Converter.ToList<FileDetail>(Result.Tables[1]);
-
-                    var employeeProfessionDetail = Converter.ToType<EmployeeProfessionDetail>(Result.Tables[0]);
-                    if (!string.IsNullOrEmpty(employeeProfessionDetail.ProfessionalDetail_Json))
-                    {
-                        profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(employeeProfessionDetail.ProfessionalDetail_Json);
-                    }
-                    //profileDetail.professionalUser = new ProfessionalUser();
-                    if (string.IsNullOrEmpty(profileDetail.professionalUser.FirstName) && string.IsNullOrEmpty(profileDetail.professionalUser.LastName))
-                    {
-                        profileDetail.professionalUser.FirstName = employeeProfessionDetail.FirstName;
-                        profileDetail.professionalUser.LastName = employeeProfessionDetail.LastName;
-                        profileDetail.professionalUser.Email = employeeProfessionDetail.Email;
-                        profileDetail.professionalUser.Mobile_Number = employeeProfessionDetail.Mobile;
-                        profileDetail.professionalUser.UserId = employeeProfessionDetail.EmployeeUid;
-                    }
-                }
-            }
+            if (professionalUser != null)
+                profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(professionalUser.ProfessionalDetailJson);
+            profileDetail.employee = employee;
+            profileDetail.profileDetail = null;
             return profileDetail;
         }
 

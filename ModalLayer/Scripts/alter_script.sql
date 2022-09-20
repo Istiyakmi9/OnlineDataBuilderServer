@@ -1,37 +1,13 @@
-alter table employee_leave_request
-add column TotalLeaveQuota decimal default 0;
+drop table if exists professionaldetail; 
 
-alter table employee_leave_request
-drop column AvailableLeaveQuota;
-
-alter table employee_leave_request
-add column LeaveQuotaStatus json;
-
-
-alter table employee_leave_request
-drop column LeaveQuotaStatus;
-
-alter table employee_leave_request
-add column LeaveQuotaDetail json;
-
-drop table if exists email_setting_detail;
-
-create table email_setting_detail(
-	EmailSettingDetailId int primary key auto_increment,
-	CompanyId int,
-    EmailAddress varchar(200),
-    EmailName varchar(100),
-    EmailHost varchar(100),
-    PortNo int,
-    EnableSsl bit,
-    DeliveryMothod varchar(50),
-    UserDefaultCredentials bit,
-    Credentials varchar(100),
-    IsPrimary bit,
-    UpdatedBy long,
-    UpdatedOn Datetime not null
-);
-
-select * from company;
-select * from email_setting_detail;
-insert into email_setting_detail values(default, 1, 'info@bottomhalf.in', 'BOTTOMHALF', 'smtpout.asia.secureserver.net', 587, true, 0, false, 'bottomhalf@mi9', true, 22, now());
+CREATE TABLE `professionaldetail` (
+  `EmployeeId` bigint NOT NULL,
+  `Mobile` varchar(20) DEFAULT NULL,
+  `Email` varchar(100) DEFAULT NULL,
+  `FirstName` varchar(100) DEFAULT NULL,
+  `LastName` varchar(100) DEFAULT NULL,
+  `ProfessionalDetailJson` json DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`EmployeeId`)
+) ENGINE=InnoDB AUTO_INCREMENT=90 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
