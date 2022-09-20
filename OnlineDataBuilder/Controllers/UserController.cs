@@ -35,10 +35,10 @@ namespace OnlineDataBuilder.Controllers
         }
 
 
-        [HttpGet("GetUserDetail/{userId}/{UserTypeId}")]
-        public IResponse<ApiResponse> GetUserDetail(long userId, int UserTypeId)
+        [HttpGet("GetUserDetail/{EmployeeId}")]
+        public IResponse<ApiResponse> GetUserDetail(long EmployeeId)
         {
-            var result = _userService.GetUserDetail(userId, UserTypeId);
+            var result = _userService.GetUserDetail(EmployeeId);
             return BuildResponse(result);
         }
 
