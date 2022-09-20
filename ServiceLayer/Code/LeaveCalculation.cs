@@ -569,7 +569,13 @@ namespace ServiceLayer.Code
 
         private void LoadCalculationData(long EmployeeId, LeaveCalculationModal leaveCalculationModal)
         {
-            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new { EmployeeId, IsActive = 1, Year = now.Year }, false);
+            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new
+            {
+                EmployeeId,
+                IsActive = 1,
+                Year = now.Year
+            }, false);
+
             if (ds != null && ds.Tables.Count == 5)
             {
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
@@ -694,42 +700,29 @@ namespace ServiceLayer.Code
             return flag;
         }
 
-        private void LoadAccrualCalculationData(int CompanyId, LeaveCalculationModal leaveCalculationModal)
-        {
-            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new { CompanyId }, false);
-            if (ds != null && ds.Tables.Count == 2)
-            {
-                if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
-                    throw new HiringBellException("Fail to load leave detail. Please contact to admin.");
-
-                leaveCalculationModal.leavePlanTypes = Converter.ToList<LeavePlanType>(ds.Tables[1]);
-                _companySetting = Converter.ToType<CompanySetting>(ds.Tables[3]);
-            }
-            else
-                throw new HiringBellException("Employee does not exist. Please contact to admin.");
-        }
-
         public void RunLeaveCalculationCycle()
         {
             List<Company> companies = _db.GetList<Company>("sp_company_get");
             int i = 0;
-            while (companies.Count > 0)
+            while (i < companies.Count)
             {
-                LeaveCalculationModal leaveCalculationModal = new LeaveCalculationModal();
+                LeaveCalculationModal leaveCalculationModal = null;
                 // get employee detail and store it in class level variable
-                LoadAccrualCalculationData(companies.ElementAt(i).CompanyId, leaveCalculationModal);
 
                 int PageIndex = 0;
 
-                while (true)
+                List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
                 {
-                    List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
-                    {
-                        SearchString = " 1=1 ",
-                        SortBy = "",
-                        PageIndex = ++PageIndex,
-                        PageSize = 500
-                    });
+                    SearchString = " 1=1 ",
+                    SortBy = "",
+                    PageIndex = ++PageIndex,
+                    PageSize = 1
+                });
+
+                Parallel.ForEach(employees, async e =>
+                {
+                    leaveCalculationModal = new LeaveCalculationModal();
+                    LoadCalculationData(e.EmployeeUid, leaveCalculationModal);
 
                     int k = 0;
                     while (k < leaveCalculationModal.leavePlanTypes.Count)
@@ -737,25 +730,20 @@ namespace ServiceLayer.Code
                         ValidateAndGetLeavePlanConfiguration(leaveCalculationModal.leavePlanTypes[k]);
                         if (!_leavePlanConfiguration.leaveAccrual.IsNoLeaveOnNoticePeriod)
                         {
-                            Parallel.ForEach(employees, async e =>
-                            {
-                                leaveCalculationModal = new LeaveCalculationModal();
-                                leaveCalculationModal.employee = e;
+                            leaveCalculationModal.employee = e;
 
-                                // Check employee is in probation period
-                                CheckForProbationPeriod(leaveCalculationModal);
+                            // Check employee is in probation period
+                            CheckForProbationPeriod(leaveCalculationModal);
 
-                                // Check employee is in notice period
-                                CheckForNoticePeriod(leaveCalculationModal);
+                            // Check employee is in notice period
+                            CheckForNoticePeriod(leaveCalculationModal);
 
-                                await RunEmployeeLeaveAccrualCycle(leaveCalculationModal, leaveCalculationModal.leavePlanTypes[k]);
-                            });
+                            await RunEmployeeLeaveAccrualCycle(leaveCalculationModal, leaveCalculationModal.leavePlanTypes[k]);
                         }
                     }
+                });
 
-                    if (employees.Last().RowIndex == employees.First().Total)
-                        break;
-                }
+                i++;
             }
         }
 
