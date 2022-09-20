@@ -20,7 +20,6 @@ namespace ModalLayer.Modal.Profile
         public string Mobile { get; set; }
         public long FileId { get; set; }
         public string ProfessionalDetailJson { get; set; }
-
         public OtherDetail OtherDetails { get; set; }
         public List<SkillDetail> Skills { get; set; } = new List<SkillDetail>();
         public List<Company> Companies { get; set; } = new List<Company>();
