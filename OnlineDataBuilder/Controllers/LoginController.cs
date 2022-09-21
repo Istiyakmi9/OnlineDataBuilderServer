@@ -34,6 +34,15 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [Route("SignUpNew")]
+        public async Task<ApiResponse> SignUpNew(RegistrationForm registrationForm)
+        {
+            var userDetail = await this.loginService.RegisterNewCompany(registrationForm);
+            return BuildResponse(userDetail, HttpStatusCode.OK);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
         [Route("AuthenticateProvider")]
         public async Task<ApiResponse> AuthenticateProvider(UserDetail authUser)
         {
