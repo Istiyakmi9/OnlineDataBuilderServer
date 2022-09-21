@@ -591,7 +591,7 @@ namespace ServiceLayer.Code
                     Password = EncreptedPassword,
                     employee.AccessLevelId,
                     employee.UserTypeId,
-                    employeeSalaryDetail.CTC,
+                    employee.CTC,
                     employeeSalaryDetail.GrossIncome,
                     employeeSalaryDetail.NetSalary,
                     employeeSalaryDetail.CompleteSalaryDetail,
