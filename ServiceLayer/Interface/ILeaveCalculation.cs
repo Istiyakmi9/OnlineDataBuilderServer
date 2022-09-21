@@ -11,5 +11,6 @@ namespace ServiceLayer.Interface
         Task<string> CheckAndApplyForLeave(LeaveRequestDetail leaveDetail);
         Task<bool> CanApplyForHalfDay(long EmployeeId);
         void RunLeaveCalculationCycle();
+        Task RunEmployeeLeaveAccrualCycle(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType);
     }
 }
