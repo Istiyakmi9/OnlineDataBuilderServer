@@ -72,3 +72,20 @@ Insert into designation_detail values
 (default, 'Tester', 'Tester', 0, null, null),
 (default, 'HR Manager', 'HR Manager', 0, null, null),
 (default, 'System Engineer', 'System Engineer', 0, null, null);
+
+
+LOCK TABLES `accessibility_description` WRITE;
+/*!40000 ALTER TABLE `accessibility_description` DISABLE KEYS */;
+INSERT INTO `accessibility_description` VALUES (1,'Complete access. (read, udpate and detele)'),(2,'Only read access.'),(3,'Read and update access.');
+/*!40000 ALTER TABLE `accessibility_description` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `accesslevel`
+--
+
+LOCK TABLES `accesslevel` WRITE;
+/*!40000 ALTER TABLE `accesslevel` DISABLE KEYS */;
+INSERT INTO `accesslevel` VALUES (1,'Admin','Having all rights','2021-08-17 22:25:53',NULL),(2,'User','View or edit only personal detail.','2021-08-17 22:26:35','2022-03-13 08:48:35'),(3,'Management','Can add or edit most of the detail.','2022-03-13 08:49:18',NULL);
+/*!40000 ALTER TABLE `accesslevel` ENABLE KEYS */;
+UNLOCK TABLES;

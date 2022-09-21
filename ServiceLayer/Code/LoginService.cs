@@ -105,24 +105,6 @@ namespace ServiceLayer.Code
                 encryptedPassword = loginDetail.Password;
                 authUser.OrganizationId = loginDetail.OrganizationId;
                 authUser.CompanyId = loginDetail.CompanyId;
-
-                switch (loginDetail.UserTypeId)
-                {
-                    case 1:
-                        {
-                            if (role != Role.Admin)
-                                throw new HiringBellException("Invalid username or password for the current role.");
-                        }
-                        break;
-                    case 2:
-                        {
-                            if (role != Role.Employee)
-                                throw new HiringBellException("Invalid username or password for the current role.");
-                        }
-                        break;
-                    default:
-                        throw new HiringBellException("Invalid username or password for the current role.");
-                }
             }
             else
             {
