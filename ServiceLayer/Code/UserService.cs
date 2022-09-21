@@ -45,76 +45,22 @@ namespace ServiceLayer.Code
         {
             long employeeId = 0;
             ProfileDetail profileDetail = new ProfileDetail();
-            var professionalUserDetail = JsonConvert.SerializeObject(professionalUser);
-
-            if (UserTypeId == 3 || UserTypeId == 2)
+            professionalUser.ProfessionalDetailJson = JsonConvert.SerializeObject(professionalUser);
+            var result = _db.Execute<ProfessionalUser>("sp_professionaldetail_insupd", new
             {
-                DbParam[] dbParams = new DbParam[]
-                {
-                    new DbParam(professionalUser.EmployeeId, typeof(long), "_UserId"),
-                    new DbParam(professionalUser.Mobile, typeof(string), "_Mobile"),
-                    new DbParam(professionalUser.Email, typeof(string), "_Email"),
-                    new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
-                    new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
-                    new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
-                };
-                var msg = _db.ExecuteNonQuery("sp_professionaldetail_insupd", dbParams, true);
-                employeeId = Convert.ToInt64(msg);
-            }
-            else if (UserTypeId == 1)
-            {
-                int empId = Convert.ToInt32(_currentSession.CurrentUserDetail.UserId);
-                Employee employee = _employeeService.GetEmployeeByIdService(empId, -1);
-                DbParam[] dbParams = new DbParam[]
-                {
-                    new DbParam(employee.EmployeeUid, typeof(long), "_EmployeeUid"),
-                    new DbParam(employee.OrganizationId, typeof(int), "_OrganizationId"),
-                    new DbParam(professionalUser.FirstName, typeof(string), "_FirstName"),
-                    new DbParam(professionalUser.LastName, typeof(string), "_LastName"),
-                    new DbParam(employee.FatherName, typeof(string), "_FatherName"),
-                    new DbParam(professionalUser.Email, typeof(string), "_Email"),
-                    new DbParam(employee.LeavePlanId, typeof(string), "_LeavePlanId"),
-                    new DbParam(employee.PayrollGroupId, typeof(string), "_PayrollGroupId"),
-                    new DbParam(employee.SalaryGroupId, typeof(string), "_SalaryGroup"),
-                    new DbParam(employee.CompanyId, typeof(string), "_CompanyId"),
-                    new DbParam(employee.NoticePeriodId, typeof(string), "_NoticePeriodId"),
-                    new DbParam(employee.MotherName, typeof(string), "_MotherName"),
-                    new DbParam(employee.SpouseName, typeof(string), "_SpouseName"),
-                    new DbParam(employee.Gender, typeof(bool), "_Gender"),
-                    new DbParam(employee.State, typeof(string), "_State"),
-                    new DbParam(employee.City, typeof(string), "_City"),
-                    new DbParam(employee.Pincode, typeof(int), "_Pincode"),
-                    new DbParam(employee.Address, typeof(string), "_Address"),
-                    new DbParam(employee.Mobile, typeof(string), "_Mobile"),
-                    new DbParam(employee.SecondaryMobile, typeof(string), "_SecondaryMobile"),
-                    new DbParam(employee.PANNo, typeof(string), "_PANNo"),
-                    new DbParam(employee.AadharNo, typeof(string), "_AadharNo"),
-                    new DbParam(employee.AccountNumber, typeof(string), "_AccountNumber"),
-                    new DbParam(employee.BankName, typeof(string), "_BankName"),
-                    new DbParam(employee.BranchName, typeof(string), "_BranchName"),
-                    new DbParam(employee.IFSCCode, typeof(string), "_IFSCCode"),
-                    new DbParam(employee.Domain, typeof(string), "_Domain"),
-                    new DbParam(employee.IsPermanent, typeof(bool), "_IsPermanent"),
-                    new DbParam(employee.ClientUid, typeof(long), "_AllocatedClientId"),
-                    new DbParam(employee.ClientName, typeof(string), "_AllocatedClientName"),
-                    new DbParam(employee.ActualPackage, typeof(float), "_ActualPackage"),
-                    new DbParam(employee.FinalPackage, typeof(float), "_FinalPackage"),
-                    new DbParam(employee.TakeHomeByCandidate, typeof(float), "_TakeHomeByCandidate"),
-                    new DbParam(employee.Specification, typeof(string), "_Specification"),
-                    new DbParam(employee.ExprienceInYear, typeof(float), "_ExprienceInYear"),
-                    new DbParam(employee.LastCompanyName, typeof(string), "_LastCompanyName"),
-                    new DbParam(employee.ReportingManagerId, typeof(long), "_ReportingManagerId"),
-                    new DbParam(employee.DesignationId, typeof(int), "_DesignationId"),
-                    new DbParam(null, typeof(long), "_Password"),
-                    new DbParam(employee.AccessLevelId, typeof(int), "_AccessLevelId"),
-                    new DbParam(employee.UserTypeId, typeof(int), "_UserTypeId"),
-                    new DbParam(professionalUserDetail, typeof(string), "_ProfessionalDetail_Json"),
-                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
-                };
+                professionalUser.EmployeeId,
+                professionalUser.Mobile,
+                professionalUser.Email,
+                professionalUser.FirstName,
+                professionalUser.LastName,
+                professionalUser.ProfessionalDetailJson
+            }, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert of update");
 
-                var msg = _db.ExecuteNonQuery("sp_Employees_InsUpdate", dbParams, true);
-                employeeId = Convert.ToInt64(msg);
-            }
+            employeeId = Convert.ToInt64(result);
+            
+            
             profileDetail = this.GetUserDetail(employeeId);
             return profileDetail;
         }
@@ -154,7 +100,7 @@ namespace ServiceLayer.Code
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", table, true);
+                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, true);
 
                 _db.Commit();
             }
@@ -197,7 +143,7 @@ namespace ServiceLayer.Code
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_candidatefiledetail_InsUpd", table, true);
+                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, true);
                 _db.Commit();
                 if (insertedCount == 1)
                     result = "Resume Uploaded Successfully.";
@@ -251,14 +197,25 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Invalid UserTypeId", FieldName = nameof(EmployeeId), FieldValue = EmployeeId.ToString() };
 
             ProfileDetail profileDetail = new ProfileDetail();
-            (Employee employee, ProfessionalUser professionalUser) = _db.GetMulti<Employee, ProfessionalUser>("sp_professionaldetail_get_byid", new { EmployeeId });
-            if (employee == null)
+            ProfessionalUser professionalUser = default(ProfessionalUser);
+
+            var result = _db.FetchDataSet("sp_professionaldetail_get_byid", new { EmployeeId });
+            //(Employee employee, ProfessionalUser professionalUser, List<FileDetail> fileDetails) = _db.GetMulti<Employee, ProfessionalUser, List<FileDetail>>("sp_professionaldetail_get_byid", new { EmployeeId });
+            if (result.Tables.Count == 3)
+            {
+                profileDetail.employee = Converter.ToType<Employee>(result.Tables[0]);
+                professionalUser = Converter.ToType<ProfessionalUser>(result.Tables[1]);
+                profileDetail.profileDetail = Converter.ToList<FileDetail>(result.Tables[2]);
+            } 
+            else
+                throw new HiringBellException("unable to get records");
+
+            if (profileDetail.employee == null)
                 throw new HiringBellException("Unable to get employee detail.");
 
             if (professionalUser != null)
                 profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(professionalUser.ProfessionalDetailJson);
-            profileDetail.employee = employee;
-            profileDetail.profileDetail = null;
+
             return profileDetail;
         }
 
