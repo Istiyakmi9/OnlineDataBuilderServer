@@ -213,7 +213,7 @@ namespace ServiceLayer.Code
             if (profileDetail.employee == null)
                 throw new HiringBellException("Unable to get employee detail.");
 
-            if (professionalUser != null)
+            if (professionalUser.ProfessionalDetailJson != null)
                 profileDetail.professionalUser = JsonConvert.DeserializeObject<ProfessionalUser>(professionalUser.ProfessionalDetailJson);
 
             return profileDetail;
