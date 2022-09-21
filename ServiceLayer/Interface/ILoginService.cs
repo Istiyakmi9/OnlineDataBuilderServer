@@ -8,6 +8,7 @@ namespace ServiceLayer.Interface
     {
         Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser, string role);
         Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser);
+        Task<bool> RegisterNewCompany(RegistrationForm registrationForm);
         Boolean RemoveUserDetailService(string Token);
         UserDetail GetUserDetail(AuthUser authUser);
         Task<LoginResponse> SignUpUser(UserDetail userDetail);

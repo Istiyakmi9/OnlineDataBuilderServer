@@ -256,5 +256,49 @@ namespace ServiceLayer.Code
 
             return Status;
         }
+
+        public async Task<bool> RegisterNewCompany(RegistrationForm registrationForm)
+        {
+            return await Task.Run(() =>
+            {
+                bool statusFlag = false;
+                if (string.IsNullOrEmpty(registrationForm.OrganizationName))
+                    throw new HiringBellException { UserMessage = $"Invalid Organization name passed: {registrationForm.OrganizationName}" };
+
+                if (string.IsNullOrEmpty(registrationForm.CompanyName))
+                    throw new HiringBellException { UserMessage = $"Invalid Company name passed: {registrationForm.CompanyName}" };
+
+                if (string.IsNullOrEmpty(registrationForm.Mobile))
+                    throw new HiringBellException { UserMessage = $"Invalid Mobile number: {registrationForm.Mobile}" };
+
+                if (string.IsNullOrEmpty(registrationForm.EmailId))
+                    throw new HiringBellException { UserMessage = $"Invalid Email address passed: {registrationForm.EmailId}" };
+
+                if (string.IsNullOrEmpty(registrationForm.AuthenticationCode))
+                    throw new HiringBellException { UserMessage = $"Invalid Authentication Code passed: {registrationForm.AuthenticationCode}" };
+
+                registrationForm.FirstName = "Admin";
+                registrationForm.LastName = "User";
+                string EncreptedPassword = _authenticationService.Encrypt(
+                    _configuration.GetSection("DefaultNewEmployeePassword").Value,
+                    _configuration.GetSection("EncryptSecret").Value
+                );
+                registrationForm.Password = EncreptedPassword;
+
+                var status = this.db.Execute<string>("sp_new_registration", new
+                {
+                    registrationForm.OrganizationName,
+                    registrationForm.CompanyName,
+                    registrationForm.Mobile,
+                    registrationForm.EmailId,
+                    registrationForm.FirstName,
+                    registrationForm.LastName,
+                    registrationForm.Password
+                }, true);
+
+                statusFlag = true;
+                return statusFlag;
+            });
+        }
     }
 }
