@@ -304,10 +304,10 @@ namespace ServiceLayer.Code
                 foreach (SalaryGroup salaryGroup in salaryGroups)
                 {
                     salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-                        if (components.IncludeInPayslip == true)
-                            salaryComponents.Add(components);
-                        else
-                            salaryComponents.RemoveAll(x => x.ComponentId == components.ComponentId);
+                    if (components.IncludeInPayslip == true)
+                        salaryComponents.Add(components);
+                    else
+                        salaryComponents.RemoveAll(x => x.ComponentId == components.ComponentId);
 
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
@@ -316,6 +316,8 @@ namespace ServiceLayer.Code
                 if (status <= 0)
                     throw new HiringBellException("Unable to update detail");
             }
+            else
+                status = 1;
             return status;
         }
 
