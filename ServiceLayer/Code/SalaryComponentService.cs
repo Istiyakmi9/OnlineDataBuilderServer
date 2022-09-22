@@ -297,31 +297,34 @@ namespace ServiceLayer.Code
         private void updateSalaryGroupByUdatingComponent(SalaryStructure recurringComponent)
         {
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
-            foreach (var item in salaryGroups)
+            if (salaryGroups.Count > 0)
             {
-                if (string.IsNullOrEmpty(item.SalaryComponents))
-                    throw new HiringBellException("Salary component not found");
-
-                List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(item.SalaryComponents);
-                var component = salaryComponents.Find(x => x.ComponentId == recurringComponent.ComponentName);
-                if (component != null)
+                foreach (var item in salaryGroups)
                 {
-                    component.ComponentId = recurringComponent.ComponentName;
-                    component.ComponentCatagoryId = recurringComponent.ComponentCatagoryId;
-                    component.ComponentTypeId = recurringComponent.ComponentTypeId;
-                    component.ComponentFullName = recurringComponent.ComponentFullName;
-                    component.MaxLimit = recurringComponent.MaxLimit;
-                    component.ComponentDescription = recurringComponent.ComponentDescription;
-                    component.TaxExempt = recurringComponent.TaxExempt;
-                    component.Section = recurringComponent.Section;
-                    component.SectionMaxLimit = recurringComponent.SectionMaxLimit;
+                    if (string.IsNullOrEmpty(item.SalaryComponents))
+                        throw new HiringBellException("Salary component not found");
+
+                    List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(item.SalaryComponents);
+                    var component = salaryComponents.Find(x => x.ComponentId == recurringComponent.ComponentName);
+                    if (component != null)
+                    {
+                        component.ComponentId = recurringComponent.ComponentName;
+                        component.ComponentCatagoryId = recurringComponent.ComponentCatagoryId;
+                        component.ComponentTypeId = recurringComponent.ComponentTypeId;
+                        component.ComponentFullName = recurringComponent.ComponentFullName;
+                        component.MaxLimit = recurringComponent.MaxLimit;
+                        component.ComponentDescription = recurringComponent.ComponentDescription;
+                        component.TaxExempt = recurringComponent.TaxExempt;
+                        component.Section = recurringComponent.Section;
+                        component.SectionMaxLimit = recurringComponent.SectionMaxLimit;
+                    }
+                    item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
-                item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
+                var table = Converter.ToDataTable(salaryGroups);
+                var result = _db.BatchInsert("sp_salary_group_insupd", table, true);
+                if (result <= 0)
+                    throw new HiringBellException("Fail to insert or update salary group.");
             }
-            var table = Converter.ToDataTable(salaryGroups);
-            var result = _db.BatchInsert("sp_salary_group_insupd", table, true);
-            if (result <= 0)
-                throw new HiringBellException("Fail to insert or update salary group.");
         }
 
         public List<SalaryComponents> AddAdhocComponents(SalaryStructure adhocComponent)
