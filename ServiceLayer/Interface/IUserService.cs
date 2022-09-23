@@ -10,7 +10,7 @@ namespace ServiceLayer.Interface
     public interface IUserService
     {
         Task<DataSet> GetEmployeeAndChientListService();
-        string UploadUserInfo(string userId, ProfessionalUser userInfo, IFormFileCollection FileCollection, int UserTypeId);
+        ProfileDetail UploadUserInfo(string userId, ProfessionalUser userInfo, IFormFileCollection FileCollection, int UserTypeId);
         ProfileDetail GetUserDetail(long EmployeeId);
         string GenerateResume(long userId);
         ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0);

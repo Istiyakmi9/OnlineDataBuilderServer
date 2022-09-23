@@ -81,8 +81,8 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("ApprovalAction")]
-        public IResponse<ApiResponse> ApprovalLeave(ApprovalRequest approvalRequest)
+        [HttpPut("ApprovalAction/{RequestId}")]
+        public IResponse<ApiResponse> ApprovalLeave([FromRoute] int RequestId, ApprovalRequest approvalRequest)
         {
             var result = _leaveService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved);
             return BuildResponse(result);
