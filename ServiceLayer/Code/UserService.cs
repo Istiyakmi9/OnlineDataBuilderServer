@@ -65,9 +65,8 @@ namespace ServiceLayer.Code
             return profileDetail;
         }
 
-        public string UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
+        public ProfileDetail UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
-            var result = string.Empty;
             if (string.IsNullOrEmpty(professionalUser.Email))
             {
                 throw new HiringBellException("Email id is required field.");
@@ -106,7 +105,7 @@ namespace ServiceLayer.Code
             }
 
             var value = this.UpdateProfile(professionalUser, UserTypeId, IsProfileImageRequest);
-            return result;
+            return value;
         }
 
         public string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)

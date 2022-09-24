@@ -760,7 +760,8 @@ namespace ServiceLayer.Code
 
             if (ds != null && ds.Tables.Count == 5)
             {
-                if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
+                //if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
+                if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
                     throw new HiringBellException("Fail to get employee related details. Please contact to admin.");
 
                 leaveCalculationModal.employee = Converter.ToType<Employee>(ds.Tables[0]);
@@ -1032,35 +1033,54 @@ namespace ServiceLayer.Code
             });
 
             if (leaveRequestDetail == null)
-                throw new HiringBellException("Unable to find leave request for current employee.");
+                leaveRequestDetail = new LeaveRequestDetail();
+                //throw new HiringBellException("Unable to find leave request for current employee.");
 
             string result = string.Empty;
             await Task.Run(() =>
             {
                 leaveRequestDetail.TotalLeaveApplied += leaveCalculationModal.totalNumOfLeaveApplied;
-                List<CompleteLeaveDetail> leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
+                List<CompleteLeaveDetail> leaveDetails = null;
+                if (leaveRequestDetail.LeaveDetail != null)
+                    leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
 
-                if (leaveDetails != null)
+                CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
                 {
-                    CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
-                    {
-                        EmployeeId = leaveDetail.EmployeeId,
-                        EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                        AssignTo = leaveDetail.AssignTo,
-                        Session = leaveDetail.Session,
-                        LeaveType = leaveDetail.LeaveType,
-                        LeaveFromDay = leaveDetail.LeaveFromDay,
-                        LeaveToDay = leaveDetail.LeaveToDay,
-                        NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
-                        LeaveStatus = (int)ItemStatus.Pending,
-                        Reason = leaveDetail.Reason,
-                        RequestedOn = DateTime.UtcNow
-                    };
+                    EmployeeId = leaveDetail.EmployeeId,
+                    EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
+                    AssignTo = leaveDetail.AssignTo,
+                    Session = leaveDetail.Session,
+                    LeaveType = leaveDetail.LeaveType,
+                    LeaveFromDay = leaveDetail.LeaveFromDay,
+                    LeaveToDay = leaveDetail.LeaveToDay,
+                    NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
+                    LeaveStatus = (int)ItemStatus.Pending,
+                    Reason = leaveDetail.Reason,
+                    RequestedOn = DateTime.UtcNow
+                };
 
-                    leaveDetails.Add(newLeaveDeatil);
-                }
-                else
-                    leaveDetails = new List<CompleteLeaveDetail>();
+                leaveDetails.Add(newLeaveDeatil);
+                //if (leaveDetails != null)
+                //{
+                //    CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
+                //    {
+                //        EmployeeId = leaveDetail.EmployeeId,
+                //        EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
+                //        AssignTo = leaveDetail.AssignTo,
+                //        Session = leaveDetail.Session,
+                //        LeaveType = leaveDetail.LeaveType,
+                //        LeaveFromDay = leaveDetail.LeaveFromDay,
+                //        LeaveToDay = leaveDetail.LeaveToDay,
+                //        NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
+                //        LeaveStatus = (int)ItemStatus.Pending,
+                //        Reason = leaveDetail.Reason,
+                //        RequestedOn = DateTime.UtcNow
+                //    };
+
+                //    leaveDetails.Add(newLeaveDeatil);
+                //}
+                //else
+                //    leaveDetails = new List<CompleteLeaveDetail>();
 
                 leaveDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(
                     leaveCalculationModal.leavePlanTypes.Select(x => new EmployeeLeaveQuota
