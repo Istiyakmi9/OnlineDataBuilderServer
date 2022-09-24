@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
         public PfEsiSetting GetSalaryComponentService(int CompanyId)
         {
             PfEsiSetting pfEsiSettings = new PfEsiSetting();
-            var value= _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
+            var value = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
             if (value != null)
                 pfEsiSettings = value;
 
@@ -48,27 +48,27 @@ namespace ServiceLayer.Code
             var existing = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
             if (existing != null)
             {
-                existing.PFEnable=pfesiSetting.PFEnable;
-                existing.IsPfAmountLimitStatutory=pfesiSetting.IsPfAmountLimitStatutory;
-                existing.IsPfCalculateInPercentage=pfesiSetting.IsPfCalculateInPercentage;
-                existing.IsAllowOverridingPf=pfesiSetting.IsAllowOverridingPf;
-                existing.IsPfEmployerContribution=pfesiSetting.IsPfEmployerContribution;
-                existing.IsHidePfEmployer=pfesiSetting.IsHidePfEmployer;
-                existing.IsPayOtherCharges=pfesiSetting.IsPayOtherCharges;
-                existing.IsAllowVPF=pfesiSetting.IsAllowVPF;
-                existing.EsiEnable=pfesiSetting.EsiEnable;
-                existing.IsAllowOverridingEsi=pfesiSetting.IsAllowOverridingEsi;
-                existing.IsHideEsiEmployer=pfesiSetting.IsHideEsiEmployer;
-                existing.IsEsiExcludeEmployerShare=pfesiSetting.IsEsiExcludeEmployerShare;
-                existing.IsEsiExcludeEmployeeGratuity=pfesiSetting.IsEsiExcludeEmployeeGratuity;
-                existing.IsEsiEmployerContributionOutside=pfesiSetting.IsEsiEmployerContributionOutside;
-                existing.IsRestrictEsi=pfesiSetting.IsRestrictEsi;
-                existing.IsIncludeBonusEsiEligibility=pfesiSetting.IsIncludeBonusEsiEligibility;
-                existing.IsIncludeBonusEsiContribution=pfesiSetting.IsIncludeBonusEsiContribution;
-                existing.IsEmployerPFLimitContribution=pfesiSetting.IsEmployerPFLimitContribution;
-                existing.EmployerPFLimit=pfesiSetting.EmployerPFLimit;
-                existing.MaximumGrossForESI=pfesiSetting.MaximumGrossForESI;
-                existing.EsiEmployeeContribution=pfesiSetting.EsiEmployeeContribution;
+                existing.PFEnable = pfesiSetting.PFEnable;
+                existing.IsPfAmountLimitStatutory = pfesiSetting.IsPfAmountLimitStatutory;
+                existing.IsPfCalculateInPercentage = pfesiSetting.IsPfCalculateInPercentage;
+                existing.IsAllowOverridingPf = pfesiSetting.IsAllowOverridingPf;
+                existing.IsPfEmployerContribution = pfesiSetting.IsPfEmployerContribution;
+                existing.IsHidePfEmployer = pfesiSetting.IsHidePfEmployer;
+                existing.IsPayOtherCharges = pfesiSetting.IsPayOtherCharges;
+                existing.IsAllowVPF = pfesiSetting.IsAllowVPF;
+                existing.EsiEnable = pfesiSetting.EsiEnable;
+                existing.IsAllowOverridingEsi = pfesiSetting.IsAllowOverridingEsi;
+                existing.IsHideEsiEmployer = pfesiSetting.IsHideEsiEmployer;
+                existing.IsEsiExcludeEmployerShare = pfesiSetting.IsEsiExcludeEmployerShare;
+                existing.IsEsiExcludeEmployeeGratuity = pfesiSetting.IsEsiExcludeEmployeeGratuity;
+                existing.IsEsiEmployerContributionOutside = pfesiSetting.IsEsiEmployerContributionOutside;
+                existing.IsRestrictEsi = pfesiSetting.IsRestrictEsi;
+                existing.IsIncludeBonusEsiEligibility = pfesiSetting.IsIncludeBonusEsiEligibility;
+                existing.IsIncludeBonusEsiContribution = pfesiSetting.IsIncludeBonusEsiContribution;
+                existing.IsEmployerPFLimitContribution = pfesiSetting.IsEmployerPFLimitContribution;
+                existing.EmployerPFLimit = pfesiSetting.EmployerPFLimit;
+                existing.MaximumGrossForESI = pfesiSetting.MaximumGrossForESI;
+                existing.EsiEmployeeContribution = pfesiSetting.EsiEmployeeContribution;
                 existing.EsiEmployerContribution = pfesiSetting.EsiEmployerContribution;
             }
             else
@@ -207,8 +207,10 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> ActivateCurrentComponentService(List<SalaryComponents> components)
         {
+            List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
             var salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get");
-            if (salaryComponent != null)
+            if (salaryComponent != null && salaryGroups != null)
             {
                 SalaryComponents componentItem = null;
                 Parallel.ForEach<SalaryComponents>(salaryComponent, x =>
@@ -220,6 +222,7 @@ namespace ServiceLayer.Code
                         x.ComponentCatagoryId = componentItem.ComponentCatagoryId;
                     }
                 });
+
 
                 var updateComponents = (from n in salaryComponent
                                         select new
@@ -258,7 +261,7 @@ namespace ServiceLayer.Code
                 if (statue <= 0)
                     throw new HiringBellException("Unable to update detail");
                 else
-                    this.AddorRemoveListSalaryComponentfromSalaryGroup(components);
+                    this.AddRemoveSalaryComponents(components, salaryGroups);
             }
             else
             {
@@ -266,6 +269,31 @@ namespace ServiceLayer.Code
             }
 
             return salaryComponent;
+        }
+
+        private void AddRemoveSalaryComponents(List<SalaryComponents> components, List<SalaryGroup> salaryGroups)
+        {
+            if (salaryGroups.Count > 0)
+            {
+                List<SalaryComponents> salaryComponents = null;
+                foreach (SalaryGroup salaryGroup in salaryGroups)
+                {
+                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+                    Parallel.For(0, components.Count, i =>
+                    {
+                        if (components[i].IsOpted == true)
+                            salaryComponents.Add(components[i]);
+                        else
+                            salaryComponents.RemoveAll(x => x.ComponentId == components[i].ComponentId);
+
+                    });
+                    salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
+                }
+                DataTable table = Converter.ToDataTable(salaryGroups);
+                int statue = _db.BatchInsert("sp_salary_group_insupd", table, true);
+                if (statue <= 0)
+                    throw new HiringBellException("Unable to update detail");
+            }
         }
 
         private void AddorRemoveListSalaryComponentfromSalaryGroup(List<SalaryComponents> components)

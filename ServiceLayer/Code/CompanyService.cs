@@ -156,6 +156,8 @@ namespace ServiceLayer.Code
                 company.Branch = companyInfo.Branch;
                 company.IFSC = companyInfo.IFSC;
                 company.IsPrimaryCompany = companyInfo.IsPrimaryCompany;
+                if(string.IsNullOrEmpty(companyInfo.FixedComponentsId))
+                    companyInfo.FixedComponentsId = "[]";
                 company.FixedComponentsId = companyInfo.FixedComponentsId;
                 company.BranchCode = companyInfo.BranchCode;
                 company.OpeningDate = companyInfo.OpeningDate;
