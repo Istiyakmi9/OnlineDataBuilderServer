@@ -43,5 +43,6 @@ namespace ModalLayer.Modal
         public string CompantDetail { get; set; }
         public int SectorType { get; set; }
         public string FullAddress { get; set; }
+        public bool IsPrimaryCompany { get; set; }
     }
 }

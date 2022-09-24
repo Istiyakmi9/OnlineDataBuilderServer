@@ -328,7 +328,7 @@ namespace ServiceLayer.Code
                         new DbParam(leaveDetailString, typeof(string), "_LeaveDetail"),
                         new DbParam(existingRecord.LeaveType, typeof(int), "_LeaveType"),
                         new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(existingRecord.RequestType, typeof(int), "_RequestType")
+                        new DbParam(existingRecord.RequestType, typeof(int), "_RequestType"),
                     };
 
                     message = _db.ExecuteNonQuery("sp_approval_request_leave_InsUpdate", param, true);
