@@ -17,7 +17,7 @@ namespace ServiceLayer.Interface
         ResponseModel<FileDetail> InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
         List<Files> EditFileService(Files files);
         string DeleteDataService(string Uid);
-        DataSet EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
+        BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
         FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, GenerateBillFileDetail fileDetail);
         string UpdateRecord(FileDetail fileDetail, long Uid);
         string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocument);

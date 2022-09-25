@@ -78,7 +78,9 @@ public enum ItemStatus
     Generated = 6,
     Raised = 7,
     Submitted = 8,
-    Approved = 9
+    Approved = 9,
+    Present = 10,
+    Absent = 11
 }
 
 public enum LeaveType

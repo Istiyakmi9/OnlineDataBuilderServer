@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -31,19 +30,17 @@ namespace ServiceLayer.Code
         private readonly IFileMaker _fileMaker;
         private readonly ILogger<BillService> _logger;
         private readonly ExcelWriter _excelWriter;
-        private readonly IDocumentProcessing _documentProcessing;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IEMailManager _eMailManager;
-
+        private readonly ITemplateService _templateService;
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
-            IHostingEnvironment hostingEnvironment,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
-            IDocumentProcessing documentProcessing,
             CurrentSession currentSession,
             ExcelWriter excelWriter,
             HtmlToPdfConverter htmlToPdfConverter,
             IEMailManager eMailManager,
+            ITemplateService templateService,
             IFileMaker fileMaker)
         {
             this.db = db;
@@ -52,11 +49,11 @@ namespace ServiceLayer.Code
             _htmlToPdfConverter = htmlToPdfConverter;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
-            _documentProcessing = documentProcessing;
             _fileLocationDetail = fileLocationDetail;
             _currentSession = currentSession;
             _fileMaker = fileMaker;
             _excelWriter = excelWriter;
+            _templateService = templateService;
         }
 
         public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
@@ -196,8 +193,9 @@ namespace ServiceLayer.Code
             pdfModal.receiverGSTNo = organization.GSTNO;
         }
 
-        public FileDetail GenerateDocument(PdfModal pdfModal)
+        public dynamic GenerateDocument(PdfModal pdfModal)
         {
+            List<string> emails = new List<string>();
             FileDetail fileDetail = new FileDetail();
             try
             {
@@ -257,6 +255,14 @@ namespace ServiceLayer.Code
                 {
                     sender = Converter.ToType<Organization>(ds.Tables[0]);
                     receiver = Converter.ToType<Organization>(ds.Tables[1]);
+
+                    emails.Add(receiver.Email);
+                    if (!string.IsNullOrEmpty(receiver.OtherEmail_1))
+                        emails.Add(receiver.OtherEmail_1);
+                    if (!string.IsNullOrEmpty(receiver.OtherEmail_2))
+                        emails.Add(receiver.OtherEmail_2);
+                    emails.Add(sender.Email);
+
                     List<Employee> EmployeeMappedClient = Converter.ToList<Employee>(ds.Tables[2]);
                     fileDetail = Converter.ToType<FileDetail>(ds.Tables[3]);
 
@@ -418,7 +424,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException(ex.Message, ex);
             }
 
-            return fileDetail;
+            EmailTemplate emailTemplate = _templateService.GetBillingTemplateDetailService();
+            return new { FileDetail = fileDetail, EmailTemplate = emailTemplate, EmailAddress = emails };
         }
 
         private void ValidateBillModal(PdfModal pdfModal)
@@ -642,9 +649,17 @@ namespace ServiceLayer.Code
 
                 var receiver = organizations.Find(x => x.ClientId == generateBillFileDetail.ClientId);
                 var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
+
+                List<string> emails = generateBillFileDetail.Emails;
+                if (!emails.Contains(receiver.Email))
+                    emails.Add(receiver.Email);
+
+                if (!emails.Contains(sender.OtherEmail_1))
+                    emails.Add(sender.OtherEmail_1);
+
                 EmailSenderModal emailSenderModal = new EmailSenderModal
                 {
-                    To = new List<string> { "istiyaq.mi9@gmail.com" }, //receiver.Email,
+                    To = emails, //receiver.Email,
                     From = emailSetting.EmailAddress, //sender.Email,
                     UserName = emailSetting.EmailName,
                     CC = new List<string>(),
@@ -654,25 +669,7 @@ namespace ServiceLayer.Code
                     FileDetails = file
                 };
 
-                if (!string.IsNullOrEmpty(sender.OtherEmail_1))
-                    emailSenderModal.CC.Add(sender.OtherEmail_1);
-                if (!string.IsNullOrEmpty(sender.OtherEmail_2))
-                    emailSenderModal.CC.Add(sender.OtherEmail_2);
-                if (!string.IsNullOrEmpty(sender.OtherEmail_3))
-                    emailSenderModal.CC.Add(sender.OtherEmail_3);
-                if (!string.IsNullOrEmpty(sender.OtherEmail_4))
-                    emailSenderModal.CC.Add(sender.OtherEmail_4);
-
-                if (!string.IsNullOrEmpty(receiver.OtherEmail_1))
-                    emailSenderModal.CC.Add(receiver.OtherEmail_1);
-                if (!string.IsNullOrEmpty(receiver.OtherEmail_2))
-                    emailSenderModal.CC.Add(receiver.OtherEmail_2);
-                if (!string.IsNullOrEmpty(receiver.OtherEmail_3))
-                    emailSenderModal.CC.Add(receiver.OtherEmail_3);
-                if (!string.IsNullOrEmpty(receiver.OtherEmail_4))
-                    emailSenderModal.CC.Add(receiver.OtherEmail_4);
-
-                result = _eMailManager.SendMail(emailSenderModal, employee);
+                result = _eMailManager.SendMail(emailSenderModal, generateBillFileDetail.EmailTemplateDetail, employee);
             }
 
             return result;
