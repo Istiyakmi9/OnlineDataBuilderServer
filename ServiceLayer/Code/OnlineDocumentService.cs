@@ -24,6 +24,7 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly CommonFilterService _commonFilterService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly ITimesheetService _timesheetService;
         private readonly IFileMaker _iFileMaker;
         private readonly ICacheManager _cacheManager;
         private readonly CurrentSession _currentSession;
@@ -38,6 +39,7 @@ namespace ServiceLayer.Code
             ILogger<OnlineDocumentService> logger,
             CommonFilterService commonFilterService,
             IAuthenticationService authenticationService,
+            ITimesheetService timesheetService,
             CurrentSession currentSession,
             ICacheManager cacheManager,
             FileLocationDetail fileLocationDetail,
@@ -54,6 +56,7 @@ namespace ServiceLayer.Code
             _iFileMaker = iFileMaker;
             _billService = billService;
             _fileLocationDetail = fileLocationDetail;
+            _timesheetService = timesheetService;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -324,24 +327,38 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public DataSet EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
+        public BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
         {
+            BillingDetail billingDetail = default(BillingDetail);
             DbParam[] dbParams = new DbParam[]
             {
                 new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
                 new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
                 new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
                 new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                new DbParam(fileDetail.UserTypeId, typeof(long), "_UserTypeId"),
+                new DbParam(fileDetail.ForMonth, typeof(long), "_ForMonth"),
+                new DbParam(fileDetail.ForYear, typeof(long), "_ForYear")
             };
 
             var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
             if (Result.Tables.Count == 3)
             {
-                Result.Tables[0].TableName = "fileDetail";
-                Result.Tables[1].TableName = "Employees";
-                Result.Tables[2].TableName = "Organizations";
+                billingDetail = new BillingDetail();
+                billingDetail.FileDetail = Result.Tables[0];
+                billingDetail.Employees = Result.Tables[1];
+
+                TimesheetDetail timesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
+                var attrs = _timesheetService.BuildFinalTimesheet(timesheetDetail);
+
+                billingDetail.TimesheetDetails = attrs.Item1;
+                billingDetail.MissingDate = attrs.Item2;
+
+                var companies = _cacheManager.Get(CacheTable.Company);
+                billingDetail.Organizations = companies;
             }
-            return Result;
+
+            return billingDetail;
         }
 
         public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, GenerateBillFileDetail generateBillFileDetail)

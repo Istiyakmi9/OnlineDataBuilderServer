@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Mail;
 using EAGetMail;
 using System.Globalization;
+using System.Text;
 
 namespace EMailService.Service
 {
@@ -75,7 +76,7 @@ namespace EMailService.Service
                 sequence);
         }
 
-        public string SendMail(EmailSenderModal emailSenderModal, dynamic OtherDetails)
+        public string SendMail(EmailSenderModal emailSenderModal, EmailTemplate EmailTemplateDetail, Employee employee)
         {
             string status = string.Empty;
 
@@ -104,7 +105,7 @@ namespace EMailService.Service
 
             var message = new MailMessage();
             message.Subject = emailSenderModal.Title;
-            message.Body = this.GetClientBillingBody(OtherDetails);
+            message.Body = this.GetClientBillingBody(employee, EmailTemplateDetail);
             message.IsBodyHtml = true;
             message.From = fromAddress;
 
@@ -140,22 +141,156 @@ namespace EMailService.Service
             return status;
         }
 
-        private string GetClientBillingBody(dynamic Details)
+        private string GetClientBillingBody(Employee employee, EmailTemplate emailTemplate)
         {
+            StringBuilder firstPhase = new StringBuilder();
+            StringBuilder body = new StringBuilder();
+            StringBuilder endPhase = new StringBuilder();
+
+            foreach (var first in emailTemplate.BodyContentDetail.FirstPhase)
+                firstPhase.AppendLine(first);
+
+            foreach (var first in emailTemplate.BodyContentDetail.Body)
+                body.AppendLine(first);
+
+            foreach (var first in emailTemplate.BodyContentDetail.EndPhase)
+                endPhase.AppendLine(first);
+
+            string style = @"
+                    <style>
+                        .mt-4 {
+                            margin-top: 1.5rem!important;
+                        }
+
+                        .mb-1 {
+                            margin-bottom: 0.25rem!important;
+                        }
+
+                        .border {
+                            border: 1px solid #dee2e6!important;
+                        }
+
+                        .col-12 {
+                            flex: 0 0 auto;
+                            width: 100%;
+                        }
+
+                        .py-3 {
+                            padding - top: 1rem!important;
+                            padding-bottom: 1rem!important;
+                        }
+
+                        .px-2 {padding - right: 0.5rem!important;
+                            padding-left: 0.5rem!important;
+                        } 
+
+                        .position-relative {
+                            position: relative!important;
+                        }
+                        .d-flex {
+                            display: flex!important;
+                        }
+
+                        .fw-bold {
+                            font-weight: 700!important;
+                        }
+
+                        .ps-2 {
+                            padding-left: 0.5rem!important;
+                        }
+                        .w-100 {
+                            width: 100%!important;
+                        }
+
+                        .mt-3 {
+                            margin-top: 1rem!important;
+                        }
+                    </style>
+                ";
+
             string htmlBody = $@"<!DOCTYPE html>            
                     <html>
                         <head>
                             <title>STAFFING BILL</title> 
+                            {style}
                          </head> 
                          <body>
-                            <h4>Hi Sir/Madam, </h4> 
-                            <p>PFA bill for the month of JUly.</p> 
-                            <p>Developer detail as follows:</p>
-                            <div style='margin-left:10px;'>1. {Details.FirstName} {Details.LastName}  [ROLE: SOFTWARE DEVELOPER]</div> 
-                            
-                            <p style='margin-top: 2rem;'>Thanks & Regards,</p>
-                            <div>Team BottomHalf</div>
-                            <div>Mob: +91-9100544384</div>
+                            <div>
+                              <div class='mt-4'>
+                                <div class='mt-1'>
+                                  {emailTemplate.Salutation}
+                                </div>
+                                <div class='border py-3 px-2'>
+                                  <div class='col-12'>
+                                    <div>
+                                      <div class='no-focus-line'>
+                                        {firstPhase.ToString()}
+                                      </div> 
+                                    </div>
+                                  </div>
+                  
+                                  <div class='col-12'>
+                                    <div>
+                                      <div class='no-focus-line'>
+                                        {body.ToString()}
+                                      </div> 
+                                    </div>
+                                  </div>
+
+                                  <div class='col-12 my-4'>
+                                    <div>
+                                      <div>
+                                        <div class='d-flex'>
+                                          <span class='px-4 fw-bold'>CANDIDATE NAME: </span>
+                                          <span>{employee.FirstName + ' ' + employee.LastName}</span>
+                                        </div>
+
+                                        <div class='d-flex'>
+                                          <span class='px-4 fw-bold'>CANDIDATE ROLE: </span>
+                                          <span>SOFTWARE DEVELOPER</span>
+                                        </div>
+                        
+                                        <div class='d-flex'>
+                                          <span class='px-4 fw-bold'>BILLING MONTH: </span>
+                                          <span>{employee.CreatedOn.Month}, {employee.CreatedOn.Year}</span>
+                                        </div>
+                                      </div> 
+                                    </div>
+                                  </div>
+
+                                  <div class='col-12'>
+                                    <div>
+                                      <div class='no-focus-line'>
+                                        {endPhase.ToString()}
+                                      </div>  
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class='d-flex position-relative'>
+                                  <div class='fw-bold'>Note: </div> 
+                                  <div>
+                                    <input type='text' class='w-100 ps-2 border-0' 
+                                      placeholder='Enter your name' [value]='emailTemplate.EmailNote'>
+                                  </div>
+                                  <i class='edit fa fa-pencil position-absolute'></i>
+                                </div>
+                                <div class='mt-3'>
+                                  {emailTemplate.EmailClosingStatement}
+                                </div>
+                                <div class='position-relative'>
+                                  <input type='text' class='border-0' 
+                                    placeholder='Enter your name' [value]='emailTemplate.SignatureDetail'>
+                                  <i class='edit fa fa-pencil position-absolute'></i>
+                                </div>
+                                <div class='position-relative'>
+                                  Contact No#:
+                                  <div>
+                                    +91-{emailTemplate.ContactNo}
+                                  </div>
+                                  <i class='edit fa fa-pencil position-absolute'></i>
+                                </div>
+                              </div>
+                            </div>
                         </body> 
                     </html>";
 
