@@ -134,7 +134,10 @@ namespace ServiceLayer.Code
         {
             var calculatedSalaryBreakupDetail = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);
             if (calculatedSalaryBreakupDetail == null)
-                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
+                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                {
+                    FinalAmount = 0
+                };
 
             var basicComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Basic);
             if (basicComponent == null)
