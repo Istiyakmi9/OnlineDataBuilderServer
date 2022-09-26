@@ -428,45 +428,48 @@ namespace ServiceLayer.Code
                     timesheetDetail.ClientId
                 });
 
+            if (currentTimesheetDetail == null)
+                currentTimesheetDetail = new TimesheetDetail
+                {
+                    ForMonth = timesheetDetail.ForMonth,
+                    ForYear = timesheetDetail.ForYear
+                };
+
             var result = BuildFinalTimesheet(currentTimesheetDetail);
             return new { TimesheetDetails = result.Item1, MissingDate = result.Item2 };
         }
 
         public (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail)
         {
-            try
+            List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
+            List<DateTime> missingDayList = new List<DateTime>();
+            if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
+                dailyTimesheetDetails = JsonConvert
+                    .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
+            else
             {
-                List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
-                List<DateTime> missingDayList = new List<DateTime>();
-                if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
-                    dailyTimesheetDetails = JsonConvert
-                        .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
-                else
+                currentTimesheetDetail = new TimesheetDetail
                 {
-                    currentTimesheetDetail = new TimesheetDetail();
-                    currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
-                }
-
-                int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
-                int i = 1;
-                while (i <= days)
-                {
-                    var value = dailyTimesheetDetails
-                        .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.PresentDate, _currentSession.TimeZone).Day == i)
-                        .FirstOrDefault();
-                    if (value == null)
-                    {
-                        missingDayList.Add(new DateTime(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth, i));
-                    }
-                    i++;
-                }
-
-                return (dailyTimesheetDetails, missingDayList);
+                    ForMonth = currentTimesheetDetail.ForMonth,
+                    ForYear = currentTimesheetDetail.ForYear
+                };
             }
-            catch (Exception ex)
+
+            int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
+            int i = 1;
+            while (i <= days)
             {
-                throw new HiringBellException(ex.StackTrace);
+                var value = dailyTimesheetDetails
+                    .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.PresentDate, _currentSession.TimeZone).Day == i)
+                    .FirstOrDefault();
+                if (value == null)
+                {
+                    missingDayList.Add(new DateTime(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth, i));
+                }
+                i++;
             }
+
+            return (dailyTimesheetDetails, missingDayList);
         }
 
         public dynamic UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment)
