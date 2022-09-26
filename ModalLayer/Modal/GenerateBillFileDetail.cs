@@ -14,6 +14,8 @@ namespace ModalLayer.Modal
         public int ForYear { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
+        public string EmailTitle { get; set; } = string.Empty;
+        public string EmailSubject { get; set; } = string.Empty;
         public List<string> Emails { get; set; }
         public EmailTemplate EmailTemplateDetail { set; get; }
     }
