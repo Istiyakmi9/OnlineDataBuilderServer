@@ -74,8 +74,9 @@ namespace ServiceLayer.Code
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
             if (string.IsNullOrEmpty(value))
-                throw new HiringBellException("Fail to insert company group.");
 
+                throw new HiringBellException("Fail to insert company group.");
+            companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
             _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
             return companyGrp;
         }
