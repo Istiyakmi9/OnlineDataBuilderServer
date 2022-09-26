@@ -94,8 +94,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to get organization detail.");
 
             OrganizationDetail organizationDetail = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
-            FileDetail fileDetail = Converter.ToType<FileDetail>(ResultSet.Tables[1]);
-
+            var fileDetail = ResultSet.Tables[1];
             return new { OrganizationDetail = organizationDetail, Files = fileDetail };
         }
 
