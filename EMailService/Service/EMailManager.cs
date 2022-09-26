@@ -76,7 +76,7 @@ namespace EMailService.Service
                 sequence);
         }
 
-        public string SendMail(EmailSenderModal emailSenderModal, EmailTemplate EmailTemplateDetail, Employee employee)
+        public string SendMail(EmailSenderModal emailSenderModal, GenerateBillFileDetail EmailTemplateDetail, Employee employee)
         {
             string status = string.Empty;
 
@@ -141,11 +141,12 @@ namespace EMailService.Service
             return status;
         }
 
-        private string GetClientBillingBody(Employee employee, EmailTemplate emailTemplate)
+        private string GetClientBillingBody(Employee employee, GenerateBillFileDetail EmailTemplateDetail)
         {
             StringBuilder firstPhase = new StringBuilder();
             StringBuilder body = new StringBuilder();
             StringBuilder endPhase = new StringBuilder();
+            var emailTemplate = EmailTemplateDetail.EmailTemplateDetail;
 
             foreach (var first in emailTemplate.BodyContentDetail.FirstPhase)
                 firstPhase.AppendLine(first);
@@ -228,7 +229,7 @@ namespace EMailService.Service
                                           <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
                                             BILLING MONTH: 
                                           </span>
-                                          <span>{employee.CreatedOn.Month}, {employee.CreatedOn.Year}</span>
+                                          <span>{EmailTemplateDetail.MonthName}, {EmailTemplateDetail.ForYear}</span>
                                         </div>
                                       </div> 
                                     </div>

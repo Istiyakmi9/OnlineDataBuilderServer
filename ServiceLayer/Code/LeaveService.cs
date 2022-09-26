@@ -65,7 +65,6 @@ namespace ServiceLayer.Code
         public List<LeavePlanType> AddLeavePlanTypeService(LeavePlanType leavePlanType)
         {
             List<LeavePlanType> leavePlanTypes = default(List<LeavePlanType>);
-            ValidateLeavePlanToInsert(leavePlanType);
             BuildConfigurationDetailObject(leavePlanType);
 
             string result = _db.Execute<LeavePlanType>("sp_leave_plans_type_insupd", new
@@ -94,31 +93,6 @@ namespace ServiceLayer.Code
             }
 
             return leavePlanTypes;
-        }
-
-        private void ValidateLeavePlanToInsert(LeavePlanType leavePlanType)
-        {
-            if (leavePlanType == null)
-                throw new HiringBellException("Empty Leave plan submitted.");
-
-            int multiPlanFlag = 3;
-            if (leavePlanType.IsPaidLeave)
-                multiPlanFlag--;
-
-            if (leavePlanType.IsSickLeave)
-                multiPlanFlag--;
-
-            if (leavePlanType.IsStatutoryLeave)
-                multiPlanFlag--;
-
-            if (multiPlanFlag != 2)
-            {
-                if (leavePlanType.IsSickLeave)
-                    throw new HiringBellException("Multiple leave type selected. (i.e. Select only one from Sick or Paid or Statutory)");
-
-                if (leavePlanType.IsStatutoryLeave)
-                    throw new HiringBellException("Multiple leave type selected. (i.e. Select only one from Sick or Paid or Statutory)");
-            }
         }
 
         public dynamic GetLeavePlansService(FilterModel filterModel)
@@ -162,8 +136,6 @@ namespace ServiceLayer.Code
         {
             if (leavePlanType.LeavePlanTypeId <= 0)
                 throw new HiringBellException("Leave plan type id not found. Please add one plan first.");
-
-            ValidateLeavePlanToInsert(leavePlanType);
 
             LeavePlanType record = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
