@@ -662,8 +662,8 @@ namespace ServiceLayer.Code
                     UserName = emailSetting.EmailName,
                     CC = new List<string>(),
                     BCC = new List<string>(),
-                    Title = generateBillFileDetail.EmailTitle,
-                    Subject = generateBillFileDetail.EmailSubject,
+                    Title = generateBillFileDetail.EmailTemplateDetail.EmailTitle,
+                    Subject = generateBillFileDetail.EmailTemplateDetail.EmailSubject,
                     FileDetails = file,
                     EmailSettingDetails = emailSetting
                 };
