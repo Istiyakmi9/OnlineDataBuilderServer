@@ -197,7 +197,7 @@ namespace ServiceLayer.Code
             string companyLogo = String.Empty;
             try
             {
-                if (fileCollection.Count == 1)
+                if (fileCollection.Count > 0)
                     companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[0].Name);
 
                 if (File.Exists(companyLogo))
@@ -295,7 +295,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to insert or update.");
 
-            if (fileCollection.Count == 1)
+            if (fileCollection.Count > 0)
                 UpdateOrganizationLogo(companyInfo, fileCollection);
 
             return company;
