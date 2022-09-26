@@ -83,24 +83,24 @@ namespace EMailService.Service
             if (emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
 
-            var fromEmail = new
-            {
-                Id = emailSenderModal.From,
-                Pwd = "bottomhalf@mi9",
-                Host = "smtpout.asia.secureserver.net",
-                Port = 587  // 25	                 
-            };
+            //var fromEmail = new
+            //{
+            //    Id = emailSenderModal.From,
+            //    Pwd = emailSenderModal.EmailSettingDetails.Credentials,
+            //    Host = emailSenderModal.EmailSettingDetails.EmailHost, // "smtpout.asia.secureserver.net",
+            //    Port = emailSenderModal.EmailSettingDetails.PortNo // 587  // 25	                 
+            //};
 
-            var fromAddress = new System.Net.Mail.MailAddress(fromEmail.Id, emailSenderModal.Title);
+            var fromAddress = new System.Net.Mail.MailAddress(emailSenderModal.From, emailSenderModal.Title);
 
             var smtp = new SmtpClient
             {
-                Host = fromEmail.Host,
-                Port = fromEmail.Port,
-                EnableSsl = true,
+                Host = emailSenderModal.EmailSettingDetails.EmailHost,
+                Port = emailSenderModal.EmailSettingDetails.PortNo,
+                EnableSsl = emailSenderModal.EmailSettingDetails.EnableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                UseDefaultCredentials = false,
-                Credentials = new NetworkCredential(fromAddress.Address, fromEmail.Pwd)
+                UseDefaultCredentials = emailSenderModal.EmailSettingDetails.UserDefaultCredentials,
+                Credentials = new NetworkCredential(fromAddress.Address, emailSenderModal.EmailSettingDetails.Credentials)
             };
 
             var message = new MailMessage();
@@ -157,40 +157,7 @@ namespace EMailService.Service
                 endPhase.AppendLine(first);
 
             string style = @"
-                    <style>
-                        .mt-4 {
-                            margin-top: 1.5rem!important;
-                        }
-
-                        .mb-1 {
-                            margin-bottom: 0.25rem!important;
-                        }
-
-                        .border {
-                            border: 1px solid #dee2e6!important;
-                        }
-
-                        .col-12 {
-                            flex: 0 0 auto;
-                            width: 100%;
-                        }
-
-                        .py-3 {
-                            padding - top: 1rem!important;
-                            padding-bottom: 1rem!important;
-                        }
-
-                        .px-2 {padding - right: 0.5rem!important;
-                            padding-left: 0.5rem!important;
-                        } 
-
-                        .position-relative {
-                            position: relative!important;
-                        }
-                        .d-flex {
-                            display: flex!important;
-                        }
-
+                    <style>                        
                         .fw-bold {
                             font-weight: 700!important;
                         }
@@ -216,78 +183,82 @@ namespace EMailService.Service
                          </head> 
                          <body>
                             <div>
-                              <div class='mt-4'>
-                                <div class='mt-1'>
+                              <div style='margin-top: 1.5rem!important;'>
+                                <div style='margin-bottom: 0.25rem!important;'>
                                   {emailTemplate.Salutation}
                                 </div>
-                                <div class='border py-3 px-2'>
-                                  <div class='col-12'>
+                                <div style='border: 1px solid #dee2e6!important; padding - top: 1rem!important;
+                                    padding-bottom: 1rem!important; padding - right: 0.5rem!important;
+                                    padding-left: 0.5rem!important;'>
+                                  <div style='flex: 0 0 auto; width: 100%;'>
                                     <div>
-                                      <div class='no-focus-line'>
+                                      <div>
                                         {firstPhase.ToString()}
                                       </div> 
                                     </div>
                                   </div>
                   
-                                  <div class='col-12'>
+                                  <div style='flex: 0 0 auto; width: 100%;'>
                                     <div>
-                                      <div class='no-focus-line'>
+                                      <div>
                                         {body.ToString()}
                                       </div> 
                                     </div>
                                   </div>
 
-                                  <div class='col-12 my-4'>
+                                  <div style='flex: 0 0 auto; width: 100%; margin-top: 1.5rem!important;
+                                        margin-bottom: 1.5rem!important;'>
                                     <div>
                                       <div>
-                                        <div class='d-flex'>
-                                          <span class='px-4 fw-bold'>CANDIDATE NAME: </span>
+                                        <div style='display: flex!important;'>
+                                          <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
+                                                CANDIDATE NAME: 
+                                          </span>
                                           <span>{employee.FirstName + ' ' + employee.LastName}</span>
                                         </div>
 
-                                        <div class='d-flex'>
-                                          <span class='px-4 fw-bold'>CANDIDATE ROLE: </span>
+                                        <div style='display: flex!important;'>
+                                          <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
+                                            CANDIDATE ROLE: 
+                                          </span>
                                           <span>SOFTWARE DEVELOPER</span>
                                         </div>
                         
-                                        <div class='d-flex'>
-                                          <span class='px-4 fw-bold'>BILLING MONTH: </span>
+                                        <div style='display: flex!important;'>
+                                          <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
+                                            BILLING MONTH: 
+                                          </span>
                                           <span>{employee.CreatedOn.Month}, {employee.CreatedOn.Year}</span>
                                         </div>
                                       </div> 
                                     </div>
                                   </div>
 
-                                  <div class='col-12'>
+                                  <div style='flex: 0 0 auto; width: 100%;'>
                                     <div>
-                                      <div class='no-focus-line'>
+                                      <div>
                                         {endPhase.ToString()}
                                       </div>  
                                     </div>
                                   </div>
                                 </div>
-                                <div class='d-flex position-relative'>
-                                  <div class='fw-bold'>Note: </div> 
+                                <div style='display: flex!important;'>
+                                  <div style='font-weight: 700!important;'>Note: </div> 
                                   <div>
-                                    <input type='text' class='w-100 ps-2 border-0' 
-                                      placeholder='Enter your name' [value]='emailTemplate.EmailNote'>
+                                    {emailTemplate.EmailNote}
                                   </div>
-                                  <i class='edit fa fa-pencil position-absolute'></i>
                                 </div>
-                                <div class='mt-3'>
+                                <div style='margin-top: 1rem !important;'>
                                   {emailTemplate.EmailClosingStatement}
                                 </div>
-                                <div class='position-relative'>
-                                  <input type='text' class='border-0' 
-                                    placeholder='Enter your name' [value]='emailTemplate.SignatureDetail'>
-                                  <i class='edit fa fa-pencil position-absolute'></i>
+                                <div>
+                                  <div>{emailTemplate.SignatureDetail}</div>
                                 </div>
-                                <div class='position-relative'>
+                                <div>
                                   Contact No#:
                                   <div>
                                     +91-{emailTemplate.ContactNo}
                                   </div>
-                                  <i class='edit fa fa-pencil position-absolute'></i>
                                 </div>
                               </div>
                             </div>

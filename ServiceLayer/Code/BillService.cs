@@ -425,7 +425,8 @@ namespace ServiceLayer.Code
             }
 
             EmailTemplate emailTemplate = _templateService.GetBillingTemplateDetailService();
-            return new { FileDetail = fileDetail, EmailTemplate = emailTemplate, EmailAddress = emails };
+            emailTemplate.Emails = emails;
+            return new { FileDetail = fileDetail, EmailTemplate = emailTemplate };
         }
 
         private void ValidateBillModal(PdfModal pdfModal)
@@ -650,12 +651,9 @@ namespace ServiceLayer.Code
                 var receiver = organizations.Find(x => x.ClientId == generateBillFileDetail.ClientId);
                 var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
 
-                List<string> emails = generateBillFileDetail.Emails;
-                if (!emails.Contains(receiver.Email))
-                    emails.Add(receiver.Email);
-
-                if (!emails.Contains(sender.OtherEmail_1))
-                    emails.Add(sender.OtherEmail_1);
+                List<string> emails = generateBillFileDetail.EmailTemplateDetail.Emails;
+                if (emails.Count == 0)
+                    throw new HiringBellException("No receiver address added. Please add atleast one email address.");
 
                 EmailSenderModal emailSenderModal = new EmailSenderModal
                 {
@@ -664,9 +662,10 @@ namespace ServiceLayer.Code
                     UserName = emailSetting.EmailName,
                     CC = new List<string>(),
                     BCC = new List<string>(),
-                    Title = $"STAFFING BILL FOR MONTH - July, 2022",
-                    Subject = "Staffing bill",
-                    FileDetails = file
+                    Title = generateBillFileDetail.EmailTitle,
+                    Subject = generateBillFileDetail.EmailSubject,
+                    FileDetails = file,
+                    EmailSettingDetails = emailSetting
                 };
 
                 result = _eMailManager.SendMail(emailSenderModal, generateBillFileDetail.EmailTemplateDetail, employee);
