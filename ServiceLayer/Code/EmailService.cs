@@ -37,8 +37,6 @@ namespace ServiceLayer.Code
             EmailSenderModal emailSenderModal = new EmailSenderModal
             {
                 To = mailRequest.To, //receiver.Email,
-                From = "info@bottomhalf.in", //sender.Email,
-                UserName = "BottomHalf",
                 CC = mailRequest.CC,    //new List<string>(),
                 BCC = mailRequest.BCC,  //new List<string>(),
                 Subject = mailRequest.Subject,

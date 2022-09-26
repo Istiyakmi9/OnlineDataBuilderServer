@@ -428,6 +428,13 @@ namespace ServiceLayer.Code
                     timesheetDetail.ClientId
                 });
 
+            if (currentTimesheetDetail == null)
+                currentTimesheetDetail = new TimesheetDetail
+                {
+                    ForMonth = timesheetDetail.ForMonth,
+                    ForYear = timesheetDetail.ForYear
+                };
+
             var result = BuildFinalTimesheet(currentTimesheetDetail);
             return new { TimesheetDetails = result.Item1, MissingDate = result.Item2 };
         }
@@ -436,13 +443,18 @@ namespace ServiceLayer.Code
         {
             List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
             List<DateTime> missingDayList = new List<DateTime>();
-            if (currentTimesheetDetail.TimesheetMonthJson != null)
+            if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
                 dailyTimesheetDetails = JsonConvert
                     .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
             else
-                currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
+            {
+                currentTimesheetDetail = new TimesheetDetail
+                {
+                    ForMonth = currentTimesheetDetail.ForMonth,
+                    ForYear = currentTimesheetDetail.ForYear
+                };
+            }
 
-            dailyTimesheetDetails.OrderBy(DateTime => DateTime);
             int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
             int i = 1;
             while (i <= days)
