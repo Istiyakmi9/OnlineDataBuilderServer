@@ -436,7 +436,7 @@ namespace ServiceLayer.Code
         {
             List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
             List<DateTime> missingDayList = new List<DateTime>();
-            if (currentTimesheetDetail != null)
+            if (currentTimesheetDetail.TimesheetMonthJson != null)
                 dailyTimesheetDetails = JsonConvert
                     .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
             else

@@ -94,8 +94,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to get organization detail.");
 
             OrganizationDetail organizationDetail = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
-            FileDetail fileDetail = Converter.ToType<FileDetail>(ResultSet.Tables[1]);
-
+            var fileDetail = ResultSet.Tables[1];
             return new { OrganizationDetail = organizationDetail, Files = fileDetail };
         }
 
@@ -198,7 +197,7 @@ namespace ServiceLayer.Code
             string companyLogo = String.Empty;
             try
             {
-                if (fileCollection.Count == 1)
+                if (fileCollection.Count > 0)
                     companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[0].Name);
 
                 if (File.Exists(companyLogo))
@@ -296,7 +295,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to insert or update.");
 
-            if (fileCollection.Count == 1)
+            if (fileCollection.Count > 0)
                 UpdateOrganizationLogo(companyInfo, fileCollection);
 
             return company;
