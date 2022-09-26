@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ModalLayer.Modal;
 
 namespace ServiceLayer.Interface
 {
     public interface ITemplateService
     {
         string GetStaffingTemplateService();
+        EmailTemplate GetBillingTemplateDetailService();
     }
 }

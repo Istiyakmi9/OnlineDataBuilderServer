@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
+using MySql.Data.Types;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -113,12 +114,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                         fieldValue = instance.GetType().GetProperty(p.Name).GetValue(instance, null);
                         if (fieldValue != null)
                         {
-                            if (p.PropertyType == typeof(System.DateTime))
+                            if (p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(Nullable<DateTime>))
                             {
                                 if (Convert.ToDateTime(fieldValue).Year == 1)
                                     cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = Convert.ToDateTime("1/1/1976");
                                 else
-                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = fieldValue;
+                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = fieldValue.ToString("yyyy-MM-dd HH:mm:ss.fff");
                             }
                             else if (p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?))
                             {

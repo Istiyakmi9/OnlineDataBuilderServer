@@ -9,8 +9,12 @@ namespace ModalLayer.Modal
         public long EmployeeId { set; get; }
         public string FileExtension { get; set; }
         public long FileId { get; set; }
+        public int UserTypeId { get; set; }
+        public int ForMonth { get; set; }
+        public int ForYear { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
         public List<string> Emails { get; set; }
+        public EmailTemplate EmailTemplateDetail { set; get; }
     }
 }

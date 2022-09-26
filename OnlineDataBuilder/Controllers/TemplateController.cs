@@ -25,5 +25,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _templateService.GetStaffingTemplateService();
             return BuildResponse(result);
         }
+
+        [HttpGet("GetBillingTemplateDetail")]
+        public IResponse<ApiResponse> GetBillingTemplateDetail()
+        {
+            var result = _templateService.GetBillingTemplateDetailService();
+            return BuildResponse(result);
+        }
     }
 }

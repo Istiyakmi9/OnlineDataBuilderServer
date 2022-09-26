@@ -203,8 +203,6 @@ namespace ServiceLayer.Code
 
         private string UpdateOrInsertTimesheetDetail(List<DailyTimesheetDetail> finalDailyTimesheetDetails, TimesheetDetail currentTimesheet)
         {
-            var firstAttn = finalDailyTimesheetDetails.FirstOrDefault();
-
             var TimesheetDetail = JsonConvert.SerializeObject(finalDailyTimesheetDetails);
 
             decimal MonthsMinutes = 0;
@@ -391,37 +389,6 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
             }
 
-            //List<DailyTimesheetDetail> dailyTimesheetDetail = new List<DailyTimesheetDetail>();
-            //finalTimesheetSet.ForEach(x =>
-            //{
-            //    if (x.PresentDate >= TimeZoneInfo.ConvertTimeToUtc(firstDate) && x.PresentDate <= TimeZoneInfo.ConvertTimeToUtc(lastDate))
-            //    {
-            //        dailyTimesheetDetail.Add(x);
-            //    }
-            //});
-
-            //if (otherMonthTimesheetDetail.Count > 0)
-            //{
-            //    if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
-            //    {
-            //        otherMonthTimesheetDetail = otherMonthTimesheetDetail.Where(x => employee.CreatedOn.Date.Subtract(x.PresentDate.Date).TotalDays <= 0).ToList();
-            //    }
-
-            //    result = this.UpdateOrInsertTimesheetDetail(otherMonthTimesheetDetail, currentTimesheetDetail, ApplicationConstants.InsertUpdateTimesheet);
-            //    if (string.IsNullOrEmpty(result))
-            //    {
-            //        throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
-            //    }
-
-            //    otherMonthTimesheetDetail.ForEach(x =>
-            //    {
-            //        if (x.PresentDate >= TimeZoneInfo.ConvertTimeToUtc(firstDate) && x.PresentDate <= TimeZoneInfo.ConvertTimeToUtc(lastDate))
-            //        {
-            //            dailyTimesheetDetail.Add(x);
-            //        }
-            //    });
-            //}
-
             return finalTimesheetSet;
         }
 
@@ -451,9 +418,6 @@ namespace ServiceLayer.Code
 
         public dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail)
         {
-            List<DateTime> missingDayList = new List<DateTime>();
-            List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
-
             (TimesheetDetail currentTimesheetDetail, Employee employee) =
                 _db.GetMulti<TimesheetDetail, Employee>("sp_employee_timesheet_getby_empid", new
                 {
@@ -464,11 +428,19 @@ namespace ServiceLayer.Code
                     timesheetDetail.ClientId
                 });
 
+            var result = BuildFinalTimesheet(currentTimesheetDetail);
+            return new { TimesheetDetails = result.Item1, MissingDate = result.Item2 };
+        }
+
+        public (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail)
+        {
+            List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
+            List<DateTime> missingDayList = new List<DateTime>();
             if (currentTimesheetDetail != null)
                 dailyTimesheetDetails = JsonConvert
                     .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
             else
-                currentTimesheetDetail = new TimesheetDetail { ForMonth = timesheetDetail.ForMonth, ForYear = timesheetDetail.ForYear };
+                currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
 
             dailyTimesheetDetails.OrderBy(DateTime => DateTime);
             int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
@@ -485,31 +457,20 @@ namespace ServiceLayer.Code
                 i++;
             }
 
-            return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
+            return (dailyTimesheetDetails, missingDayList);
         }
 
         public dynamic UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment)
         {
             List<DateTime> missingDayList = new List<DateTime>();
-            var descendingTimesheet = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate).ToList();
-            foreach (var item in descendingTimesheet)
-            {
-                if (item.TimesheetStatus == ItemStatus.NotGenerated)
-                {
-                    missingDayList.Add(item.PresentDate);
-                    dailyTimesheetDetails.Remove(item);
-                }
-                else
-                    break;
-            }
-
             if (dailyTimesheetDetails == null || dailyTimesheetDetails.Count == 0 || timesheetDetail == null)
                 throw new HiringBellException("Incorrect data passed. Please verify your input.");
 
             var firstDate = dailyTimesheetDetails.First().PresentDate;
             firstDate = _timezoneConverter.ToTimeZoneDateTime(firstDate, _currentSession.TimeZone);
             int days = DateTime.DaysInMonth(firstDate.Year, firstDate.Month);
-            if (descendingTimesheet.Count != days)
+
+            if (dailyTimesheetDetails.Count > days)
                 throw new HiringBellException("Incorrect data passed. Please verify your input.");
 
             (TimesheetDetail currentTimesheetDetail, Employee employee) =
@@ -525,43 +486,52 @@ namespace ServiceLayer.Code
             if (employee == null)
                 throw new HiringBellException("Employee detail not found. Please contact to admin.");
 
-            var newCreateList = dailyTimesheetDetails;
+            var utcJoiningDate = _timezoneConverter.ToTimeZoneDateTime(employee.CreatedOn, _currentSession.TimeZone);
             if (currentTimesheetDetail == null)
-            {
-                newCreateList = InsertUpdateTimesheet(newCreateList);
-                UpdateTimesheetList(dailyTimesheetDetails, newCreateList);
-            }
-            else
-            {
-                var utcJoiningDate = _timezoneConverter.ToTimeZoneDateTime(employee.CreatedOn, _currentSession.TimeZone);
-                newCreateList = dailyTimesheetDetails
-                                .Where(x => utcJoiningDate.Date.Subtract(
-                                    _timezoneConverter.ToTimeZoneDateTime(
-                                        x.PresentDate,
-                                        _currentSession.TimeZone
-                                    ).Date).TotalDays <= 0).ToList();
-                UpdateTimesheetList(dailyTimesheetDetails, newCreateList);
+                currentTimesheetDetail = timesheetDetail;
 
-                currentTimesheetDetail.TimesheetMonthJson = JsonConvert.SerializeObject(dailyTimesheetDetails);
+            UpdateTimesheetList(dailyTimesheetDetails, utcJoiningDate);
 
-                var result = this.UpdateOrInsertTimesheetDetail(dailyTimesheetDetails, currentTimesheetDetail);
-                if (string.IsNullOrEmpty(result))
-                    throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
+            int i = 0;
+            DailyTimesheetDetail item = default(DailyTimesheetDetail);
+            while (i < dailyTimesheetDetails.Count)
+            {
+                item = dailyTimesheetDetails.ElementAt(i);
+                if (item.TimesheetStatus != ItemStatus.Submitted)
+                {
+                    missingDayList.Add(item.PresentDate);
+                    dailyTimesheetDetails.RemoveAt(i);
+                }
+                else
+                    i++;
+
             }
+
+            currentTimesheetDetail.TimesheetMonthJson = JsonConvert.SerializeObject(dailyTimesheetDetails);
+            var result = this.UpdateOrInsertTimesheetDetail(dailyTimesheetDetails, currentTimesheetDetail);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
             return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
         }
 
-        private void UpdateTimesheetList(List<DailyTimesheetDetail> dailyTimesheetDetails, List<DailyTimesheetDetail> newCreateList)
+        private void UpdateTimesheetList(List<DailyTimesheetDetail> dailyTimesheetDetails, DateTime utcJoiningDate)
         {
+            var now = DateTime.UtcNow;
             Parallel.ForEach(dailyTimesheetDetails, i =>
             {
-                if (newCreateList
-                .Where(x => x.PresentDate.Date.Subtract(i.PresentDate.Date).TotalDays == 0)
-                .FirstOrDefault() != null)
-                    i.TimesheetStatus = ItemStatus.Submitted;
-                else
+                if (utcJoiningDate.Date.
+                    Subtract(_timezoneConverter.ToTimeZoneDateTime(i.PresentDate, _currentSession.TimeZone)).TotalDays > 0 ||
+                    now.Date
+                    .Subtract(_timezoneConverter.ToTimeZoneDateTime(i.PresentDate, _currentSession.TimeZone)).TotalDays < 0)
                     i.TimesheetStatus = ItemStatus.NotGenerated;
+                else
+                {
+                    if (i.TimesheetStatus != ItemStatus.Submitted)
+                        i.TimesheetStatus = ItemStatus.Absent;
+
+                    i.TimesheetStatus = ItemStatus.Submitted;
+                }
             });
         }
     }

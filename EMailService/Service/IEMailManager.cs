@@ -7,7 +7,7 @@ namespace EMailService.Service
 {
     public interface IEMailManager
     {
-        string SendMail(EmailSenderModal emailSenderModal, dynamic? otherDetails);
+        string SendMail(EmailSenderModal emailSenderModal, EmailTemplate EmailTemplateDetail, Employee OtherDetails);
         void ReadMails(EmailSettingDetail emailSettingDetail);
     }
 }
