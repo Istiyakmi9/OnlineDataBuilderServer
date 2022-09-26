@@ -447,7 +447,6 @@ namespace ServiceLayer.Code
                     currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
                 }
 
-                dailyTimesheetDetails.OrderBy(DateTime => DateTime);
                 int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
                 int i = 1;
                 while (i <= days)
