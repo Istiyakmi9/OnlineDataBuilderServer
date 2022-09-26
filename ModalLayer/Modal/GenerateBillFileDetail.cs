@@ -11,6 +11,7 @@ namespace ModalLayer.Modal
         public long FileId { get; set; }
         public int UserTypeId { get; set; }
         public int ForMonth { get; set; }
+        public string MonthName { get; set; }
         public int ForYear { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
