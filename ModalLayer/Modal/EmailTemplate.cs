@@ -16,6 +16,9 @@ namespace ModalLayer.Modal
         public string SignatureDetail { set; get; }
         public string ContactNo { set; get; }
         public string Fax { set; get; }
+        public string EmailTitle { get; set; } = string.Empty;
+        public string EmailSubject { get; set; } = string.Empty;
+        public List<string> Emails { set; get; }
         public long UpdatedBy { set; get; }
         public DateTime UpdatedOn { set; get; }
     }

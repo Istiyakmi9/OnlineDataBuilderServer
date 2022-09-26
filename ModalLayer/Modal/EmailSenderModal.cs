@@ -13,5 +13,6 @@ namespace ModalLayer.Modal
         public List<string> CC { set; get; }
         public List<string> BCC { set; get; }
         public List<FileDetail> FileDetails { set; get; }
+        public EmailSettingDetail EmailSettingDetails { set; get; }
     }
 }
