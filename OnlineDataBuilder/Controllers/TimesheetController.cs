@@ -51,15 +51,8 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetEmployeeTimeSheet")]
         public IResponse<ApiResponse> GetEmployeeTimeSheet(TimesheetDetail timesheetDetail)
         {
-            try
-            {
-                var result = _timesheetService.GetEmployeeTimeSheetService(timesheetDetail);
-                return BuildResponse(result, HttpStatusCode.OK);
-            }
-            catch
-            {
-                throw;
-            }
+            var result = _timesheetService.GetEmployeeTimeSheetService(timesheetDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -70,10 +63,10 @@ namespace OnlineDataBuilder.Controllers
             _httpContext.Request.Form.TryGetValue("dailyTimesheetDetail", out StringValues timeSheetDetail);
             _httpContext.Request.Form.TryGetValue("timesheet", out StringValues timesheet);
             string Comment = JsonConvert.DeserializeObject<string>(comment);
-
+            
             List<DailyTimesheetDetail> dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetail);
             TimesheetDetail timesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheet);
-
+            
             var result = _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
             return BuildResponse(result, HttpStatusCode.OK);
         }

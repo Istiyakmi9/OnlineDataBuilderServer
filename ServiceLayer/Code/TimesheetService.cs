@@ -434,33 +434,40 @@ namespace ServiceLayer.Code
 
         public (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail)
         {
-            List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
-            List<DateTime> missingDayList = new List<DateTime>();
-            if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
-                dailyTimesheetDetails = JsonConvert
-                    .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
-            else
+            try
             {
-                currentTimesheetDetail = new TimesheetDetail();
-                currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
-            }
-
-            dailyTimesheetDetails.OrderBy(DateTime => DateTime);
-            int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
-            int i = 1;
-            while (i <= days)
-            {
-                var value = dailyTimesheetDetails
-                    .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.PresentDate, _currentSession.TimeZone).Day == i)
-                    .FirstOrDefault();
-                if (value == null)
+                List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
+                List<DateTime> missingDayList = new List<DateTime>();
+                if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
+                    dailyTimesheetDetails = JsonConvert
+                        .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
+                else
                 {
-                    missingDayList.Add(new DateTime(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth, i));
+                    currentTimesheetDetail = new TimesheetDetail();
+                    currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
                 }
-                i++;
-            }
 
-            return (dailyTimesheetDetails, missingDayList);
+                dailyTimesheetDetails.OrderBy(DateTime => DateTime);
+                int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
+                int i = 1;
+                while (i <= days)
+                {
+                    var value = dailyTimesheetDetails
+                        .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.PresentDate, _currentSession.TimeZone).Day == i)
+                        .FirstOrDefault();
+                    if (value == null)
+                    {
+                        missingDayList.Add(new DateTime(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth, i));
+                    }
+                    i++;
+                }
+
+                return (dailyTimesheetDetails, missingDayList);
+            }
+            catch (Exception ex)
+            {
+                throw new HiringBellException(ex.StackTrace);
+            }
         }
 
         public dynamic UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment)
