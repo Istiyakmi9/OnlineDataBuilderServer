@@ -436,11 +436,14 @@ namespace ServiceLayer.Code
         {
             List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
             List<DateTime> missingDayList = new List<DateTime>();
-            if (currentTimesheetDetail.TimesheetMonthJson != null)
+            if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
                 dailyTimesheetDetails = JsonConvert
                     .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
             else
+            {
+                currentTimesheetDetail = new TimesheetDetail();
                 currentTimesheetDetail = new TimesheetDetail { ForMonth = currentTimesheetDetail.ForMonth, ForYear = currentTimesheetDetail.ForYear };
+            }
 
             dailyTimesheetDetails.OrderBy(DateTime => DateTime);
             int days = DateTime.DaysInMonth(currentTimesheetDetail.ForYear, currentTimesheetDetail.ForMonth);
