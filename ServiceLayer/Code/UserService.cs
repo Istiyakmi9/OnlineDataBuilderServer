@@ -108,9 +108,8 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public string UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
+        public Files UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
-            var result = string.Empty;
             if (Int32.Parse(userId) <= 0)
             {
                 throw new HiringBellException("");
@@ -144,11 +143,13 @@ namespace ServiceLayer.Code
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
                 int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, true);
                 _db.Commit();
-                if (insertedCount == 1)
-                    result = "Resume Uploaded Successfully.";
+                if (insertedCount != 1)
+                    throw new HiringBellException("Fail to insert or update the resume");
+                else
+                    file = files[0];
             }
 
-            return result;
+            return file;
         }
 
         public string UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection, List<Files> files)
