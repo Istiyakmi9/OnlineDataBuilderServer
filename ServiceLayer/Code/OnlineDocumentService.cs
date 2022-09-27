@@ -348,9 +348,39 @@ namespace ServiceLayer.Code
                 billingDetail.FileDetail = Result.Tables[0];
                 billingDetail.Employees = Result.Tables[1];
 
-                TimesheetDetail timesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
-                var attrs = _timesheetService.BuildFinalTimesheet(timesheetDetail);
+                TimesheetDetail timesheetDetail = default(TimesheetDetail);
+                if (Result.Tables[2] == null || Result.Tables[2].Rows.Count == 0)
+                {
+                    bool flag = false;
+                    timesheetDetail = new TimesheetDetail
+                    {
+                        ForMonth = 0,
+                        ForYear = 0
+                    };
 
+                    if (billingDetail.FileDetail.Rows[0]["BillForMonth"] == DBNull.Value)
+                        flag = true;
+                    else
+                        timesheetDetail.ForMonth = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillForMonth"]);
+
+                    if (billingDetail.FileDetail.Rows[0]["BillYear"] == DBNull.Value)
+                        flag = true;
+                    else
+                        timesheetDetail.ForYear = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillYear"]);
+
+                    DateTime billingOn = DateTime.Now;
+                    if (flag)
+                    {
+                        billingOn = Convert.ToDateTime(billingDetail.FileDetail.Rows[0]["BillYear"]);
+                        timesheetDetail.ForMonth = billingOn.Month;
+                        timesheetDetail.ForYear = billingOn.Year;
+                    }
+
+                }
+                else
+                    timesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
+
+                var attrs = _timesheetService.BuildFinalTimesheet(timesheetDetail);
                 billingDetail.TimesheetDetails = attrs.Item1;
                 billingDetail.MissingDate = attrs.Item2;
 

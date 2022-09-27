@@ -105,7 +105,7 @@ namespace ServiceLayer.Code
                     attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail, status);
                 }
 
-                if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+                if (this.IsRegisteredOnPresentMonth(employee.CreatedOn) == 1)
                 {
                     attendenceDetails = attendenceDetails.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
                 }
@@ -668,6 +668,18 @@ namespace ServiceLayer.Code
             }
 
             return 0;
+        }
+
+        private int IsRegisteredOnPresentMonth(DateTime RegistratedOn)
+        {
+            var monthFirstDay = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+
+            if (RegistratedOn.Date.Subtract(monthFirstDay.Date).TotalDays <= 0)
+            {
+                return 0;
+            }
+
+            return 1;
         }
 
         private int IsGivenDateAllowed(DateTime From, DateTime To, List<AttendenceDetail> attendanceData)
