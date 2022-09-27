@@ -216,13 +216,15 @@ namespace ServiceLayer.Code
             if (salaryGroup.CompanyId <= 0)
                 throw new HiringBellException("Invalid data selected to create group. Please contact to admin.");
 
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
-            foreach (SalaryGroup existSalaryGroup in salaryGroups)
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_get_if_exists", new
             {
-                if ((salaryGroup.MinAmount > existSalaryGroup.MinAmount && salaryGroup.MinAmount < existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
-                    throw new HiringBellException("Salary group limit already exist");
-            }
+                salaryGroup.CompanyId,
+                salaryGroup.MinAmount,
+                salaryGroup.MaxAmount
+            });
+
+            if (salaryGrp != null)
+                throw new HiringBellException("Salary group limit already exist");
 
             List<SalaryComponents> initialSalaryComponents = _db.GetList<SalaryComponents>("sp_salary_group_get_initial_components");
 
@@ -498,9 +500,9 @@ namespace ServiceLayer.Code
             return salaryGroup.GroupComponents;
         }
 
-        public List<SalaryComponents> GetSalaryGroupComponentsByCTC(decimal CTC)
+        public List<SalaryComponents> GetSalaryGroupComponentsByCTC(long EmployeeId, decimal CTC)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { EmployeeId, CTC });
             if (salaryGroup == null)
             {
                 salaryGroup = new SalaryGroup
@@ -672,7 +674,10 @@ namespace ServiceLayer.Code
         {
             List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
             DateTime startDate = new DateTime(DateTime.Now.Year, 4, 1);
-            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
+            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(EmployeeId, CTCAnnually);
+
+            if (salaryComponents.Count == 0)
+                throw new HiringBellException($"Salary group not defined for CTC bracked: [{CTCAnnually}]");
 
             string stringifySalaryComponents = JsonConvert.SerializeObject(salaryComponents);
             decimal perquisiteAmount = GetPerquisiteAmount(salaryComponents);
@@ -779,7 +784,7 @@ namespace ServiceLayer.Code
 
 
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
-            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(CTCAnnually);
+            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(EmployeeId, CTCAnnually);
 
             CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
             foreach (var item in salaryComponents)

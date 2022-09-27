@@ -117,7 +117,7 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw new HiringBellException(ex.Message, ex);
+                throw ex;
             }
         }
     }

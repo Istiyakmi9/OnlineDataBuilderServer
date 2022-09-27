@@ -22,7 +22,6 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
         string SalaryDetailService(long EmployeeId, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, int PresentMonth, int PresentYear);
         List<AnnualSalaryBreakup> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
-        List<SalaryComponents> GetSalaryGroupComponentsByCTC(decimal CTC);
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
         SalaryGroup GetSalaryGroupByCTC(decimal CTC);
     }
