@@ -70,5 +70,13 @@ namespace OnlineDataBuilder.Controllers
             var result = _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost]
+        [Route("EditEmployeeBillDetail")]
+        public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] GenerateBillFileDetail fileDetail)
+        {
+            var result = _timesheetService.EditEmployeeBillDetailService(fileDetail);
+            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+        }
     }
 }

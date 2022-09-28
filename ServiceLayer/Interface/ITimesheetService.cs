@@ -12,5 +12,6 @@ namespace ServiceLayer.Interface
         dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);
         dynamic UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment);
         (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail);
+        BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
     }
 }
