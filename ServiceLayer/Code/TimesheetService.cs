@@ -474,7 +474,7 @@ namespace ServiceLayer.Code
             return (dailyTimesheetDetails, missingDayList);
         }
 
-        public dynamic UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment)
+        public void UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment)
         {
             List<DateTime> missingDayList = new List<DateTime>();
             if (dailyTimesheetDetails == null || dailyTimesheetDetails.Count == 0 || timesheetDetail == null)
@@ -526,7 +526,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
-            return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
+            //return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
         }
 
         private void UpdateTimesheetList(List<DailyTimesheetDetail> dailyTimesheetDetails, DateTime utcJoiningDate)

@@ -33,6 +33,7 @@ namespace ServiceLayer.Code
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IEMailManager _eMailManager;
         private readonly ITemplateService _templateService;
+        private readonly ITimesheetService _timesheetService;
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
@@ -41,6 +42,7 @@ namespace ServiceLayer.Code
             HtmlToPdfConverter htmlToPdfConverter,
             IEMailManager eMailManager,
             ITemplateService templateService,
+            ITimesheetService timesheetService,
             IFileMaker fileMaker)
         {
             this.db = db;
@@ -54,6 +56,7 @@ namespace ServiceLayer.Code
             _fileMaker = fileMaker;
             _excelWriter = excelWriter;
             _templateService = templateService;
+            _timesheetService = timesheetService;
         }
 
         public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
@@ -339,6 +342,7 @@ namespace ServiceLayer.Code
                         ).ToList<TimesheetModel>();
 
                         // UpdateTimesheet
+                        _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
 
                         var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
                         _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));

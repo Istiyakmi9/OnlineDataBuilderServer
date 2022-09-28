@@ -55,21 +55,21 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [Authorize(Roles = Role.Admin)]
-        [HttpPost("UpdateTimesheet")]
-        public IResponse<ApiResponse> UpdateTimesheet()
-        {
-            _httpContext.Request.Form.TryGetValue("comment", out StringValues comment);
-            _httpContext.Request.Form.TryGetValue("dailyTimesheetDetail", out StringValues timeSheetDetail);
-            _httpContext.Request.Form.TryGetValue("timesheet", out StringValues timesheet);
-            string Comment = JsonConvert.DeserializeObject<string>(comment);
+        //[Authorize(Roles = Role.Admin)]
+        //[HttpPost("UpdateTimesheet")]
+        //public IResponse<ApiResponse> UpdateTimesheet()
+        //{
+        //    _httpContext.Request.Form.TryGetValue("comment", out StringValues comment);
+        //    _httpContext.Request.Form.TryGetValue("dailyTimesheetDetail", out StringValues timeSheetDetail);
+        //    _httpContext.Request.Form.TryGetValue("timesheet", out StringValues timesheet);
+        //    string Comment = JsonConvert.DeserializeObject<string>(comment);
             
-            List<DailyTimesheetDetail> dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetail);
-            TimesheetDetail timesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheet);
+        //    List<DailyTimesheetDetail> dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetail);
+        //    TimesheetDetail timesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheet);
             
-            var result = _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
-            return BuildResponse(result, HttpStatusCode.OK);
-        }
+        //    var result = _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
+        //    return BuildResponse(result, HttpStatusCode.OK);
+        //}
 
         [HttpPost]
         [Route("EditEmployeeBillDetail")]

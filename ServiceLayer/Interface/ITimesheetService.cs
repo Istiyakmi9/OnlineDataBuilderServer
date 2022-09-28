@@ -10,7 +10,7 @@ namespace ServiceLayer.Interface
         List<DailyTimesheetDetail> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetail);
         List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId);
         dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);
-        dynamic UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment);
+        void UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment);
         (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail);
         BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
     }
