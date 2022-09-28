@@ -2,8 +2,8 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
-using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -18,9 +18,11 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        public TimesheetService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        private readonly ICacheManager _cacheManager;
+        public TimesheetService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession, ICacheManager cacheManager)
         {
             _db = db;
+            _cacheManager = cacheManager;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
         }
@@ -545,6 +547,70 @@ namespace ServiceLayer.Code
                     i.TimesheetStatus = ItemStatus.Submitted;
                 }
             });
+        }
+
+        public BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
+        {
+            BillingDetail billingDetail = default(BillingDetail);
+            DbParam[] dbParams = new DbParam[]
+            {
+                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
+                new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
+                new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
+                new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                new DbParam(fileDetail.UserTypeId, typeof(long), "_UserTypeId"),
+                new DbParam(fileDetail.ForMonth, typeof(long), "_ForMonth"),
+                new DbParam(fileDetail.ForYear, typeof(long), "_ForYear")
+            };
+
+            var Result = _db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
+            if (Result.Tables.Count == 3)
+            {
+                billingDetail = new BillingDetail();
+                billingDetail.FileDetail = Result.Tables[0];
+                billingDetail.Employees = Result.Tables[1];
+
+                TimesheetDetail timesheetDetail = default(TimesheetDetail);
+                if (Result.Tables[2] == null || Result.Tables[2].Rows.Count == 0)
+                {
+                    bool flag = false;
+                    timesheetDetail = new TimesheetDetail
+                    {
+                        ForMonth = 0,
+                        ForYear = 0
+                    };
+
+                    if (billingDetail.FileDetail.Rows[0]["BillForMonth"] == DBNull.Value)
+                        flag = true;
+                    else
+                        timesheetDetail.ForMonth = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillForMonth"]);
+
+                    if (billingDetail.FileDetail.Rows[0]["BillYear"] == DBNull.Value)
+                        flag = true;
+                    else
+                        timesheetDetail.ForYear = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillYear"]);
+
+                    DateTime billingOn = DateTime.Now;
+                    if (flag)
+                    {
+                        billingOn = Convert.ToDateTime(billingDetail.FileDetail.Rows[0]["BillYear"]);
+                        timesheetDetail.ForMonth = billingOn.Month;
+                        timesheetDetail.ForYear = billingOn.Year;
+                    }
+
+                }
+                else
+                    timesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
+
+                var attrs = BuildFinalTimesheet(timesheetDetail);
+                billingDetail.TimesheetDetails = attrs.Item1;
+                billingDetail.MissingDate = attrs.Item2;
+
+                var companies = _cacheManager.Get(CacheTable.Company);
+                billingDetail.Organizations = companies;
+            }
+
+            return billingDetail;
         }
     }
 }
