@@ -46,5 +46,12 @@ namespace ModalLayer.Modal
         public UserDetail UserDetail { set; get; }
         public DataTable Menu { set; get; }
         public DataTable Companies { set; get; }
+        public List<AutoCompleteEmployees> EmployeeList { set; get; }
+    }
+
+    public class AutoCompleteEmployees
+    {
+        public long value { set; get; }
+        public string text { set; get; }
     }
 }

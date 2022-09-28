@@ -36,6 +36,14 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
+        [HttpPost]
+        [Route("EmployeesListData")]
+        public ApiResponse EmployeesListData([FromRoute] FilterModel filterModel)
+        {
+            var Result = _employeeService.EmployeesListDataService(filterModel);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
         [HttpGet]
         [Route("GetManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetManageEmployeeDetail(long EmployeeId)
