@@ -541,8 +541,8 @@ namespace ServiceLayer.Code
                 {
                     if (i.TimesheetStatus != ItemStatus.Submitted)
                         i.TimesheetStatus = ItemStatus.Absent;
-
-                    i.TimesheetStatus = ItemStatus.Submitted;
+                    else
+                        i.TimesheetStatus = ItemStatus.Submitted;
                 }
             });
         }
