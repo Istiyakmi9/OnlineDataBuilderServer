@@ -1,10 +1,12 @@
 ﻿using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTagModel;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
@@ -21,11 +23,12 @@ namespace OnlineDataBuilder.Controllers
         private readonly IFileService _fileService;
         private readonly IBillService _billService;
         private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
-
+        private readonly HttpContext _httpContext;
         public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration,
             IOnlineDocumentService onlineDocumentService,
             IFileService fileService, IBillService billService,
             IOptions<BuildPdfTable> options,
+            IHttpContextAccessor httpContext,
             IDOCXToHTMLConverter iDOCXToHTMLConverter)
         {
             _iFileMaker = iFileMaker;
@@ -33,6 +36,7 @@ namespace OnlineDataBuilder.Controllers
             _onlineDocumentService = onlineDocumentService;
             _fileService = fileService;
             _billService  = billService;
+            _httpContext = httpContext.HttpContext;
             _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }
 
@@ -46,18 +50,20 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Route("GenerateBill")]
-        public IResponse<ApiResponse> GenerateBill([FromBody] PdfModal pdfModal)
+        public IResponse<ApiResponse> GenerateBill()
         {
-            var fileDetail = _billService.GenerateDocument(pdfModal);
-            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
-        }
+            _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
+            _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
+            _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
+            _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
 
-        [HttpPost]
-        [Route("EditEmployeeBillDetail")]
-        public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] GenerateBillFileDetail fileDetail)
-        {
-            var result = _onlineDocumentService.EditEmployeeBillDetailService(fileDetail);
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            string Comment = JsonConvert.DeserializeObject<string>(commentJson);
+            List<DailyTimesheetDetail> dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
+            TimesheetDetail timesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
+            PdfModal pdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
+
+            var fileDetail = _billService.GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
+            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 
         [HttpPost]

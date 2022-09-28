@@ -193,7 +193,8 @@ namespace ServiceLayer.Code
             pdfModal.receiverGSTNo = organization.GSTNO;
         }
 
-        public dynamic GenerateDocument(PdfModal pdfModal)
+        public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails, 
+            TimesheetDetail timesheetDetail, string Comment)
         {
             List<string> emails = new List<string>();
             FileDetail fileDetail = new FileDetail();
@@ -336,6 +337,8 @@ namespace ServiceLayer.Code
                                                  Status = "Approved"
                                              }
                         ).ToList<TimesheetModel>();
+
+                        // UpdateTimesheet
 
                         var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
                         _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
