@@ -1,25 +1,17 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Spreadsheet;
-using iText.Html2pdf.Attach;
-using iText.StyledXmlParser.Node;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
-using Org.BouncyCastle.Asn1.X509;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO.Packaging;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -144,11 +136,34 @@ namespace ServiceLayer.Code
 
             if (filterModel.CompanyId > 0)
                 filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+            else
+                filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
 
             if (filterModel.IsActive != null && filterModel.IsActive == true)
                 employees = FilterActiveEmployees(filterModel);
             else
                 employees = FilterInActiveEmployees(filterModel);
+
+            return employees;
+        }
+
+        public List<AutoCompleteEmployees> EmployeesListDataService(FilterModel filterModel)
+        {
+            if (filterModel.CompanyId > 0)
+                filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+            else
+                filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
+
+            List<AutoCompleteEmployees> employees = _db.GetList<AutoCompleteEmployees>("SP_Employee_GetAll", new
+            {
+                filterModel.SearchString,
+                filterModel.PageIndex,
+                filterModel.PageSize,
+                filterModel.CompanyId
+            });
+
+            if (employees == null)
+                throw new HiringBellException("Unable to load employee list data.");
 
             return employees;
         }

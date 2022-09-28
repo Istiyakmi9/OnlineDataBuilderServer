@@ -8,6 +8,7 @@ using ServiceLayer.Interface;
 using SocialMediaServices;
 using SocialMediaServices.Modal;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -164,11 +165,12 @@ namespace ServiceLayer.Code
                 new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
                 new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
                 new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
-                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId")
+                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
+                new DbParam(1000, typeof(int), "_PageSize")
             };
 
             DataSet ds = db.GetDataset(ProcedureName, param);
-            if (ds != null && ds.Tables.Count == 3)
+            if (ds != null && ds.Tables.Count >= 3)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -204,6 +206,19 @@ namespace ServiceLayer.Code
                         loginResponse.Menu = ds.Tables[2];
                         loginResponse.UserDetail = userDetail;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
+
+                        if (authUser.UserTypeId == (int)UserType.Admin)
+                        {
+                            if (ds.Tables[3] == null || ds.Tables[3].Rows.Count == 0)
+                                throw new HiringBellException("Fail to get list of employees. Please contact to admin.");
+
+                            loginResponse.EmployeeList = ds.Tables[3].AsEnumerable()
+                                                           .Select(x => new AutoCompleteEmployees
+                                                           {
+                                                               value = x.Field<long>("EmployeeUid"),
+                                                               text = x.Field<string>("Name")
+                                                           }).ToList<AutoCompleteEmployees>();
+                        }
                     }
                 }
             }

@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.Leaves;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -12,6 +9,7 @@ namespace ServiceLayer.Interface
     public interface IEmployeeService
     {
         List<Employee> GetEmployees(FilterModel filterModel);
+        List<AutoCompleteEmployees> EmployeesListDataService(FilterModel filterModel);
         DataSet GetManageEmployeeDetailService(long EmployeeId);
         DataSet GetEmployeeLeaveDetailService(long EmployeeId);
         DataSet LoadMappedClientService(long EmployeeId);
