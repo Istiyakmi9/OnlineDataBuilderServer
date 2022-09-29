@@ -67,6 +67,24 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost]
+        [Route("UpdateGeneratedBill")]
+        public IResponse<ApiResponse> UpdateGeneratedBill()
+        {
+            _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
+            _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
+            _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
+            _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
+
+            string Comment = JsonConvert.DeserializeObject<string>(commentJson);
+            List<DailyTimesheetDetail> dailyTimesheetDetails = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
+            TimesheetDetail timesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
+            PdfModal pdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
+
+            var fileDetail = _billService.UpdateGeneratedBillService(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
+            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+        }
+
+        [HttpPost]
         [Route("ReGenerateBill")]
         public IResponse<ApiResponse> ReGenerateBill([FromBody] GenerateBillFileDetail fileDetail)
         {
