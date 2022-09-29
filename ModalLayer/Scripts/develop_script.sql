@@ -311,3 +311,7 @@ Begin
 		End;
 	End$$
 DELIMITER ;
+
+
+
+select * from rolesandmenu;
