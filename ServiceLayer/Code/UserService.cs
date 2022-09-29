@@ -269,6 +269,7 @@ namespace ServiceLayer.Code
             await Task.Run(() =>
             {
                 FilterModel filterModel = new FilterModel();
+                filterModel.PageSize = 1000;
                 DbParam[] param = new DbParam[]
                 {
                     new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
