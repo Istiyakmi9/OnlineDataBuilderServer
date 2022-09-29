@@ -196,7 +196,16 @@ namespace ServiceLayer.Code
             pdfModal.receiverGSTNo = organization.GSTNO;
         }
 
-        public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails, 
+        public dynamic UpdateGeneratedBillService(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
+            TimesheetDetail timesheetDetail, string Comment)
+        {
+            if (timesheetDetail == null || timesheetDetail.TimesheetId == 0)
+                throw new HiringBellException("Invalid timesheet submitted. Please check you detail.");
+
+            return GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
+        }
+
+        public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
             TimesheetDetail timesheetDetail, string Comment)
         {
             List<string> emails = new List<string>();
