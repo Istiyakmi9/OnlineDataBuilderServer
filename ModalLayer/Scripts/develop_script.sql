@@ -46,8 +46,6 @@ Begin
 		And _ForYear = a.ForYear and _ForMonth = a.ForMonth
 		And a.UserTypeId = _UserTypeId
         And a.ClientId = _ClientId;
-        
-        select * from clients;
 	End;
 end$$
 DELIMITER ;
@@ -311,3 +309,7 @@ Begin
 		End;
 	End$$
 DELIMITER ;
+
+
+
+select * from rolesandmenu;
