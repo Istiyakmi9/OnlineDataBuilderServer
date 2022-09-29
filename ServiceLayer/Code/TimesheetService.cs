@@ -340,8 +340,6 @@ namespace ServiceLayer.Code
             while (i < dailyTimesheetDetails.Count)
             {
                 var x = dailyTimesheetDetails.ElementAt(i);
-                x.PresentDate = _timezoneConverter.ToIstTime(x.PresentDate);
-
                 var item = finalTimesheetSet.Find(i => i.PresentDate.Subtract(x.PresentDate).TotalDays == 0);
                 if (item != null)
                 {
@@ -564,7 +562,7 @@ namespace ServiceLayer.Code
             };
 
             var Result = _db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
-            if (Result.Tables.Count == 3)
+            if (Result.Tables.Count == 4)
             {
                 billingDetail = new BillingDetail();
                 billingDetail.FileDetail = Result.Tables[0];
