@@ -31,7 +31,7 @@ namespace ServiceLayer.Code
         private List<DailyTimesheetDetail> BuildTimesheetTillDate(TimesheetDetail timesheetDetail)
         {
             List<DailyTimesheetDetail> timesheets = new List<DailyTimesheetDetail>();
-            DateTime now = DateTime.UtcNow;
+            DateTime now = timesheetDetail.TimesheetToDate;
             DateTime presentDate = timesheetDetail.TimesheetFromDate;
 
             while (now.Subtract(presentDate).TotalDays >= 0)
@@ -299,7 +299,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                var currentMonthDateTime = _timezoneConverter.ToIstTime(DateTime.UtcNow);
+                var currentMonthDateTime = _timezoneConverter.ToIstTime(firstItem.PresentDate);
                 int totalDays = DateTime.DaysInMonth(currentMonthDateTime.Year, currentMonthDateTime.Month);
                 currentTimesheetDetail = new TimesheetDetail
                 {
@@ -444,8 +444,12 @@ namespace ServiceLayer.Code
             List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
             List<DateTime> missingDayList = new List<DateTime>();
             if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetMonthJson != null)
+            {
                 dailyTimesheetDetails = JsonConvert
                     .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
+
+                Parallel.ForEach(dailyTimesheetDetails, x => x.TimesheetId = currentTimesheetDetail.TimesheetId);
+            }
             else
             {
                 currentTimesheetDetail = new TimesheetDetail
