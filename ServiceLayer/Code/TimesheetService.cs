@@ -562,7 +562,7 @@ namespace ServiceLayer.Code
             };
 
             var Result = _db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
-            if (Result.Tables.Count == 3)
+            if (Result.Tables.Count == 4)
             {
                 billingDetail = new BillingDetail();
                 billingDetail.FileDetail = Result.Tables[0];
