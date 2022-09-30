@@ -291,6 +291,10 @@ namespace ServiceLayer.Code
             company.LegalEntity = companyInfo.LegalEntity;
             company.FullAddress = companyInfo.FullAddress;
             company.InCorporationDate = companyInfo.InCorporationDate;
+            company.SectorType = companyInfo.SectorType;
+            company.PANNo = companyInfo.PANNo;
+            company.GSTNo = companyInfo.GSTNo;
+            company.TradeLicenseNo = companyInfo.TradeLicenseNo;
 
             var status = _db.Execute<OrganizationDetail>("sp_company_intupd", company, true);
             if (string.IsNullOrEmpty(status))
@@ -328,9 +332,6 @@ namespace ServiceLayer.Code
                 bank.IFSC = bankDetail.IFSC;
                 bank.OpeningDate = bankDetail.OpeningDate;
                 bank.BranchCode = bankDetail.BranchCode;
-                bank.PANNo = bankDetail.PANNo;
-                bank.GSTNo = bankDetail.GSTNo;
-                bank.TradeLicenseNo = bankDetail.TradeLicenseNo;
                 bank.OpeningDate = bankDetail.OpeningDate;
                 bank.ClosingDate = bankDetail.ClosingDate;
                 bank.IsPrimaryAccount = bankDetail.IsPrimaryAccount;
