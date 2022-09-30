@@ -9,5 +9,7 @@ namespace ServiceLayer.Interface
     {
         string SendEmailRequestService(EmailSenderModal mailRequest, IFormFileCollection files);
         List<string> GetMyMailService();
+        EmailSettingDetail GetEmailSettingByCompIdService(int CompanyId);
+        EmailSettingDetail InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail);
     }
 }

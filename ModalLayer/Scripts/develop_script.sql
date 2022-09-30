@@ -712,3 +712,132 @@ Begin
 		End;
 	End$$
 DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_by_companyId`(
+	   /*
+
+    Call sp_email_setting_detail_by_companyId(1);
+
+*/
+	_CompanyId int
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_setting_detail_by_companyId', 1, 0, @Result);
+		end;
+        
+        select * from email_setting_detail
+        where CompanyId = _CompanyId;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_email_setting_detail_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_insupd`(
+	   /*
+
+    Call sp_email_setting_detail_insupd(1);
+
+*/
+	_EmailSettingDetailId int,
+	_CompanyId int,
+	_EmailAddress varchar(200),
+	_EmailHost varchar(100),
+	_PortNo int,
+	_EnableSsl bit,
+	_DeliveryMethod varchar(50),
+	_UserDefaultCredentials bit,
+	_Credentials varchar(100),
+	_EmailName varchar(100),
+	_POP3EmailHost varchar(100),
+	_POP3PortNo int,
+	_POP3EnableSsl bit,
+    _IsPrimary bit,
+    _UpdatedBy bigint,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_setting_detail_insupd', 1, 0, @Result);
+		end;
+        
+        if not exists (select 1 from email_setting_detail where EmailSettingDetailId = _EmailSettingDetailId) then
+        begin
+			Insert into email_setting_detail values(
+				default,
+				_CompanyId,
+				_EmailAddress,
+                _EmailName,
+				_EmailHost,
+                _POP3EmailHost,
+				_PortNo,
+                _POP3PortNo,
+				_EnableSsl,
+                _POP3EnableSsl,
+				_DeliveryMethod,
+				_UserDefaultCredentials,
+				_Credentials,
+				_IsPrimary,
+                null,
+                null
+			);
+         
+             Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update email_setting_detail set 
+				CompanyId					=			_CompanyId,
+				EmailAddress				=			_EmailAddress,
+                EmailName					=			_EmailName,
+				EmailHost					=			_EmailHost,
+                POP3EmailHost				=			_POP3EmailHost,
+				PortNo						=			_PortNo,
+                POP3PortNo					=			_POP3PortNo,
+				EnableSsl					=			_EnableSsl,
+                POP3EnableSsl				=			_POP3EnableSsl,
+				DeliveryMethod				=			_DeliveryMethod,
+				UserDefaultCredentials		=			_UserDefaultCredentials,
+				Credentials					=			_Credentials,
+				IsPrimary					=			_IsPrimary,
+                UpdatedBy					=			_UpdatedBy,
+                UpdatedOn					=			utc_date()
+			where EmailSettingDetailId 		= 			_EmailSettingDetailId;
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+alter table email_setting_detail
+add column POP3EmailHost varchar(100) after EmailHost;
+
+alter table email_setting_detail
+add column POP3PortNo varchar(100) after PortNo;
+
+alter table email_setting_detail
+add column POP3EnableSsl bit after EnableSsl;

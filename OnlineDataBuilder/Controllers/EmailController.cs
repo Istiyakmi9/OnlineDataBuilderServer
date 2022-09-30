@@ -43,5 +43,19 @@ namespace OnlineDataBuilder.Controllers
             var Result = _emailService.GetMyMailService();
             return BuildResponse(Result, HttpStatusCode.OK);
         }
+
+        [HttpGet("GetEmailSettingByCompId/{CompanyId}")]
+        public IResponse<ApiResponse> GetEmailSettingByCompId(int CompanyId)
+        {
+            var result = _emailService.GetEmailSettingByCompIdService(CompanyId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("InsertUpdateEmailSetting")]
+        public IResponse<ApiResponse> InsertUpdateEmailSetting(EmailSettingDetail emailSettingDetail)
+        {
+            var result = _emailService.InsertUpdateEmailSettingService(emailSettingDetail);
+            return BuildResponse(result);
+        }
     }
 }
