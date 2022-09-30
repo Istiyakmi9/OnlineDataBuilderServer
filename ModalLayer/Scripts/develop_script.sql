@@ -589,3 +589,126 @@ Begin
 	End;
 End$$
 DELIMITER ;
+
+
+
+
+DELIMITER $$
+
+drop procedure if exists SP_ApplicationData_Get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ApplicationData_Get`(
+/*	
+
+	Call SP_ApplicationData_Get();
+
+*/
+
+)
+Begin
+    Begin
+		Declare exit handler for sqlexception
+		Begin
+		
+			GET DIAGNOSTICS CONDITION 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
+			Call sp_LogException(@Message, '', 'SP_ApplicationData_Get', 1, 0, @Result);
+		End;
+
+        Begin            
+            select * from accesslevel;
+            
+            select * from leave_plan;
+            
+            select 
+				CompanyId,
+				OrganizationId,
+				OrganizationName,
+				CompanyName,
+				Country,
+				State,
+				City,
+				FirstAddress,
+				SecondAddress,
+				ThirdAddress,
+				ForthAddress,
+				FullAddress,
+				MobileNo,
+				Email,
+				FirstEmail,
+				SecondEmail,
+				ThirdEmail,
+				ForthEmail,
+				PrimaryPhoneNo,
+				SecondaryPhoneNo,
+				Fax,
+				Pincode,
+				IsPrimaryCompany,
+				FixedComponentsId
+            from company;            
+		End;
+	End;
+end$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+
+drop procedure if exists sp_Billing_detail $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Billing_detail`(
+
+/*
+
+
+	Call sp_Billing_detail(1, 2, '000292', 2, 1, 4, 2022);
+
+
+*/
+
+    _sender bigint,
+    _receiver bigint,
+    _billNo varchar(45),
+    _employeeId bigint,
+    _userTypeId int,
+    _forMonth int,
+    _forYear int
+)
+Begin
+    Set @OperationStatus = '';
+		Begin
+			Declare Exit handler for sqlexception
+			Begin
+				Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+											@errorno = MYSQL_ERRNO,
+											@errortext = MESSAGE_TEXT;
+                                            
+				Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+				Call sp_LogException (@Message, @OperationStatus, 'sp_Billing_detail', 1, 0, @Result);
+			end;
+            
+            # Calculate amount paid between dates
+            Select c.*, b.BankName, b.AccountNo, b.IFSC, b.Branch BranchName from company c
+            Inner join bank_accounts b on c.CompanyId = b.CompanyId
+            where c.CompanyId = _sender and
+            b.IsPrimaryAccount = 1;
+            
+            Select * from clients 
+            where clients.ClientId = _receiver;
+            
+            select f.* from billdetail b
+			inner join filedetail f on b.FileDetailId = f.FileId
+			where b.BillNo = _billNo;
+            
+            select a.* from attendance a
+            where a.EmployeeId = _employeeId
+            and a.UserTypeId = _userTypeId
+            and a.ForMonth = _forMonth
+			and a.ForYear = _forYear;
+		End;
+	End$$
+DELIMITER ;

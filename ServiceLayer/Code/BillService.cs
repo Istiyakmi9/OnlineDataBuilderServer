@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -107,7 +108,7 @@ namespace ServiceLayer.Code
                 html = html.Replace("[[BILLNO]]", pdfModal.billNo).
                 Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd MMM, yyyy")).
                 Replace("[[senderFirstAddress]]", sender.FirstAddress).
-                Replace("[[senderCompanyName]]", sender.ClientName).
+                Replace("[[senderCompanyName]]", sender.CompanyName).
                 Replace("[[senderGSTNo]]", sender.GSTNO).
                 Replace("[[senderSecondAddress]]", sender.SecondAddress).
                 Replace("[[senderPrimaryContactNo]]", sender.PrimaryPhoneNo).
@@ -250,7 +251,6 @@ namespace ServiceLayer.Code
 
                 Organization sender = null;
                 Organization receiver = null;
-                Employee employeeMappedClient = null;
                 DataSet ds = new DataSet();
                 DbParam[] dbParams = new DbParam[]
                 {
@@ -264,7 +264,7 @@ namespace ServiceLayer.Code
                 };
 
                 ds = this.db.GetDataset("sp_Billing_detail", dbParams);
-                if (ds.Tables.Count == 5)
+                if (ds.Tables.Count == 4)
                 {
                     sender = Converter.ToType<Organization>(ds.Tables[0]);
                     receiver = Converter.ToType<Organization>(ds.Tables[1]);
@@ -276,8 +276,7 @@ namespace ServiceLayer.Code
                         emails.Add(receiver.OtherEmail_2);
                     emails.Add(sender.Email);
 
-                    List<Employee> EmployeeMappedClient = Converter.ToList<Employee>(ds.Tables[2]);
-                    fileDetail = Converter.ToType<FileDetail>(ds.Tables[3]);
+                    fileDetail = Converter.ToType<FileDetail>(ds.Tables[2]);
 
                     this.FillReceiverDetail(receiver, pdfModal);
                     this.FillSenderDetail(sender, pdfModal);
@@ -292,12 +291,10 @@ namespace ServiceLayer.Code
                         };
                     }
 
-                    employeeMappedClient = EmployeeMappedClient.Single();
-
                     List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
-                    if (ds.Tables[4].Rows.Count > 0)
+                    if (ds.Tables[3].Rows.Count > 0)
                     {
-                        var currentAttendance = Converter.ToType<Attendance>(ds.Tables[4]);
+                        var currentAttendance = Converter.ToType<Attendance>(ds.Tables[3]);
                         attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
                     }
 
