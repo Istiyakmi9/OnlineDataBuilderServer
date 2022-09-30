@@ -286,7 +286,6 @@ namespace ServiceLayer.Code
             company.City = companyInfo.City;
             company.Country = companyInfo.Country;
             company.State = companyInfo.State;
-            company.LegalNameOfCompany = companyInfo.LegalNameOfCompany;
             company.TypeOfBusiness = companyInfo.TypeOfBusiness;
             company.LegalEntity = companyInfo.LegalEntity;
             company.FullAddress = companyInfo.FullAddress;
