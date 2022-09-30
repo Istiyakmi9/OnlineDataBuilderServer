@@ -145,7 +145,6 @@ namespace ServiceLayer.Code
                 company.InCorporationDate = companyInfo.InCorporationDate;
                 company.LegalDocumentPath = companyInfo.LegalDocumentPath;
                 company.LegalEntity = companyInfo.LegalEntity;
-                company.LegalNameOfCompany = companyInfo.LegalNameOfCompany;
                 company.PANNo = companyInfo.PANNo;
                 company.SectorType = companyInfo.SectorType;
                 company.State = companyInfo.State;
