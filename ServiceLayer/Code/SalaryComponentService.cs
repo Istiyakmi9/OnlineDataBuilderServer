@@ -845,9 +845,9 @@ namespace ServiceLayer.Code
             return completeSalaryBreakup;
         }
 
-        public SalaryGroup GetSalaryGroupByCTC(decimal CTC)
+        public SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC, EmployeeId });
             if (salaryGroup == null)
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
             return salaryGroup;

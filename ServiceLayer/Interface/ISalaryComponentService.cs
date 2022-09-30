@@ -23,6 +23,6 @@ namespace ServiceLayer.Interface
         string SalaryDetailService(long EmployeeId, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, int PresentMonth, int PresentYear);
         List<AnnualSalaryBreakup> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
-        SalaryGroup GetSalaryGroupByCTC(decimal CTC);
+        SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId);
     }
 }
