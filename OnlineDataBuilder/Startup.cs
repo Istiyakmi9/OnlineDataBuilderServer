@@ -124,6 +124,7 @@ namespace OnlineDataBuilder
             services.AddScoped<ITemplateService, TemplateService>();
             services.AddScoped<HtmlConverterService>();
             services.AddScoped<IDOCXToHTMLConverter, DOCXToHTMLConverter>();
+            services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<ExcelWriter>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddSingleton<FileLocationDetail>(service =>
