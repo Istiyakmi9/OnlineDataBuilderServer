@@ -21,4 +21,16 @@ namespace ModalLayer.Modal
         public string KeywordDetail { set; get; }
         public string DocumentationDetail { set; get; }
     }
+    public class WikiDetail
+    {
+        public long ProjectId { get; set; }
+        public string Title { get; set; }
+        public List<wiki> ProjectContent { get; set; }
+        public string ProjectName { get; set; }
+    }
+    public class wiki
+    {
+        public string SectionName { get; set; }
+        public string SectionDescription { get; set; }
+    }
 }

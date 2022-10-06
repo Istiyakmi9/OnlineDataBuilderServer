@@ -15,9 +15,10 @@ namespace ServiceLayer.Code
         {
             _db = db;
         }
-        public string AddProjectService(Project project)
+        public string AddProjectService(WikiDetail project)
         {
             Project projectDetail = new Project();
+            projectDetail.ProjectId = project.ProjectId;
             projectDetail.ProjectName = "HiringBell";
             projectDetail.ProjectDescription = "Accounts related project";
             projectDetail.ProjectManagerId = 1;
@@ -26,9 +27,9 @@ namespace ServiceLayer.Code
             projectDetail.IsClientProject = true;
             projectDetail.ClientId = 1;
             projectDetail.HomePageUrl = "wwww";
-            projectDetail.PageIndexDetail = JsonConvert.SerializeObject(project.PageIndexDetail);
+            projectDetail.PageIndexDetail = "[]";
             projectDetail.KeywordDetail = "[]";
-            projectDetail.DocumentationDetail = JsonConvert.SerializeObject(project.DocumentationDetail);
+            projectDetail.DocumentationDetail = JsonConvert.SerializeObject(project);
             var result = _db.Execute<Project>("sp_project_detail_insupd", projectDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");

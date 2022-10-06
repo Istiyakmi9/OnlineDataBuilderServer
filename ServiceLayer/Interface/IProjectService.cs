@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
 {
     public interface IProjectService
     {
-        string AddProjectService (Project project);
+        string AddProjectService (WikiDetail project);
         List<Project> GetAllProjectService();
     }
 }
