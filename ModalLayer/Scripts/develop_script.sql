@@ -218,3 +218,132 @@ DELIMITER ;
 Set @result = '';
 Call sp_menu_insupd('Leave', 'Manage', 'leave', 'fa fa-calendar-check-o', null, null, @result);    
 Select @result;
+
+
+create table project(
+	ProjectId bigint primary key auto_increment,
+    ProjectName varchar(150),
+    ProjectDescription varchar(500),
+    ProjectManagerId bigint,
+    TeamMemberIds json,
+    ProjectStartedOn datetime null,
+    ProjectEndedOn datetime null,
+    ArchitectId bigint,
+    IsClientProject bit,
+    ClientId bigint,
+    HomePageUrl varchar(150),
+    PageIndexDetail json,
+    KeywordDetail json,
+    DocumentationDetail json
+);
+
+DELIMITER $$
+
+drop procedure if exists sp_project_detail_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_project_detail_insupd`(
+	   /*
+
+    Call sp_project_detail_insupd(1);
+
+*/
+	_ProjectId bigint ,
+    _ProjectName varchar(150),
+    _ProjectDescription varchar(500),
+    _ProjectManagerId bigint,
+    _TeamMemberIds json,
+    _ProjectStartedOn datetime,
+    _ProjectEndedOn datetime,
+    _ArchitectId bigint,
+    _IsClientProject bit,
+    _ClientId bigint,
+    _HomePageUrl varchar(150),
+    _PageIndexDetail json,
+    _KeywordDetail json,
+    _DocumentationDetail json,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_project_detail_insupd', 1, 0, @Result);
+		end;
+        
+        if not exists (select 1 from project where ProjectId = _ProjectId) then
+        begin
+			Insert into project values(
+				default,
+				_ProjectName,
+				_ProjectDescription,
+				_ProjectManagerId,
+				_TeamMemberIds,
+				_ProjectStartedOn,
+				_ProjectEndedOn,
+				_ArchitectId,
+				_IsClientProject,
+				_ClientId,
+				_HomePageUrl,
+				_PageIndexDetail,
+				_KeywordDetail,
+				_DocumentationDetail
+			);
+         
+             Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update project set 
+				ProjectName						=			_ProjectName,
+				ProjectDescription				=			_ProjectDescription,
+				ProjectManagerId				=			_ProjectManagerId,
+				TeamMemberIds					=			_TeamMemberIds,
+				ProjectStartedOn				=			_ProjectStartedOn,
+				ProjectEndedOn					=			_ProjectEndedOn,
+				ArchitectId						=			_ArchitectId,
+				IsClientProject					=			_IsClientProject,
+				ClientId						=			_ClientId,
+				HomePageUrl						=			_HomePageUrl,
+				PageIndexDetail					=			_PageIndexDetail,
+				KeywordDetail					=			_KeywordDetail,
+				DocumentationDetail				=			_DocumentationDetail
+			where ProjectId 					= 			_ProjectId;
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_getAll_Project`(
+	   /*
+
+    Call sp_getAll_Project();
+
+*/
+
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_getAll_Project', 1, 0, @Result);
+		end;
+        
+        select * from project;
+	End;
+End$$
+DELIMITER ;
