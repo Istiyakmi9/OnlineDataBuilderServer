@@ -16,7 +16,7 @@ namespace OnlineDataBuilder.Controllers
             _projectService = projectService;
         }
         [HttpPost("AddProject")]
-        public IResponse<ApiResponse> AddProject(Project project)
+        public IResponse<ApiResponse> AddProject(WikiDetail project)
         {
             var result = _projectService.AddProjectService(project);
             return BuildResponse(result);  
