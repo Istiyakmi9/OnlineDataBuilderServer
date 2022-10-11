@@ -18,6 +18,13 @@ namespace BottomhalfCore.Services.Code
             return utcNow;
         }
 
+        public DateTime ToTimeZoneZeroTime(DateTime now, TimeZoneInfo timeZoneInfo)
+        {
+            var dateTimeUnspec = DateTime.SpecifyKind(now.Date, DateTimeKind.Unspecified);
+            var timeZoneDateTime = TimeZoneInfo.ConvertTimeToUtc(dateTimeUnspec, timeZoneInfo);
+            return timeZoneDateTime;
+        }
+
         public DateTime ToIstTime(DateTime now)
         {
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
