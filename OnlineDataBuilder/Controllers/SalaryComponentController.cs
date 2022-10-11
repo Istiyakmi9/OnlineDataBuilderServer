@@ -154,10 +154,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetSalaryGroupByCTC/{CTC}")]
-        public IResponse<ApiResponse> GetSalaryGroupByCTC(decimal CTC)
+        [HttpGet("GetSalaryGroupByCTC/{CTC}/{EmployeeId}")]
+        public IResponse<ApiResponse> GetSalaryGroupByCTC(decimal CTC, long EmployeeId)
         {
-            var result = _salaryComponentService.GetSalaryGroupByCTC(CTC);
+            var result = _salaryComponentService.GetSalaryGroupByCTC(CTC, EmployeeId);
             return BuildResponse(result);
         }
     }
