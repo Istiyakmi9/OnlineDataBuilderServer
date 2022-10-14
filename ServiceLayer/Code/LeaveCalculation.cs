@@ -161,54 +161,55 @@ namespace ServiceLayer.Code
         {
             await Task.Run((Action)(() =>
             {
-                var planType = Enumerable.FirstOrDefault<EmployeeLeaveQuota>(
-                    leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail,
-                    (Func<EmployeeLeaveQuota, bool>)(x => x.LeavePlanTypeId == leavePlanType.LeavePlanTypeId));
+                //var planType = Enumerable.FirstOrDefault<EmployeeLeaveQuota>(
+                //    leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail,
+                //    (Func<EmployeeLeaveQuota, bool>)(x => x.LeavePlanTypeId == leavePlanType.LeavePlanTypeId));
 
-                if (planType != null && planType.AvailableLeave > 0)
+                //if (planType != null && planType.AvailableLeave > 0)
+                //{
+                //    leavePlanType.AvailableLeave = planType.AvailableLeave;
+                //}
+                //else
+                //{
+
+                var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+                if (leaveLimit > 0)
                 {
-                    leavePlanType.AvailableLeave = planType.AvailableLeave;
-                }
-                else
-                {
-                    var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                    if (leaveLimit > 0)
+                    switch (leaveCalculationModal.employeeType)
                     {
-                        switch (leaveCalculationModal.employeeType)
-                        {
-                            case 1:
-                                leavePlanType.AvailableLeave = CalculateLeaveForProbation(leaveCalculationModal);
-                                break;
-                            case 2:
-                                leavePlanType.AvailableLeave = CalculateLeaveForNotice(leaveCalculationModal);
-                                break;
-                            default:
-                                decimal availableLeave = ExecuteLeaveAccrualDetail(leaveCalculationModal);
-                                leavePlanType.AvailableLeave = LeaveLimitForCurrentType(leavePlanType.LeavePlanTypeId, availableLeave, leaveCalculationModal);
-                                break;
-                        }
-
-                        /* -------------------------------------  this condition will be use for attendance -------------------------
-            
-                        // check weekoff as absent if rule applicable
-                        CheckWeekOffRuleApplicable(perMonthLeaves);
-
-                        // check weekoff as absent if rule applicable
-                        CheckHolidayRuleApplicable(perMonthLeaves);
-            
-                        -----------------------------------------------------------------------------------------------------------*/
-
-
-                        // check weather can apply for leave based on future date projected balance
-                        // availableLeaveLimit = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, availableLeaveLimit);
-
-                        // round up decimal value of available as per rule defined
-                        leavePlanType.AvailableLeave = RoundUpTheLeaves(leavePlanType.AvailableLeave);
-
-                        // check leave expiry
-                        leavePlanType.AvailableLeave = UpdateLeaveIfSetForExpiry(leavePlanType.AvailableLeave);
+                        case 1:
+                            leavePlanType.AvailableLeave = CalculateLeaveForProbation(leaveCalculationModal);
+                            break;
+                        case 2:
+                            leavePlanType.AvailableLeave = CalculateLeaveForNotice(leaveCalculationModal);
+                            break;
+                        default:
+                            decimal availableLeave = ExecuteLeaveAccrualDetail(leaveCalculationModal);
+                            leavePlanType.AvailableLeave = LeaveLimitForCurrentType(leavePlanType.LeavePlanTypeId, availableLeave, leaveCalculationModal);
+                            break;
                     }
+
+                    /* -------------------------------------  this condition will be use for attendance -------------------------
+
+                    // check weekoff as absent if rule applicable
+                    CheckWeekOffRuleApplicable(perMonthLeaves);
+
+                    // check weekoff as absent if rule applicable
+                    CheckHolidayRuleApplicable(perMonthLeaves);
+
+                    -----------------------------------------------------------------------------------------------------------*/
+
+
+                    // check weather can apply for leave based on future date projected balance
+                    // availableLeaveLimit = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, availableLeaveLimit);
+
+                    // round up decimal value of available as per rule defined
+                    leavePlanType.AvailableLeave = RoundUpTheLeaves(leavePlanType.AvailableLeave);
+
+                    // check leave expiry
+                    leavePlanType.AvailableLeave = UpdateLeaveIfSetForExpiry(leavePlanType.AvailableLeave);
                 }
+                //}
             }), cts.Token);
         }
 
@@ -666,7 +667,7 @@ namespace ServiceLayer.Code
                 List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
                 if (completeLeaveDetails.Count > 0)
                 {
-                    alreadyAppliedLeave = completeLeaveDetails.FindAll(x => x.LeaveType == leavePlanTypeId && x.LeaveStatus == (int)ItemStatus.Approved).Sum(x => x.NumOfDays);
+                    alreadyAppliedLeave = completeLeaveDetails.FindAll(x => x.LeaveType == leavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected).Sum(x => x.NumOfDays);
                     CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
 
                     leaveCalculationModal.lastApprovedLeaveDetail = completeLeaveDetails.Where(x => x.LeaveStatus == (int)ItemStatus.Approved)
@@ -674,7 +675,7 @@ namespace ServiceLayer.Code
                 }
 
             }
-            
+
             alreadyAppliedLeave = availableLeaves - alreadyAppliedLeave;
             return alreadyAppliedLeave;
         }
@@ -816,8 +817,8 @@ namespace ServiceLayer.Code
         private void LeaveEligibilityCheck(LeaveCalculationModal leaveCalculationModal)
         {
             // if future date then > 0 else < 0
-            leaveCalculationModal.fromDate = _timezoneConverter.ToUtcTime(leaveCalculationModal.fromDate);
-            double days = leaveCalculationModal.fromDate.Subtract(now).TotalDays;
+            var presentDate = _timezoneConverter.ToUtcTime(DateTime.SpecifyKind(now.Date, DateTimeKind.Unspecified));
+            double days = leaveCalculationModal.fromDate.Subtract(presentDate).TotalDays;
             if (days < 0) // past date
             {
                 days = days * -1;
@@ -1038,7 +1039,7 @@ namespace ServiceLayer.Code
 
             if (leaveRequestDetail == null)
                 leaveRequestDetail = new LeaveRequestDetail();
-                //throw new HiringBellException("Unable to find leave request for current employee.");
+            //throw new HiringBellException("Unable to find leave request for current employee.");
 
             string result = string.Empty;
             await Task.Run(() =>
@@ -1057,7 +1058,7 @@ namespace ServiceLayer.Code
                     LeaveType = leaveDetail.LeaveType,
                     LeaveFromDay = leaveDetail.LeaveFromDay,
                     LeaveToDay = leaveDetail.LeaveToDay,
-                    NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays),
+                    NumOfDays = Convert.ToDecimal(leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays) + 1,
                     LeaveStatus = (int)ItemStatus.Pending,
                     Reason = leaveDetail.Reason,
                     RequestedOn = DateTime.UtcNow

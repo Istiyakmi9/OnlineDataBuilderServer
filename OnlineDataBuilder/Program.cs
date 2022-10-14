@@ -18,7 +18,7 @@ namespace OnlineDataBuilder
                 {
                     webBuilder.UseStartup<Startup>();
                 })
-                .ConfigureServices(x => x.AddHostedService<EmailSchedulerJob>())
-                .ConfigureServices(x => x.AddHostedService<LeaveAccrualSchedular>());
+                .ConfigureServices(x => x.AddHostedService<EmailSchedulerJob>());
+        // .ConfigureServices(x => x.AddHostedService<LeaveAccrualSchedular>());
     }
 }
