@@ -83,7 +83,10 @@ namespace ServiceLayer.Code
             switch (leaveDistributedSeq)
             {
                 default:
-                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
+                    if (_leavePlanConfiguration.leaveAccrual.IsLeaveAccruedPatternAvail)
+                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
+                    else
+                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                     availableLeaveLimit = this.MonthlyAccrualCalculation(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
                 case "2":
@@ -557,7 +560,7 @@ namespace ServiceLayer.Code
                 fractionValue = availableLeaves % 1.0m;
                 if (fractionValue > 0)
                 {
-                    integralValue = Convert.ToInt32(fractionValue);
+                    integralValue = Convert.ToInt32(availableLeaves);
                     if (_leavePlanConfiguration.leaveAccrual.ToNearestHalfDay)
                     {
                         if (fractionValue >= 0.1m && fractionValue <= 0.2m)
@@ -813,6 +816,7 @@ namespace ServiceLayer.Code
         private void LeaveEligibilityCheck(LeaveCalculationModal leaveCalculationModal)
         {
             // if future date then > 0 else < 0
+            leaveCalculationModal.fromDate = _timezoneConverter.ToUtcTime(leaveCalculationModal.fromDate);
             double days = leaveCalculationModal.fromDate.Subtract(now).TotalDays;
             if (days < 0) // past date
             {
@@ -1040,7 +1044,7 @@ namespace ServiceLayer.Code
             await Task.Run(() =>
             {
                 leaveRequestDetail.TotalLeaveApplied += leaveCalculationModal.totalNumOfLeaveApplied;
-                List<CompleteLeaveDetail> leaveDetails = null;
+                List<CompleteLeaveDetail> leaveDetails = new List<CompleteLeaveDetail>();
                 if (leaveRequestDetail.LeaveDetail != null)
                     leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
 
