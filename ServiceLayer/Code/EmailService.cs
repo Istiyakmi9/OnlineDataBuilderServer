@@ -151,7 +151,7 @@ namespace ServiceLayer.Code
             EmailSettingsValidation(emailSettingDetail);
 
             emailSetting = _db.Get<EmailSettingDetail>("sp_email_setting_detail_by_companyId", new { CompanyId = emailSettingDetail.CompanyId });
-            if (emailSettingDetail != null)
+            if (emailSetting != null)
             {
                 emailSetting.EmailAddress = emailSettingDetail.EmailAddress;
                 emailSetting.EmailHost = emailSettingDetail.EmailHost;
@@ -164,10 +164,12 @@ namespace ServiceLayer.Code
                 emailSetting.POP3EmailHost  = emailSettingDetail.POP3EmailHost;
                 emailSetting.POP3PortNo = emailSettingDetail.POP3PortNo;
                 emailSetting.POP3EnableSsl = emailSettingDetail.POP3EnableSsl;
+                emailSetting.IsPrimary = emailSettingDetail.IsPrimary;
                 emailSetting.UpdatedBy = _currentSession.CurrentUserDetail.UserId;
             } else
             {
                 emailSetting = emailSettingDetail;
+                emailSetting.UpdatedBy = _currentSession.CurrentUserDetail.UserId;
             }
             var result = _db.Execute<EmailSettingDetail>("sp_email_setting_detail_insupd", emailSetting, true);
             if (string.IsNullOrEmpty(result))
