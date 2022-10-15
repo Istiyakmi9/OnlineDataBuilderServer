@@ -16,11 +16,13 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly CurrentSession _currentSession;
 
-        public RequestService(IDb db, ITimezoneConverter timezoneConverter)
+        public RequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
+            _currentSession = currentSession;
         }
 
         public List<ApprovalRequest> FetchPendingRequestService(long employeeId, int requestTypeId)
@@ -28,7 +30,12 @@ namespace ServiceLayer.Code
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            List<ApprovalRequest> result = _db.GetList<ApprovalRequest>("sp_attendance_get_pending_requests", new { ManagerId = employeeId, StatusId = requestTypeId });
+            string procedure = "sp_attendance_get_pending_requests";
+            if (_currentSession.CurrentUserDetail.RoleId == (int)UserType.Admin)
+                procedure = "sp_attendance_get_pending_requests_by_role";
+
+            List<ApprovalRequest> result = _db.GetList<ApprovalRequest>(procedure, new
+            { ManagerId = employeeId, StatusId = requestTypeId });
             if (result != null && result.Count > 0)
             {
                 int i = 0;

@@ -347,3 +347,100 @@ Begin
 	End;
 End$$
 DELIMITER ;
+
+
+
+DELIMITER $$
+
+drop procedure if exists sp_attendance_get_pending_requests_admin $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_get_pending_requests_by_role`(
+
+/*
+
+    Call sp_attendance_get_pending_requests_admin(22, 2);
+
+*/
+
+    _ManagerId bigint,
+    _StatusId int
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests', 1, 0, @Result);
+		end;
+        
+        Set @AdminAccessId = 0;
+        if(_StatusId = 0) then 
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId Or AssigneeId = @AdminAccessId
+			order by RequestedOn desc;
+        end;
+        else
+        begin
+			Select * from approval_request
+			where (AssigneeId = _ManagerId Or AssigneeId = @AdminAccessId)
+			and RequestStatusId = _StatusId
+			order by RequestedOn desc;        
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+
+drop procedure if exists sp_attendance_get_pending_requests $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_get_pending_requests`(
+
+/*
+
+    Call sp_attendance_get_pending_requests(22, 2);
+
+*/
+
+    _ManagerId bigint,
+    _StatusId int
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests', 1, 0, @Result);
+		end;
+              
+        if(_StatusId = 0) then 
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId
+			order by RequestedOn desc;
+        end;
+        else
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId
+			and RequestStatusId = _StatusId
+			order by RequestedOn desc;        
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
