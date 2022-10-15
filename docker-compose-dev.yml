@@ -1,0 +1,15 @@
+services:
+  hiringbellAPI:
+    image: api_hiringbell
+    network_mode: bridge
+    environment:
+      -  TZ=Asia/Kolkata
+      -  DEBIAN_FRONTENT=noninteractive
+    build:
+      context: .
+      dockerfile: OnlineDataBuilder/Dockerfile
+    ports:
+      -  5000:80
+    volumes:
+      -  /home/projects/Documents:/app/Documents
+      -  /home/projects/Documents/appsettings.json:/app/appsettings.json
