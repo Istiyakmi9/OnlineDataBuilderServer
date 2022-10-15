@@ -134,13 +134,16 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(filterModel.SearchString))
                 filterModel.SearchString = "1=1";
 
-            if (filterModel.CompanyId > 0)
-                filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
-            else
-                filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
 
             if (filterModel.IsActive != null && filterModel.IsActive == true)
+            {
+                if (filterModel.CompanyId > 0)
+                    filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+                else
+                    filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
                 employees = FilterActiveEmployees(filterModel);
+
+            }
             else
                 employees = FilterInActiveEmployees(filterModel);
 
@@ -325,6 +328,7 @@ namespace ServiceLayer.Code
         private string DeActivateEmployee(int EmployeeId)
         {
             EmployeeCompleteDetailModal employeeCompleteDetailModal = GetEmployeeCompleteDetail(EmployeeId);
+            employeeCompleteDetailModal.EmployeeDetail.IsActive = false;
             var result = _db.Execute<EmployeeArchiveModal>("sp_Employee_DeActivate", new
             {
                 EmployeeId,
