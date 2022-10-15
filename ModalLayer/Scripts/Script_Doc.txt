@@ -1,0 +1,908 @@
+﻿DELIMITER $$
+
+drop procedure if exists sp_new_registration $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_new_registration`(
+
+/*
+	set @value = '';
+	Call sp_new_registration('BOTTOMHALF PVT.LTD', 'BOTTOMHALF', '9000000000','istiyaq.mi9@gmail.com', 'ADMIN', 'USER', "EiOcNOYYuHiQrEc0z16rEjUlp71vYq73fNDXL1PbZZ4=", @value);
+    select @value;
+
+*/
+	_OrganizationName varchar(250),
+	_CompanyName varchar(250),
+	_Mobile varchar(20),
+	_EmailId varchar(100),
+    _FirstName varchar(100),
+    _LastName varchar(100),
+	_Password varchar(250),
+    out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+			@errorno = MYSQL_ERRNO,
+			@errortext = MESSAGE_TEXT;
+            
+            RollBack;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, '', 'sp_new_registration', 1, 0, @Result);
+		end;  
+        
+        Start Transaction;
+        begin
+
+			# Sample email template detai
+            Insert into email_templates values(default, 'Billing Template', 'Developer(s) bill detail', 
+			'Dear Sir/Madam', 'Thanks & Regards,', 
+			'{"FirstPhase":["GENERATED STAFFING BILL FOR THE LAST MONTH","BILLING DETAIL AS FOLLOWS:"],"Body":[],"EndPhase":["PLEASE FIND ATTACHED PDF BILL"]}', 
+			'Please check detail if required any changes do revert to us.', 'Team BottomHalf.',
+			_Mobile, null, 1, utc_date());
+
+			# Inserting initial bill information.
+           
+			insert into billtype values(1, 'Bill number sequence for generating payment to clients');
+			insert into bills values(1, 1, 0, 8, 1);
+            
+            #insert user type deatils
+
+			INSERT INTO `usertypedetail` VALUES 
+            (1,'Admin','Administrator will complete access granted.'),
+            (2,'Employee','Employee level access.'),
+            (3,'Candidate','Candidate level access.'),
+            (4,'Client','Candidate level access.'),
+            (5,'Other','Other level access.'),
+            (6,'Company','Company related access similar to Admin. This type will be used only for file saving purpose.');
+			if not exists(select 1 from organization_detail where OrganizationName = _OrganizationName) then
+            
+             # inserting roles and menu
+
+            INSERT INTO `rolesandmenu` VALUES 
+            ('Administration',NULL,NULL,NULL,NULL,NULL,1),
+            ('Dashboard','Administration','dashboard','fa fa-tachometer',NULL,NULL,2),
+            ('Employees','Administration','employees','fa fa-id-card',NULL,NULL,4),
+            ('Client','Administration','clients','fa fa-building-o',NULL,NULL,5),
+            ('Bills','Administration','billdetail','fa fa-file-o',NULL,NULL,7),
+            ('Home',NULL,NULL,NULL,NULL,NULL,8),
+            ('Profile','Manage','profile','fa fa-user',NULL,NULL,9),
+            ('Roles','Settings','roles','fa fa-object-group',NULL,NULL,10),
+            ('Generate Bill','Administration','generatebill','fa fa-file-pdf-o',NULL,NULL,11),
+            ('Attendence','Manage','attendance','fa fa-id-badge',NULL,NULL,12),
+            ('Manage',NULL,NULL,NULL,NULL,NULL,13),
+            ('Declaration','Accounts','declaration','fa fa-handshake-o',NULL,NULL,14),
+            ('Salary','Accounts','salary','fa fa-money',NULL,NULL,15),
+            ('Summary','Accounts','summary','fa fa-history',NULL,NULL,16),
+            ('Preferences','Accounts','preferences','fa fa-object-group',NULL,NULL,17),
+            ('Dashboard','Home','dashboard','fa fa-tachometer',NULL,NULL,18),
+            ('Accounts',NULL,NULL,NULL,NULL,NULL,19),
+            ('Timesheet','Manage','timesheet','fa fa-calendar',NULL,NULL,20),
+            ('Holidays','Manage','planholidays','fa fa-calendar-minus-o',NULL,NULL,21),
+            ('About Me','Home','profile','fa fa-user',NULL,NULL,22),
+            ('Tax','Accounts','taxcalculation','fa fa-money',NULL,NULL,23),
+            ('Request','Team','request','fa fa-hand-o-right',NULL,NULL,24),
+            ('Team',NULL,NULL,NULL,NULL,NULL,25),
+            ('Notification','Team','notification','fa fa-bell-o',NULL,NULL,26),
+            ('Settings',NULL,NULL,NULL,NULL,NULL,28),
+            ('Leave Plan','Settings','leave','fa fa-calendar-check-o',NULL,NULL,29),
+            ('Payroll','Settings','payrollsettings','fa fa-cog fa-spin fa-fw',NULL,NULL,30),
+            ('Email Setting','Settings','emailsetting','fa fa-envelope',NULL,NULL,31),
+            ('Menu','Settings','menu','fa fa-bars',NULL,NULL,32),
+            ('Project','Team','project','fa fa-lightbulb-o',NULL,NULL,33),
+            ('Company','Settings','companysettings','fa fa-cogs',NULL,NULL,34);           
+            
+            # Insert designation deatils
+
+			Insert into designation_detail values
+			(default, 'Admin', 'Full access at organization level', 0, null, null),
+			(default, 'Project Manager', 'Project Manager', 0, null, null),
+			(default, 'Solution Architect', 'Solution Architect', 0, null, null),
+			(default, 'Application Architect', 'Application Architect', 0, null, null),
+			(default, 'Team Lead', 'Team Lead', 0, null, null),
+			(default, 'Full stact developer', 'Full stact developer', 0, null, null),
+			(default, 'Senior Software engineer', 'Sr. Software engineer', 0, null, null),
+			(default, 'Junior Software engineer', 'Junior Software engineer', 0, null, null),
+			(default, 'Software Associate', 'Software Associate', 0, null, null),
+			(default, 'Tester', 'Tester', 0, null, null),
+			(default, 'HR Manager', 'HR Manager', 0, null, null),
+			(default, 'System Engineer', 'System Engineer', 0, null, null);
+
+
+			#Inserting accessibility description
+
+			INSERT INTO `accessibility_description` VALUES 
+            (1,'Complete access. (read, udpate and detele)'),
+            (2,'Only read access.'),
+            (3,'Read and update access.');
+
+			# inserting access level
+			INSERT INTO `accesslevel` VALUES 
+            (1,'Admin','Having all rights','2021-08-17 22:25:53',NULL),
+            (2,'User','View or edit only personal detail.','2021-08-17 22:26:35','2022-03-13 08:48:35'),
+            (3,'Management','Can add or edit most of the detail.','2022-03-13 08:49:18',NULL);
+            
+			begin
+				set @userTypeId = 0;
+				set @accessLevelId = 1;
+				select UserTypeId into @userTypeId from usertypedetail
+				where RoleName = 'Admin';
+				
+				set @designationId = 0;
+				select DesignationId into @designationId from designation_detail
+				where DesignationName = 'Admin';
+			
+				set @organizationId = 0;
+				select OrganizationId into @organizationId from organization_detail
+                order by OrganizationId desc;
+                set @organizationId = @organizationId + 1;                
+
+                select * from organization_detail;
+				Insert into organization_detail values(
+					@organizationId,
+					_OrganizationName,
+					_Mobile,
+					_EmailId,
+					_Mobile,
+					null,
+					null,
+					0,
+                    null,
+					utc_date(),
+                    null
+				);            
+				
+				set @companyId = 0;
+				select CompanyId into @companyId from company
+                order by CompanyId desc;
+                set @companyId = @companyId + 1;   
+
+				Insert into company values(            
+					@companyId,
+					@organizationId,
+					_OrganizationName,
+					_CompanyName,
+					null,
+					0,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					_Mobile,
+					_EmailId,
+					null,
+					null,
+					null,
+					null,
+					_Mobile,
+					null,
+					null,
+					0,
+					0,
+					null,
+					null,
+					null,
+					null,
+					null,
+                    null,
+                    null,
+					true,
+					null,
+					0,
+					null,
+					utc_date(),
+					null
+				);
+				
+				set @employeeId = 0;
+				select EmployeeUid into @employeeId from employees
+                order by EmployeeUid desc;
+                set @employeeId = @employeeId + 1;
+
+				Insert into employees values(
+					@employeeId,
+					_FirstName,
+					_LastName,
+					_Mobile,
+					_EmailId,
+					true,
+					0,
+					null,
+					utc_date(),
+					null,
+					0,
+					@designationId,
+					@userTypeId,
+					0,
+					0,
+                    0,
+					@companyId,
+					0
+				);
+
+                Insert into employeeprofessiondetail values (
+					default,
+                    @employeeId,
+                    _FirstName,
+					_LastName,
+					_Mobile,
+                    null,
+					_EmailId,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    0,
+                    null,
+                    utc_date(),
+                    null,
+                    null
+                );
+
+                Insert into employeepersonaldetail values (
+					default,
+					@employeeId,
+                    _Mobile,
+                    null,
+                    _EmailId,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    true,
+                    null,
+                    null,
+                    null,
+                    0,
+                    null,
+                    utc_date(),
+                    null,
+                    null
+                );
+
+				Insert into employeelogin values(
+					default,
+					@employeeId,
+					@userTypeId,
+					@accessLevelId,
+					_Password,
+					_EmailId,
+					_Mobile,
+					@organizationId,
+					@companyId,
+					0,
+					null,
+					utc_date(),
+					null
+				);
+                
+				insert into bank_accounts values (
+					default,
+                    @organizationId,
+                    @companyId,
+					null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    true,
+                    0,
+                    null,
+                    utc_date(),
+                    null
+                );
+				set _ProcessingResult = 'updated';
+			end;
+			end if;
+        end;
+        Commit;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_organization_detail_get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_detail_get`(
+    
+/*
+
+	Call sp_organization_detail_get();
+    
+*/
+	
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+                                        
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+    		Call sp_LogException (@Message, '', 'sp_organization_detail_get', 1, 0, @Result);
+		end;  
+        
+		select 
+			c.CompanyId,
+			o.OrganizationId,
+			o.OrganizationName,
+			c.CompanyName,
+			c.CompanyDetail,
+			c.SectorType,
+			c.Country,
+			c.State,
+			c.City,
+			c.FirstAddress,
+			c.SecondAddress,
+			c.ThirdAddress,
+			c.ForthAddress,
+			c.FullAddress,
+			c.MobileNo,
+			c.Email,
+			c.FirstEmail,
+			c.SecondEmail,
+			c.ThirdEmail,
+			c.ForthEmail,
+			c.PrimaryPhoneNo,
+			c.SecondaryPhoneNo,
+			c.Fax,
+			c.Pincode,
+			c.FileId,
+			c.LegalDocumentPath,
+			c.LegalEntity,
+			c.TypeOfBusiness,
+			c.InCorporationDate,
+			c.IsPrimaryCompany,
+			c.FixedComponentsId,
+			b.BankAccountId,
+			b.BankName,
+			b.BranchCode,
+			b.Branch,
+			b.IFSC,
+			b.AccountNo,
+			b.OpeningDate,
+			b.ClosingDate,
+			c.PANNo,
+			c.GSTNo,
+			c.TradeLicenseNo,
+			o.OrgMobileNo,
+			o.OrgEmail,
+			o.OrgPrimaryPhoneNo,
+			o.OrgSecondaryPhoneNo,
+			o.OrgFax
+        from organization_detail o
+        inner join company c on o.OrganizationId = c.OrganizationId
+        inner join bank_accounts b on b.OrganizationId = c.OrganizationId;
+
+        select * from filedetail
+        where UserTypeId = 6;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_organization_intupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_intupd`(
+	_CompanyId int,
+	_OrganizationId int,
+	_OrganizationName varchar(250),
+	_CompanyName varchar(150),
+	_CompanyDetail varchar(250),
+	_SectorType int,
+	_Country varchar(50),
+	_State varchar(100),
+	_City varchar(100),
+	_FirstAddress varchar(100),
+	_SecondAddress varchar(100),
+	_ThirdAddress varchar(100),
+	_ForthAddress varchar(100),
+	_FullAddress varchar(150),
+	_MobileNo varchar(20),
+	_Email varchar(50),
+	_FirstEmail varchar(100),
+	_SecondEmail varchar(100),
+	_ThirdEmail varchar(100),
+	_ForthEmail varchar(100),
+	_PrimaryPhoneNo varchar(20),
+	_SecondaryPhoneNo varchar(20),
+	_Fax varchar(50),
+	_Pincode int,
+	_FileId bigint,
+	_LegalDocumentPath varchar(250),
+	_LegalEntity varchar(50),
+	_TypeOfBusiness varchar(150),
+	_InCorporationDate datetime,
+	_IsPrimaryCompany bit(1),
+	_FixedComponentsId json,    
+	_BankAccountId int,
+	_BankName varchar(100),
+	_BranchCode varchar(20),
+	_Branch varchar(50),
+	_IFSC varchar(20),
+	_AccountNo varchar(45),
+	_OpeningDate datetime,
+	_ClosingDate datetime,
+	_PANNo varchar(20),
+	_GSTNo varchar(50),
+	_TradeLicenseNo varchar(50),
+	_OrgMobileNo varchar(20),
+	_OrgEmail varchar(50),
+	_OrgPrimaryPhoneNo varchar(20),
+	_OrgSecondaryPhoneNo varchar(20),
+	_OrgFax varchar(50),
+    _IsPrimaryAccount bit,
+    _AdminId long,    
+	out _ProcessingResult varchar(50)
+    
+/*
+
+
+	set @outcome = '';
+    
+	Call sp_organization_intupd(0, 'BottomHlaf', 'BottomHalf Pvt. Ltd.', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
+    null, null, null, null, null, null, @outcome);    
+    
+    select @outcome;
+    
+
+*/
+	
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+                                        
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+            Rollback;
+			Call sp_LogException (@Message, @OperationStatus, 'sp_organization_intupd', 1, 0, @Result);
+		end;  
+        
+		Start Transaction;
+		begin
+        /*
+			if not exists(select 1 from company where CompanyId = _CompanyId) then
+			begin
+				if exists(select 1 from company where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany)) then
+				begin
+					select CompanyId from company 
+					where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany) into _CompanyId;
+				end;
+				end if;
+			end;
+			end if;
+		*/
+            
+			if not exists(select 1 from organization_detail where OrganizationId = _OrganizationId) then
+			begin               
+				Set @@SESSION.information_schema_stats_expiry = 0;
+
+				SELECT AUTO_INCREMENT into _OrganizationId
+				FROM information_schema.tables
+				WHERE table_name = 'organization_detail'
+				AND table_schema = DATABASE();	
+				
+				insert into organization_detail values(
+					_OrganizationId,
+					_OrganizationName,
+					_OrgMobileNo,
+					_OrgEmail,
+					_OrgPrimaryPhoneNo,
+					_OrgSecondaryPhoneNo,
+					_OrgFax,
+					_AdminId,
+					null,
+					utc_date(),
+					null
+				);
+			end;
+            else
+            begin
+				update organization_detail set
+					OrganizationName					=			_OrganizationName,
+					OrgMobileNo							=			_OrgMobileNo,
+					OrgEmail							=			_OrgEmail,
+					OrgPrimaryPhoneNo					=			_OrgPrimaryPhoneNo,
+					OrgSecondaryPhoneNo					=			_OrgSecondaryPhoneNo,
+					OrgFax								=			_OrgFax,
+					UpdatedBy							=			_AdminId,
+                    UpdatedOn							=			utc_date()
+				where OrganizationId = _OrganizationId;
+            end;
+			end if;
+					
+			if not exists(select 1 from company where CompanyId = _CompanyId) then
+			begin
+				Set @@SESSION.information_schema_stats_expiry = 0;
+
+				SELECT AUTO_INCREMENT into _CompanyId
+				FROM information_schema.tables
+				WHERE table_name = 'company'
+				AND table_schema = DATABASE();	
+				Insert into company values(
+					_CompanyId,
+					_OrganizationId,
+					_OrganizationName,
+					_CompanyName,
+					_CompanyDetail,
+					_SectorType,
+					_Country,
+					_State,
+					_City,
+					_FirstAddress,
+					_SecondAddress,
+					_ThirdAddress,
+					_ForthAddress,
+					_FullAddress,
+					_MobileNo,
+					_Email,
+					_FirstEmail,
+					_SecondEmail,
+					_ThirdEmail,
+					_ForthEmail,
+					_PrimaryPhoneNo,
+					_SecondaryPhoneNo,
+					_Fax,
+					_Pincode,
+					_FileId,
+					_LegalDocumentPath,
+					_LegalEntity,
+					_TypeOfBusiness,
+					_InCorporationDate,
+                    _PANNo,
+					_GSTNo,
+					_TradeLicenseNo,
+					_IsPrimaryCompany,
+					_FixedComponentsId,
+					_AdminId,
+					null,
+					utc_date(),
+					null
+				);
+			end;
+            else
+            begin
+				update company set
+					OrganizationId					=			_OrganizationId,
+					OrganizationName				=			_OrganizationName,
+					CompanyName						=			_CompanyName,
+					CompanyDetail					=			_CompanyDetail,
+					SectorType						=			_SectorType,
+					Country							=			_Country,
+					State							=			_State,
+					City							=			_City,
+					FirstAddress					=			_FirstAddress,
+					SecondAddress					=			_SecondAddress,
+					ThirdAddress					=			_ThirdAddress,
+					ForthAddress					=			_ForthAddress,
+					FullAddress						=			_FullAddress,
+					MobileNo						=			_MobileNo,
+					Email							=			_Email,
+					FirstEmail						=			_FirstEmail,
+					SecondEmail						=			_SecondEmail,
+					ThirdEmail						=			_ThirdEmail,
+					ForthEmail						=			_ForthEmail,
+					PrimaryPhoneNo					=			_PrimaryPhoneNo,
+					SecondaryPhoneNo				=			_SecondaryPhoneNo,
+					Fax								=			_Fax,
+					Pincode							=			_Pincode,
+					FileId							=			_FileId,
+					LegalDocumentPath				=			_LegalDocumentPath,
+					LegalEntity						=			_LegalEntity,
+					PANNo							=			_PANNo,
+					GSTNo							=			_GSTNo,
+					TradeLicenseNo					=			_TradeLicenseNo,
+					TypeOfBusiness					=			_TypeOfBusiness,
+					InCorporationDate				=			_InCorporationDate,
+					IsPrimaryCompany				=			_IsPrimaryCompany,
+					FixedComponentsId				=			_FixedComponentsId,
+					UpdatedBy						=			_AdminId,
+                    UpdatedOn						=			utc_date()
+				where CompanyId 	= 	_CompanyId;
+            end;
+			end if;
+			
+			if not exists(select 1 from bank_accounts where BankAccountId = _BankAccountId) then
+			begin
+				insert into bank_accounts value(
+					default,
+					_OrganizationId,
+					_CompanyId,
+					_BankName,
+					_BranchCode,
+					_Branch,
+					_IFSC,
+					_AccountNo,
+					_OpeningDate,
+					_ClosingDate,
+					_PANNo,
+					_GSTNo,
+					_TradeLicenseNo,
+                    _IsPrimaryAccount,
+					_AdminId,
+					null,
+					utc_date(),
+					null
+				);
+			end;
+            else
+            begin
+				update bank_accounts set
+					BankName							=			_BankName,
+					BranchCode							=			_BranchCode,
+					Branch								=			_Branch,
+					IFSC								=			_IFSC,
+					AccountNo							=			_AccountNo,
+					OpeningDate							=			_OpeningDate,
+					ClosingDate							=			_ClosingDate,
+					PANNo								=			_PANNo,
+					GSTNo								=			_GSTNo,
+					TradeLicenseNo						=			_TradeLicenseNo,
+                    IsPrimaryAccount					=			_IsPrimaryAccount,
+					UpdatedBy							=			_AdminId,
+                    UpdatedOn							=			utc_date()
+				where BankAccountId = _BankAccountId;
+            end;
+			end if;
+		end;
+		Commit;
+		Set _ProcessingResult = 'updated';
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_email_setting_detail_insupd $$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_insupd`(
+	   /*
+
+    Call sp_email_setting_detail_insupd(1);
+
+*/
+	_EmailSettingDetailId int,
+	_CompanyId int,
+	_EmailAddress varchar(200),
+	_EmailHost varchar(100),
+	_PortNo int,
+	_EnableSsl bit,
+	_DeliveryMethod varchar(50),
+	_UserDefaultCredentials bit,
+	_Credentials varchar(100),
+	_EmailName varchar(100),
+	_POP3EmailHost varchar(100),
+	_POP3PortNo int,
+	_POP3EnableSsl bit,
+    _IsPrimary bit,
+    _UpdatedBy bigint,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_setting_detail_insupd', 1, 0, @Result);
+		end;
+        
+        if not exists (select * from email_setting_detail where EmailSettingDetailId = _EmailSettingDetailId) then
+        begin
+			Insert into email_setting_detail values(
+				default,
+				_CompanyId,
+				_EmailAddress,
+                _EmailName,
+				_EmailHost,
+                _POP3EmailHost,
+				_PortNo,
+                _POP3PortNo,
+				_EnableSsl,
+                _POP3EnableSsl,
+				_DeliveryMethod,
+				_UserDefaultCredentials,
+				_Credentials,
+				_IsPrimary,
+                null,
+                utc_date()
+			);
+         
+             Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update email_setting_detail set 
+				CompanyId					=			_CompanyId,
+				EmailAddress				=			_EmailAddress,
+                EmailName					=			_EmailName,
+				EmailHost					=			_EmailHost,
+                POP3EmailHost				=			_POP3EmailHost,
+				PortNo						=			_PortNo,
+                POP3PortNo					=			_POP3PortNo,
+				EnableSsl					=			_EnableSsl,
+                POP3EnableSsl				=			_POP3EnableSsl,
+				DeliveryMethod				=			_DeliveryMethod,
+				UserDefaultCredentials		=			_UserDefaultCredentials,
+				Credentials					=			_Credentials,
+				IsPrimary					=			_IsPrimary,
+                UpdatedBy					=			_UpdatedBy,
+                UpdatedOn					=			utc_date()
+			where EmailSettingDetailId 		= 			_EmailSettingDetailId;
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_email_setting_detail_get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_get`(
+	   /*
+
+    Call sp_email_setting_detail_get(0);
+
+*/
+	_EmailSettingDetailId int
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_setting_detail_get', 1, 0, @Result);
+		end;
+        if(_EmailSettingDetailId = 0) then
+        begin
+			select * from email_setting_detail
+			where IsPrimary = true;
+        end;
+        else
+        begin
+			select * from email_setting_detail
+			where EmailSettingDetailId = _EmailSettingDetailId;
+        end;
+        end if;
+        
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+
+drop procedure if exists sp_attendance_get_pending_requests $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_get_pending_requests`(
+
+/*
+
+    Call sp_attendance_get_pending_requests(22, 2);
+
+*/
+
+    _ManagerId bigint,
+    _StatusId int
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests', 1, 0, @Result);
+		end;
+              
+        if(_StatusId = 0) then 
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId
+			order by RequestedOn desc;
+        end;
+        else
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId
+			and RequestStatusId = _StatusId
+			order by RequestedOn desc;        
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+
+drop procedure if exists sp_attendance_get_pending_requests_admin $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_get_pending_requests_by_role`(
+
+/*
+
+    Call sp_attendance_get_pending_requests_admin(22, 2);
+
+*/
+
+    _ManagerId bigint,
+    _StatusId int
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests', 1, 0, @Result);
+		end;
+        
+        Set @AdminAccessId = 0;
+        if(_StatusId = 0) then 
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId Or AssigneeId = @AdminAccessId
+			order by RequestedOn desc;
+        end;
+        else
+        begin
+			Select * from approval_request
+			where (AssigneeId = _ManagerId Or AssigneeId = @AdminAccessId)
+			and RequestStatusId = _StatusId
+			order by RequestedOn desc;        
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
