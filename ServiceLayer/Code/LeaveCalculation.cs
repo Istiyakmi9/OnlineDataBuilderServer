@@ -83,7 +83,10 @@ namespace ServiceLayer.Code
             switch (leaveDistributedSeq)
             {
                 default:
-                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
+                    if (_leavePlanConfiguration.leaveAccrual.IsLeaveAccruedPatternAvail)
+                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
+                    else
+                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                     availableLeaveLimit = this.MonthlyAccrualCalculation(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
                 case "2":
@@ -558,7 +561,7 @@ namespace ServiceLayer.Code
                 fractionValue = availableLeaves % 1.0m;
                 if (fractionValue > 0)
                 {
-                    integralValue = Convert.ToInt32(fractionValue);
+                    integralValue = Convert.ToInt32(availableLeaves);
                     if (_leavePlanConfiguration.leaveAccrual.ToNearestHalfDay)
                     {
                         if (fractionValue >= 0.1m && fractionValue <= 0.2m)

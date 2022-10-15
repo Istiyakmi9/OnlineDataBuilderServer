@@ -10,9 +10,9 @@ namespace ModalLayer.Modal
         public long EmployeeUid { get; set; }
         public int ClientUid { get; set; }
         public string ClientName { get; set; }
-        public float FinalPackage { get; set; }
-        public float ActualPackage { get; set; }
-        public float TakeHomeByCandidate { get; set; }
+        public decimal FinalPackage { get; set; }
+        public decimal ActualPackage { get; set; }
+        public decimal TakeHomeByCandidate { get; set; }
         public bool IsPermanent { get; set; }
         public bool IsActive { get; set; }
         public int BillingHours { get; set; }

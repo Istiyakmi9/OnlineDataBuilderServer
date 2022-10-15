@@ -19,7 +19,7 @@ namespace ServiceLayer.Code
         {
             Project projectDetail = new Project();
             projectDetail.ProjectId = project.ProjectId;
-            projectDetail.ProjectName = "HiringBell";
+            projectDetail.ProjectName = project.ProjectName;
             projectDetail.ProjectDescription = "Accounts related project";
             projectDetail.ProjectManagerId = 1;
             projectDetail.TeamMemberIds = "[]";
