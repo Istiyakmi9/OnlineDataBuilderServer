@@ -12,4 +12,4 @@ services:
       -  5000:80
     volumes:
       -  /home/projects/Documents:/app/Documents
-      -  /home/projects/Documents/appsettings.json:/app/appsettings.json
+#      -  /home/projects/Documents/appsettings.json:/app/appsettings.json
