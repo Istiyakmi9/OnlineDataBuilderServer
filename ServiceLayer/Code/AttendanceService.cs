@@ -406,7 +406,7 @@ namespace ServiceLayer.Code
                     ForMonth = commentDetails.AttendanceDay.Month
                 };
 
-                DateTime requestedDate = _timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceFromDay);
+                DateTime requestedDate = (DateTime)commentDetails.AttendenceFromDay;
                 var attendanceList = new List<AttendenceDetail>();
                 DbParam[] dbParams = new DbParam[]
                 {
@@ -452,7 +452,7 @@ namespace ServiceLayer.Code
                         .ToList();
                 }
 
-                while (requestedDate.Date.Subtract(_timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceToDay).Date).TotalDays < 0)
+                while (requestedDate.Date.Subtract(((DateTime)commentDetails.AttendenceToDay).Date).TotalDays <= 0)
                 {
                     attendanceOn = attendanceList.Find(x => x.AttendanceDay.Date.Subtract(requestedDate.Date).TotalDays == 0);
 
@@ -493,18 +493,27 @@ namespace ServiceLayer.Code
                     requestedDate = requestedDate.AddDays(1);
                 }
 
-                var AttendaceDetail = JsonConvert.SerializeObject((from n in attendanceList
-                                                                   select new
-                                                                   {
-                                                                       TotalMinutes = n.TotalMinutes,
-                                                                       UserTypeId = n.UserTypeId,
-                                                                       PresentDayStatus = n.PresentDayStatus,
-                                                                       EmployeeUid = n.EmployeeUid,
-                                                                       AttendanceId = n.AttendanceId,
-                                                                       UserComments = n.UserComments,
-                                                                       AttendanceDay = n.AttendanceDay,
-                                                                       AttendenceStatus = n.AttendenceStatus,
-                                                                   }));
+                var AttendaceDetail = JsonConvert
+                                        .SerializeObject((
+                                            from n in attendanceList
+                                            select new AttendanceDetail
+                                            {
+                                                TotalMinutes = n.TotalMinutes,
+                                                UserTypeId = n.UserTypeId,
+                                                PresentDayStatus = n.PresentDayStatus,
+                                                EmployeeUid = n.EmployeeUid,
+                                                AttendanceId = n.AttendanceId,
+                                                UserComments = n.UserComments,
+                                                AttendanceDay = n.AttendanceDay,
+                                                AttendenceStatus = n.AttendenceStatus,
+                                                Email = employee.Email,
+                                                EmployeeName = string.Concat(employee.FirstName, 
+                                                                " ",
+                                                                employee.LastName).Trim(),
+                                                Mobile = employee.Mobile,
+                                                ReportingManagerId = employee.ReportingManagerId,
+                                                ManagerName = "NA"
+                                            }));
 
                 double MonthsMinutes = 0;
                 currentAttendence.DaysPending = 0;

@@ -42,11 +42,14 @@ namespace ServiceLayer.Code
                 ForYear = now.Year,
                 ForMonth = now.Month
             });
+
             if (resultSet != null && resultSet.Tables.Count != 2)
                 throw new HiringBellException("Fail to get approval request data for current user.");
 
             Attendance attendance = null;
-            string attendanceDetail = resultSet.Tables[1].Rows[0][nameof(attendance.AttendanceDetail)].ToString();
+            string attendanceDetail = string.Empty;
+            if (resultSet.Tables[1].Rows.Count > 0)
+                attendanceDetail = resultSet.Tables[1].Rows[0][nameof(attendance.AttendanceDetail)].ToString();
 
             int i = 0;
             List<ApprovalRequest> approvalRequest = Converter.ToList<ApprovalRequest>(resultSet.Tables[0]);
