@@ -520,7 +520,7 @@ namespace ServiceLayer.Code
                 {
                     AttendanceId = currentAttendence.AttendanceId,
                     AttendanceDetail = AttendaceDetail,
-                    UserTypeId = UserType.Employee,
+                    UserTypeId = (int)UserType.Employee,
                     EmployeeId = commentDetails.EmployeeUid,
                     TotalDays = currentAttendence.TotalDays,
                     TotalWeekDays = currentAttendence.TotalWeekDays,
@@ -528,7 +528,7 @@ namespace ServiceLayer.Code
                     TotalBurnedMinutes = MonthsMinutes,
                     ForYear = currentAttendence.ForYear,
                     ForMonth = currentAttendence.ForMonth,
-                    UserI = _currentSession.CurrentUserDetail.UserId
+                    UserId = _currentSession.CurrentUserDetail.UserId
                 }, true);
             }
             else
@@ -634,7 +634,9 @@ namespace ServiceLayer.Code
                     TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
                     AttendanceDay = startDate,
                     AttendanceId = 0,
-                    AttendenceStatus = (int)ItemStatus.Pending,
+                    AttendenceStatus = (startDate.DayOfWeek == DayOfWeek.Saturday
+                                    ||
+                                startDate.DayOfWeek == DayOfWeek.Sunday) ? (int)DayStatus.Weekend : (int)ItemStatus.Pending,
                     BillingHours = 480,
                     ClientId = attendenceDetail.ClientId,
                     DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
