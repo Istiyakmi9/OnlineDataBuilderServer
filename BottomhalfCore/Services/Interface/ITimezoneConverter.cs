@@ -7,7 +7,7 @@ namespace BottomhalfCore.Services.Interface
         DateTime ToUtcTime(DateTime now);
         DateTime ToTimeZoneDateTime(DateTime now, TimeZoneInfo timeZoneInfo);
         DateTime UpdateToUTCTimeZoneOnly(DateTime now);
-        DateTime ToTimeZoneZeroTime(DateTime now, TimeZoneInfo timeZoneInfo);
+        DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null);
         DateTime ToIstTime(DateTime now);
         DateTime ZeroTime(DateTime now);
         DateTime IstZeroTime(DateTime now);

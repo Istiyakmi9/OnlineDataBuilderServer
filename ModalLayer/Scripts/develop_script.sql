@@ -352,13 +352,13 @@ DELIMITER ;
 
 DELIMITER $$
 
-drop procedure if exists sp_attendance_get_pending_requests_admin $$
+drop procedure if exists sp_attendance_get_pending_requests_by_role $$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_get_pending_requests_by_role`(
 
 /*
 
-    Call sp_attendance_get_pending_requests_admin(22, 2);
+    Call sp_attendance_get_pending_requests_by_role(22, 2);
 
 */
 
@@ -375,7 +375,7 @@ Begin
 										@errortext = MESSAGE_TEXT;
 										
 			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests', 1, 0, @Result);
+			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests_by_role', 1, 0, @Result);
 		end;
         
         Set @AdminAccessId = 0;
@@ -396,6 +396,7 @@ Begin
 	End;
 End$$
 DELIMITER ;
+
 
 
 

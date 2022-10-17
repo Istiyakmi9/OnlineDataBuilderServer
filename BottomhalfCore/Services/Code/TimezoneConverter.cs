@@ -18,9 +18,13 @@ namespace BottomhalfCore.Services.Code
             return utcNow;
         }
 
-        public DateTime ToTimeZoneZeroTime(DateTime now, TimeZoneInfo timeZoneInfo)
+        public DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null)
         {
-            var dateTimeUnspec = DateTime.SpecifyKind(now.Date, DateTimeKind.Unspecified);
+            DateTime present = DateTime.Now;
+            if (now != null)
+                present = Convert.ToDateTime(now);
+
+            var dateTimeUnspec = DateTime.SpecifyKind(present, DateTimeKind.Unspecified);
             var timeZoneDateTime = TimeZoneInfo.ConvertTimeToUtc(dateTimeUnspec, timeZoneInfo);
             return timeZoneDateTime;
         }
