@@ -27,18 +27,6 @@ namespace BottomhalfCore.Services.Code
 
         public DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null)
         {
-            var zoneSpecificDate = new DateTime(now.Year, now.Month, now.Day,
-                timeZoneInfo.BaseUtcOffset.Hours,
-                timeZoneInfo.BaseUtcOffset.Minutes,
-                timeZoneInfo.BaseUtcOffset.Seconds,
-                timeZoneInfo.BaseUtcOffset.Milliseconds);
-
-            var timeZoneDateTime = TimeZoneInfo.ConvertTime(zoneSpecificDate, timeZoneInfo);
-            return timeZoneDateTime;
-        }
-
-        public DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null)
-        {
             DateTime present = DateTime.Now;
             if (now != null)
                 present = Convert.ToDateTime(now);
