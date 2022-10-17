@@ -25,15 +25,14 @@ namespace BottomhalfCore.Services.Code
             return utcNow;
         }
 
-        public DateTime ToTimeZoneZeroTime(DateTime now, TimeZoneInfo timeZoneInfo)
+        public DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null)
         {
-            var zoneSpecificDate = new DateTime(now.Year, now.Month, now.Day,
-                timeZoneInfo.BaseUtcOffset.Hours,
-                timeZoneInfo.BaseUtcOffset.Minutes,
-                timeZoneInfo.BaseUtcOffset.Seconds,
-                timeZoneInfo.BaseUtcOffset.Milliseconds);
+            DateTime present = DateTime.Now;
+            if (now != null)
+                present = Convert.ToDateTime(now);
 
-            var timeZoneDateTime = TimeZoneInfo.ConvertTime(zoneSpecificDate, timeZoneInfo);
+            var dateTimeUnspec = DateTime.SpecifyKind(present, DateTimeKind.Unspecified);
+            var timeZoneDateTime = TimeZoneInfo.ConvertTimeToUtc(dateTimeUnspec, timeZoneInfo);
             return timeZoneDateTime;
         }
 

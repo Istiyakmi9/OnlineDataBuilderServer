@@ -16,29 +16,47 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly CurrentSession _currentSession;
 
-        public RequestService(IDb db, ITimezoneConverter timezoneConverter)
+        public RequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
+            _currentSession = currentSession;
         }
 
-        public List<ApprovalRequest> FetchPendingRequestService(long employeeId, int requestTypeId)
+        public dynamic FetchPendingRequestService(long employeeId, int requestTypeId)
         {
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            List<ApprovalRequest> result = _db.GetList<ApprovalRequest>("sp_attendance_get_pending_requests", new { ManagerId = employeeId, StatusId = requestTypeId });
-            if (result != null && result.Count > 0)
+            string procedure = "sp_approval_requests_get";
+            if (_currentSession.CurrentUserDetail.RoleId == (int)UserType.Admin)
+                procedure = "sp_approval_requests_get_by_role";
+
+            DateTime now = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            var resultSet = _db.FetchDataSet(procedure, new
             {
-                int i = 0;
-                Parallel.For(i, result.Count, x =>
-                {
-                    result.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(result.ElementAt(i).FromDate);
-                    result.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(result.ElementAt(i).ToDate);
-                });
-            }
-            return result;
+                ManagerId = employeeId,
+                StatusId = requestTypeId,
+                ForYear = now.Year,
+                ForMonth = now.Month
+            });
+            if (resultSet != null && resultSet.Tables.Count != 2)
+                throw new HiringBellException("Fail to get approval request data for current user.");
+
+            Attendance attendance = null;
+            string attendanceDetail = resultSet.Tables[1].Rows[0][nameof(attendance.AttendanceDetail)].ToString();
+
+            int i = 0;
+            List<ApprovalRequest> approvalRequest = Converter.ToList<ApprovalRequest>(resultSet.Tables[0]);
+            Parallel.For(i, approvalRequest.Count, x =>
+            {
+                approvalRequest.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).FromDate);
+                approvalRequest.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).ToDate);
+            });
+
+            return new { ApprovalRequest = approvalRequest, AttendaceDetail = attendanceDetail };
         }
 
         public List<ApprovalRequest> ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status, int RequestId)
