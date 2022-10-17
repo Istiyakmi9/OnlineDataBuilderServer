@@ -3964,153 +3964,8 @@ Begin
         where CompanyId = _CompanyId;
 	End;
 End ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_email_setting_detail_get` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_get`(
-	   /*
 
-    Call sp_email_setting_detail_get(3);
 
-*/
-	_EmailSettingDetailId int
-    
- 
-)
-Begin
-    Begin
-		Declare Exit handler for sqlexception
-        Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-
-            Call sp_LogException (@Message, '', 'sp_email_setting_detail_get', 1, 0, @Result);
-		end;
-        if(_EmailSettingDetailId = 0) then
-        begin
-			select * from email_setting_detail
-			where IsPrimary = true;
-        end;
-        else
-        begin
-			select * from email_setting_detail
-			where EmailSettingDetailId = _EmailSettingDetailId;
-        end;
-        end if;
-        
-	End;
-End ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_email_setting_detail_insupd` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_insupd`(
-	   /*
-
-    Call sp_email_setting_detail_insupd(1);
-
-*/
-	_EmailSettingDetailId int,
-	_CompanyId int,
-	_EmailAddress varchar(200),
-	_EmailHost varchar(100),
-	_PortNo int,
-	_EnableSsl bit,
-	_DeliveryMethod varchar(50),
-	_UserDefaultCredentials bit,
-	_Credentials varchar(100),
-	_EmailName varchar(100),
-	_POP3EmailHost varchar(100),
-	_POP3PortNo int,
-	_POP3EnableSsl bit,
-    _IsPrimary bit,
-    _UpdatedBy bigint,
-	out _ProcessingResult varchar(50)
-)
-Begin
-    Begin
-		Declare Exit handler for sqlexception
-        Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-
-            Call sp_LogException (@Message, '', 'sp_email_setting_detail_insupd', 1, 0, @Result);
-		end;
-        
-        if not exists (select * from email_setting_detail where EmailSettingDetailId = _EmailSettingDetailId) then
-        begin
-			Insert into email_setting_detail values(
-				default,
-				_CompanyId,
-				_EmailAddress,
-                _EmailName,
-				_EmailHost,
-                _POP3EmailHost,
-				_PortNo,
-                _POP3PortNo,
-				_EnableSsl,
-                _POP3EnableSsl,
-				_DeliveryMethod,
-				_UserDefaultCredentials,
-				_Credentials,
-				_IsPrimary,
-                null,
-                utc_date()
-			);
-         
-             Set _ProcessingResult = 'inserted';
-        end;
-        else
-        begin
-			update email_setting_detail set 
-				CompanyId					=			_CompanyId,
-				EmailAddress				=			_EmailAddress,
-                EmailName					=			_EmailName,
-				EmailHost					=			_EmailHost,
-                POP3EmailHost				=			_POP3EmailHost,
-				PortNo						=			_PortNo,
-                POP3PortNo					=			_POP3PortNo,
-				EnableSsl					=			_EnableSsl,
-                POP3EnableSsl				=			_POP3EnableSsl,
-				DeliveryMethod				=			_DeliveryMethod,
-				UserDefaultCredentials		=			_UserDefaultCredentials,
-				Credentials					=			_Credentials,
-				IsPrimary					=			_IsPrimary,
-                UpdatedBy					=			_UpdatedBy,
-                UpdatedOn					=			utc_date()
-			where EmailSettingDetailId 		= 			_EmailSettingDetailId;
-            Set _ProcessingResult = 'updated';
-        end;
-        end if;
-	End;
-End ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -8388,46 +8243,7 @@ Begin
 		from employees e where IsActive = 1;        
 	End;
 End ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_getAll_Project` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_getAll_Project`(
-	   /*
 
-    Call sp_getAll_Project();
-
-*/
-
-    
- 
-)
-Begin
-    Begin
-		Declare Exit handler for sqlexception
-        Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-
-            Call sp_LogException (@Message, '', 'sp_getAll_Project', 1, 0, @Result);
-		end;
-        
-        select * from project;
-	End;
-End ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -11140,98 +10956,7 @@ Begin
 		End;
 	End;
 end ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_organization_detail_get` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_detail_get`(
-    
-/*
 
-	Call sp_organization_detail_get();
-    
-*/
-	
-)
-Begin
-    Begin
-		Declare Exit handler for sqlexception
-		Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-                                        
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-    		Call sp_LogException (@Message, '', 'sp_organization_detail_get', 1, 0, @Result);
-		end;  
-        
-		select 
-			c.CompanyId,
-			o.OrganizationId,
-			o.OrganizationName,
-			c.CompanyName,
-			c.CompanyDetail,
-			c.SectorType,
-			c.Country,
-			c.State,
-			c.City,
-			c.FirstAddress,
-			c.SecondAddress,
-			c.ThirdAddress,
-			c.ForthAddress,
-			c.FullAddress,
-			c.MobileNo,
-			c.Email,
-			c.FirstEmail,
-			c.SecondEmail,
-			c.ThirdEmail,
-			c.ForthEmail,
-			c.PrimaryPhoneNo,
-			c.SecondaryPhoneNo,
-			c.Fax,
-			c.Pincode,
-			c.FileId,
-			c.LegalDocumentPath,
-			c.LegalEntity,
-			c.TypeOfBusiness,
-			c.InCorporationDate,
-			c.IsPrimaryCompany,
-			c.FixedComponentsId,
-			b.BankAccountId,
-			b.BankName,
-			b.BranchCode,
-			b.Branch,
-			b.IFSC,
-			b.AccountNo,
-			b.OpeningDate,
-			b.ClosingDate,
-			c.PANNo,
-			c.GSTNo,
-			c.TradeLicenseNo,
-			o.OrgMobileNo,
-			o.OrgEmail,
-			o.OrgPrimaryPhoneNo,
-			o.OrgSecondaryPhoneNo,
-			o.OrgFax
-        from organization_detail o
-        inner join company c on o.OrganizationId = c.OrganizationId
-        inner join bank_accounts b on b.OrganizationId = c.OrganizationId;
-
-        select * from filedetail
-        where UserTypeId = 6;
-	End;
-End ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -11384,292 +11109,7 @@ Begin
             end if;
 	End;
 End ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_organization_intupd` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_intupd`(
-	_CompanyId int,
-	_OrganizationId int,
-	_OrganizationName varchar(250),
-	_CompanyName varchar(150),
-	_CompanyDetail varchar(250),
-	_SectorType int,
-	_Country varchar(50),
-	_State varchar(100),
-	_City varchar(100),
-	_FirstAddress varchar(100),
-	_SecondAddress varchar(100),
-	_ThirdAddress varchar(100),
-	_ForthAddress varchar(100),
-	_FullAddress varchar(150),
-	_MobileNo varchar(20),
-	_Email varchar(50),
-	_FirstEmail varchar(100),
-	_SecondEmail varchar(100),
-	_ThirdEmail varchar(100),
-	_ForthEmail varchar(100),
-	_PrimaryPhoneNo varchar(20),
-	_SecondaryPhoneNo varchar(20),
-	_Fax varchar(50),
-	_Pincode int,
-	_FileId bigint,
-	_LegalDocumentPath varchar(250),
-	_LegalEntity varchar(50),
-	_TypeOfBusiness varchar(150),
-	_InCorporationDate datetime,
-	_IsPrimaryCompany bit(1),
-	_FixedComponentsId json,    
-	_BankAccountId int,
-	_BankName varchar(100),
-	_BranchCode varchar(20),
-	_Branch varchar(50),
-	_IFSC varchar(20),
-	_AccountNo varchar(45),
-	_OpeningDate datetime,
-	_ClosingDate datetime,
-	_PANNo varchar(20),
-	_GSTNo varchar(50),
-	_TradeLicenseNo varchar(50),
-	_OrgMobileNo varchar(20),
-	_OrgEmail varchar(50),
-	_OrgPrimaryPhoneNo varchar(20),
-	_OrgSecondaryPhoneNo varchar(20),
-	_OrgFax varchar(50),
-    _IsPrimaryAccount bit,
-    _AdminId long,    
-	out _ProcessingResult varchar(50)
-    
-/*
 
-
-	set @outcome = '';
-    
-	Call sp_organization_intupd(0, 'BottomHlaf', 'BottomHalf Pvt. Ltd.', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-    null, null, null, null, null, null, @outcome);    
-    
-    select @outcome;
-    
-
-*/
-	
-)
-Begin
-    Set @OperationStatus = '';
-	Begin
-		Declare Exit handler for sqlexception
-		Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-                                        
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-            Rollback;
-			Call sp_LogException (@Message, @OperationStatus, 'sp_organization_intupd', 1, 0, @Result);
-		end;  
-        
-		Start Transaction;
-		begin
-        /*
-			if not exists(select 1 from company where CompanyId = _CompanyId) then
-			begin
-				if exists(select 1 from company where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany)) then
-				begin
-					select CompanyId from company 
-					where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany) into _CompanyId;
-				end;
-				end if;
-			end;
-			end if;
-		*/
-            
-			if not exists(select 1 from organization_detail where OrganizationId = _OrganizationId) then
-			begin               
-				Set @@SESSION.information_schema_stats_expiry = 0;
-
-				SELECT AUTO_INCREMENT into _OrganizationId
-				FROM information_schema.tables
-				WHERE table_name = 'organization_detail'
-				AND table_schema = DATABASE();	
-				
-				insert into organization_detail values(
-					_OrganizationId,
-					_OrganizationName,
-					_OrgMobileNo,
-					_OrgEmail,
-					_OrgPrimaryPhoneNo,
-					_OrgSecondaryPhoneNo,
-					_OrgFax,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-			end;
-            else
-            begin
-				update organization_detail set
-					OrganizationName					=			_OrganizationName,
-					OrgMobileNo							=			_OrgMobileNo,
-					OrgEmail							=			_OrgEmail,
-					OrgPrimaryPhoneNo					=			_OrgPrimaryPhoneNo,
-					OrgSecondaryPhoneNo					=			_OrgSecondaryPhoneNo,
-					OrgFax								=			_OrgFax,
-					UpdatedBy							=			_AdminId,
-                    UpdatedOn							=			utc_date()
-				where OrganizationId = _OrganizationId;
-            end;
-			end if;
-					
-			if not exists(select 1 from company where CompanyId = _CompanyId) then
-			begin
-				Set @@SESSION.information_schema_stats_expiry = 0;
-
-				SELECT AUTO_INCREMENT into _CompanyId
-				FROM information_schema.tables
-				WHERE table_name = 'company'
-				AND table_schema = DATABASE();	
-				Insert into company values(
-					_CompanyId,
-					_OrganizationId,
-					_OrganizationName,
-					_CompanyName,
-					_CompanyDetail,
-					_SectorType,
-					_Country,
-					_State,
-					_City,
-					_FirstAddress,
-					_SecondAddress,
-					_ThirdAddress,
-					_ForthAddress,
-					_FullAddress,
-					_MobileNo,
-					_Email,
-					_FirstEmail,
-					_SecondEmail,
-					_ThirdEmail,
-					_ForthEmail,
-					_PrimaryPhoneNo,
-					_SecondaryPhoneNo,
-					_Fax,
-					_Pincode,
-					_FileId,
-					_LegalDocumentPath,
-					_LegalEntity,
-					_TypeOfBusiness,
-					_InCorporationDate,
-                    _PANNo,
-					_GSTNo,
-					_TradeLicenseNo,
-					_IsPrimaryCompany,
-					_FixedComponentsId,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-			end;
-            else
-            begin
-				update company set
-					OrganizationId					=			_OrganizationId,
-					OrganizationName				=			_OrganizationName,
-					CompanyName						=			_CompanyName,
-					CompanyDetail					=			_CompanyDetail,
-					SectorType						=			_SectorType,
-					Country							=			_Country,
-					State							=			_State,
-					City							=			_City,
-					FirstAddress					=			_FirstAddress,
-					SecondAddress					=			_SecondAddress,
-					ThirdAddress					=			_ThirdAddress,
-					ForthAddress					=			_ForthAddress,
-					FullAddress						=			_FullAddress,
-					MobileNo						=			_MobileNo,
-					Email							=			_Email,
-					FirstEmail						=			_FirstEmail,
-					SecondEmail						=			_SecondEmail,
-					ThirdEmail						=			_ThirdEmail,
-					ForthEmail						=			_ForthEmail,
-					PrimaryPhoneNo					=			_PrimaryPhoneNo,
-					SecondaryPhoneNo				=			_SecondaryPhoneNo,
-					Fax								=			_Fax,
-					Pincode							=			_Pincode,
-					FileId							=			_FileId,
-					LegalDocumentPath				=			_LegalDocumentPath,
-					LegalEntity						=			_LegalEntity,
-					PANNo							=			_PANNo,
-					GSTNo							=			_GSTNo,
-					TradeLicenseNo					=			_TradeLicenseNo,
-					TypeOfBusiness					=			_TypeOfBusiness,
-					InCorporationDate				=			_InCorporationDate,
-					IsPrimaryCompany				=			_IsPrimaryCompany,
-					FixedComponentsId				=			_FixedComponentsId,
-					UpdatedBy						=			_AdminId,
-                    UpdatedOn						=			utc_date()
-				where CompanyId 	= 	_CompanyId;
-            end;
-			end if;
-			
-			if not exists(select 1 from bank_accounts where BankAccountId = _BankAccountId) then
-			begin
-				insert into bank_accounts value(
-					default,
-					_OrganizationId,
-					_CompanyId,
-					_BankName,
-					_BranchCode,
-					_Branch,
-					_IFSC,
-					_AccountNo,
-					_OpeningDate,
-					_ClosingDate,
-					_PANNo,
-					_GSTNo,
-					_TradeLicenseNo,
-                    _IsPrimaryAccount,
-					_AdminId,
-					null,
-					utc_date(),
-					null
-				);
-			end;
-            else
-            begin
-				update bank_accounts set
-					BankName							=			_BankName,
-					BranchCode							=			_BranchCode,
-					Branch								=			_Branch,
-					IFSC								=			_IFSC,
-					AccountNo							=			_AccountNo,
-					OpeningDate							=			_OpeningDate,
-					ClosingDate							=			_ClosingDate,
-					PANNo								=			_PANNo,
-					GSTNo								=			_GSTNo,
-					TradeLicenseNo						=			_TradeLicenseNo,
-                    IsPrimaryAccount					=			_IsPrimaryAccount,
-					UpdatedBy							=			_AdminId,
-                    UpdatedOn							=			utc_date()
-				where BankAccountId = _BankAccountId;
-            end;
-			end if;
-		end;
-		Commit;
-		Set _ProcessingResult = 'updated';
-	End;
-End ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -12983,98 +12423,7 @@ Begin
 		
 		Set _ProcessingResult = _EmployeeId;
 End ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_project_detail_insupd` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_project_detail_insupd`(
-	   /*
 
-    Call sp_project_detail_insupd(1);
-
-*/
-	_ProjectId bigint ,
-    _ProjectName varchar(150),
-    _ProjectDescription varchar(500),
-    _ProjectManagerId bigint,
-    _TeamMemberIds json,
-    _ProjectStartedOn datetime,
-    _ProjectEndedOn datetime,
-    _ArchitectId bigint,
-    _IsClientProject bit,
-    _ClientId bigint,
-    _HomePageUrl varchar(150),
-    _PageIndexDetail json,
-    _KeywordDetail json,
-    _DocumentationDetail json,
-	out _ProcessingResult varchar(50)
-)
-Begin
-    Begin
-		Declare Exit handler for sqlexception
-        Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-
-            Call sp_LogException (@Message, '', 'sp_project_detail_insupd', 1, 0, @Result);
-		end;
-        
-        if not exists (select 1 from project where ProjectId = _ProjectId) then
-        begin
-			Insert into project values(
-				default,
-				_ProjectName,
-				_ProjectDescription,
-				_ProjectManagerId,
-				_TeamMemberIds,
-				_ProjectStartedOn,
-				_ProjectEndedOn,
-				_ArchitectId,
-				_IsClientProject,
-				_ClientId,
-				_HomePageUrl,
-				_PageIndexDetail,
-				_KeywordDetail,
-				_DocumentationDetail
-			);
-         
-             Set _ProcessingResult = 'inserted';
-        end;
-        else
-        begin
-			update project set 
-				ProjectName						=			_ProjectName,
-				ProjectDescription				=			_ProjectDescription,
-				ProjectManagerId				=			_ProjectManagerId,
-				TeamMemberIds					=			_TeamMemberIds,
-				ProjectStartedOn				=			_ProjectStartedOn,
-				ProjectEndedOn					=			_ProjectEndedOn,
-				ArchitectId						=			_ArchitectId,
-				IsClientProject					=			_IsClientProject,
-				ClientId						=			_ClientId,
-				HomePageUrl						=			_HomePageUrl,
-				PageIndexDetail					=			_PageIndexDetail,
-				KeywordDetail					=			_KeywordDetail,
-				DocumentationDetail				=			_DocumentationDetail
-			where ProjectId 					= 			_ProjectId;
-            Set _ProcessingResult = 'updated';
-        end;
-        end if;
-	End;
-End ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -14745,3 +14094,755 @@ DELIMITER ;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2022-10-15 18:44:29
+
+DELIMITER $$
+
+drop procedure if exists sp_project_detail_getall $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_project_detail_getall`(
+	   /*
+
+    Call sp_project_detail_getall();
+
+*/
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_project_detail_getall', 1, 0, @Result);
+		end;
+        
+        select * from project;
+        
+	End;
+End$$
+DELIMITER ;
+
+
+drop procedure if exists sp_getAll_Project;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_project_getBy_id`(
+	   /*
+
+    Call sp_project_getBy_id(1);
+	
+*/
+	_ProjectId long
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_project_getBy_id', 1, 0, @Result);
+		end;
+        
+        select * from project
+        where ProjectId = _ProjectId;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_project_detail_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_project_detail_insupd`(
+	   /*
+
+    Call sp_project_detail_insupd(1);
+
+*/
+	_ProjectId bigint ,
+    _ProjectName varchar(150),
+    _ProjectDescription varchar(500),
+    _ProjectManagerId bigint,
+    _TeamMemberIds json,
+    _ProjectStartedOn datetime,
+    _ProjectEndedOn datetime,
+    _ArchitectId bigint,
+    _IsClientProject bit,
+    _ClientId bigint,
+    _HomePageUrl varchar(150),
+    _PageIndexDetail json,
+    _KeywordDetail json,
+    _DocumentationDetail json,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_project_detail_insupd', 1, 0, @Result);
+		end;
+        
+        if not exists (select 1 from project where ProjectId = _ProjectId) then
+        begin
+			Insert into project values(
+				default,
+				_ProjectName,
+				_ProjectDescription,
+				_ProjectManagerId,
+				_TeamMemberIds,
+				_ProjectStartedOn,
+				_ProjectEndedOn,
+				_ArchitectId,
+				_IsClientProject,
+				_ClientId,
+				_HomePageUrl,
+				_PageIndexDetail,
+				_KeywordDetail,
+				_DocumentationDetail
+			);
+         
+             Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update project set 
+				ProjectName						=			_ProjectName,
+				ProjectDescription				=			_ProjectDescription,
+				ProjectManagerId				=			_ProjectManagerId,
+				TeamMemberIds					=			_TeamMemberIds,
+				ProjectStartedOn				=			_ProjectStartedOn,
+				ProjectEndedOn					=			_ProjectEndedOn,
+				ArchitectId						=			_ArchitectId,
+				IsClientProject					=			_IsClientProject,
+				ClientId						=			_ClientId,
+				HomePageUrl						=			_HomePageUrl
+			where ProjectId 					= 			_ProjectId;
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+drop procedure if exists sp_wiki_detail_upd $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_wiki_detail_upd`(
+	   /*
+
+    Call sp_wiki_detail_upd(1);
+
+*/
+	_ProjectId bigint ,
+    _PageIndexDetail json,
+    _KeywordDetail json,
+    _DocumentationDetail json,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_wiki_detail_upd', 1, 0, @Result);
+		end;
+        
+        update project set 
+				PageIndexDetail					=			_PageIndexDetail,
+				KeywordDetail					=			_KeywordDetail,
+				DocumentationDetail				=			_DocumentationDetail
+			where ProjectId 					= 			_ProjectId;
+            Set _ProcessingResult = 'updated';
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_project_detail_get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_project_detail_getby_id`(
+	   /*
+
+    Call sp_project_detail_getby_id(0);
+
+*/
+	_ProjectId int
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_project_detail_getby_id', 1, 0, @Result);
+		end;
+        
+		select * from project
+		where ProjectId = _ProjectId;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_attendance_get_pending_requests_admin $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_get_pending_requests_by_role`(
+
+/*
+
+    Call sp_attendance_get_pending_requests_admin(22, 2);
+
+*/
+
+    _ManagerId bigint,
+    _StatusId int
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_get_pending_requests', 1, 0, @Result);
+		end;
+        
+        Set @AdminAccessId = 0;
+        if(_StatusId = 0) then 
+        begin
+			Select * from approval_request
+			where AssigneeId = _ManagerId Or AssigneeId = @AdminAccessId
+			order by RequestedOn desc;
+        end;
+        else
+        begin
+			Select * from approval_request
+			where (AssigneeId = _ManagerId Or AssigneeId = @AdminAccessId)
+			and RequestStatusId = _StatusId
+			order by RequestedOn desc;        
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+
+drop procedure if exists sp_email_setting_detail_get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_get`(
+	   /*
+
+    Call sp_email_setting_detail_get(0);
+
+*/
+	_EmailSettingDetailId int
+    
+ 
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_setting_detail_get', 1, 0, @Result);
+		end;
+        if(_EmailSettingDetailId = 0) then
+        begin
+			select * from email_setting_detail
+			where IsPrimary = true;
+        end;
+        else
+        begin
+			select * from email_setting_detail
+			where EmailSettingDetailId = _EmailSettingDetailId;
+        end;
+        end if;
+        
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+
+drop procedure if exists sp_email_setting_detail_insupd $$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_setting_detail_insupd`(
+	   /*
+
+    Call sp_email_setting_detail_insupd(1);
+
+*/
+	_EmailSettingDetailId int,
+	_CompanyId int,
+	_EmailAddress varchar(200),
+	_EmailHost varchar(100),
+	_PortNo int,
+	_EnableSsl bit,
+	_DeliveryMethod varchar(50),
+	_UserDefaultCredentials bit,
+	_Credentials varchar(100),
+	_EmailName varchar(100),
+	_POP3EmailHost varchar(100),
+	_POP3PortNo int,
+	_POP3EnableSsl bit,
+    _IsPrimary bit,
+    _UpdatedBy bigint,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_setting_detail_insupd', 1, 0, @Result);
+		end;
+        
+        if not exists (select * from email_setting_detail where EmailSettingDetailId = _EmailSettingDetailId) then
+        begin
+			Insert into email_setting_detail values(
+				default,
+				_CompanyId,
+				_EmailAddress,
+                _EmailName,
+				_EmailHost,
+                _POP3EmailHost,
+				_PortNo,
+                _POP3PortNo,
+				_EnableSsl,
+                _POP3EnableSsl,
+				_DeliveryMethod,
+				_UserDefaultCredentials,
+				_Credentials,
+				_IsPrimary,
+                null,
+                utc_date()
+			);
+         
+             Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update email_setting_detail set 
+				CompanyId					=			_CompanyId,
+				EmailAddress				=			_EmailAddress,
+                EmailName					=			_EmailName,
+				EmailHost					=			_EmailHost,
+                POP3EmailHost				=			_POP3EmailHost,
+				PortNo						=			_PortNo,
+                POP3PortNo					=			_POP3PortNo,
+				EnableSsl					=			_EnableSsl,
+                POP3EnableSsl				=			_POP3EnableSsl,
+				DeliveryMethod				=			_DeliveryMethod,
+				UserDefaultCredentials		=			_UserDefaultCredentials,
+				Credentials					=			_Credentials,
+				IsPrimary					=			_IsPrimary,
+                UpdatedBy					=			_UpdatedBy,
+                UpdatedOn					=			utc_date()
+			where EmailSettingDetailId 		= 			_EmailSettingDetailId;
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_organization_intupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_intupd`(
+	_CompanyId int,
+	_OrganizationId int,
+	_OrganizationName varchar(250),
+	_CompanyName varchar(150),
+	_CompanyDetail varchar(250),
+	_SectorType int,
+	_Country varchar(50),
+	_State varchar(100),
+	_City varchar(100),
+	_FirstAddress varchar(100),
+	_SecondAddress varchar(100),
+	_ThirdAddress varchar(100),
+	_ForthAddress varchar(100),
+	_FullAddress varchar(150),
+	_MobileNo varchar(20),
+	_Email varchar(50),
+	_FirstEmail varchar(100),
+	_SecondEmail varchar(100),
+	_ThirdEmail varchar(100),
+	_ForthEmail varchar(100),
+	_PrimaryPhoneNo varchar(20),
+	_SecondaryPhoneNo varchar(20),
+	_Fax varchar(50),
+	_Pincode int,
+	_FileId bigint,
+	_LegalDocumentPath varchar(250),
+	_LegalEntity varchar(50),
+	_TypeOfBusiness varchar(150),
+	_InCorporationDate datetime,
+	_IsPrimaryCompany bit(1),
+	_FixedComponentsId json,    
+	_BankAccountId int,
+	_BankName varchar(100),
+	_BranchCode varchar(20),
+	_Branch varchar(50),
+	_IFSC varchar(20),
+	_AccountNo varchar(45),
+	_OpeningDate datetime,
+	_ClosingDate datetime,
+	_PANNo varchar(20),
+	_GSTNo varchar(50),
+	_TradeLicenseNo varchar(50),
+	_OrgMobileNo varchar(20),
+	_OrgEmail varchar(50),
+	_OrgPrimaryPhoneNo varchar(20),
+	_OrgSecondaryPhoneNo varchar(20),
+	_OrgFax varchar(50),
+    _IsPrimaryAccount bit,
+    _AdminId long,    
+	out _ProcessingResult varchar(50)
+    
+/*
+
+
+	set @outcome = '';
+    
+	Call sp_organization_intupd(0, 'BottomHlaf', 'BottomHalf Pvt. Ltd.', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
+    null, null, null, null, null, null, @outcome);    
+    
+    select @outcome;
+    
+
+*/
+	
+)
+Begin
+    Set @OperationStatus = '';
+	Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+                                        
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+            Rollback;
+			Call sp_LogException (@Message, @OperationStatus, 'sp_organization_intupd', 1, 0, @Result);
+		end;  
+        
+		Start Transaction;
+		begin
+        /*
+			if not exists(select 1 from company where CompanyId = _CompanyId) then
+			begin
+				if exists(select 1 from company where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany)) then
+				begin
+					select CompanyId from company 
+					where lower(LegalNameOfCompany) = lower(_LegalNameOfCompany) into _CompanyId;
+				end;
+				end if;
+			end;
+			end if;
+		*/
+            
+			if not exists(select 1 from organization_detail where OrganizationId = _OrganizationId) then
+			begin               
+				Set @@SESSION.information_schema_stats_expiry = 0;
+
+				SELECT AUTO_INCREMENT into _OrganizationId
+				FROM information_schema.tables
+				WHERE table_name = 'organization_detail'
+				AND table_schema = DATABASE();	
+				
+				insert into organization_detail values(
+					_OrganizationId,
+					_OrganizationName,
+					_OrgMobileNo,
+					_OrgEmail,
+					_OrgPrimaryPhoneNo,
+					_OrgSecondaryPhoneNo,
+					_OrgFax,
+					_AdminId,
+					null,
+					utc_date(),
+					null
+				);
+			end;
+            else
+            begin
+				update organization_detail set
+					OrganizationName					=			_OrganizationName,
+					OrgMobileNo							=			_OrgMobileNo,
+					OrgEmail							=			_OrgEmail,
+					OrgPrimaryPhoneNo					=			_OrgPrimaryPhoneNo,
+					OrgSecondaryPhoneNo					=			_OrgSecondaryPhoneNo,
+					OrgFax								=			_OrgFax,
+					UpdatedBy							=			_AdminId,
+                    UpdatedOn							=			utc_date()
+				where OrganizationId = _OrganizationId;
+            end;
+			end if;
+					
+			if not exists(select 1 from company where CompanyId = _CompanyId) then
+			begin
+				Set @@SESSION.information_schema_stats_expiry = 0;
+
+				SELECT AUTO_INCREMENT into _CompanyId
+				FROM information_schema.tables
+				WHERE table_name = 'company'
+				AND table_schema = DATABASE();	
+				Insert into company values(
+					_CompanyId,
+					_OrganizationId,
+					_OrganizationName,
+					_CompanyName,
+					_CompanyDetail,
+					_SectorType,
+					_Country,
+					_State,
+					_City,
+					_FirstAddress,
+					_SecondAddress,
+					_ThirdAddress,
+					_ForthAddress,
+					_FullAddress,
+					_MobileNo,
+					_Email,
+					_FirstEmail,
+					_SecondEmail,
+					_ThirdEmail,
+					_ForthEmail,
+					_PrimaryPhoneNo,
+					_SecondaryPhoneNo,
+					_Fax,
+					_Pincode,
+					_FileId,
+					_LegalDocumentPath,
+					_LegalEntity,
+					_TypeOfBusiness,
+					_InCorporationDate,
+                    _PANNo,
+					_GSTNo,
+					_TradeLicenseNo,
+					_IsPrimaryCompany,
+					_FixedComponentsId,
+					_AdminId,
+					null,
+					utc_date(),
+					null
+				);
+			end;
+            else
+            begin
+				update company set
+					OrganizationId					=			_OrganizationId,
+					OrganizationName				=			_OrganizationName,
+					CompanyName						=			_CompanyName,
+					CompanyDetail					=			_CompanyDetail,
+					SectorType						=			_SectorType,
+					Country							=			_Country,
+					State							=			_State,
+					City							=			_City,
+					FirstAddress					=			_FirstAddress,
+					SecondAddress					=			_SecondAddress,
+					ThirdAddress					=			_ThirdAddress,
+					ForthAddress					=			_ForthAddress,
+					FullAddress						=			_FullAddress,
+					MobileNo						=			_MobileNo,
+					Email							=			_Email,
+					FirstEmail						=			_FirstEmail,
+					SecondEmail						=			_SecondEmail,
+					ThirdEmail						=			_ThirdEmail,
+					ForthEmail						=			_ForthEmail,
+					PrimaryPhoneNo					=			_PrimaryPhoneNo,
+					SecondaryPhoneNo				=			_SecondaryPhoneNo,
+					Fax								=			_Fax,
+					Pincode							=			_Pincode,
+					FileId							=			_FileId,
+					LegalDocumentPath				=			_LegalDocumentPath,
+					LegalEntity						=			_LegalEntity,
+					PANNo							=			_PANNo,
+					GSTNo							=			_GSTNo,
+					TradeLicenseNo					=			_TradeLicenseNo,
+					TypeOfBusiness					=			_TypeOfBusiness,
+					InCorporationDate				=			_InCorporationDate,
+					IsPrimaryCompany				=			_IsPrimaryCompany,
+					FixedComponentsId				=			_FixedComponentsId,
+					UpdatedBy						=			_AdminId,
+                    UpdatedOn						=			utc_date()
+				where CompanyId 	= 	_CompanyId;
+            end;
+			end if;
+			
+			if not exists(select 1 from bank_accounts where BankAccountId = _BankAccountId) then
+			begin
+				insert into bank_accounts value(
+					default,
+					_OrganizationId,
+					_CompanyId,
+					_BankName,
+					_BranchCode,
+					_Branch,
+					_IFSC,
+					_AccountNo,
+					_OpeningDate,
+					_ClosingDate,
+					_PANNo,
+					_GSTNo,
+					_TradeLicenseNo,
+                    _IsPrimaryAccount,
+					_AdminId,
+					null,
+					utc_date(),
+					null
+				);
+			end;
+            else
+            begin
+				update bank_accounts set
+					BankName							=			_BankName,
+					BranchCode							=			_BranchCode,
+					Branch								=			_Branch,
+					IFSC								=			_IFSC,
+					AccountNo							=			_AccountNo,
+					OpeningDate							=			_OpeningDate,
+					ClosingDate							=			_ClosingDate,
+					PANNo								=			_PANNo,
+					GSTNo								=			_GSTNo,
+					TradeLicenseNo						=			_TradeLicenseNo,
+                    IsPrimaryAccount					=			_IsPrimaryAccount,
+					UpdatedBy							=			_AdminId,
+                    UpdatedOn							=			utc_date()
+				where BankAccountId = _BankAccountId;
+            end;
+			end if;
+		end;
+		Commit;
+		Set _ProcessingResult = 'updated';
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+
+drop procedure if exists sp_organization_detail_get $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_organization_detail_get`(
+    
+/*
+
+	Call sp_organization_detail_get();
+    
+*/
+	
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+		Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+                                        
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+    		Call sp_LogException (@Message, '', 'sp_organization_detail_get', 1, 0, @Result);
+		end;  
+        
+		select 
+			c.CompanyId,
+			o.OrganizationId,
+			o.OrganizationName,
+			c.CompanyName,
+			c.CompanyDetail,
+			c.SectorType,
+			c.Country,
+			c.State,
+			c.City,
+			c.FirstAddress,
+			c.SecondAddress,
+			c.ThirdAddress,
+			c.ForthAddress,
+			c.FullAddress,
+			c.MobileNo,
+			c.Email,
+			c.FirstEmail,
+			c.SecondEmail,
+			c.ThirdEmail,
+			c.ForthEmail,
+			c.PrimaryPhoneNo,
+			c.SecondaryPhoneNo,
+			c.Fax,
+			c.Pincode,
+			c.FileId,
+			c.LegalDocumentPath,
+			c.LegalEntity,
+			c.TypeOfBusiness,
+			c.InCorporationDate,
+			c.IsPrimaryCompany,
+			c.FixedComponentsId,
+			b.BankAccountId,
+			b.BankName,
+			b.BranchCode,
+			b.Branch,
+			b.IFSC,
+			b.AccountNo,
+			b.OpeningDate,
+			b.ClosingDate,
+			c.PANNo,
+			c.GSTNo,
+			c.TradeLicenseNo,
+			o.OrgMobileNo,
+			o.OrgEmail,
+			o.OrgPrimaryPhoneNo,
+			o.OrgSecondaryPhoneNo,
+			o.OrgFax
+        from organization_detail o
+        inner join company c on o.OrganizationId = c.OrganizationId
+        inner join bank_accounts b on b.OrganizationId = c.OrganizationId;
+
+        select * from filedetail
+        where UserTypeId = 6;
+	End;
+End$$
+DELIMITER ;
