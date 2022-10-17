@@ -1648,7 +1648,7 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_attendance_update_timesheet` */;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_attendance_update_request` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -1658,13 +1658,13 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_update_timesheet`(
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_update_request`(
 
 /*
 
 
 	set @result = '';
-    Call sp_attendance_update_timesheet(0, '[]', '2022-05-22', '2022-05-23', 1, '', 1, 1, 1, 1, 1, 2022, 8, 1, @result);
+    Call sp_attendance_update_request(0, '[]', '2022-05-22', '2022-05-23', 1, '', 1, 1, 1, 1, 1, 2022, 8, 1, @result);
     select @result;
 
 
@@ -1672,10 +1672,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_update_timesheet`(
 
     _AttendanceId bigint,
     _AttendanceDetail Json,
-	_FromDate DateTime,
-	_ToDate DateTime,
     _UserTypeId int,
-    _Message varchar(500),
     _EmployeeId bigint,    
 	_TotalDays int,
     _TotalWeekDays int,
@@ -1686,115 +1683,50 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_attendance_update_timesheet`(
     _UserId long,
     out _ProcessingResult varchar(100)
 )
-Begin
-    Set @OperationStatus = '';    
+Begin  
+	Declare Exit handler for sqlexception
 	Begin
-		Declare Exit handler for sqlexception
-		Begin
-			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
-										@errorno = MYSQL_ERRNO,
-										@errortext = MESSAGE_TEXT;
-										
-			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
-            Rollback;
-            Set _ProcessingResult = '';
-            SET autocommit = 1;
-			Call sp_LogException (@Message, @OperationStatus, 'sp_attendance_update_timesheet', 1, 0, @Result);
-		end;
+		Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+									@errorno = MYSQL_ERRNO,
+									@errortext = MESSAGE_TEXT;
+									
+		Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+		Rollback;
 		Set _ProcessingResult = '';
-        
-        SET autocommit = 0;
-        Start Transaction;
-        Begin        
-			if exists (select 1 from attendance where AttendanceId = _AttendanceId) then
-			Begin
-				update attendance Set
-					AttendanceDetail		=		_AttendanceDetail
-				where AttendanceId 			= 		_AttendanceId;
-				
-				set _ProcessingResult = 'updated';
-			End;
-			else
-			Begin
-				Set @@SESSION.information_schema_stats_expiry = 0;
-            
-				SELECT AUTO_INCREMENT into _AttendanceId
-				FROM information_schema.tables
-				WHERE table_name = 'attendance'
-				AND table_schema = DATABASE();			
-                
-				Insert into attendance values(
-					default,
-					_EmployeeId,
-					_UserTypeId,
-					_AttendanceDetail,
-					_TotalDays,
-					_TotalWeekDays,
-					_DaysPending,
-					_TotalBurnedMinutes,
-					_ForYear,
-					_ForMonth,
-					now(),
-					null,
-					_UserId,
-					null
-				);
-                
-				set _ProcessingResult = 'inserted';
-			End;
-			End if;
-            
-			Set @EmployeeName = '';
-            Set @Email = '';
-            Set @Mobile = '';
-            Set @ManagerId = 0;
-            Set @ProjectId = 0;
-            Set @ProjectName = null;
-			Set @outCome = '';
-            
-            Select 
-				Concat(FirstName, ' ', LastName) FullName, Mobile, Email, ReportingManagerId 
-            from employees 
-            where EmployeeUid = _EmployeeId
-            into @EmployeeName, @Mobile, @Email, @ManagerId;
-            
-            Set @approvalRequestId = 0;
-            
-            Select ApprovalRequestId from approval_request 
-            where AttendanceId = _AttendanceId
-            and datediff(_FromDate, FromDate) = 0
-            and datediff(_ToDate, ToDate) = 0
-            into @approvalRequestId;
-            
-            if(@approvalRequestId is null) then
-				Set @approvalRequestId = 0;
-			end if;
-            
-            Call sp_approval_request_attendace_InsUpdate(
-				@approvalRequestId,
-				@EmployeeName,
-				_Message,
-				_EmployeeId,
-				_UserTypeId,
-				utc_date(),
-				@Email,
-				@Mobile,
-				_FromDate,
-				_ToDate,
-				@ManagerId,
-				@ProjectId,
-				@ProjectName,
-                2,
-                _AttendanceId,
-                null,
-                0,
-                2,
-                0,
-                @outCome
-			);
-		End;
-        Commit;
+		SET autocommit = 1;
+		Call sp_LogException (@Message, '', 'sp_attendance_update_request', 1, 0, @Result);
+	end;
+		  
+	if exists (select 1 from attendance where AttendanceId = _AttendanceId) then
+	Begin
+		update attendance Set
+			AttendanceDetail		=		_AttendanceDetail
+		where AttendanceId 			= 		_AttendanceId;
+		
+		set _ProcessingResult = 'updated';
 	End;
+	else
+	Begin				
+		Insert into attendance values(
+			default,
+			_EmployeeId,
+			_UserTypeId,
+			_AttendanceDetail,
+			_TotalDays,
+			_TotalWeekDays,
+			_DaysPending,
+			_TotalBurnedMinutes,
+			_ForYear,
+			_ForMonth,
+			now(),
+			null,
+			_UserId,
+			null
+		);
+		
+		set _ProcessingResult = 'inserted';
+	End;
+	End if;
 End ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -4766,6 +4698,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Employees_InsUpdate`(
 	_TaxDetail Json,
 	_AdminId bigint,
     _DOB datetime,
+    _RegistrationDate datetime,
     out _ProcessingResult varchar(100)
 )
 Begin
@@ -4822,7 +4755,7 @@ Begin
 					1,
 					_AdminId,
 					null, 
-					now(),
+					_RegistrationDate,
 					null,
 					_ReportingManagerId,
 					_DesignationId,
@@ -4854,7 +4787,7 @@ Begin
 					_TakeHomeByCandidate,
 					_AdminId,
 					null,
-					now(),
+					_RegistrationDate,
 					null,
                     _DOB
 				);
@@ -4879,7 +4812,7 @@ Begin
 					_LastCompanyName,
 					_AdminId,
 					null,
-					now(),
+					_RegistrationDate,
 					null,
 					_ProfessionalDetail_Json
 				);
@@ -4898,7 +4831,7 @@ Begin
 					_CompanyId,
 					_AdminId, 
 					null, 
-					utc_date(), 
+					_RegistrationDate, 
 					null
 				);			
 			End;
