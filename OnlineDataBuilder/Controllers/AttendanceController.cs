@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -91,6 +92,13 @@ namespace OnlineDataBuilder.Controllers
             {
                 throw ex;
             }
+        }
+
+        [HttpPut("AttendanceRequestAction/{AttendanceId}/{StatusId}")]
+        public IResponse<ApiResponse> ApprovalAction([FromRoute]long AttendanceId, [FromRoute] ItemStatus StatusId, AttendanceDetails attendanceDetail)
+        {
+            var result = _attendanceService.AttendanceRequestActionService(AttendanceId, StatusId, attendanceDetail);
+            return BuildResponse(result);
         }
     }
 }

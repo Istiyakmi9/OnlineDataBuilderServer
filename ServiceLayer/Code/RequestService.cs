@@ -46,10 +46,9 @@ namespace ServiceLayer.Code
             if (resultSet != null && resultSet.Tables.Count != 2)
                 throw new HiringBellException("Fail to get approval request data for current user.");
 
-            Attendance attendance = null;
-            string attendanceDetail = string.Empty;
+            DataTable attendanceTable = null;
             if (resultSet.Tables[1].Rows.Count > 0)
-                attendanceDetail = resultSet.Tables[1].Rows[0][nameof(attendance.AttendanceDetail)].ToString();
+                attendanceTable = resultSet.Tables[1];
 
             int i = 0;
             List<ApprovalRequest> approvalRequest = Converter.ToList<ApprovalRequest>(resultSet.Tables[0]);
@@ -59,7 +58,7 @@ namespace ServiceLayer.Code
                 approvalRequest.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).ToDate);
             });
 
-            return new { ApprovalRequest = approvalRequest, AttendaceDetail = attendanceDetail };
+            return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
         }
 
         public List<ApprovalRequest> ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status, int RequestId)

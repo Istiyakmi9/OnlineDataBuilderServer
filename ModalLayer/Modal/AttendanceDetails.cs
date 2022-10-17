@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ModalLayer.Modal
 {
-    public class AttendanceDetail
+    public class AttendanceDetails
     {
         public long EmployeeUid {set;get;}
         public string EmployeeName {set;get;}
