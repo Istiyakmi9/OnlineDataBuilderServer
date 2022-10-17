@@ -416,7 +416,7 @@ namespace ServiceLayer.Code
                     new DbParam(commentDetails.AttendanceDay.Year, typeof(int), "_ForYear")
                 };
 
-                var result = _db.GetDataset("Sp_Attendance_GetById", dbParams);
+                var result = _db.GetDataset("sp_Attendance_YearMonth", dbParams);
                 if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
                 {
                     currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
@@ -496,7 +496,7 @@ namespace ServiceLayer.Code
                 var AttendaceDetail = JsonConvert
                                         .SerializeObject((
                                             from n in attendanceList
-                                            select new AttendanceDetail
+                                            select new AttendanceDetails
                                             {
                                                 TotalMinutes = n.TotalMinutes,
                                                 UserTypeId = n.UserTypeId,
@@ -546,6 +546,41 @@ namespace ServiceLayer.Code
             }
 
             return Result;
+        }
+
+        public List<AttendanceDetails> AttendanceRequestActionService(long AttendanceId, ItemStatus StatusId, AttendanceDetails attendanceDetail)
+        {
+            if (AttendanceId <= 0)
+                throw new HiringBellException("Invalid attendance day selected");
+
+            var attendance = _db.Get<Attendance>("sp_Attendance_GetById", new {
+                AttendanceId = AttendanceId
+            });
+
+            var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetails>>(attendance.AttendanceDetail);
+            var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
+            if (currentAttendance == null)
+                throw new HiringBellException("Unable to update present request. Please contact to admin.");
+
+            currentAttendance.PresentDayStatus = (int)ItemStatus.Approved;
+
+            // this call is used for only upadate AttendanceDetail json object
+            var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
+            {
+                AttendanceId = attendanceDetail.AttendanceId,
+                AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
+                UserTypeId = 0,
+                EmployeeId = 0,
+                TotalDays = 0,
+                TotalWeekDays = 0,
+                DaysPending = 0,
+                TotalBurnedMinutes = 0,
+                ForYear = 0,
+                ForMonth = 0,
+                UserId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            return allAttendance;
         }
 
         public AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail)

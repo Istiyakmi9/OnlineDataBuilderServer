@@ -1220,21 +1220,12 @@ Begin
 	End;
 End ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `Sp_Attendance_GetById` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Sp_Attendance_GetById`(
+
+DROP PROCEDURE IF EXISTS `sp_Attendance_YearMonth` ;;
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Attendance_YearMonth`(
 	_EmployeeId long,
     _UserTypeId int,
     _ForMonth int,
@@ -1243,7 +1234,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `Sp_Attendance_GetById`(
 /*
 
 
-	call Sp_Attendance_GetById (4, 1, 4, 2022)
+	call sp_Attendance_YearMonth (2, 2, 10, 2022)
 
 
 */
@@ -1259,7 +1250,7 @@ Begin
 										@errortext = MESSAGE_TEXT;
 										
 			Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
-			Call sp_LogException(@Message, '', 'Sp_Attendance_GetById', 1, 0, @Result);
+			Call sp_LogException(@Message, '', 'sp_Attendance_YearMonth', 1, 0, @Result);
 		End;
 		
         select 
@@ -1272,6 +1263,46 @@ Begin
 	End;
 end ;;
 DELIMITER ;
+
+
+DELIMITER ;;
+
+drop procedure if exists sp_Attendance_GetById ;;
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_Attendance_GetById`(
+	_AttendanceId long
+    
+/*
+
+
+	call sp_Attendance_GetById (1)
+
+
+*/
+
+)
+Begin
+	Begin
+		Declare exit handler for sqlexception
+		Begin
+		
+			GET DIAGNOSTICS CONDITION 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+										
+			Set @Message = CONCAT('ERROR ', @errorno ,  ' (', @sqlstate, '): ', @errortext);
+			Call sp_LogException(@Message, '', 'sp_Attendance_GetById', 1, 0, @Result);
+		End;
+		
+        select 
+			a.*
+		from attendance a
+        where a.AttendanceId = _AttendanceId;
+	End;
+end ;;
+DELIMITER ;
+
+
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
