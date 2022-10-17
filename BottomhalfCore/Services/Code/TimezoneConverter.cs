@@ -12,10 +12,29 @@ namespace BottomhalfCore.Services.Code
             return TimeZoneInfo.ConvertTimeToUtc(now);
         }
 
+        public DateTime ToUtcTimeFromMidNightTimeZone(DateTime now, TimeZoneInfo timeZoneInfo)
+        {
+            var dateTimeUnspec = DateTime.SpecifyKind(now.Date, DateTimeKind.Unspecified);
+            var timeZoneDateTime = TimeZoneInfo.ConvertTimeToUtc(dateTimeUnspec, timeZoneInfo);
+            return timeZoneDateTime;
+        }
+
         public DateTime UpdateToUTCTimeZoneOnly(DateTime now)
         {
             DateTime utcNow = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, now.Millisecond, DateTimeKind.Utc);
             return utcNow;
+        }
+
+        public DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null)
+        {
+            var zoneSpecificDate = new DateTime(now.Year, now.Month, now.Day,
+                timeZoneInfo.BaseUtcOffset.Hours,
+                timeZoneInfo.BaseUtcOffset.Minutes,
+                timeZoneInfo.BaseUtcOffset.Seconds,
+                timeZoneInfo.BaseUtcOffset.Milliseconds);
+
+            var timeZoneDateTime = TimeZoneInfo.ConvertTime(zoneSpecificDate, timeZoneInfo);
+            return timeZoneDateTime;
         }
 
         public DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null)

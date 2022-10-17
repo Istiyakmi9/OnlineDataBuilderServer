@@ -52,6 +52,7 @@ namespace ServiceLayer.Code
                 new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth")
             };
 
+            DateTime registrationDate = new DateTime();
             var Result = _db.GetDataset("sp_attendance_get", dbParams);
             if (Result.Tables.Count == 2)
             {
@@ -59,7 +60,9 @@ namespace ServiceLayer.Code
                 if (Result.Tables[1].Rows.Count > 0)
                 {
                     employee = Converter.ToType<Employee>(Result.Tables[1]);
-                    if (Convert.ToDateTime(attendenceDetail.AttendenceToDay).Subtract(employee.CreatedOn).TotalDays < 0)
+                    registrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(employee.CreatedOn, _currentSession.TimeZone);
+
+                    if (Convert.ToDateTime(attendenceDetail.AttendenceToDay?.Date).Subtract(registrationDate.Date).TotalDays < 0)
                     {
                         throw new HiringBellException("Past date before DOJ not allowed.");
                     }
@@ -105,9 +108,9 @@ namespace ServiceLayer.Code
                     attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail, status);
                 }
 
-                if (this.IsRegisteredOnPresentMonth(employee.CreatedOn) == 1)
+                if (this.IsRegisteredOnPresentMonth(registrationDate) == 1)
                 {
-                    attendenceDetails = attendenceDetails.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
+                    attendenceDetails = attendenceDetails.Where(x => registrationDate.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
                 }
             }
 

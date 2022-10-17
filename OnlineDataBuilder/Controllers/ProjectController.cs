@@ -15,16 +15,30 @@ namespace OnlineDataBuilder.Controllers
         {
             _projectService = projectService;
         }
-        [HttpPost("AddProject")]
-        public IResponse<ApiResponse> AddProject(WikiDetail project)
+        [HttpPost("AddWiki")]
+        public IResponse<ApiResponse> AddWiki(WikiDetail project)
         {
-            var result = _projectService.AddProjectService(project);
+            var result = _projectService.AddWikiService(project);
             return BuildResponse(result);  
         }
-        [HttpGet("GetAllProject")]
-        public IResponse<ApiResponse> GetAllProject()
+        [HttpGet("GetAllWiki/{ProjectId}")]
+        public IResponse<ApiResponse> GetAllWikiById(long ProjectId)
         {
-            var result = _projectService.GetAllProjectService();
+            var result = _projectService.GetAllWikiService(ProjectId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AddUpdateProjectDetail")]
+        public IResponse<ApiResponse> AddUpdateProjectDetail(Project projectDetail)
+        {
+            var result = _projectService.AddUpdateProjectDetailService(projectDetail);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetAllProjectDeatil")]
+        public IResponse<ApiResponse> GetAllProjectDeatil()
+        {
+            var result = _projectService.GetAllProjectDeatilService();
             return BuildResponse(result);
         }
     }
