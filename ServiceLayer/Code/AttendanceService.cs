@@ -4,7 +4,6 @@ using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -52,17 +51,13 @@ namespace ServiceLayer.Code
                 new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth")
             };
 
-            DateTime registrationDate = new DateTime();
             var Result = _db.GetDataset("sp_attendance_get", dbParams);
             if (Result.Tables.Count == 2)
             {
-
                 if (Result.Tables[1].Rows.Count > 0)
                 {
                     employee = Converter.ToType<Employee>(Result.Tables[1]);
-                    registrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(employee.CreatedOn, _currentSession.TimeZone);
-
-                    if (Convert.ToDateTime(attendenceDetail.AttendenceToDay?.Date).Subtract(registrationDate.Date).TotalDays < 0)
+                    if (Convert.ToDateTime(attendenceDetail.AttendenceToDay?.Date).Subtract(employee.CreatedOn.Date).TotalDays < 0)
                     {
                         throw new HiringBellException("Past date before DOJ not allowed.");
                     }
@@ -108,9 +103,9 @@ namespace ServiceLayer.Code
                     attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail, status);
                 }
 
-                if (this.IsRegisteredOnPresentMonth(registrationDate) == 1)
+                if (this.IsRegisteredOnPresentMonth(employee.CreatedOn) == 1)
                 {
-                    attendenceDetails = attendenceDetails.Where(x => registrationDate.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
+                    attendenceDetails = attendenceDetails.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
                 }
             }
 
@@ -450,6 +445,13 @@ namespace ServiceLayer.Code
                 }
 
                 AttendenceDetail attendanceOn = null;
+                if (employee.CreatedOn.Year == commentDetails.AttendanceDay.Year && employee.CreatedOn.Month == commentDetails.AttendanceDay.Month)
+                {
+                    attendanceList = attendanceList
+                        .Where(x => x.AttendanceDay.Subtract(employee.CreatedOn).TotalDays >= 0)
+                        .ToList();
+                }
+
                 while (requestedDate.Date.Subtract(_timezoneConverter.ToUtcTime((DateTime)commentDetails.AttendenceToDay).Date).TotalDays < 0)
                 {
                     attendanceOn = attendanceList.Find(x => x.AttendanceDay.Date.Subtract(requestedDate.Date).TotalDays == 0);
@@ -513,25 +515,21 @@ namespace ServiceLayer.Code
                         currentAttendence.DaysPending++;
                 });
 
-                dbParams = new DbParam[]
-                {
-                        new DbParam(currentAttendence.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(AttendaceDetail, typeof(string), "_AttendanceDetail"),
-                        new DbParam(commentDetails.AttendenceFromDay, typeof(DateTime), "_FromDate"),
-                        new DbParam(commentDetails.AttendenceToDay, typeof(DateTime), "_ToDate"),
-                        new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                        new DbParam(commentDetails.UserComments, typeof(string), "_Message"),
-                        new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId"),
-                        new DbParam(currentAttendence.TotalDays, typeof(int), "_TotalDays"),
-                        new DbParam(currentAttendence.TotalWeekDays, typeof(int), "_TotalWeekDays"),
-                        new DbParam(currentAttendence.DaysPending, typeof(int), "_DaysPending"),
-                        new DbParam(MonthsMinutes, typeof(double), "_TotalBurnedMinutes"),
-                        new DbParam(currentAttendence.ForYear, typeof(int), "_ForYear"),
-                        new DbParam(currentAttendence.ForMonth, typeof(int), "_ForMonth"),
-                        new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_UserId")
-                };
 
-                Result = _db.ExecuteNonQuery("sp_attendance_update_timesheet", dbParams, true);
+                Result = _db.Execute<Attendance>("sp_attendance_update_request", new
+                {
+                    AttendanceId = currentAttendence.AttendanceId,
+                    AttendanceDetail = AttendaceDetail,
+                    UserTypeId = UserType.Employee,
+                    EmployeeId = commentDetails.EmployeeUid,
+                    TotalDays = currentAttendence.TotalDays,
+                    TotalWeekDays = currentAttendence.TotalWeekDays,
+                    DaysPending = currentAttendence.DaysPending,
+                    TotalBurnedMinutes = MonthsMinutes,
+                    ForYear = currentAttendence.ForYear,
+                    ForMonth = currentAttendence.ForMonth,
+                    UserI = _currentSession.CurrentUserDetail.UserId
+                }, true);
             }
             else
             {

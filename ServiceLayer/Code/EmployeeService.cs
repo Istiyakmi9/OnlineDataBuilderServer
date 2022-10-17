@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
@@ -29,6 +30,7 @@ namespace ServiceLayer.Code
         private readonly IAuthenticationService _authenticationService;
         private readonly ILoginService _loginService;
         private readonly IDeclarationService _declarationService;
+        private readonly ITimezoneConverter _timezoneConverter;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
@@ -40,6 +42,7 @@ namespace ServiceLayer.Code
             ILoginService loginService,
             IDeclarationService declarationService,
             IAuthenticationService authenticationService,
+            ITimezoneConverter timezoneConverter,
             FileLocationDetail fileLocationDetail)
         {
             _db = db;
@@ -53,6 +56,7 @@ namespace ServiceLayer.Code
             _fileLocationDetail = fileLocationDetail;
             _commonService = commonService;
             _declarationService = declarationService;
+            _timezoneConverter = timezoneConverter;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -616,6 +620,7 @@ namespace ServiceLayer.Code
                     employeeSalaryDetail.CompleteSalaryDetail,
                     employeeSalaryDetail.TaxDetail,
                     employee.DOB,
+                    RegistrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(DateTime.Now, _currentSession.TimeZone),
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true
