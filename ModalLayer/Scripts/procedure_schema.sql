@@ -14846,3 +14846,138 @@ Begin
 	End;
 End$$
 DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_email_template_insupd $$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_template_insupd`(
+	   /*
+
+    Call sp_email_template_insupd();
+
+*/
+	_EmailTemplateId bigint,
+    _CompanyId int,
+	_TemplateName varchar(145),
+	_SubjectLine varchar(100),
+	_Salutation varchar(100),
+	_EmailClosingStatement varchar(100),
+	_BodyContent json,
+	_EmailNote varchar(500),
+	_SignatureDetail varchar(145),
+	_ContactNo varchar(20),
+    _AdminId bigint,
+	out _ProcessingResult varchar(50)
+)
+Begin
+    Begin
+		Declare Exit handler for sqlexception
+        Begin
+			Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+										@errorno = MYSQL_ERRNO,
+										@errortext = MESSAGE_TEXT;
+			Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+
+            Call sp_LogException (@Message, '', 'sp_email_template_insupd', 1, 0, @Result);
+		end;
+        
+        if not exists (select 1 from email_templates where EmailTemplateId = _EmailTemplateId) then
+        begin
+			Insert into email_templates values(
+				 default,
+                 _CompanyId,
+				_TemplateName,
+				_SubjectLine,
+				_Salutation,
+				_EmailClosingStatement,
+				_BodyContent,
+				_EmailNote,
+				_SignatureDetail,
+				_ContactNo,
+                null,
+				_AdminId,
+                utc_date()
+			);
+         
+             Set _ProcessingResult = 'inserted';
+        end;
+        else
+        begin
+			update email_templates set 
+				TemplateName				=			_TemplateName,
+				SubjectLine					=			_SubjectLine,
+				Salutation					=			_Salutation,
+				EmailClosingStatement		=			_EmailClosingStatement,
+				BodyContent					=			_BodyContent,
+				EmailNote					=			_EmailNote,
+				SignatureDetail				=			_SignatureDetail,
+				ContactNo					=			_ContactNo,
+				UPdatedBy					=			_AdminId,
+                UpdatedOn					=			utc_date()
+			where EmailTemplateId 			= 			_EmailTemplateId;
+            Set _ProcessingResult = 'updated';
+        end;
+        end if;
+	End;
+End$$
+DELIMITER ;
+
+DELIMITER $$
+drop procedure if exists sp_email_template_getby_filter $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_email_template_getby_filter`(
+
+/*
+
+	Call sp_email_template_getby_filter(' 1=1 and CompanyId = 1', '', 1, 20);
+
+*/  
+
+	_SearchString varchar(500),
+    _SortBy varchar(100),
+    _PageIndex int,
+    _PageSize int
+)
+Begin
+	Declare Exit handler for sqlexception
+	Begin
+		Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+		@errorno = MYSQL_ERRNO,
+		@errortext = MESSAGE_TEXT;
+		Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+		Call sp_LogException (@Message, '', 'sp_email_template_getby_filter', 1, 0, @Result);
+	end;  
+	Begin
+        
+		if(_SortBy is null Or _SortBy = '') then
+			Set _SortBy = ' UpdatedOn Desc ';
+		end if;
+		
+		Set @activeQuery = Concat('
+			Select 
+				e.EmailTemplateId,
+                e.TemplateName,
+                e.SubjectLine,
+                e.CompanyId,
+                e.SignatureDetail,
+                e.ContactNo,
+                e.UpdatedOn
+            from email_templates e
+			where ', _SearchString, '
+		');	
+		
+		Set @SelectQuery = '';
+		Set @SelectQuery = Concat('
+			select *, Row_Number() over() as RowIndex, Count(1) Over() as Total from (
+				', @activeQuery ,'
+			)T Order by ', _SortBy ,' limit ', _PageSize ,' offset ', (_PageIndex - 1) * 10
+		);
+		
+	# select @SelectQuery;
+	prepare SelectQuery from @SelectQuery;
+	execute SelectQuery;
+	End;
+End$$
+DELIMITER ;

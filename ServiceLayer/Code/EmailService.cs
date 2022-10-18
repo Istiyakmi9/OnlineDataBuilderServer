@@ -3,6 +3,7 @@ using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -203,6 +204,54 @@ namespace ServiceLayer.Code
 
             if (emailSettingDetail.PortNo <= 0)
                 throw new HiringBellException("Invalid port number");
+        }
+
+        public string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate)
+        {
+            var existingTemplate = _db.Get<EmailTemplate>("sp_email_template_get", new { emailTemplate.EmailTemplateId });
+            if (existingTemplate == null)
+            {
+                existingTemplate = emailTemplate;
+                existingTemplate.BodyContent = JsonConvert.SerializeObject(emailTemplate.BodyContent);
+                existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
+            }
+            else
+            {
+                existingTemplate.TemplateName = emailTemplate.TemplateName;
+                existingTemplate.SubjectLine = emailTemplate.SubjectLine;
+                existingTemplate.Salutation = emailTemplate.Salutation;
+                existingTemplate.EmailClosingStatement = emailTemplate.EmailClosingStatement;
+                existingTemplate.EmailNote = emailTemplate.EmailNote;
+                existingTemplate.SignatureDetail = emailTemplate.SignatureDetail;
+                existingTemplate.ContactNo = emailTemplate.ContactNo;
+                existingTemplate.BodyContent = JsonConvert.SerializeObject(emailTemplate.BodyContent);
+                existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
+            }
+            var result = _db.Execute<EmailTemplate>("sp_email_template_insupd", existingTemplate, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or updfate");
+            return result;
+        }
+
+        public List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel)
+        {
+            var result = _db.GetList<EmailTemplate>("sp_email_template_getby_filter", new
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
+            });
+            return result;
+        }
+
+        public EmailTemplate GetEmailTemplateByIdService(long EmailTemplateId)
+        {
+            if (EmailTemplateId == 0)
+                throw new HiringBellException("Invalid Email template selected");
+
+            var result = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
+            return result;
         }
     }
 }

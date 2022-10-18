@@ -57,5 +57,26 @@ namespace OnlineDataBuilder.Controllers
             var result = _emailService.InsertUpdateEmailSettingService(emailSettingDetail);
             return BuildResponse(result);
         }
+
+        [HttpPost("InsertUpdateEmailTemplate")]
+        public IResponse<ApiResponse> InsertUpdateEmailTemplate(EmailTemplate emailTemplate)
+        {
+            var result = _emailService.InsertUpdateEmailTemplateService(emailTemplate)  ;
+            return BuildResponse(result);
+        }
+
+        [HttpPost("GetEmailTemplate")]
+        public IResponse<ApiResponse> GetEmailTemplate([FromBody] FilterModel filterModel)
+        {
+            var result = _emailService.GetEmailTemplateService(filterModel);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetEmailTemplateById/{EmailTemplateId}")]
+        public IResponse<ApiResponse> GetEmailTemplateByIdService(long EmailTemplateId)
+        {
+            var result = _emailService.GetEmailTemplateByIdService(EmailTemplateId);
+            return BuildResponse(result);
+        }
     }
 }
