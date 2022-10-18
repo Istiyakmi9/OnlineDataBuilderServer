@@ -2464,7 +2464,8 @@ INSERT INTO `rolesandmenu` VALUES
 ('Menu','Settings','menu','fa fa-bars',NULL,NULL,32),
 ('Project','Team','project','fa fa-lightbulb-o',NULL,NULL,33),
 ('Company','Settings','companysettings','fa fa-cogs',NULL,NULL,34),
-('Leave','Manage','leave','fa fa-calendar-check-o',NULL,NULL,35); 
+('Leave','Manage','leave','fa fa-calendar-check-o',NULL,NULL,35),
+('Email Template','Administration','emailtemplate','fa fa-envelope-o',NULL,NULL,36); 
 
 
 # Insert designation deatils
@@ -2500,3 +2501,7 @@ INSERT INTO `accesslevel` VALUES
 set @value = '';
 Call sp_new_registration('BOTTOMHALF', 'BOTTOMHALF PVT. LTD.', '9100544384','info@bottomhalf.in', 'ADMIN', 'USER', "EiOcNOYYuHiQrEc0z16rEjUlp71vYq73fNDXL1PbZZ4=", @value);
 select @value;
+
+
+alter table email_templates
+add CompanyId int NOT NULL after EmailTemplateId;

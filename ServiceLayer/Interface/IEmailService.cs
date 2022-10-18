@@ -11,5 +11,8 @@ namespace ServiceLayer.Interface
         List<string> GetMyMailService();
         EmailSettingDetail GetEmailSettingByCompIdService(int CompanyId);
         EmailSettingDetail InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail);
+        string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate);
+        List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
+        EmailTemplate GetEmailTemplateByIdService(long EmailTemplateId);
     }
 }

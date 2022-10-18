@@ -19,8 +19,10 @@ namespace ModalLayer.Modal
         public string EmailTitle { get; set; } = string.Empty;
         public string EmailSubject { get; set; } = string.Empty;
         public List<string> Emails { set; get; }
-        public long UpdatedBy { set; get; }
+        public long AdminId { set; get; }
         public DateTime UpdatedOn { set; get; }
+        public int Total { set; get; }
+        public int CompanyId { get; set; }
     }
 
     public class BodyContentDetail
