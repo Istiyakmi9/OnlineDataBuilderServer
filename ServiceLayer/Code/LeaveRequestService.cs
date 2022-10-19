@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -51,7 +52,7 @@ namespace ServiceLayer.Code
                 attendanceTable = resultSet.Tables[1];
 
             int i = 0;
-            List<ApprovalRequest> approvalRequest = Converter.ToList<ApprovalRequest>(resultSet.Tables[0]);
+            List<LeaveRequestNotification> approvalRequest = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[0]);
             Parallel.For(i, approvalRequest.Count, x =>
             {
                 approvalRequest.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).FromDate);
@@ -61,41 +62,60 @@ namespace ServiceLayer.Code
             return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
         }
 
-        public List<ApprovalRequest> ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status, int RequestId)
+        public List<LeaveRequestNotification> ApprovalLeaveService(LeaveRequestNotification leaveRequestNotification)
+        {
+            return UpdateLeaveDetail(leaveRequestNotification, ItemStatus.Approved);
+        }
+
+        public List<LeaveRequestNotification> RejectLeaveService(LeaveRequestNotification leaveRequestNotification)
+        {
+            return UpdateLeaveDetail(leaveRequestNotification, ItemStatus.Rejected);
+        }
+
+        public List<LeaveRequestNotification> UpdateLeaveDetail(LeaveRequestNotification leaveRequestNotification, ItemStatus status)
         {
             string message = string.Empty;
-            DbParam[] param = new DbParam[]
+            var requestNotification = _db.Get<LeaveRequestNotification>("sp_leave_request_notification_get_byId", new
             {
-                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId"),
-                new DbParam(2, typeof(int), "_RequestType")
-            };
+                leaveRequestNotification.LeaveRequestNotificationId
+            });
 
-            var result = _db.GetDataset("sp_approval_request_GetById", param);
-            if (result.Tables.Count > 0 && result.Tables[0].Rows.Count > 0)
+            if (requestNotification != null)
             {
-                var attendanceDetailString = result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
-                List<AttendenceDetail> attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendanceDetailString);
-                ApprovalRequest existingRecord = Converter.ToType<ApprovalRequest>(result.Tables[0]);
+                List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert
+                  .DeserializeObject<List<CompleteLeaveDetail>>(requestNotification.LeaveDetail);
 
-                if (attendenceDetails != null)
+                if (completeLeaveDetail != null)
                 {
-                    var attendenceDetail = attendenceDetails.Find(x => existingRecord.FromDate.Subtract((DateTime)x.AttendanceDay).TotalDays == 0);
-                    if (attendenceDetail != null)
+                    var singleLeaveDetail = completeLeaveDetail.Find(x =>
+                        requestNotification.FromDate.Subtract(x.LeaveFromDay).TotalDays == 0 &&
+                        requestNotification.ToDate.Subtract(x.LeaveToDay).TotalDays == 0
+                    );
+
+                    if (singleLeaveDetail != null)
                     {
-                        attendenceDetail.AttendenceStatus = (int)status;
-                        attendanceDetailString = JsonConvert.SerializeObject((from n in attendenceDetails
-                                                                              select new
-                                                                              {
-                                                                                  TotalMinutes = n.TotalMinutes,
-                                                                                  UserTypeId = n.UserTypeId,
-                                                                                  PresentDayStatus = n.PresentDayStatus,
-                                                                                  EmployeeUid = n.EmployeeUid,
-                                                                                  AttendanceId = n.AttendanceId,
-                                                                                  UserComments = n.UserComments,
-                                                                                  AttendanceDay = n.AttendanceDay,
-                                                                                  AttendenceStatus = n.AttendenceStatus
-                                                                              }));
+                        singleLeaveDetail.LeaveStatus = (int)status;
+                        singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
+                        requestNotification.LeaveDetail = JsonConvert.SerializeObject(
+                            (from n in completeLeaveDetail
+                             select new
+                             {
+                                 Reason = n.Reason,
+                                 Session = n.Session,
+                                 AssignTo = n.AssignTo,
+                                 LeaveType = n.LeaveType,
+                                 NumOfDays = n.NumOfDays,
+                                 ProjectId = n.ProjectId,
+                                 UpdatedOn = n.UpdatedOn,
+                                 EmployeeId = n.EmployeeId,
+                                 LeaveToDay = n.LeaveToDay,
+                                 LeaveStatus = n.LeaveStatus,
+                                 RequestedOn = n.RequestedOn,
+                                 RespondedBy = n.RespondedBy,
+                                 EmployeeName = n.EmployeeName,
+                                 LeaveFromDay = n.LeaveFromDay
+                             })
+                            );
                     }
                     else
                     {
@@ -107,44 +127,34 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Error");
                 }
 
-                if (existingRecord != null)
+                if (requestNotification != null)
                 {
-                    existingRecord.RequestStatusId = approvalRequest.RequestStatusId;
-
-                    param = new DbParam[]
+                    requestNotification.LastReactedOn = DateTime.UtcNow;
+                    requestNotification.RequestStatusId = leaveRequestNotification.RequestStatusId;
+                    message = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
                     {
-                        new DbParam(existingRecord.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                        new DbParam(existingRecord.Message, typeof(string), "_Message"),
-                        new DbParam(existingRecord.UserName, typeof(string), "_UserName"),
-                        new DbParam(existingRecord.UserId, typeof(long), "_UserId"),
-                        new DbParam(existingRecord.UserTypeId, typeof(int), "_UserTypeId"),
-                        new DbParam(DateTime.Now, typeof(DateTime), "_RequestedOn"),
-                        new DbParam(existingRecord.Email, typeof(string), "_Email"),
-                        new DbParam(existingRecord.Mobile, typeof(string), "_Mobile"),
-                        new DbParam(existingRecord.FromDate, typeof(DateTime), "_FromDate"),
-                        new DbParam(existingRecord.ToDate, typeof(DateTime), "_ToDate"),
-                        new DbParam(existingRecord.AssigneeId, typeof(long), "_AssigneeId"),
-                        new DbParam(existingRecord.ProjectId, typeof(long), "_ProjectId"),
-                        new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
-                        new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
-                        new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(attendanceDetailString, typeof(string), "_AttendanceDetail"),
-                        new DbParam(0, typeof(int), "_LeaveType"),
-                        new DbParam(RequestType.Attandance, typeof(int), "_RequestType"),
-                        new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId")
-                    };
-
-                    message = _db.ExecuteNonQuery("sp_approval_request_attendace_InsUpdate", param, true);
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        return FetchPendingRequestService(existingRecord.UserId, RequestId);
-                    }
+                        requestNotification.LeaveRequestNotificationId,
+                        requestNotification.LeaveRequestId,
+                        requestNotification.UserMessage,
+                        requestNotification.EmployeeId,
+                        requestNotification.AssigneeId,
+                        requestNotification.ProjectId,
+                        requestNotification.ProjectName,
+                        requestNotification.FromDate,
+                        requestNotification.ToDate,
+                        requestNotification.NumOfDays,
+                        requestNotification.RequestStatusId,
+                        requestNotification.LeaveTypeId,
+                        requestNotification.FeedBackMessage,
+                        requestNotification.LastReactedOn,
+                        requestNotification.LeaveDetail
+                    }, true);
                 }
             }
             return null;
         }
 
-        public List<ApprovalRequest> ReAssigneToOtherManagerService(ApprovalRequest approvalRequest)
+        public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification)
         {
             return null;
         }

@@ -51,7 +51,7 @@ namespace ServiceLayer.Code
                 attendanceTable = resultSet.Tables[1];
 
             int i = 0;
-            List<TimesheetDetail> approvalRequest = Converter.ToList<TimesheetDetail>(resultSet.Tables[0]);
+            List<LeaveRequestNotification> approvalRequest = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[0]);
             Parallel.For(i, approvalRequest.Count, x =>
             {
                 approvalRequest.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).FromDate);
@@ -61,100 +61,65 @@ namespace ServiceLayer.Code
             return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
         }
 
-        public List<TimesheetDetail> RejectTimesheetService(TimesheetDetail timesheetDetail)
+        public List<DailyTimesheetDetail> RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            return UpdateTimesheetRequest(timesheetDetail, ItemStatus.Rejected);
+            return UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
         }
 
-        public List<TimesheetDetail> ApprovalTimesheetService(TimesheetDetail timesheetDetail)
+        public List<DailyTimesheetDetail> ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            return UpdateTimesheetRequest(timesheetDetail, ItemStatus.Approved);
+            return UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
         }
 
-        public List<TimesheetDetail> UpdateTimesheetRequest(TimesheetDetail timesheetDetail, ItemStatus itemStatus)
+        public List<DailyTimesheetDetail> UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
         {
-            string message = string.Empty;
-            DbParam[] param = new DbParam[]
+            var firstItem = dailyTimesheetDetails.FirstOrDefault();
+            if (firstItem.TimesheetId <= 0)
+                throw new HiringBellException("Invalid attendance day selected");
+
+            var timesheet = _db.Get<TimesheetDetail>("sp_employee_timesheet_getby_id", new
             {
-                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId"),
-                new DbParam(2, typeof(int), "_RequestType")
-            };
+                TimesheetId = firstItem.TimesheetId
+            });
 
-            var result = _db.GetDataset("sp_approval_request_GetById", param);
-            if (result.Tables.Count > 0 && result.Tables[0].Rows.Count > 0)
+            var allTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timesheet.TimesheetMonthJson);
+            foreach (var dailyTimesheet in dailyTimesheetDetails)
             {
-                var attendanceDetailString = result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
-                List<AttendenceDetail> attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendanceDetailString);
-                TimesheetDetail existingRecord = Converter.ToType<ApprovalRequest>(result.Tables[0]);
-
-                if (attendenceDetails != null)
-                {
-                    var attendenceDetail = attendenceDetails.Find(x => existingRecord.FromDate.Subtract((DateTime)x.AttendanceDay).TotalDays == 0);
-                    if (attendenceDetail != null)
-                    {
-                        attendenceDetail.AttendenceStatus = (int)status;
-                        attendanceDetailString = JsonConvert.SerializeObject((from n in attendenceDetails
-                                                                              select new
-                                                                              {
-                                                                                  TotalMinutes = n.TotalMinutes,
-                                                                                  UserTypeId = n.UserTypeId,
-                                                                                  PresentDayStatus = n.PresentDayStatus,
-                                                                                  EmployeeUid = n.EmployeeUid,
-                                                                                  AttendanceId = n.AttendanceId,
-                                                                                  UserComments = n.UserComments,
-                                                                                  AttendanceDay = n.AttendanceDay,
-                                                                                  AttendenceStatus = n.AttendenceStatus
-                                                                              }));
-                    }
-                    else
-                    {
-                        throw new HiringBellException("Error");
-                    }
-                }
-                else
-                {
-                    throw new HiringBellException("Error");
-                }
-
-                if (existingRecord != null)
-                {
-                    existingRecord.RequestStatusId = approvalRequest.RequestStatusId;
-
-                    param = new DbParam[]
-                    {
-                        new DbParam(existingRecord.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                        new DbParam(existingRecord.Message, typeof(string), "_Message"),
-                        new DbParam(existingRecord.UserName, typeof(string), "_UserName"),
-                        new DbParam(existingRecord.UserId, typeof(long), "_UserId"),
-                        new DbParam(existingRecord.UserTypeId, typeof(int), "_UserTypeId"),
-                        new DbParam(DateTime.Now, typeof(DateTime), "_RequestedOn"),
-                        new DbParam(existingRecord.Email, typeof(string), "_Email"),
-                        new DbParam(existingRecord.Mobile, typeof(string), "_Mobile"),
-                        new DbParam(existingRecord.FromDate, typeof(DateTime), "_FromDate"),
-                        new DbParam(existingRecord.ToDate, typeof(DateTime), "_ToDate"),
-                        new DbParam(existingRecord.AssigneeId, typeof(long), "_AssigneeId"),
-                        new DbParam(existingRecord.ProjectId, typeof(long), "_ProjectId"),
-                        new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
-                        new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
-                        new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(attendanceDetailString, typeof(string), "_AttendanceDetail"),
-                        new DbParam(0, typeof(int), "_LeaveType"),
-                        new DbParam(RequestType.Attandance, typeof(int), "_RequestType"),
-                        new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId")
-                    };
-
-                    message = _db.ExecuteNonQuery("sp_approval_request_attendace_InsUpdate", param, true);
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        return FetchPendingRequestService(existingRecord.UserId, RequestId);
-                    }
-                }
+                var currentTimesheet= allTimesheet.Find(x => x.PresentDate == dailyTimesheet.PresentDate);
+                if (currentTimesheet != null)
+                    currentTimesheet.TimesheetStatus = itemStatus;
             }
-            return null;
+            var timesheetMonthJson = JsonConvert.SerializeObject(allTimesheet);
+            timesheet.TimesheetMonthJson = timesheetMonthJson;
+            // this call is used for only upadate AttendanceDetail json object
+            var Result = _db.Execute<TimesheetDetail>("sp_attendance_update_request", new
+            {
+                timesheet.TimesheetId,
+                timesheet.EmployeeId,
+                timesheet.ClientId,
+                timesheet.UserTypeId,
+                timesheet.TimesheetMonthJson,
+                timesheet.TotalDays,
+                timesheet.DaysAbsent,
+                timesheet.ExpectedBurnedMinutes,
+                timesheet.ActualBurnedMinutes,
+                timesheet.TotalWeekDays,
+                timesheet.TotalWorkingDays,
+                timesheet.TotalHolidays,
+                timesheet.MonthTimesheetApprovalState,
+                timesheet.ForYear,
+                timesheet.ForMonth,
+                AminId = _currentSession.CurrentUserDetail.UserId
+            }, true);;
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable to update attendance status");
+
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+            // PrepareSendEmailNotification(currentAttendance, template);
+            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
         }
 
-        public List<TimesheetDetail> ReAssigneTimesheetService(TimesheetDetail timesheetDetail)
+        public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
             return null;
         }
