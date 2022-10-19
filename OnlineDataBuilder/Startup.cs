@@ -89,7 +89,7 @@ namespace OnlineDataBuilder
             });
 
             string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
-            services.AddScoped<IDb, Db>(x => new Db(connectionString));
+            services.AddSingleton<IDb, Db>(x => new Db(connectionString));
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IEvaluationPostfixExpression, EvaluationPostfixExpression>();
             services.AddScoped<IEmailService, EmailService>();
@@ -151,7 +151,6 @@ namespace OnlineDataBuilder
             {
                 return CacheManager.GetInstance(connectionString);
             });
-            services.AddScoped<IRequestService, RequestService>();
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<ISalaryComponentService, SalaryComponentService>();
             services.AddScoped<ICompanyService, CompanyService>();
@@ -161,6 +160,9 @@ namespace OnlineDataBuilder
             services.AddScoped<ITimesheetService, TimesheetService>();
             services.AddScoped<IComponentsCalculationService, ComponentsCalculationService>();
             services.AddTransient<ILeaveCalculation, LeaveCalculation>();
+            services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
+            services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+            services.AddScoped<ITimesheetRequestService, TimesheetRequestService>();
 
             services.AddCors(options =>
             {
