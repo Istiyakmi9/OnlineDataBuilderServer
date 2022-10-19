@@ -91,11 +91,11 @@ namespace ServiceLayer.Code
             var mailMessage = new MailMessage();
             mailMessage.Subject = emailSenderModal.Subject;
             mailMessage.Body = emailSenderModal.Body;
-            mailMessage.IsBodyHtml = false;
+            mailMessage.IsBodyHtml = true;
             mailMessage.From = fromAddress;
 
             foreach (var emailAddress in emailSenderModal.To)
-                mailMessage.To.Add(emailAddress);
+                mailMessage.To.Add(new MailAddress(emailAddress));
 
             if (emailSenderModal.CC != null && emailSenderModal.CC.Count > 0)
                 foreach (var emailAddress in emailSenderModal.CC)

@@ -1,13 +1,10 @@
 ﻿using ModalLayer.Modal;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EMailService.Service
 {
     public interface IEMailManager
     {
-        string SendMail(EmailSenderModal emailSenderModal, GenerateBillFileDetail EmailTemplateDetail, Employee OtherDetails);
+        string SendMail();
         void ReadMails(EmailSettingDetail emailSettingDetail);
     }
 }

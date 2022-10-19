@@ -47,19 +47,7 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
 
         private void SendMail()
         {
-            EmailSenderModal emailSenderModal = new EmailSenderModal
-            {
-                BCC = null,
-                CC = null,
-                FileDetails = null,
-                From = "info@bottomhalf.in",
-                Subject = "Testing",
-                Title = "Test",
-                To = new List<string> { "istiyaq.4game@gmail.com" },
-                UserName = null
-            };
-
-            _eMailManager.SendMail(emailSenderModal, null, null);
+            _eMailManager.SendMail();
         }
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
