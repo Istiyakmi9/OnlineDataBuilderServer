@@ -39,5 +39,10 @@ namespace ModalLayer.Modal
         public ItemStatus TimesheetStatus { get; set; }
         public DateTime PresentDate { get; set; }
         public string UserComments { get; set; }
+        public string EmployeeName { set; get; }
+        public string Email { set; get; }
+        public string Mobile { set; get; }
+        public long ReportingManagerId { set; get; }
+        public string ManagerName { set; get; }
     }
 }

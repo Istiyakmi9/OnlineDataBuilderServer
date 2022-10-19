@@ -12,8 +12,8 @@ namespace OnlineDataBuilder.Controllers
     [ApiController]
     public class LeaveRequestController : BaseController
     {
-        private readonly IAttendanceRequestService _requestService;
-        public LeaveRequestController(IAttendanceRequestService requestService)
+        private readonly ILeaveRequestService _requestService;
+        public LeaveRequestController(ILeaveRequestService requestService)
         {
             _requestService = requestService;
         }
@@ -28,14 +28,14 @@ namespace OnlineDataBuilder.Controllers
         [HttpPut("ApprovalAction/{RequestId}")]
         public IResponse<ApiResponse> ApprovalAction([FromRoute]int RequestId, [FromBody] LeaveRequestNotification approvalRequest)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved, RequestId);
+            var result = _requestService.ApprovalLeaveService(approvalRequest);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
         public IResponse<ApiResponse> RejectAction(LeaveRequestNotification approvalRequest)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Rejected, 1);
+            var result = _requestService.RejectLeaveService(approvalRequest);
             return BuildResponse(result);
         }
 

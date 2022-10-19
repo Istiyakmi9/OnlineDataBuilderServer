@@ -61,100 +61,57 @@ namespace ServiceLayer.Code
             return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
         }
 
-        public List<Attendance> ApprovalTimesheetService(Attendance attendance)
+        public dynamic ApprovalAttendanceService(AttendanceDetails attendanceDetail)
         {
-            return UpdateAttendanceDetail(attendance, ItemStatus.Approved);
+            return UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
         }
 
-        public List<Attendance> RejectTimesheetService(Attendance attendance)
+        public dynamic RejectAttendanceService(AttendanceDetails attendanceDetail)
         {
-            return UpdateAttendanceDetail(attendance, ItemStatus.Rejected);
+            return UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
         }
 
-        public List<Attendance> UpdateAttendanceDetail(Attendance attendance, ItemStatus status)
+        public dynamic UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
         {
-            string message = string.Empty;
-            DbParam[] param = new DbParam[]
+            if (attendanceDetail.AttendanceId <= 0)
+                throw new HiringBellException("Invalid attendance day selected");
+
+            var attendance = _db.Get<Attendance>("sp_Attendance_GetById", new
             {
-                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId"),
-                new DbParam(2, typeof(int), "_RequestType")
-            };
+                AttendanceId = attendanceDetail.AttendanceId
+            });
 
-            var result = _db.GetDataset("sp_approval_request_GetById", param);
-            if (result.Tables.Count > 0 && result.Tables[0].Rows.Count > 0)
+            var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetails>>(attendance.AttendanceDetail);
+            var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
+            if (currentAttendance == null)
+                throw new HiringBellException("Unable to update present request. Please contact to admin.");
+
+            currentAttendance.PresentDayStatus = (int)status;
+            currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
+            // this call is used for only upadate AttendanceDetail json object
+            var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
             {
-                var attendanceDetailString = result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
-                List<AttendenceDetail> attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendanceDetailString);
-                LeaveRequestNotification existingRecord = Converter.ToType<LeaveRequestNotification>(result.Tables[0]);
+                AttendanceId = attendanceDetail.AttendanceId,
+                AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
+                UserTypeId = 0,
+                EmployeeId = 0,
+                TotalDays = 0,
+                TotalWeekDays = 0,
+                DaysPending = 0,
+                TotalBurnedMinutes = 0,
+                ForYear = 0,
+                ForMonth = 0,
+                UserId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable to update attendance status");
 
-                if (attendenceDetails != null)
-                {
-                    var attendenceDetail = attendenceDetails.Find(x => existingRecord.FromDate.Subtract((DateTime)x.AttendanceDay).TotalDays == 0);
-                    if (attendenceDetail != null)
-                    {
-                        attendenceDetail.AttendenceStatus = (int)status;
-                        attendanceDetailString = JsonConvert.SerializeObject((from n in attendenceDetails
-                                                                              select new
-                                                                              {
-                                                                                  TotalMinutes = n.TotalMinutes,
-                                                                                  UserTypeId = n.UserTypeId,
-                                                                                  PresentDayStatus = n.PresentDayStatus,
-                                                                                  EmployeeUid = n.EmployeeUid,
-                                                                                  AttendanceId = n.AttendanceId,
-                                                                                  UserComments = n.UserComments,
-                                                                                  AttendanceDay = n.AttendanceDay,
-                                                                                  AttendenceStatus = n.AttendenceStatus
-                                                                              }));
-                    }
-                    else
-                    {
-                        throw new HiringBellException("Error");
-                    }
-                }
-                else
-                {
-                    throw new HiringBellException("Error");
-                }
-
-                if (existingRecord != null)
-                {
-                    existingRecord.RequestStatusId = approvalRequest.RequestStatusId;
-
-                    param = new DbParam[]
-                    {
-                        new DbParam(existingRecord.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                        new DbParam(existingRecord.Message, typeof(string), "_Message"),
-                        new DbParam(existingRecord.UserName, typeof(string), "_UserName"),
-                        new DbParam(existingRecord.UserId, typeof(long), "_UserId"),
-                        new DbParam(existingRecord.UserTypeId, typeof(int), "_UserTypeId"),
-                        new DbParam(DateTime.Now, typeof(DateTime), "_RequestedOn"),
-                        new DbParam(existingRecord.Email, typeof(string), "_Email"),
-                        new DbParam(existingRecord.Mobile, typeof(string), "_Mobile"),
-                        new DbParam(existingRecord.FromDate, typeof(DateTime), "_FromDate"),
-                        new DbParam(existingRecord.ToDate, typeof(DateTime), "_ToDate"),
-                        new DbParam(existingRecord.AssigneeId, typeof(long), "_AssigneeId"),
-                        new DbParam(existingRecord.ProjectId, typeof(long), "_ProjectId"),
-                        new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
-                        new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
-                        new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(attendanceDetailString, typeof(string), "_AttendanceDetail"),
-                        new DbParam(0, typeof(int), "_LeaveType"),
-                        new DbParam(RequestType.Attandance, typeof(int), "_RequestType"),
-                        new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId")
-                    };
-
-                    message = _db.ExecuteNonQuery("sp_approval_request_attendace_InsUpdate", param, true);
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        return FetchPendingRequestService(existingRecord.UserId, RequestId);
-                    }
-                }
-            }
-            return null;
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+            // PrepareSendEmailNotification(currentAttendance, template);
+            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
         }
 
-        public List<LeaveRequestNotification> ReAssigneTimesheetService(LeaveRequestNotification approvalRequest)
+        public List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail)
         {
             return null;
         }

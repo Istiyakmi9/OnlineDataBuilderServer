@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -19,23 +20,23 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("ApproveTimesheet")]
-        public IResponse<ApiResponse> ApproveTimesheet([FromBody] TimesheetDetail approvalRequest)
+        public IResponse<ApiResponse> ApproveTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest);
+            var result = _requestService.ApprovalTimesheetService(dailyTimesheetDetails);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction(ApprovalRequest approvalRequest)
+        public IResponse<ApiResponse> RejectAction(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Rejected, 1);
+            var result = _requestService.RejectTimesheetService(dailyTimesheetDetails);
             return BuildResponse(result);
         }
 
         [HttpPut("ReAssigneToOtherManager")]
-        public IResponse<ApiResponse> ReAssigneToOtherManager(ApprovalRequest approvalRequest)
+        public IResponse<ApiResponse> ReAssigneToOtherManager(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            var result = _requestService.ReAssigneToOtherManagerService(approvalRequest);
+            var result = _requestService.ReAssigneTimesheetService(dailyTimesheetDetails);
             return BuildResponse(result);
         }
     }
