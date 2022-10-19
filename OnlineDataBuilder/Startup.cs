@@ -89,7 +89,7 @@ namespace OnlineDataBuilder
             });
 
             string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
-            services.AddScoped<IDb, Db>(x => new Db(connectionString));
+            services.AddSingleton<IDb, Db>(x => new Db(connectionString));
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IEvaluationPostfixExpression, EvaluationPostfixExpression>();
             services.AddScoped<IEmailService, EmailService>();
