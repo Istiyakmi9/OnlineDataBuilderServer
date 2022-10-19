@@ -219,52 +219,50 @@ namespace ServiceLayer.Code
             return leavePlans;
         }
 
-        public string ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status)
+        public string LeaveRquestManagerActionService(LeaveRequestNotification notification, ItemStatus status)
         {
             string message = string.Empty;
-            DbParam[] param = new DbParam[]
+            var requestNotification = _db.Get<LeaveRequestNotification>("sp_leave_request_notification_get_byId", new
             {
-                new DbParam(approvalRequest.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                new DbParam(approvalRequest.LeaveRequestId, typeof(long), "_LeaveRequestId"),
-                new DbParam(1, typeof(int), "_RequestType")
-            };
+                notification.LeaveRequestNotificationId
+            });
 
-            var result = _db.GetDataset("sp_approval_request_GetById", param);
-            if (result.Tables.Count > 0 && result.Tables[0].Rows.Count > 0)
+            if (requestNotification != null)
             {
-                var leaveDetailString = result.Tables[0].Rows[0]["LeaveDetail"].ToString();
-                List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveDetailString);
-                ApprovalRequest existingRecord = Converter.ToType<ApprovalRequest>(result.Tables[0]);
+                List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert
+                  .DeserializeObject<List<CompleteLeaveDetail>>(requestNotification.LeaveDetail);
 
                 if (completeLeaveDetail != null)
                 {
                     var singleLeaveDetail = completeLeaveDetail.Find(x =>
-                        approvalRequest.FromDate.Subtract(x.LeaveFromDay).TotalDays == 0 &&
-                        approvalRequest.ToDate.Subtract(x.LeaveToDay).TotalDays == 0
+                        requestNotification.FromDate.Subtract(x.LeaveFromDay).TotalDays == 0 &&
+                        requestNotification.ToDate.Subtract(x.LeaveToDay).TotalDays == 0
                     );
 
                     if (singleLeaveDetail != null)
                     {
                         singleLeaveDetail.LeaveStatus = (int)status;
                         singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
-                        leaveDetailString = JsonConvert.SerializeObject((from n in completeLeaveDetail
-                                                                         select new
-                                                                         {
-                                                                             Reason = n.Reason,
-                                                                             Session = n.Session,
-                                                                             AssignTo = n.AssignTo,
-                                                                             LeaveType = n.LeaveType,
-                                                                             NumOfDays = n.NumOfDays,
-                                                                             ProjectId = n.ProjectId,
-                                                                             UpdatedOn = n.UpdatedOn,
-                                                                             EmployeeId = n.EmployeeId,
-                                                                             LeaveToDay = n.LeaveToDay,
-                                                                             LeaveStatus = n.LeaveStatus,
-                                                                             RequestedOn = n.RequestedOn,
-                                                                             RespondedBy = n.RespondedBy,
-                                                                             EmployeeName = n.EmployeeName,
-                                                                             LeaveFromDay = n.LeaveFromDay
-                                                                         }));
+                        requestNotification.LeaveDetail = JsonConvert.SerializeObject(
+                            (from n in completeLeaveDetail
+                             select new
+                             {
+                                 Reason = n.Reason,
+                                 Session = n.Session,
+                                 AssignTo = n.AssignTo,
+                                 LeaveType = n.LeaveType,
+                                 NumOfDays = n.NumOfDays,
+                                 ProjectId = n.ProjectId,
+                                 UpdatedOn = n.UpdatedOn,
+                                 EmployeeId = n.EmployeeId,
+                                 LeaveToDay = n.LeaveToDay,
+                                 LeaveStatus = n.LeaveStatus,
+                                 RequestedOn = n.RequestedOn,
+                                 RespondedBy = n.RespondedBy,
+                                 EmployeeName = n.EmployeeName,
+                                 LeaveFromDay = n.LeaveFromDay
+                             })
+                            );
                     }
                     else
                     {
@@ -276,34 +274,28 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Error");
                 }
 
-                if (existingRecord != null)
+                if (requestNotification != null)
                 {
-                    existingRecord.RequestStatusId = approvalRequest.RequestStatusId;
-
-                    param = new DbParam[]
+                    requestNotification.LastReactedOn = DateTime.UtcNow;
+                    requestNotification.RequestStatusId = notification.RequestStatusId;
+                    message = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
                     {
-                        new DbParam(existingRecord.ApprovalRequestId, typeof(long), "_ApprovalRequestId"),
-                        new DbParam(existingRecord.Message, typeof(string), "_Message"),
-                        new DbParam(existingRecord.UserName, typeof(string), "_UserName"),
-                        new DbParam(existingRecord.UserId, typeof(long), "_UserId"),
-                        new DbParam(existingRecord.UserTypeId, typeof(int), "_UserTypeId"),
-                        new DbParam(DateTime.Now, typeof(DateTime), "_RequestedOn"),
-                        new DbParam(existingRecord.Email, typeof(string), "_Email"),
-                        new DbParam(existingRecord.Mobile, typeof(string), "_Mobile"),
-                        new DbParam(existingRecord.FromDate, typeof(DateTime), "_FromDate"),
-                        new DbParam(existingRecord.ToDate, typeof(DateTime), "_ToDate"),
-                        new DbParam(existingRecord.AssigneeId, typeof(long), "_AssigneeId"),
-                        new DbParam(existingRecord.ProjectId, typeof(long), "_ProjectId"),
-                        new DbParam(existingRecord.ProjectName, typeof(string), "_ProjectName"),
-                        new DbParam(existingRecord.RequestStatusId, typeof(int), "_RequestStatusId"),
-                        new DbParam(existingRecord.LeaveRequestId, typeof(long), "_LeaveRequestId"),
-                        new DbParam(leaveDetailString, typeof(string), "_LeaveDetail"),
-                        new DbParam(existingRecord.LeaveType, typeof(int), "_LeaveType"),
-                        new DbParam(existingRecord.AttendanceId, typeof(long), "_AttendanceId"),
-                        new DbParam(existingRecord.RequestType, typeof(int), "_RequestType"),
-                    };
-
-                    message = _db.ExecuteNonQuery("sp_approval_request_leave_InsUpdate", param, true);
+                        requestNotification.LeaveRequestNotificationId,
+                        requestNotification.LeaveRequestId,
+                        requestNotification.UserMessage,
+                        requestNotification.EmployeeId,
+                        requestNotification.AssigneeId,
+                        requestNotification.ProjectId,
+                        requestNotification.ProjectName,
+                        requestNotification.FromDate,
+                        requestNotification.ToDate,
+                        requestNotification.NumOfDays,
+                        requestNotification.RequestStatusId,
+                        requestNotification.LeaveTypeId,
+                        requestNotification.FeedBackMessage,
+                        requestNotification.LastReactedOn,
+                        requestNotification.LeaveDetail
+                    }, true);
                 }
             }
             return message;

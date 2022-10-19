@@ -15,6 +15,6 @@ namespace ServiceLayer.Interface
         LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId);
         List<LeavePlanType> GetLeaveTypeFilterService();
         List<LeavePlan> SetDefaultPlanService(int leavePlanId, LeavePlan leavePlan);
-        string ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status);
+        string LeaveRquestManagerActionService(LeaveRequestNotification approvalRequest, ItemStatus status);
     }
 }

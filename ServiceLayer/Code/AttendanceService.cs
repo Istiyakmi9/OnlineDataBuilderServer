@@ -21,14 +21,14 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly IEmailService _emailService;
-        private readonly IRequestService _requestService;
+        private readonly IAttendanceRequestService _requestService;
 
         public AttendanceService(IDb db, 
             ILeaveCalculation leaveCalculation, 
             ITimezoneConverter timezoneConverter, 
             CurrentSession currentSession,
             IEmailService emailService,
-            IRequestService requestService)
+            IAttendanceRequestService requestService)
         {
             _db = db;
             _currentSession = currentSession;

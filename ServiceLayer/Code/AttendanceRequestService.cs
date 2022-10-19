@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
-    public class RequestService : IRequestService
+    public class AttendanceRequestService : IAttendanceRequestService
     {
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
 
-        public RequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        public AttendanceRequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -51,7 +51,7 @@ namespace ServiceLayer.Code
                 attendanceTable = resultSet.Tables[1];
 
             int i = 0;
-            List<ApprovalRequest> approvalRequest = Converter.ToList<ApprovalRequest>(resultSet.Tables[0]);
+            List<LeaveRequestNotification> approvalRequest = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[0]);
             Parallel.For(i, approvalRequest.Count, x =>
             {
                 approvalRequest.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).FromDate);
@@ -61,7 +61,17 @@ namespace ServiceLayer.Code
             return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
         }
 
-        public List<ApprovalRequest> ApprovalOrRejectActionService(ApprovalRequest approvalRequest, ItemStatus status, int RequestId)
+        public List<Attendance> ApprovalTimesheetService(Attendance attendance)
+        {
+            return UpdateAttendanceDetail(attendance, ItemStatus.Approved);
+        }
+
+        public List<Attendance> RejectTimesheetService(Attendance attendance)
+        {
+            return UpdateAttendanceDetail(attendance, ItemStatus.Rejected);
+        }
+
+        public List<Attendance> UpdateAttendanceDetail(Attendance attendance, ItemStatus status)
         {
             string message = string.Empty;
             DbParam[] param = new DbParam[]
@@ -76,7 +86,7 @@ namespace ServiceLayer.Code
             {
                 var attendanceDetailString = result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
                 List<AttendenceDetail> attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendanceDetailString);
-                ApprovalRequest existingRecord = Converter.ToType<ApprovalRequest>(result.Tables[0]);
+                LeaveRequestNotification existingRecord = Converter.ToType<LeaveRequestNotification>(result.Tables[0]);
 
                 if (attendenceDetails != null)
                 {
@@ -144,7 +154,7 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public List<ApprovalRequest> ReAssigneToOtherManagerService(ApprovalRequest approvalRequest)
+        public List<LeaveRequestNotification> ReAssigneTimesheetService(LeaveRequestNotification approvalRequest)
         {
             return null;
         }
