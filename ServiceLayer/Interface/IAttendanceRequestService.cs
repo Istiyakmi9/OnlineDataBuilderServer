@@ -7,8 +7,8 @@ namespace ServiceLayer.Interface
     public interface IAttendanceRequestService
     {
         dynamic FetchPendingRequestService(long employeeId, int requestTypeId);
-        List<TimesheetDetail> ApprovalTimesheetService(TimesheetDetail timesheetDetail);
-        List<TimesheetDetail> RejectTimesheetService(TimesheetDetail timesheetDetail);
-        List<TimesheetDetail> ReAssigneTimesheetService(TimesheetDetail timesheetDetail);
+        dynamic ApprovalAttendanceService(AttendanceDetails attendanceDetais);
+        dynamic RejectAttendanceService(AttendanceDetails attendanceDetail);
+        List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail);
     }
 }

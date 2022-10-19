@@ -25,24 +25,24 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("ApprovalAction/{RequestId}")]
-        public IResponse<ApiResponse> ApprovalAction([FromRoute]int RequestId, [FromBody] ApprovalRequest approvalRequest)
+        [HttpPut("ApprovalAction")]
+        public IResponse<ApiResponse> ApprovalAction(AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved, RequestId);
+            var result = _requestService.ApprovalAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction(ApprovalRequest approvalRequest)
+        public IResponse<ApiResponse> RejectAction(AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Rejected, 1);
+            var result = _requestService.RejectAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("ReAssigneToOtherManager")]
-        public IResponse<ApiResponse> ReAssigneToOtherManager(ApprovalRequest approvalRequest)
+        public IResponse<ApiResponse> ReAssigneToOtherManager(AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.ReAssigneToOtherManagerService(approvalRequest);
+            var result = _requestService.ReAssigneAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
     }
