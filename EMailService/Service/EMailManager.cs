@@ -6,12 +6,14 @@ using System.Net.Mail;
 using EAGetMail;
 using System.Globalization;
 using System.Text;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 
 namespace EMailService.Service
 {
     public class EMailManager : IEMailManager
     {
         private readonly FileLocationDetail _fileLocationDetail;
+        private readonly IDb _db;
 
         public EMailManager(FileLocationDetail fileLocationDetail)
         {
@@ -76,20 +78,24 @@ namespace EMailService.Service
                 sequence);
         }
 
-        public string SendMail(EmailSenderModal emailSenderModal, GenerateBillFileDetail EmailTemplateDetail, Employee employee)
+        private EmailSettingDetail GetSettingDetail()
+        {
+            var emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            if (emailSettingDetail == null)
+                throw new HiringBellException("Fail to get emaill detail. Please contact to admin.");
+
+            return emailSettingDetail;
+        }
+
+        public string SendMail()
         {
             string status = string.Empty;
+            EmailSenderModal emailSenderModal = null;
+            EmailSettingDetail emailSettingDetail = GetSettingDetail();
+            Employee employee = null;
 
             if (emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
-
-            //var fromEmail = new
-            //{
-            //    Id = emailSenderModal.From,
-            //    Pwd = emailSenderModal.EmailSettingDetails.Credentials,
-            //    Host = emailSenderModal.EmailSettingDetails.EmailHost, // "smtpout.asia.secureserver.net",
-            //    Port = emailSenderModal.EmailSettingDetails.PortNo // 587  // 25	                 
-            //};
 
             var fromAddress = new System.Net.Mail.MailAddress(emailSenderModal.From, emailSenderModal.Title);
 
@@ -105,7 +111,7 @@ namespace EMailService.Service
 
             var message = new MailMessage();
             message.Subject = emailSenderModal.Title;
-            message.Body = this.GetClientBillingBody(employee, EmailTemplateDetail);
+            message.Body = this.GetClientBillingBody(employee);
             message.IsBodyHtml = true;
             message.From = fromAddress;
 
@@ -141,21 +147,15 @@ namespace EMailService.Service
             return status;
         }
 
-        private string GetClientBillingBody(Employee employee, GenerateBillFileDetail EmailTemplateDetail)
+        private string GetClientBillingBody(Employee employee)
         {
             StringBuilder firstPhase = new StringBuilder();
             StringBuilder body = new StringBuilder();
             StringBuilder endPhase = new StringBuilder();
-            var emailTemplate = EmailTemplateDetail.EmailTemplateDetail;
+            GenerateBillFileDetail emailTemplateDetail = null;
+            var emailTemplate = emailTemplateDetail.EmailTemplateDetail;
 
-            foreach (var first in emailTemplate.BodyContentDetail.FirstPhase)
-                firstPhase.AppendLine(first);
-
-            foreach (var first in emailTemplate.BodyContentDetail.Body)
-                body.AppendLine(first);
-
-            foreach (var first in emailTemplate.BodyContentDetail.EndPhase)
-                endPhase.AppendLine(first);
+            body.AppendLine(emailTemplate.BodyContent);
 
             string style = @"
                     <style>                        
@@ -191,14 +191,7 @@ namespace EMailService.Service
                                 <div style='border: 1px solid #dee2e6!important; padding - top: 1rem!important;
                                     padding-bottom: 1rem!important; padding - right: 0.5rem!important;
                                     padding-left: 0.5rem!important;'>
-                                  <div style='flex: 0 0 auto; width: 100%;'>
-                                    <div>
-                                      <div>
-                                        {firstPhase.ToString()}
-                                      </div> 
-                                    </div>
-                                  </div>
-                  
+
                                   <div style='flex: 0 0 auto; width: 100%;'>
                                     <div>
                                       <div>
@@ -229,19 +222,12 @@ namespace EMailService.Service
                                           <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
                                             BILLING MONTH: 
                                           </span>
-                                          <span>{EmailTemplateDetail.MonthName}, {EmailTemplateDetail.ForYear}</span>
+                                          <span>{emailTemplateDetail.MonthName}, {emailTemplateDetail.ForYear}</span>
                                         </div>
                                       </div> 
                                     </div>
                                   </div>
 
-                                  <div style='flex: 0 0 auto; width: 100%;'>
-                                    <div>
-                                      <div>
-                                        {endPhase.ToString()}
-                                      </div>  
-                                    </div>
-                                  </div>
                                 </div>
                                 <div style='display: flex!important;'>
                                   <div style='font-weight: 700!important;'>Note: </div> 

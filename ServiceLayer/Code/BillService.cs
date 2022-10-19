@@ -681,7 +681,7 @@ namespace ServiceLayer.Code
                     EmailSettingDetails = emailSetting
                 };
 
-                result = _eMailManager.SendMail(emailSenderModal, generateBillFileDetail, employee);
+                result = _eMailManager.SendMail();
             }
 
             return result;

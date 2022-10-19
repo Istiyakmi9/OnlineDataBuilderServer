@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -19,13 +20,22 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILeaveCalculation _leaveCalculation;
+        private readonly IEmailService _emailService;
+        private readonly IRequestService _requestService;
 
-        public AttendanceService(IDb db, ILeaveCalculation leaveCalculation, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        public AttendanceService(IDb db, 
+            ILeaveCalculation leaveCalculation, 
+            ITimezoneConverter timezoneConverter, 
+            CurrentSession currentSession,
+            IEmailService emailService,
+            IRequestService requestService)
         {
             _db = db;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
             _leaveCalculation = leaveCalculation;
+            _emailService = emailService;
+            _requestService = requestService;
         }
 
         public AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail)
@@ -548,7 +558,7 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public List<AttendanceDetails> AttendanceRequestActionService(long AttendanceId, ItemStatus StatusId, AttendanceDetails attendanceDetail)
+        public dynamic AttendanceRequestActionService(long AttendanceId, ItemStatus StatusId, AttendanceDetails attendanceDetail)
         {
             if (AttendanceId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
@@ -562,8 +572,8 @@ namespace ServiceLayer.Code
             if (currentAttendance == null)
                 throw new HiringBellException("Unable to update present request. Please contact to admin.");
 
-            currentAttendance.PresentDayStatus = (int)ItemStatus.Approved;
-
+            currentAttendance.PresentDayStatus = (int)StatusId;
+            currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
             // this call is used for only upadate AttendanceDetail json object
             var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
             {
@@ -579,8 +589,12 @@ namespace ServiceLayer.Code
                 ForMonth = 0,
                 UserId = _currentSession.CurrentUserDetail.UserId
             }, true);
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable to update attendance status");
 
-            return allAttendance;
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+            // PrepareSendEmailNotification(currentAttendance, template);
+            return _requestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
         }
 
         public AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail)
@@ -874,6 +888,20 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Past week's are not allowed.");
                 }
             }
+        }
+
+        private string PrepareSendEmailNotification(AttendanceDetails attendance, EmailTemplate emailTemplateDetail)
+        {
+            var body = JsonConvert.DeserializeObject<string>(emailTemplateDetail.BodyContent);
+            EmailSenderModal emailSenderModal = new EmailSenderModal
+            {
+                To = new List<string> { attendance.Email, "istiyaq.4game@gmail.com" },
+                Body = body,
+                Subject = $"{attendance.EmployeeName} | Work From Home request | Approved"
+            };
+
+            _emailService.SendEmailRequestService(emailSenderModal, null);
+            return String.Empty;
         }
     }
 }

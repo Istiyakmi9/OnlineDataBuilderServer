@@ -18,7 +18,7 @@ namespace ServiceLayer.Code
         {
             var detail = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 1 });
             if (!string.IsNullOrEmpty(detail.BodyContent))
-                detail.BodyContentDetail = JsonConvert.DeserializeObject<BodyContentDetail>(detail.BodyContent);
+                detail.BodyContent = JsonConvert.DeserializeObject<string>(detail.BodyContent);
 
             return detail;
         }

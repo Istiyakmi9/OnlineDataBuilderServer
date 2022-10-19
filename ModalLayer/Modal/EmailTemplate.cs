@@ -11,7 +11,6 @@ namespace ModalLayer.Modal
         public string Salutation { set; get; }
         public string EmailClosingStatement { set; get; }
         public string BodyContent { set; get; }
-        public BodyContentDetail BodyContentDetail { set; get; }
         public string EmailNote { set; get; }
         public string SignatureDetail { set; get; }
         public string ContactNo { set; get; }
@@ -23,12 +22,5 @@ namespace ModalLayer.Modal
         public DateTime UpdatedOn { set; get; }
         public int Total { set; get; }
         public int CompanyId { get; set; }
-    }
-
-    public class BodyContentDetail
-    {
-        public List<string> FirstPhase { set; get; }
-        public List<string> Body { set; get; }
-        public List<string> EndPhase { set; get; }
     }
 }
