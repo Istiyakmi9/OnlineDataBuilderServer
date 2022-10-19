@@ -15,9 +15,10 @@ namespace EMailService.Service
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IDb _db;
 
-        public EMailManager(FileLocationDetail fileLocationDetail)
+        public EMailManager(FileLocationDetail fileLocationDetail, IDb db)
         {
             _fileLocationDetail = fileLocationDetail;
+            _db = db;
         }
 
         public void ReadMails(EmailSettingDetail emailSettingDetail)
