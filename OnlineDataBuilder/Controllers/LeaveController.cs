@@ -81,10 +81,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("ApprovalAction/{RequestId}")]
-        public IResponse<ApiResponse> ApprovalLeave([FromRoute] int RequestId, ApprovalRequest approvalRequest)
+        [HttpPut("LeaveRquestManagerAction/{RequestId}")]
+        public IResponse<ApiResponse> LeaveRquestManagerAction([FromRoute] ItemStatus RequestId, LeaveRequestNotification approvalRequest)
         {
-            var result = _leaveService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved);
+            var result = _leaveService.LeaveRquestManagerActionService(approvalRequest, RequestId);
             return BuildResponse(result);
         }
 

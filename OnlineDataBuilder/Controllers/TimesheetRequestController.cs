@@ -10,25 +10,18 @@ namespace OnlineDataBuilder.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
-    public class RequestController : BaseController
+    public class TimesheetRequestController : BaseController
     {
-        private readonly IRequestService _requestService;
-        public RequestController(IRequestService requestService)
+        private readonly ITimesheetRequestService _requestService;
+        public TimesheetRequestController(ITimesheetRequestService requestService)
         {
             _requestService = requestService;
         }
 
-        [HttpGet("GetPendingRequests/{employeeId}/{requestTypeId}")]
-        public IResponse<ApiResponse> FetchPendingRequests(int employeeId, int requestTypeId)
+        [HttpPut("ApproveTimesheet")]
+        public IResponse<ApiResponse> ApproveTimesheet([FromBody] TimesheetDetail approvalRequest)
         {
-            var result = _requestService.FetchPendingRequestService(employeeId, requestTypeId);
-            return BuildResponse(result);
-        }
-
-        [HttpPut("ApprovalAction/{RequestId}")]
-        public IResponse<ApiResponse> ApprovalAction([FromRoute]int RequestId, [FromBody] ApprovalRequest approvalRequest)
-        {
-            var result = _requestService.ApprovalOrRejectActionService(approvalRequest, ItemStatus.Approved, RequestId);
+            var result = _requestService.ApprovalOrRejectActionService(approvalRequest);
             return BuildResponse(result);
         }
 
