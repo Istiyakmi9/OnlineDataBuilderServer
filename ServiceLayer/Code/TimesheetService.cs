@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -49,7 +50,13 @@ namespace ServiceLayer.Code
                                     ||
                                 presentDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
                     UserComments = string.Empty,
-                    UserTypeId = (int)UserType.Employee
+                    UserTypeId = (int)UserType.Employee,
+                    EmployeeName = "",
+                    Email = "",
+                    ManagerName = "",
+                    Mobile = "",
+                    ReportingManagerId = 0
+
                 });
 
                 presentDate = presentDate.AddDays(1);
@@ -351,6 +358,13 @@ namespace ServiceLayer.Code
                     item.UserComments = x.UserComments;
                     item.TimesheetStatus = ItemStatus.Submitted;
                     item.ClientId = x.ClientId;
+                    item.Email = employee.Email;
+                    item.EmployeeName = string.Concat(employee.FirstName,
+                                    " ",
+                                    employee.LastName).Trim();
+                    item.Mobile = employee.Mobile;
+                    item.ReportingManagerId = employee.ReportingManagerId;
+                    item.ManagerName = "NA";
                 }
                 else
                 {
