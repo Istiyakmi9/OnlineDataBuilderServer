@@ -43,12 +43,17 @@ namespace ServiceLayer.Code
                 ForMonth = now.Month
             });
 
-            if (resultSet != null && resultSet.Tables.Count != 2)
+            if (resultSet != null && resultSet.Tables.Count !=3)
                 throw new HiringBellException("Fail to get approval request data for current user.");
 
             DataTable attendanceTable = null;
+            DataTable timsesheetTable = null;
+
             if (resultSet.Tables[1].Rows.Count > 0)
                 attendanceTable = resultSet.Tables[1];
+
+            if (resultSet.Tables[2].Rows.Count > 0)
+                timsesheetTable = resultSet.Tables[2];
 
             int i = 0;
             List<LeaveRequestNotification> approvalRequest = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[0]);
@@ -58,7 +63,7 @@ namespace ServiceLayer.Code
                 approvalRequest.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).ToDate);
             });
 
-            return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
+            return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable, TimesheetTable = timsesheetTable };
         }
 
         public dynamic ApprovalAttendanceService(AttendanceDetails attendanceDetail)
