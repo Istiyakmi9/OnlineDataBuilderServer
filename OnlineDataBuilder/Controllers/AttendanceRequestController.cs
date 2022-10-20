@@ -10,10 +10,10 @@ namespace OnlineDataBuilder.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
-    public class RequestController : BaseController
+    public class AttendanceRequestController : BaseController
     {
         private readonly IAttendanceRequestService _requestService;
-        public RequestController(IAttendanceRequestService requestService)
+        public AttendanceRequestController(IAttendanceRequestService requestService)
         {
             _requestService = requestService;
         }

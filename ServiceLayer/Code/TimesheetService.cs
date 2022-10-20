@@ -43,7 +43,7 @@ namespace ServiceLayer.Code
                     EmployeeId = timesheetDetail.EmployeeId,
                     TimesheetId = 0,
                     TotalMinutes = 8 * 60,
-                    TimesheetStatus = ItemStatus.Pending,
+                    TimesheetStatus = ItemStatus.Generated,
                     PresentDate = presentDate,
                     IsHoliday = false,
                     IsWeekEnd = (presentDate.DayOfWeek == DayOfWeek.Saturday
@@ -356,7 +356,7 @@ namespace ServiceLayer.Code
                     item.EmployeeId = x.EmployeeId;
                     item.TimesheetId = firstItem.TimesheetId;
                     item.UserComments = x.UserComments;
-                    item.TimesheetStatus = ItemStatus.Submitted;
+                    item.TimesheetStatus = ItemStatus.Pending;
                     item.ClientId = x.ClientId;
                     item.Email = employee.Email;
                     item.EmployeeName = string.Concat(employee.FirstName,
@@ -382,8 +382,16 @@ namespace ServiceLayer.Code
                             EmployeeId = x.EmployeeId,
                             TimesheetId = firstItem.TimesheetId,
                             UserComments = x.UserComments,
-                            TimesheetStatus = ItemStatus.Submitted,
-                            ClientId = x.ClientId
+                            PresentDate = x.PresentDate,
+                            TimesheetStatus = ItemStatus.Pending,
+                            ClientId = x.ClientId,
+                            Email = employee.Email,
+                            EmployeeName = string.Concat(employee.FirstName,
+                                            " ",
+                                            employee.LastName).Trim(),
+                            Mobile = employee.Mobile,
+                            ReportingManagerId = employee.ReportingManagerId,
+                            ManagerName = "NA"
                         });
                     }
                 }
