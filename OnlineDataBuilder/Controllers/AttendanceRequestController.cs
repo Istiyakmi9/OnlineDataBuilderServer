@@ -18,10 +18,18 @@ namespace OnlineDataBuilder.Controllers
             _requestService = requestService;
         }
 
-        [HttpGet("GetPendingRequests/{employeeId}/{requestTypeId}")]
+        [HttpGet("GetManagerRequestedData/{employeeId}/{requestTypeId}")]
         public IResponse<ApiResponse> FetchPendingRequests(int employeeId, int requestTypeId)
         {
             var result = _requestService.FetchPendingRequestService(employeeId, requestTypeId);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetAllRequestedData/{employeeId}/{requestTypeId}")]
+        [Authorize(Roles = Role.Admin)]
+        public IResponse<ApiResponse> GetAllRequestedData(int employeeId, int requestTypeId)
+        {
+            var result = _requestService.GetManagerAndUnAssignedRequestService(employeeId, requestTypeId);
             return BuildResponse(result);
         }
 
