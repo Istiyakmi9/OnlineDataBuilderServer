@@ -18,13 +18,6 @@ namespace OnlineDataBuilder.Controllers
             _requestService = requestService;
         }
 
-        [HttpGet("GetPendingRequests/{employeeId}/{requestTypeId}")]
-        public IResponse<ApiResponse> FetchPendingRequests(int employeeId, int requestTypeId)
-        {
-            var result = _requestService.FetchPendingRequestService(employeeId, requestTypeId);
-            return BuildResponse(result);
-        }
-
         [HttpPut("ApprovalAction/{RequestId}")]
         public IResponse<ApiResponse> ApprovalAction([FromRoute]int RequestId, [FromBody] LeaveRequestNotification approvalRequest)
         {

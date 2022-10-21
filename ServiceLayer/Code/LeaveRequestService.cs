@@ -26,42 +26,6 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public dynamic FetchPendingRequestService(long employeeId, int requestTypeId)
-        {
-            if (employeeId < 0)
-                throw new HiringBellException("Invalid employee id.");
-
-            string procedure = "sp_approval_requests_get";
-            if (_currentSession.CurrentUserDetail.RoleId == (int)UserType.Admin)
-                procedure = "sp_approval_requests_get_by_role";
-
-            DateTime now = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
-            var resultSet = _db.FetchDataSet(procedure, new
-            {
-                ManagerId = employeeId,
-                StatusId = requestTypeId,
-                ForYear = now.Year,
-                ForMonth = now.Month
-            });
-
-            if (resultSet != null && resultSet.Tables.Count != 2)
-                throw new HiringBellException("Fail to get approval request data for current user.");
-
-            DataTable attendanceTable = null;
-            if (resultSet.Tables[1].Rows.Count > 0)
-                attendanceTable = resultSet.Tables[1];
-
-            int i = 0;
-            List<LeaveRequestNotification> approvalRequest = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[0]);
-            Parallel.For(i, approvalRequest.Count, x =>
-            {
-                approvalRequest.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).FromDate);
-                approvalRequest.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).ToDate);
-            });
-
-            return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable };
-        }
-
         public List<LeaveRequestNotification> ApprovalLeaveService(LeaveRequestNotification leaveRequestNotification)
         {
             return UpdateLeaveDetail(leaveRequestNotification, ItemStatus.Approved);
