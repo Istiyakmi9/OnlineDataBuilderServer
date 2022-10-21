@@ -25,14 +25,10 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public dynamic FetchPendingRequestService(long employeeId, int requestTypeId)
+        private dynamic GetEmployeeRequestedDataService(long employeeId, int requestTypeId, string procedure)
         {
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
-
-            string procedure = "sp_approval_requests_get";
-            if (_currentSession.CurrentUserDetail.RoleId == (int)UserType.Admin)
-                procedure = "sp_approval_requests_get_by_role";
 
             DateTime now = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
             var resultSet = _db.FetchDataSet(procedure, new
@@ -64,6 +60,16 @@ namespace ServiceLayer.Code
             });
 
             return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable, TimesheetTable = timsesheetTable };
+        }
+
+        public dynamic GetManagerAndUnAssignedRequestService(long employeeId, int requestTypeId)
+        {
+            return GetEmployeeRequestedDataService(employeeId, requestTypeId, "sp_approval_requests_get_by_role");
+        }
+
+        public dynamic FetchPendingRequestService(long employeeId, int requestTypeId)
+        {
+            return GetEmployeeRequestedDataService(employeeId, requestTypeId, "sp_approval_requests_get");
         }
 
         public dynamic ApprovalAttendanceService(AttendanceDetails attendanceDetail)
