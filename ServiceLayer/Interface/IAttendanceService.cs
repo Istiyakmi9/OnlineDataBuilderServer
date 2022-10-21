@@ -11,7 +11,6 @@ namespace ServiceLayer.Interface
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
         string SubmitAttendanceService(AttendenceDetail commentDetails);
-        dynamic AttendanceRequestActionService(long AttendanceId, ItemStatus StatusId, AttendanceDetails attendanceDetail);
         Task<dynamic> ApplyLeaveService(LeaveRequestDetail leaveDetail);
         Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave);
         Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave);

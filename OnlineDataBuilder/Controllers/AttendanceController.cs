@@ -94,11 +94,5 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpPut("AttendanceRequestAction/{AttendanceId}/{StatusId}")]
-        public IResponse<ApiResponse> ApprovalAction([FromRoute]long AttendanceId, [FromRoute] ItemStatus StatusId, AttendanceDetails attendanceDetail)
-        {
-            var result = _attendanceService.AttendanceRequestActionService(AttendanceId, StatusId, attendanceDetail);
-            return BuildResponse(result);
-        }
     }
 }
