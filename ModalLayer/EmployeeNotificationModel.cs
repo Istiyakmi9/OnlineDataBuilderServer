@@ -9,8 +9,8 @@ namespace ModalLayer
         public string DeveloperName { set; get; }
         public string AttendanceRequestType { set; get; }
         public string LeaveType { set; get; }
-        public string FromDate { set; get; }
-        public string ToDate { set; get; }
+        public DateTime FromDate { set; get; }
+        public DateTime ToDate { set; get; }
         public string ManagerName { set; get; }
         public string Message { set; get; }
         public string CompanyName { set; get; }

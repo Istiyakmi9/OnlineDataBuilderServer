@@ -3,9 +3,8 @@ using System.Collections.Generic;
 
 namespace ModalLayer.Modal.Leaves
 {
-    public class LeaveRequestDetail
+    public class LeaveRequestDetail : EmployeeCommonFields
     {
-        public long EmployeeId { set; get; }
         public int UserTypeId { get; set; }
         public long LeaveId { set; get; }
         public DateTime LeaveFromDay { get; set; }
