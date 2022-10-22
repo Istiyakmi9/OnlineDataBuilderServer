@@ -65,30 +65,34 @@ namespace ServiceLayer.Code
                 approvalRequest.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).ToDate);
             });
 
-            return new { ApprovalRequest = approvalRequest, AttendaceTable = attendanceTable, TimesheetTable = timsesheetTable };
+            return new RequestModel { 
+                ApprovalRequest = approvalRequest, 
+                AttendaceTable = attendanceTable, 
+                TimesheetTable = timsesheetTable 
+            };
         }
 
-        public dynamic GetManagerAndUnAssignedRequestService(long employeeId, int requestTypeId)
+        public RequestModel GetManagerAndUnAssignedRequestService(long employeeId, int requestTypeId)
         {
             return GetEmployeeRequestedDataService(employeeId, requestTypeId, "sp_approval_requests_get_by_role");
         }
 
-        public dynamic FetchPendingRequestService(long employeeId, int requestTypeId)
+        public RequestModel FetchPendingRequestService(long employeeId, int requestTypeId)
         {
             return GetEmployeeRequestedDataService(employeeId, requestTypeId, "sp_approval_requests_get");
         }
 
-        public dynamic ApprovalAttendanceService(AttendanceDetails attendanceDetail)
+        public RequestModel ApprovalAttendanceService(AttendanceDetails attendanceDetail)
         {
             return UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
         }
 
-        public dynamic RejectAttendanceService(AttendanceDetails attendanceDetail)
+        public RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail)
         {
             return UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
         }
 
-        public dynamic UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
+        public RequestModel UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
         {
             if (attendanceDetail.AttendanceId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
