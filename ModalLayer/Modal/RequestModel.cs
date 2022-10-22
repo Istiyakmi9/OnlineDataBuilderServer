@@ -7,7 +7,7 @@ namespace ModalLayer.Modal
 {
     public class RequestModel
     {
-        public List<LeaveRequestNotification> ApprovalRequest { get; set; }
+        public DataTable ApprovalRequest { get; set; }
         public DataTable AttendaceTable { get; set; }
         public DataTable TimesheetTable { set; get; }
     }

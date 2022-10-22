@@ -26,6 +26,7 @@ namespace ModalLayer.Modal.Leaves
         public string LeaveQuotaDetail { set; get; }
         public decimal TotalLeaveQuota { set; get; }
         public int RequestStatusId { get; set; }
+        public int LeaveRequestNotificationId { get; set; }
         public List<EmployeeLeaveQuota> EmployeeLeaveQuotaDetail { set; get; }
 
     }

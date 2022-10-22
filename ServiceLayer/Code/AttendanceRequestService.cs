@@ -50,23 +50,18 @@ namespace ServiceLayer.Code
 
             DataTable attendanceTable = null;
             DataTable timsesheetTable = null;
-
+            DataTable leaveTable = null;
             if (resultSet.Tables[1].Rows.Count > 0)
                 attendanceTable = resultSet.Tables[1];
 
             if (resultSet.Tables[2].Rows.Count > 0)
                 timsesheetTable = resultSet.Tables[2];
 
-            int i = 0;
-            List<LeaveRequestNotification> approvalRequest = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[0]);
-            Parallel.For(i, approvalRequest.Count, x =>
-            {
-                approvalRequest.ElementAt(i).FromDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).FromDate);
-                approvalRequest.ElementAt(i).ToDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(approvalRequest.ElementAt(i).ToDate);
-            });
+            if (resultSet.Tables[0].Rows.Count > 0)
+                leaveTable = resultSet.Tables[0];
 
             return new RequestModel { 
-                ApprovalRequest = approvalRequest, 
+                ApprovalRequest = leaveTable, 
                 AttendaceTable = attendanceTable, 
                 TimesheetTable = timsesheetTable 
             };
