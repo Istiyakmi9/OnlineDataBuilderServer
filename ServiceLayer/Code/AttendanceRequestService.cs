@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -17,12 +18,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
+        private readonly IEmailService _eEmailService;
 
-        public AttendanceRequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        public AttendanceRequestService(IDb db,
+            ITimezoneConverter timezoneConverter,
+            CurrentSession currentSession,
+            IEmailService eEmailService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
+            _eEmailService = eEmailService;
         }
 
         private dynamic GetEmployeeRequestedDataService(long employeeId, int requestTypeId, string procedure)
@@ -39,7 +45,7 @@ namespace ServiceLayer.Code
                 ForMonth = now.Month
             });
 
-            if (resultSet != null && resultSet.Tables.Count !=3)
+            if (resultSet != null && resultSet.Tables.Count != 3)
                 throw new HiringBellException("Fail to get approval request data for current user.");
 
             DataTable attendanceTable = null;
@@ -117,9 +123,44 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
-            // PrepareSendEmailNotification(currentAttendance, template);
+            PrepareSendEmailNotification(currentAttendance, status.ToString().ToUpper());
             return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
+        }
+
+        private void PrepareSendEmailNotification(AttendanceDetails attendanceDetails, string actionType)
+        {
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+            if(template != null && !string.IsNullOrEmpty(template.BodyContent))
+            {
+                string subject = template.SubjectLine
+                                 .Replace("[[REQUEST-TYPE]]", "Work From Home")
+                                 .Replace("[[ACTION-TYPE]]", actionType);
+
+                string body = JsonConvert.DeserializeObject<string>(template.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", attendanceDetails.EmployeeName)
+                                .Replace("[[DAYS-COUNT]]", "1")
+                                .Replace("[[REQUEST-TYPE]]", "Work From Home")
+                                .Replace("[[TO-DATE]]", attendanceDetails.AttendanceDay.ToString("dd MMM, yyyy"))
+                                .Replace("[[FROM-DATE]]", attendanceDetails.AttendanceDay.ToString("dd MMM, yyyy"))
+                                .Replace("[[ACTION-TYPE]]", actionType)
+                                .Replace("[[MANAGER-NAME]]", string.Concat(
+                                                                _currentSession.CurrentUserDetail.FirstName,
+                                                                " ",
+                                                                _currentSession.CurrentUserDetail.LastName
+                                                             ))
+                                .Replace("[[USER-MESSAGE]]", string.IsNullOrEmpty(attendanceDetails.UserComments) 
+                                                              ? "NA" 
+                                                              : attendanceDetails.UserComments)
+                                .Replace("[[COMPANY-NAME]]", template.SignatureDetail.ToUpper());
+                EmailSenderModal emailSenderModal = new EmailSenderModal
+                {
+                    To = new List<string> { attendanceDetails.Email },
+                    Subject = subject,
+                    Body = body,
+                };
+
+                _eEmailService.SendEmailRequestService(emailSenderModal, null);
+            }
         }
 
         public List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail)
