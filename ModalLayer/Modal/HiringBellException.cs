@@ -19,6 +19,13 @@ namespace ModalLayer.Modal
             this.StackTraceDetail = InnerException != null ? InnerException.StackTrace : "";
             HttpStatusCode = HttpStatusCode.BadRequest;
         }
+
+        public HiringBellException(string Message, HttpStatusCode httpStatusCode)
+        {
+            this.UserMessage = Message;
+            HttpStatusCode = httpStatusCode;
+        }
+
         public HiringBellException(string Message, string FieldName = null, string FieldValue = null, HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest)
         {
             this.UserMessage = Message;

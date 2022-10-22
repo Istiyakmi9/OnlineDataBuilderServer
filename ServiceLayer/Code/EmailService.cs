@@ -2,6 +2,7 @@
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -252,6 +253,36 @@ namespace ServiceLayer.Code
 
             var result = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
             return result;
+        }
+
+        public void PrepareSendEmailNotification(EmployeeNotificationModel notification)
+        {
+            if (notification != null)
+            {
+                string subject = notification.Subject
+                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
+
+                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
+                                .Replace("[[DAYS-COUNT]]", "1")
+                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                .Replace("[[TO-DATE]]", notification.FromDate)
+                                .Replace("[[FROM-DATE]]", notification.ToDate)
+                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
+                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
+                                .Replace("[[USER-MESSAGE]]", notification.Message)
+                                .Replace("[[COMPANY-NAME]]", notification.CompanyName);
+
+                EmailSenderModal emailSenderModal = new EmailSenderModal
+                {
+                    To = notification.To,
+                    Subject = subject,
+                    Body = body,
+                };
+
+                this.SendEmailRequestService(emailSenderModal, null);
+            }
         }
     }
 }

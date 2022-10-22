@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -60,10 +61,11 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[0].Rows.Count > 0)
                 leaveTable = resultSet.Tables[0];
 
-            return new RequestModel { 
-                ApprovalRequest = leaveTable, 
-                AttendaceTable = attendanceTable, 
-                TimesheetTable = timsesheetTable 
+            return new RequestModel
+            {
+                ApprovalRequest = leaveTable,
+                AttendaceTable = attendanceTable,
+                TimesheetTable = timsesheetTable
             };
         }
 
@@ -122,44 +124,30 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            PrepareSendEmailNotification(currentAttendance, status.ToString().ToUpper());
-            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
-        }
-
-        private void PrepareSendEmailNotification(AttendanceDetails attendanceDetails, string actionType)
-        {
             var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
-            if(template != null && !string.IsNullOrEmpty(template.BodyContent))
+
+            if (template == null)
+                throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
+
+            _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
             {
-                string subject = template.SubjectLine
-                                 .Replace("[[REQUEST-TYPE]]", "Work From Home")
-                                 .Replace("[[ACTION-TYPE]]", actionType);
+                DeveloperName = currentAttendance.EmployeeName,
+                AttendanceRequestType = "Work From Home",
+                CompanyName = template.SignatureDetail,
+                BodyContent = template.BodyContent,
+                Subject = template.SubjectLine,
+                To = new List<string> { currentAttendance.Email },
+                ApprovalType = status.ToString(),
+                FromDate = currentAttendance.AttendanceDay.ToString("dd MMM, yyyy"),
+                ToDate = currentAttendance.AttendanceDay.ToString("dd MMM, yyyy"),
+                LeaveType = null,
+                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                Message = string.IsNullOrEmpty(currentAttendance.UserComments)
+                            ? "NA"
+                            : currentAttendance.UserComments,
+            });
 
-                string body = JsonConvert.DeserializeObject<string>(template.BodyContent)
-                                .Replace("[[DEVELOPER-NAME]]", attendanceDetails.EmployeeName)
-                                .Replace("[[DAYS-COUNT]]", "1")
-                                .Replace("[[REQUEST-TYPE]]", "Work From Home")
-                                .Replace("[[TO-DATE]]", attendanceDetails.AttendanceDay.ToString("dd MMM, yyyy"))
-                                .Replace("[[FROM-DATE]]", attendanceDetails.AttendanceDay.ToString("dd MMM, yyyy"))
-                                .Replace("[[ACTION-TYPE]]", actionType)
-                                .Replace("[[MANAGER-NAME]]", string.Concat(
-                                                                _currentSession.CurrentUserDetail.FirstName,
-                                                                " ",
-                                                                _currentSession.CurrentUserDetail.LastName
-                                                             ))
-                                .Replace("[[USER-MESSAGE]]", string.IsNullOrEmpty(attendanceDetails.UserComments) 
-                                                              ? "NA" 
-                                                              : attendanceDetails.UserComments)
-                                .Replace("[[COMPANY-NAME]]", template.SignatureDetail.ToUpper());
-                EmailSenderModal emailSenderModal = new EmailSenderModal
-                {
-                    To = new List<string> { attendanceDetails.Email },
-                    Subject = subject,
-                    Body = body,
-                };
-
-                _eEmailService.SendEmailRequestService(emailSenderModal, null);
-            }
+            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
         }
 
         public List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail)
