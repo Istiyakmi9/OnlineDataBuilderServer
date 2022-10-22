@@ -41,7 +41,7 @@ namespace ServiceLayer.Code
             var resultSet = _db.FetchDataSet(procedure, new
             {
                 ManagerId = employeeId,
-                StatusId = requestTypeId,
+                StatusId = 0,
                 ForYear = now.Year,
                 ForMonth = now.Month
             });
