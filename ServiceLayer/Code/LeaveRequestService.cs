@@ -101,7 +101,7 @@ namespace ServiceLayer.Code
                         throw new HiringBellException("Unable to update leave status. Please contact to admin");
                 }
             }
-            return _attendanceRequestService.FetchPendingRequestService(leaveRequestDetail.EmployeeId, 0);
+            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification)
