@@ -7,8 +7,8 @@ namespace ServiceLayer.Interface
 {
     public interface ILeaveRequestService
     {
-        dynamic ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail);
-        dynamic RejectLeaveService(LeaveRequestDetail leaveRequestDetail);
+        RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail);
+        RequestModel RejectLeaveService(LeaveRequestDetail leaveRequestDetail);
         List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification approvalRequest);
     }
 }

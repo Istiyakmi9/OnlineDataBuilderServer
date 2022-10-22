@@ -27,17 +27,17 @@ namespace ServiceLayer.Code
             _attendanceRequestService = attendanceRequestService;
         }
 
-        public dynamic RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public RequestModel RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
             return UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
         }
 
-        public dynamic ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public RequestModel ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
             return UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
         }
 
-        public dynamic UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
+        public RequestModel UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
         {
             var firstItem = dailyTimesheetDetails.FirstOrDefault();
             if (firstItem.TimesheetId <= 0)

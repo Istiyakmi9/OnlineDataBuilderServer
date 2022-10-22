@@ -27,17 +27,17 @@ namespace ServiceLayer.Code
             _attendanceRequestService = attendanceRequestService;
         }
 
-        public dynamic ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail)
+        public RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail)
         {
             return UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
         }
 
-        public dynamic RejectLeaveService(LeaveRequestDetail leaveRequestDetail)
+        public RequestModel RejectLeaveService(LeaveRequestDetail leaveRequestDetail)
         {
             return UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
         }
 
-        public dynamic UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
+        public RequestModel UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
         {
             string message = string.Empty;
             var leaveRequestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_GetById", new
@@ -63,25 +63,6 @@ namespace ServiceLayer.Code
                         singleLeaveDetail.LeaveStatus = (int)status;
                         singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
                         leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
-                            //(from n in completeLeaveDetail
-                            // select new
-                            // {
-                            //     Reason = n.Reason,
-                            //     Session = n.Session,
-                            //     AssignTo = n.AssignTo,
-                            //     LeaveType = n.LeaveType,
-                            //     NumOfDays = n.NumOfDays,
-                            //     ProjectId = n.ProjectId,
-                            //     UpdatedOn = n.UpdatedOn,
-                            //     EmployeeId = n.EmployeeId,
-                            //     LeaveToDay = n.LeaveToDay,
-                            //     LeaveStatus = n.LeaveStatus,
-                            //     RequestedOn = n.RequestedOn,
-                            //     RespondedBy = n.RespondedBy,
-                            //     EmployeeName = n.EmployeeName,
-                            //     LeaveFromDay = n.LeaveFromDay
-                            // })
-                            //);
                     }
                     else
                     {
