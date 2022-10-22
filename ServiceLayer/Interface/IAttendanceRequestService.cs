@@ -1,15 +1,14 @@
 ﻿using ModalLayer.Modal;
 using System.Collections.Generic;
-using System.Data;
 
 namespace ServiceLayer.Interface
 {
     public interface IAttendanceRequestService
     {
-        dynamic FetchPendingRequestService(long employeeId, int requestTypeId);
-        dynamic GetManagerAndUnAssignedRequestService(long employeeId, int requestTypeId);
-        dynamic ApprovalAttendanceService(AttendanceDetails attendanceDetais);
-        dynamic RejectAttendanceService(AttendanceDetails attendanceDetail);
+        RequestModel FetchPendingRequestService(long employeeId, int requestTypeId);
+        RequestModel GetManagerAndUnAssignedRequestService(long employeeId, int requestTypeId);
+        RequestModel ApprovalAttendanceService(AttendanceDetails attendanceDetais);
+        RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail);
         List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail);
     }
 }
