@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 
@@ -18,17 +19,17 @@ namespace OnlineDataBuilder.Controllers
             _requestService = requestService;
         }
 
-        [HttpPut("ApprovalAction/{RequestId}")]
-        public IResponse<ApiResponse> ApprovalAction([FromRoute]int RequestId, [FromBody] LeaveRequestNotification approvalRequest)
+        [HttpPut("ApprovalAction")]
+        public IResponse<ApiResponse> ApprovalAction(LeaveRequestDetail leaveRequestDetail)
         {
-            var result = _requestService.ApprovalLeaveService(approvalRequest);
+            var result = _requestService.ApprovalLeaveService(leaveRequestDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction(LeaveRequestNotification approvalRequest)
+        public IResponse<ApiResponse> RejectAction(LeaveRequestDetail leaveRequestDetail)
         {
-            var result = _requestService.RejectLeaveService(approvalRequest);
+            var result = _requestService.RejectLeaveService(leaveRequestDetail);
             return BuildResponse(result);
         }
 

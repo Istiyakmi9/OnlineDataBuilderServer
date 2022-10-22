@@ -1095,26 +1095,26 @@ namespace ServiceLayer.Code
                     }));
 
                 leaveDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
+                decimal numOfDays = (decimal)leaveDetail.LeaveToDay.Subtract(leaveDetail.LeaveFromDay).TotalDays;
                 result = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
                 {
                     leaveDetail.LeaveRequestId,
                     leaveDetail.EmployeeId,
                     leaveDetail.LeaveDetail,
                     leaveDetail.Reason,
-                    leaveDetail.UserTypeId,
                     AssignTo = _currentSession.CurrentUserDetail.ReportingManagerId,
                     Year = leaveDetail.LeaveFromDay.Year,
                     leaveDetail.LeaveFromDay,
                     leaveDetail.LeaveToDay,
                     leaveDetail.LeaveType,
                     RequestStatusId = (int)ItemStatus.Pending,
-                    leaveDetail.RequestType,
                     leaveDetail.AvailableLeaves,
                     leaveRequestDetail.TotalLeaveApplied,
                     leaveDetail.TotalApprovedLeave,
                     TotalLeaveQuota = totalAllocatedLeave,
-                    leaveDetail.LeaveQuotaDetail
-
+                    leaveDetail.LeaveQuotaDetail,
+                    NumOfDays = numOfDays,
+                    LeaveRequestNotificationId  = 0
                 }, true);
 
                 if (string.IsNullOrEmpty(result))

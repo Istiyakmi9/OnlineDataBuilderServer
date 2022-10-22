@@ -18,68 +18,70 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-
-        public LeaveRequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
+        private readonly IAttendanceRequestService _attendanceRequestService;
+        public LeaveRequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession, IAttendanceRequestService attendanceRequestService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
+            _attendanceRequestService = attendanceRequestService;
         }
 
-        public List<LeaveRequestNotification> ApprovalLeaveService(LeaveRequestNotification leaveRequestNotification)
+        public dynamic ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail)
         {
-            return UpdateLeaveDetail(leaveRequestNotification, ItemStatus.Approved);
+            return UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
         }
 
-        public List<LeaveRequestNotification> RejectLeaveService(LeaveRequestNotification leaveRequestNotification)
+        public dynamic RejectLeaveService(LeaveRequestDetail leaveRequestDetail)
         {
-            return UpdateLeaveDetail(leaveRequestNotification, ItemStatus.Rejected);
+            return UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
         }
 
-        public List<LeaveRequestNotification> UpdateLeaveDetail(LeaveRequestNotification leaveRequestNotification, ItemStatus status)
+        public dynamic UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
         {
             string message = string.Empty;
-            var requestNotification = _db.Get<LeaveRequestNotification>("sp_leave_request_notification_get_byId", new
+            var leaveRequestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_GetById", new
             {
-                leaveRequestNotification.LeaveRequestNotificationId
+                EmployeeId = leaveDeatil.EmployeeId,
+                Year = DateTime.Now.Year
             });
 
-            if (requestNotification != null)
+            if (leaveRequestDetail != null && !string.IsNullOrEmpty(leaveRequestDetail.LeaveDetail))
             {
                 List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert
-                  .DeserializeObject<List<CompleteLeaveDetail>>(requestNotification.LeaveDetail);
+                  .DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
 
                 if (completeLeaveDetail != null)
                 {
                     var singleLeaveDetail = completeLeaveDetail.Find(x =>
-                        requestNotification.FromDate.Subtract(x.LeaveFromDay).TotalDays == 0 &&
-                        requestNotification.ToDate.Subtract(x.LeaveToDay).TotalDays == 0
+                        leaveDeatil.LeaveFromDay.Subtract(x.LeaveFromDay).TotalDays == 0 &&
+                        leaveDeatil.LeaveToDay.Subtract(x.LeaveToDay).TotalDays == 0
                     );
 
                     if (singleLeaveDetail != null)
                     {
                         singleLeaveDetail.LeaveStatus = (int)status;
                         singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
-                        requestNotification.LeaveDetail = JsonConvert.SerializeObject(
-                            (from n in completeLeaveDetail
-                             select new
-                             {
-                                 Reason = n.Reason,
-                                 Session = n.Session,
-                                 AssignTo = n.AssignTo,
-                                 LeaveType = n.LeaveType,
-                                 NumOfDays = n.NumOfDays,
-                                 ProjectId = n.ProjectId,
-                                 UpdatedOn = n.UpdatedOn,
-                                 EmployeeId = n.EmployeeId,
-                                 LeaveToDay = n.LeaveToDay,
-                                 LeaveStatus = n.LeaveStatus,
-                                 RequestedOn = n.RequestedOn,
-                                 RespondedBy = n.RespondedBy,
-                                 EmployeeName = n.EmployeeName,
-                                 LeaveFromDay = n.LeaveFromDay
-                             })
-                            );
+                        leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
+                            //(from n in completeLeaveDetail
+                            // select new
+                            // {
+                            //     Reason = n.Reason,
+                            //     Session = n.Session,
+                            //     AssignTo = n.AssignTo,
+                            //     LeaveType = n.LeaveType,
+                            //     NumOfDays = n.NumOfDays,
+                            //     ProjectId = n.ProjectId,
+                            //     UpdatedOn = n.UpdatedOn,
+                            //     EmployeeId = n.EmployeeId,
+                            //     LeaveToDay = n.LeaveToDay,
+                            //     LeaveStatus = n.LeaveStatus,
+                            //     RequestedOn = n.RequestedOn,
+                            //     RespondedBy = n.RespondedBy,
+                            //     EmployeeName = n.EmployeeName,
+                            //     LeaveFromDay = n.LeaveFromDay
+                            // })
+                            //);
                     }
                     else
                     {
@@ -91,31 +93,34 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Error");
                 }
 
-                if (requestNotification != null)
+                if (leaveRequestDetail != null)
                 {
-                    requestNotification.LastReactedOn = DateTime.UtcNow;
-                    requestNotification.RequestStatusId = leaveRequestNotification.RequestStatusId;
-                    message = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
+                    leaveRequestDetail.RequestStatusId = (int)status;
+                    message = _db.Execute<LeaveRequestNotification>("sp_employee_leave_request_InsUpdate", new
                     {
-                        requestNotification.LeaveRequestNotificationId,
-                        requestNotification.LeaveRequestId,
-                        requestNotification.UserMessage,
-                        requestNotification.EmployeeId,
-                        requestNotification.AssigneeId,
-                        requestNotification.ProjectId,
-                        requestNotification.ProjectName,
-                        requestNotification.FromDate,
-                        requestNotification.ToDate,
-                        requestNotification.NumOfDays,
-                        requestNotification.RequestStatusId,
-                        requestNotification.LeaveTypeId,
-                        requestNotification.FeedBackMessage,
-                        requestNotification.LastReactedOn,
-                        requestNotification.LeaveDetail
+                        leaveRequestDetail.LeaveRequestId,
+                        leaveRequestDetail.EmployeeId,
+                        leaveRequestDetail.LeaveDetail,
+                        leaveRequestDetail.Reason,
+                        leaveRequestDetail.AssignTo,
+                        leaveRequestDetail.Year,
+                        leaveRequestDetail.LeaveFromDay,
+                        leaveRequestDetail.LeaveToDay,
+                        leaveRequestDetail.LeaveType,
+                        leaveRequestDetail.RequestStatusId,
+                        leaveRequestDetail.AvailableLeaves,
+                        leaveRequestDetail.TotalLeaveApplied,
+                        leaveRequestDetail.TotalApprovedLeave,
+                        leaveRequestDetail.TotalLeaveQuota,
+                        leaveRequestDetail.LeaveQuotaDetail,
+                        NumOfDays = 0,
+                        leaveDeatil.LeaveRequestNotificationId
                     }, true);
+                    if (string.IsNullOrEmpty(message))
+                        throw new HiringBellException("Unable to update leave status. Please contact to admin");
                 }
             }
-            return null;
+            return _attendanceRequestService.FetchPendingRequestService(leaveRequestDetail.EmployeeId, 0);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification)
