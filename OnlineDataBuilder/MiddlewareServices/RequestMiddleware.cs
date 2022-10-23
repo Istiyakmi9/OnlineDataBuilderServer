@@ -5,6 +5,7 @@ using ModalLayer.Modal;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
@@ -55,7 +56,7 @@ namespace SchoolInMindServer.MiddlewareServices
                         }, out SecurityToken validatedToken);
 
                         var securityToken = handler.ReadToken(token) as JwtSecurityToken;
-                        userId = securityToken.Claims.FirstOrDefault(x => x.Type == "unique_name").Value;
+                        userId = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub).Value;
                         currentSession.CurrentUserDetail.ReportingManagerId = Convert.ToInt32(
                             securityToken.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid").Value);
                         var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
@@ -86,11 +87,13 @@ namespace SchoolInMindServer.MiddlewareServices
 
                         if (string.IsNullOrEmpty(orgId) || string.IsNullOrEmpty(companyId))
                             throw new HiringBellException("Invalid Organization id or Company id. Please contact to admin.");
-                            
+
                         currentSession.CurrentUserDetail.OrganizationId = Convert.ToInt32(orgId);
                         currentSession.CurrentUserDetail.CompanyId = Convert.ToInt32(companyId);
                         currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
                         currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
+                        currentSession.CurrentUserDetail.FullName = securityToken.Claims.FirstOrDefault(x => x.Type == "unique_name").Value;
+                        currentSession.CurrentUserDetail.ReportingManagerId = Convert.ToInt64(securityToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Sid).Value);
                     }
                 }
 

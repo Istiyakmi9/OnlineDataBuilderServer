@@ -98,7 +98,7 @@ namespace ServiceLayer.Code
                     new Claim(ClaimTypes.Role, role),
                     new Claim(ApplicationConstants.OrganizationId, userDetail.OrganizationId.ToString()),
                     new Claim(ApplicationConstants.CompanyId, userDetail.CompanyId.ToString()),
-                    new Claim(ClaimTypes.Name, userDetail.UserId.ToString()),
+                    new Claim(ClaimTypes.Name, String.Concat(userDetail.FirstName, " ", userDetail.LastName)),
                     new Claim(ClaimTypes.Version, "1.0.0"),
                     new Claim(ClaimTypes.Sid, userDetail.ReportingManagerId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

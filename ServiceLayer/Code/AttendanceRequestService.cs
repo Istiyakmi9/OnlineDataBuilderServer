@@ -1,14 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using EMailService.Service;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -31,7 +29,7 @@ namespace ServiceLayer.Code
             _eEmailService = eEmailService;
         }
 
-        private dynamic GetEmployeeRequestedDataService(long employeeId, int requestTypeId, string procedure)
+        private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure)
         {
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
@@ -60,106 +58,104 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[0].Rows.Count > 0)
                 leaveTable = resultSet.Tables[0];
 
-            return new RequestModel { 
-                ApprovalRequest = leaveTable, 
-                AttendaceTable = attendanceTable, 
-                TimesheetTable = timsesheetTable 
+            return new RequestModel
+            {
+                ApprovalRequest = leaveTable,
+                AttendaceTable = attendanceTable,
+                TimesheetTable = timsesheetTable
             };
         }
 
-        public RequestModel GetManagerAndUnAssignedRequestService(long employeeId, int requestTypeId)
+        public RequestModel GetManagerAndUnAssignedRequestService(long employeeId)
         {
-            return GetEmployeeRequestedDataService(employeeId, requestTypeId, "sp_approval_requests_get_by_role");
+            return GetEmployeeRequestedDataService(employeeId, "sp_approval_requests_get_by_role");
         }
 
-        public RequestModel FetchPendingRequestService(long employeeId, int requestTypeId)
+        public RequestModel FetchPendingRequestService(long employeeId)
         {
-            return GetEmployeeRequestedDataService(employeeId, requestTypeId, "sp_approval_requests_get");
+            return GetEmployeeRequestedDataService(employeeId, "sp_approval_requests_get");
         }
 
         public RequestModel ApprovalAttendanceService(AttendanceDetails attendanceDetail)
         {
-            return UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
+            UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
+            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+        }
+
+        public RequestModel ApproveAttendanceService(int filterId, AttendanceDetails attendanceDetail)
+        {
+            string procedure = "sp_approval_requests_get";
+            if (filterId == 0)
+                procedure = "sp_approval_requests_get_by_role";
+
+            UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
+            return GetEmployeeRequestedDataService(_currentSession.CurrentUserDetail.UserId, procedure);
         }
 
         public RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail)
         {
-            return UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
+            UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
+            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
         }
 
-        public RequestModel UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
+        public void UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
         {
             if (attendanceDetail.AttendanceId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
-
-            var attendance = _db.Get<Attendance>("sp_Attendance_GetById", new
+            try
             {
-                AttendanceId = attendanceDetail.AttendanceId
-            });
-
-            var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetails>>(attendance.AttendanceDetail);
-            var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
-            if (currentAttendance == null)
-                throw new HiringBellException("Unable to update present request. Please contact to admin.");
-
-            currentAttendance.PresentDayStatus = (int)status;
-            currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
-            currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
-            // this call is used for only upadate AttendanceDetail json object
-            var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
-            {
-                AttendanceId = attendanceDetail.AttendanceId,
-                AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
-                UserTypeId = 0,
-                EmployeeId = 0,
-                TotalDays = 0,
-                TotalWeekDays = 0,
-                DaysPending = 0,
-                TotalBurnedMinutes = 0,
-                ForYear = 0,
-                ForMonth = 0,
-                UserId = _currentSession.CurrentUserDetail.UserId
-            }, true);
-            if (string.IsNullOrEmpty(Result))
-                throw new HiringBellException("Unable to update attendance status");
-
-            PrepareSendEmailNotification(currentAttendance, status.ToString().ToUpper());
-            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, 0);
-        }
-
-        private void PrepareSendEmailNotification(AttendanceDetails attendanceDetails, string actionType)
-        {
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
-            if(template != null && !string.IsNullOrEmpty(template.BodyContent))
-            {
-                string subject = template.SubjectLine
-                                 .Replace("[[REQUEST-TYPE]]", "Work From Home")
-                                 .Replace("[[ACTION-TYPE]]", actionType);
-
-                string body = JsonConvert.DeserializeObject<string>(template.BodyContent)
-                                .Replace("[[DEVELOPER-NAME]]", attendanceDetails.EmployeeName)
-                                .Replace("[[DAYS-COUNT]]", "1")
-                                .Replace("[[REQUEST-TYPE]]", "Work From Home")
-                                .Replace("[[TO-DATE]]", attendanceDetails.AttendanceDay.ToString("dd MMM, yyyy"))
-                                .Replace("[[FROM-DATE]]", attendanceDetails.AttendanceDay.ToString("dd MMM, yyyy"))
-                                .Replace("[[ACTION-TYPE]]", actionType)
-                                .Replace("[[MANAGER-NAME]]", string.Concat(
-                                                                _currentSession.CurrentUserDetail.FirstName,
-                                                                " ",
-                                                                _currentSession.CurrentUserDetail.LastName
-                                                             ))
-                                .Replace("[[USER-MESSAGE]]", string.IsNullOrEmpty(attendanceDetails.UserComments) 
-                                                              ? "NA" 
-                                                              : attendanceDetails.UserComments)
-                                .Replace("[[COMPANY-NAME]]", template.SignatureDetail.ToUpper());
-                EmailSenderModal emailSenderModal = new EmailSenderModal
+                var attendance = _db.Get<Attendance>("sp_Attendance_GetById", new
                 {
-                    To = new List<string> { attendanceDetails.Email },
-                    Subject = subject,
-                    Body = body,
-                };
+                    AttendanceId = attendanceDetail.AttendanceId
+                });
 
-                _eEmailService.SendEmailRequestService(emailSenderModal, null);
+                var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetails>>(attendance.AttendanceDetail);
+                var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
+                if (currentAttendance == null)
+                    throw new HiringBellException("Unable to update present request. Please contact to admin.");
+
+                currentAttendance.PresentDayStatus = (int)status;
+                currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
+                currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
+                // this call is used for only upadate AttendanceDetail json object
+                var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
+                {
+                    AttendanceId = attendanceDetail.AttendanceId,
+                    AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
+                    UserId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+                if (string.IsNullOrEmpty(Result))
+                    throw new HiringBellException("Unable to update attendance status");
+
+                var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+
+                if (template == null)
+                    throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
+
+                Task.Run(() =>
+                {
+                    _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+                    {
+                        DeveloperName = currentAttendance.EmployeeName,
+                        AttendanceRequestType = "Work From Home",
+                        CompanyName = template.SignatureDetail,
+                        BodyContent = template.BodyContent,
+                        Subject = template.SubjectLine,
+                        To = new List<string> { currentAttendance.Email },
+                        ApprovalType = status.ToString(),
+                        FromDate = currentAttendance.AttendanceDay,
+                        ToDate = currentAttendance.AttendanceDay,
+                        LeaveType = null,
+                        ManagerName = _currentSession.CurrentUserDetail.FullName,
+                        Message = string.IsNullOrEmpty(currentAttendance.UserComments)
+                                    ? "NA"
+                                    : currentAttendance.UserComments,
+                    });
+                });
+            }
+            catch (Exception)
+            {
+                throw new HiringBellException("Encounter error while sending email notification.", System.Net.HttpStatusCode.NotFound);
             }
         }
 

@@ -1,7 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Interface;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -18,19 +20,26 @@ namespace ServiceLayer.Code
         private readonly ILogger<EmailService> _logger;
         private readonly IEMailManager _eMailManager;
         private readonly IDb _db;
+        private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        public EmailService(IDb db, ILogger<EmailService> logger, IEMailManager eMailManager, CurrentSession currentSession)
+        private EmailSettingDetail _emailSettingDetail;
+        public EmailService(IDb db, 
+            ILogger<EmailService> logger, 
+            IEMailManager eMailManager, 
+            CurrentSession currentSession,
+            ITimezoneConverter timezoneConverter)
         {
             _db = db;
             _logger = logger;
             _eMailManager = eMailManager;
             _currentSession = currentSession;
+            _timezoneConverter = timezoneConverter;
+            this.GetSettingDetail();
         }
 
         public List<string> GetMyMailService()
         {
-            EmailSettingDetail emailSettingDetail = GetSettingDetail();
-            _eMailManager.ReadMails(emailSettingDetail);
+            _eMailManager.ReadMails(_emailSettingDetail);
             return null;
         }
 
@@ -51,41 +60,30 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        private EmailSettingDetail GetSettingDetail()
+        private void GetSettingDetail()
         {
-            var emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
-            if (emailSettingDetail == null)
+            _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            if (_emailSettingDetail == null)
                 throw new HiringBellException("Fail to get emaill detail. Please contact to admin.");
-
-            return emailSettingDetail;
         }
 
         private string SendMail(EmailSenderModal emailSenderModal, IFormFileCollection files)
         {
             string status = string.Empty;
-            var emailSettingDetail = GetSettingDetail();
 
             if (emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
 
-            //var fromEmail = new
-            //{
-            //    Id = emailSettingDetail.EmailAddress,
-            //    Pwd = emailSettingDetail.Credentials, //"bottomhalf@mi9",
-            //    Host = emailSettingDetail.EmailHost, //"smtpout.asia.secureserver.net",
-            //    Port = emailSettingDetail.PortNo // 587  // 25	                 
-            //};
-
-            var fromAddress = new System.Net.Mail.MailAddress(emailSettingDetail.EmailAddress, emailSenderModal.Subject);
+            var fromAddress = new System.Net.Mail.MailAddress(_emailSettingDetail.EmailAddress, emailSenderModal.Subject);
 
             var smtp = new SmtpClient
             {
-                Host = emailSettingDetail.EmailHost,
-                Port = emailSettingDetail.PortNo,
-                EnableSsl = emailSettingDetail.EnableSsl,
+                Host = _emailSettingDetail.EmailHost,
+                Port = _emailSettingDetail.PortNo,
+                EnableSsl = _emailSettingDetail.EnableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                UseDefaultCredentials = emailSettingDetail.UserDefaultCredentials,
-                Credentials = new NetworkCredential(emailSettingDetail.EmailAddress, emailSettingDetail.Credentials)
+                UseDefaultCredentials = _emailSettingDetail.UserDefaultCredentials,
+                Credentials = new NetworkCredential(_emailSettingDetail.EmailAddress, _emailSettingDetail.Credentials)
             };
 
             var mailMessage = new MailMessage();
@@ -252,6 +250,39 @@ namespace ServiceLayer.Code
 
             var result = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
             return result;
+        }
+
+        public void PrepareSendEmailNotification(EmployeeNotificationModel notification)
+        {
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime(notification.FromDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime(notification.ToDate, _currentSession.TimeZone);
+            if (notification != null)
+            {
+                var totalDays = notification.ToDate.Date.Subtract(notification.FromDate.Date).TotalDays + 1;
+                string subject = notification.Subject
+                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
+
+                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
+                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
+                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
+                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
+                                .Replace("[[USER-MESSAGE]]", notification.Message)
+                                .Replace("[[COMPANY-NAME]]", notification.CompanyName);
+
+                EmailSenderModal emailSenderModal = new EmailSenderModal
+                {
+                    To = notification.To,
+                    Subject = subject,
+                    Body = body,
+                };
+
+                this.SendEmailRequestService(emailSenderModal, null);
+            }
         }
     }
 }

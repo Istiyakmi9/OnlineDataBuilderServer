@@ -29,6 +29,7 @@ namespace ModalLayer.Modal
         public int CompanyId { set; get; }
         public string FirstName { set; get; }
         public string LastName { set; get; }
+        public string FullName { set; get; }
         public string Mobile { set; get; }
         public string EmailId { set; get; }
         public string Email { set; get; }

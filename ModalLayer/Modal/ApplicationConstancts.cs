@@ -27,6 +27,11 @@ public class ApplicationConstants
     public const string EmptyJsonObject = "{}";
     public const string EmptyJsonArray = "[]";
 
+    public const string WorkFromHome = "Work From Home";
+    public const string WorkFromOffice = "Work From Office";
+    public const string Leave = "Leave";
+    public const string Timesheet = "Timesheet";
+
 
     public static bool IsExecuted(string Result)
     {
