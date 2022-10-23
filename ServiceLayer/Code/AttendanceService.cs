@@ -535,7 +535,7 @@ namespace ServiceLayer.Code
                 });
 
 
-                Result = _db.Execute<Attendance>("sp_attendance_update_request", new
+                Result = _db.Execute<Attendance>("sp_attendance_insupd", new
                 {
                     AttendanceId = currentAttendence.AttendanceId,
                     AttendanceDetail = AttendaceDetail,

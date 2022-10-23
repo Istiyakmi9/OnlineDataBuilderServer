@@ -18,18 +18,26 @@ namespace OnlineDataBuilder.Controllers
             _requestService = requestService;
         }
 
-        [HttpGet("GetManagerRequestedData/{employeeId}/{requestTypeId}")]
-        public IResponse<ApiResponse> FetchPendingRequests(int employeeId, int requestTypeId)
+        [HttpGet("GetManagerRequestedData/{employeeId}")]
+        public IResponse<ApiResponse> FetchPendingRequests(int employeeId)
         {
-            var result = _requestService.FetchPendingRequestService(employeeId, requestTypeId);
+            var result = _requestService.FetchPendingRequestService(employeeId);
             return BuildResponse(result);
         }
 
-        [HttpGet("GetAllRequestedData/{employeeId}/{requestTypeId}")]
+        [HttpGet("GetAllRequestedData/{employeeId}")]
         [Authorize(Roles = Role.Admin)]
-        public IResponse<ApiResponse> GetAllRequestedData(int employeeId, int requestTypeId)
+        public IResponse<ApiResponse> GetAllRequestedData(int employeeId)
         {
-            var result = _requestService.GetManagerAndUnAssignedRequestService(employeeId, requestTypeId);
+            var result = _requestService.GetManagerAndUnAssignedRequestService(employeeId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ApproveAttendance/{filterId}")]
+        public IResponse<ApiResponse> ApproveAttendance([FromRoute]int filterId, [FromBody]AttendanceDetails attendanceDetail)
+        {
+            var result = _requestService.ApproveAttendanceService(filterId, attendanceDetail);
             return BuildResponse(result);
         }
 

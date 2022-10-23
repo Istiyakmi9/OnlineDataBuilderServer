@@ -1,12 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,23 +16,37 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
+        private readonly IEmailService _eEmailService;
 
-        public TimesheetRequestService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession, IAttendanceRequestService attendanceRequestService)
+        public TimesheetRequestService(IDb db,
+            ITimezoneConverter timezoneConverter,
+            CurrentSession currentSession,
+            IAttendanceRequestService attendanceRequestService,
+            IEmailService eEmailService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
+            _eEmailService = eEmailService;
         }
 
         public RequestModel RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            return UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
+            if (dailyTimesheetDetails == null)
+                throw new HiringBellException("Invalid operation. Please contact to admin.");
+
+            UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
+            return _attendanceRequestService.FetchPendingRequestService(dailyTimesheetDetails.First().ReportingManagerId);
         }
 
         public RequestModel ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            return UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
+            if (dailyTimesheetDetails == null)
+                throw new HiringBellException("Invalid operation. Please contact to admin.");
+
+            UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
+            return _attendanceRequestService.FetchPendingRequestService(dailyTimesheetDetails.First().ReportingManagerId);
         }
 
         public RequestModel UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
@@ -51,7 +63,7 @@ namespace ServiceLayer.Code
             var allTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timesheet.TimesheetMonthJson);
             foreach (var dailyTimesheet in dailyTimesheetDetails)
             {
-                var currentTimesheet= allTimesheet.Find(x => x.PresentDate == dailyTimesheet.PresentDate);
+                var currentTimesheet = allTimesheet.Find(x => x.PresentDate == dailyTimesheet.PresentDate);
                 if (currentTimesheet != null)
                     currentTimesheet.TimesheetStatus = itemStatus;
             }
@@ -81,8 +93,33 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to update attendance status");
 
             var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
-            // PrepareSendEmailNotification(currentAttendance, template);
-            return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId, 0);
+
+            if (template == null)
+                throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
+
+            var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);
+
+            Task.Run(() =>
+            {
+                _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+                {
+                    DeveloperName = firstItem.EmployeeName,
+                    AttendanceRequestType = ApplicationConstants.Timesheet,
+                    CompanyName = template.SignatureDetail,
+                    BodyContent = template.BodyContent,
+                    Subject = template.SubjectLine,
+                    To = new List<string> { firstItem.Email },
+                    ApprovalType = itemStatus.ToString(),
+                    FromDate = sortedTimesheetByDate.First().PresentDate,
+                    ToDate = sortedTimesheetByDate.Last().PresentDate,
+                    LeaveType = null,
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    Message = string.IsNullOrEmpty(firstItem.UserComments)
+                                ? "NA"
+                                : firstItem.UserComments,
+                });
+            });
+            return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
         }
 
         public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)

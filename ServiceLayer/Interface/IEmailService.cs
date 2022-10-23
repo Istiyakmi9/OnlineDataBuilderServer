@@ -1,5 +1,5 @@
-﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 
@@ -14,5 +14,6 @@ namespace ServiceLayer.Interface
         string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate);
         List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
         EmailTemplate GetEmailTemplateByIdService(long EmailTemplateId);
+        void PrepareSendEmailNotification(EmployeeNotificationModel notification);
     }
 }
