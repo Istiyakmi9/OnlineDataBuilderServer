@@ -31,6 +31,8 @@ public class ApplicationConstants
     public const string WorkFromOffice = "Work From Office";
     public const string Leave = "Leave";
     public const string Timesheet = "Timesheet";
+    public const int Only = 1;
+    public const int All = 0;
 
 
     public static bool IsExecuted(string Result)

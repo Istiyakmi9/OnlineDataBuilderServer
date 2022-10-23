@@ -66,6 +66,14 @@ namespace ServiceLayer.Code
             };
         }
 
+        public RequestModel GetRequestPageData(long employeeId, int filterId)
+        {
+            if (filterId == ApplicationConstants.Only)
+                return FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            else
+                return GetManagerAndUnAssignedRequestService(_currentSession.CurrentUserDetail.UserId);
+        }
+
         public RequestModel GetManagerAndUnAssignedRequestService(long employeeId)
         {
             return GetEmployeeRequestedDataService(employeeId, "sp_approval_requests_get_by_role");
@@ -76,26 +84,16 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, "sp_approval_requests_get");
         }
 
-        public RequestModel ApprovalAttendanceService(AttendanceDetails attendanceDetail)
+        public RequestModel ApproveAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
-            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel ApproveAttendanceService(int filterId, AttendanceDetails attendanceDetail)
-        {
-            string procedure = "sp_approval_requests_get";
-            if (filterId == 0)
-                procedure = "sp_approval_requests_get_by_role";
-
-            UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
-            return GetEmployeeRequestedDataService(_currentSession.CurrentUserDetail.UserId, procedure);
-        }
-
-        public RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail)
+        public RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
-            return this.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
         public void UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
@@ -104,7 +102,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid attendance day selected");
             try
             {
-                var attendance = _db.Get<Attendance>("sp_Attendance_GetById", new
+                var attendance = _db.Get<Attendance>("sp_attendance_get_byid", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId
                 });

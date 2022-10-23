@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -33,16 +32,16 @@ namespace ServiceLayer.Code
             _eEmailService = eEmailService;
         }
 
-        public RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail)
+        public RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
             UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
-            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel RejectLeaveService(LeaveRequestDetail leaveRequestDetail)
+        public RequestModel RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
             UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
-            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
         public void UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
@@ -54,7 +53,7 @@ namespace ServiceLayer.Code
                 Year = DateTime.Now.Year
             });
 
-            if (leaveRequestDetail == null || !string.IsNullOrEmpty(leaveRequestDetail.LeaveDetail))
+            if (leaveRequestDetail == null || string.IsNullOrEmpty(leaveRequestDetail.LeaveDetail))
                 throw new HiringBellException("Unable to find leave detail. Please contact to admin.");
 
             List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert
@@ -120,7 +119,7 @@ namespace ServiceLayer.Code
                 _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
                 {
                     DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
-                    AttendanceRequestType = ApplicationConstants.Timesheet,
+                    AttendanceRequestType = ApplicationConstants.Leave,
                     CompanyName = template.SignatureDetail,
                     BodyContent = template.BodyContent,
                     Subject = template.SubjectLine,
@@ -137,7 +136,7 @@ namespace ServiceLayer.Code
             });
         }
 
-        public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification)
+        public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)
         {
             return null;
         }
