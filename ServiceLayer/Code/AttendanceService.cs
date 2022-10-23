@@ -474,7 +474,7 @@ namespace ServiceLayer.Code
                             PresentDayStatus = (int)ItemStatus.Pending,
                             AttendanceId = 0,
                             AttendenceFromDay = commentDetails.AttendenceToDay,
-                            AttendenceStatus = (int)ItemStatus.Pending,
+                            AttendenceStatus = (int)DayStatus.WorkFromOffice,
                             AttendenceToDay = commentDetails.AttendenceToDay,
                             BillingHours = 9 * 5,
                             EmployeeUid = commentDetails.EmployeeUid,
@@ -495,7 +495,7 @@ namespace ServiceLayer.Code
                     }
                     else
                     {
-                        attendanceOn.PresentDayStatus = (int)DayStatus.WorkFromHome;
+                        attendanceOn.PresentDayStatus = (int)ItemStatus.Pending;
                         attendanceOn.UserComments = commentDetails.UserComments;
                     }
 
@@ -549,6 +549,8 @@ namespace ServiceLayer.Code
                     ForMonth = currentAttendence.ForMonth,
                     UserId = _currentSession.CurrentUserDetail.UserId
                 }, true);
+                if (string.IsNullOrEmpty(Result))
+                    throw new HiringBellException("Unable submit the attendace");
             }
             else
             {
@@ -654,9 +656,7 @@ namespace ServiceLayer.Code
                     TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
                     AttendanceDay = startDate,
                     AttendanceId = 0,
-                    AttendenceStatus = (startDate.DayOfWeek == DayOfWeek.Saturday
-                                    ||
-                                startDate.DayOfWeek == DayOfWeek.Sunday) ? (int)DayStatus.Weekend : (int)ItemStatus.Pending,
+                    AttendenceStatus = (int)DayStatus.WorkFromOffice,
                     BillingHours = 480,
                     ClientId = attendenceDetail.ClientId,
                     DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
