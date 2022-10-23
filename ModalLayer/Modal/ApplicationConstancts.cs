@@ -34,6 +34,9 @@ public class ApplicationConstants
     public const int Only = 1;
     public const int All = 0;
 
+    public const string Successfull = "Successfull";
+    public const string Fail = "Fail";
+
 
     public static bool IsExecuted(string Result)
     {
