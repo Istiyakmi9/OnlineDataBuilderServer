@@ -104,6 +104,7 @@ namespace ServiceLayer.Code
 
             currentAttendance.PresentDayStatus = (int)status;
             currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
+            currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
             // this call is used for only upadate AttendanceDetail json object
             var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
             {
