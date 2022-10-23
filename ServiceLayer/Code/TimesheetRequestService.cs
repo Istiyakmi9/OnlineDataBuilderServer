@@ -37,7 +37,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid operation. Please contact to admin.");
 
             UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
-            return _attendanceRequestService.FetchPendingRequestService(dailyTimesheetDetails.First().ReportingManagerId);
+            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
         }
 
         public RequestModel ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
@@ -46,7 +46,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid operation. Please contact to admin.");
 
             UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
-            return _attendanceRequestService.FetchPendingRequestService(dailyTimesheetDetails.First().ReportingManagerId);
+            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
         }
 
         public RequestModel UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)

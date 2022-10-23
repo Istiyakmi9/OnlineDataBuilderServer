@@ -8,6 +8,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -34,15 +35,17 @@ namespace ServiceLayer.Code
 
         public RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail)
         {
-            return UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
+            UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
+            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
         }
 
         public RequestModel RejectLeaveService(LeaveRequestDetail leaveRequestDetail)
         {
-            return UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
+            UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
+            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
         }
 
-        public RequestModel UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
+        public void UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
         {
             string message = string.Empty;
             var leaveRequestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_GetById", new
@@ -112,24 +115,26 @@ namespace ServiceLayer.Code
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
-            _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+            Task.Run(() =>
             {
-                DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
-                AttendanceRequestType = ApplicationConstants.Timesheet,
-                CompanyName = template.SignatureDetail,
-                BodyContent = template.BodyContent,
-                Subject = template.SubjectLine,
-                To = new List<string> { leaveRequestDetail.Email },
-                ApprovalType = status.ToString(),
-                FromDate = leaveDeatil.LeaveFromDay,
-                ToDate = leaveDeatil.LeaveToDay,
-                LeaveType = leaveDeatil.LeaveToDay.ToString(),
-                ManagerName = _currentSession.CurrentUserDetail.FullName,
-                Message = string.IsNullOrEmpty(leaveDeatil.Reason)
-                            ? "NA"
-                            : leaveDeatil.Reason
+                _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+                {
+                    DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
+                    AttendanceRequestType = ApplicationConstants.Timesheet,
+                    CompanyName = template.SignatureDetail,
+                    BodyContent = template.BodyContent,
+                    Subject = template.SubjectLine,
+                    To = new List<string> { leaveRequestDetail.Email },
+                    ApprovalType = status.ToString(),
+                    FromDate = leaveDeatil.LeaveFromDay,
+                    ToDate = leaveDeatil.LeaveToDay,
+                    LeaveType = leaveDeatil.LeaveToDay.ToString(),
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    Message = string.IsNullOrEmpty(leaveDeatil.Reason)
+                                ? "NA"
+                                : leaveDeatil.Reason
+                });
             });
-            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification)
