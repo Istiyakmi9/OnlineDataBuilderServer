@@ -41,9 +41,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
+        public IResponse<ApiResponse> RejectAction([FromBody] AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.RejectAttendanceService(attendanceDetail, filterId);
+            var result = _requestService.RejectAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
