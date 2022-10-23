@@ -39,5 +39,29 @@ namespace OnlineDataBuilder.Controllers
             var result = _requestService.ReAssigneToOtherManagerService(approvalRequest);
             return BuildResponse(result);
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ApproveLeaveRequest/{filterId}")]
+        public IResponse<ApiResponse> ApproveLeaveRequest([FromRoute]int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
+        {
+            var result = _requestService.ApprovalLeaveService(leaveRequestDetail, filterId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("RejectLeaveRequest/{filterId}")]
+        public IResponse<ApiResponse> RejectLeaveRequest([FromRoute] int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
+        {
+            var result = _requestService.RejectLeaveService(leaveRequestDetail, filterId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ReAssigneLeaveRequest/{filterId}")]
+        public IResponse<ApiResponse> ReAssigneLeaveRequest([FromRoute] int filterId, [FromBody]LeaveRequestNotification approvalRequest)
+        {
+            var result = _requestService.ReAssigneToOtherManagerService(approvalRequest, filterId);
+            return BuildResponse(result);
+        }
     }
 }

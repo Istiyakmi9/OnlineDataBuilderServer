@@ -33,29 +33,38 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
-        [HttpPut("ApproveAttendance/{filterId}")]
-        public IResponse<ApiResponse> ApproveAttendance([FromRoute]int filterId, [FromBody]AttendanceDetails attendanceDetail)
-        {
-            var result = _requestService.ApproveAttendanceService(filterId, attendanceDetail);
-            return BuildResponse(result);
-        }
-
         [HttpPut("ApprovalAction")]
         public IResponse<ApiResponse> ApprovalAction(AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.ApprovalAttendanceService(attendanceDetail);
+            var result = _requestService.ApproveAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction(AttendanceDetails attendanceDetail)
+        public IResponse<ApiResponse> RejectAction([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.RejectAttendanceService(attendanceDetail);
+            var result = _requestService.RejectAttendanceService(attendanceDetail, filterId);
             return BuildResponse(result);
         }
 
-        [HttpPut("ReAssigneToOtherManager")]
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ApproveAttendanceRequest/{filterId}")]
+        public IResponse<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
+        {
+            var result = _requestService.ApproveAttendanceService(attendanceDetail, filterId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("RejectAttendanceRequest/{filterId}")]
+        public IResponse<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
+        {
+            var result = _requestService.RejectAttendanceService(attendanceDetail, filterId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ReAssigneAttendanceRequest/{filterId}")]
         public IResponse<ApiResponse> ReAssigneToOtherManager(AttendanceDetails attendanceDetail)
         {
             var result = _requestService.ReAssigneAttendanceService(attendanceDetail);

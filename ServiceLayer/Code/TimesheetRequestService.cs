@@ -31,22 +31,22 @@ namespace ServiceLayer.Code
             _eEmailService = eEmailService;
         }
 
-        public RequestModel RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public RequestModel RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
         {
             if (dailyTimesheetDetails == null)
                 throw new HiringBellException("Invalid operation. Please contact to admin.");
 
             UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
-            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public RequestModel ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
         {
             if (dailyTimesheetDetails == null)
                 throw new HiringBellException("Invalid operation. Please contact to admin.");
 
             UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
-            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId);
+            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
         public RequestModel UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
@@ -122,7 +122,7 @@ namespace ServiceLayer.Code
             return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
         }
 
-        public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
         {
             return null;
         }
