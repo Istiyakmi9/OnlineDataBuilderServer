@@ -28,12 +28,10 @@ namespace ServiceLayer.Code
 
             DataSet ds = Converter.ToDataSet<RoleAccessibilityMapping>(permissionMenu);
             result = _db.BatchInsert("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
-            if (permissionMenu.Count <= 0)
-            {
-                return "Fail to inserted or updated";
-            }
+            if (result != rolesAndMenus.Menu.Count)
+                throw new HiringBellException("Fail to insert or update roles permission.");
 
-            return "Inserted or updated successfully";
+            return ApplicationConstants.Successfull;
         }
 
         public DataSet GetsRolesandMenu(int accessLevelId)

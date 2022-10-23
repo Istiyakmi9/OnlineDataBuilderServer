@@ -743,8 +743,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 MySqlDataAdapter da = new MySqlDataAdapter();
                 da.InsertCommand = cmd;
                 da.UpdateBatchSize = 4;
-                if (!this.IsTransactionStarted)
-                    con.Open();
+                con.Open();
                 state = da.Update(table);
             }
             catch (Exception ex)
@@ -753,7 +752,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (!this.IsTransactionStarted && (con.State == ConnectionState.Broken || con.State == ConnectionState.Open))
+                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
                     con.Close();
             }
 
