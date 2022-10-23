@@ -33,10 +33,34 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("ReAssigneToOtherManager")]
+        [HttpPut("ReAssigneTimesheet")]
         public IResponse<ApiResponse> ReAssigneToOtherManager(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
             var result = _requestService.ReAssigneTimesheetService(dailyTimesheetDetails);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ApproveTimesheetRequest/{filterId}")]
+        public IResponse<ApiResponse> ApproveTimesheetRequest([FromRoute]int filterId, [FromBody]List<DailyTimesheetDetail> dailyTimesheetDetails)
+        {
+            var result = _requestService.ApprovalTimesheetService(dailyTimesheetDetails, filterId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("RejectTimesheetRequest/{filterId}")]
+        public IResponse<ApiResponse> RejectTimesheetRequest([FromRoute] int filterId, [FromBody] List<DailyTimesheetDetail> dailyTimesheetDetails)
+        {
+            var result = _requestService.RejectTimesheetService(dailyTimesheetDetails, filterId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPut("ReAssigneTimesheetRequest/{filterId}")]
+        public IResponse<ApiResponse> ReAssigneTimesheetRequest([FromRoute] int filterId, [FromBody]List<DailyTimesheetDetail> dailyTimesheetDetails)
+        {
+            var result = _requestService.ReAssigneTimesheetService(dailyTimesheetDetails, filterId);
             return BuildResponse(result);
         }
     }
