@@ -9,7 +9,6 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
 WORKDIR /src
 COPY ["OnlineDataBuilder/OnlineDataBuilder.csproj", "OnlineDataBuilder/"]
-COPY ["MultiTypeDocumentConverter/MultiTypeDocumentConverter.csproj", "MultiTypeDocumentConverter/"]
 COPY ["EMailService/EMailService.csproj", "EMailService/"]
 COPY ["DocMaker/DocMaker.csproj", "DocMaker/"]
 COPY ["DocxToHtml/HtmlConverter/HtmlConverter.csproj", "DocxToHtml/HtmlConverter/"]
