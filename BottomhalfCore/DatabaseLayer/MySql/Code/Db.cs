@@ -5,6 +5,7 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -41,30 +42,58 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public void StartTransaction(IsolationLevel isolationLevel)
         {
-            this.IsTransactionStarted = true;
-            this.con.Open();
-            transaction = this.con.BeginTransaction(isolationLevel);
+            try
+            {
+                this.IsTransactionStarted = true;
+                this.con.Open();
+                transaction = this.con.BeginTransaction(isolationLevel);
+            }
+            catch (Exception ex)
+            {
+                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                    con.Close();
+
+                throw new HiringBellException("Fail to perform Database operation.", ex);
+            }
         }
 
         public void Commit()
         {
-            this.IsTransactionStarted = false;
-            this.transaction.Commit();
-
-            if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                con.Close();
+            try
+            {
+                this.IsTransactionStarted = false;
+                this.transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                throw new HiringBellException("Fail to perform Database operation.", ex);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                    con.Close();
+            }
         }
 
         public void RollBack()
         {
-            if (this.IsTransactionStarted && this.transaction != null)
+            try
             {
-                this.IsTransactionStarted = false;
-                this.transaction.Rollback();
+                if (this.IsTransactionStarted && this.transaction != null)
+                {
+                    this.IsTransactionStarted = false;
+                    this.transaction.Rollback();
+                }
             }
-
-            if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                con.Close();
+            catch (Exception ex)
+            {
+                throw new HiringBellException("Fail to perform Database operation.", ex);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                    con.Close();
+            }
         }
 
         public DataSet FetchResult(string ProcedureName)
@@ -178,7 +207,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         {
             try
             {
-                DbResult dbResult = new DbResult();
                 string status = string.Empty;
                 cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -194,8 +222,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 var result = await cmd.ExecuteNonQueryAsync();
                 if (OutParam)
                     status = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                dbResult.Build(result, status);
-                return dbResult;
+                
+                return DbResult.Build(result, status);
             }
             catch (Exception ex)
             {
@@ -793,58 +821,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return state;
         }
 
-        public async Task<int> BatchInsertAsync(string ProcedureName, DataSet TableSet, Boolean IsOutparam)
+        public async Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
         {
-            int state = -1;
             try
             {
-                cmd = new MySqlCommand();
-                DataTable dt = TableSet.Tables[0];
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd.UpdatedRowSource = UpdateRowSource.None;
-
-                int Initial = 0;
-                Type ColumnType = null;
-                string ColumnValue = string.Empty;
-
-                DataColumn column = null;
-                int i = 0;
-                while (i < dt.Columns.Count)
-                {
-                    column = dt.Columns[i];
-                    ColumnType = dt.Rows[Initial][column].GetType();
-                    if (ColumnType == typeof(System.String))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-                    else if (ColumnType == typeof(System.Int16))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int16, 2, column.ColumnName);
-                    else if (ColumnType == typeof(System.Int32))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int32, 4, column.ColumnName);
-                    else if (ColumnType == typeof(System.Double) || ColumnType == typeof(System.Single))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Decimal, 8, column.ColumnName);
-                    else if (ColumnType == typeof(System.Int64) || ColumnType == typeof(System.Decimal))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int64, 8, column.ColumnName);
-                    else if (ColumnType == typeof(System.Char))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, 1, column.ColumnName);
-                    else if (ColumnType == typeof(System.Boolean))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Bit, 1, column.ColumnName);
-                    else if (ColumnType == typeof(System.DateTime))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.DateTime, 8, column.ColumnName);
-                    else
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-                    i++;
-                }
-
-                if (IsOutparam)
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, ColumnValue.Length, "ProcessingResult").Direction = ParameterDirection.Output;
-
-                MySqlDataAdapter da = new MySqlDataAdapter();
-                da.InsertCommand = cmd;
-                da.UpdateBatchSize = 4;
-                if (!this.IsTransactionStarted)
-                    con.Open();
-                state = await da.UpdateAsync(dt);
+                return await this.BatchInsertUpdateCoreAsync(ProcedureName, table, IsOutparam);
             }
             catch (Exception ex)
             {
@@ -855,8 +836,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 if (!this.IsTransactionStarted && (con.State == ConnectionState.Broken || con.State == ConnectionState.Open))
                     con.Close();
             }
-
-            return state;
         }
 
         public string XmlBatchInsertUpdate(string ProcedureName, string XmlData, bool OutParam)
@@ -899,6 +878,53 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         {
             public MySqlDbType DbType { set; get; }
             public int Size { set; get; }
+        }
+
+        private async Task<DbResult> BatchInsertUpdateCoreAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
+        {
+            string statusMessage = string.Empty;
+            cmd.Connection = con;
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = ProcedureName;
+            cmd.UpdatedRowSource = UpdateRowSource.None;
+
+            int Initial = 0;
+            Type ColumnType = null;
+            string ColumnValue = string.Empty;
+            cmd.Parameters.Clear();
+            foreach (DataColumn column in table.Columns)
+            {
+                ColumnType = table.Rows[Initial][column].GetType();
+                if (ColumnType == typeof(System.String))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
+                else if (ColumnType == typeof(System.Int16))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int16, 2, column.ColumnName);
+                else if (ColumnType == typeof(System.Int32))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int32, 4, column.ColumnName);
+                else if (ColumnType == typeof(System.Double) || ColumnType == typeof(System.Single))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Decimal, 8, column.ColumnName);
+                else if (ColumnType == typeof(System.Int64) || ColumnType == typeof(System.Decimal))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int64, 8, column.ColumnName);
+                else if (ColumnType == typeof(System.Char))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, 1, column.ColumnName);
+                else if (ColumnType == typeof(System.Boolean))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Bit, 1, column.ColumnName);
+                else if (ColumnType == typeof(System.DateTime))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.DateTime, 8, column.ColumnName);
+                else
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
+            }
+
+            if (IsOutparam)
+                cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, ColumnValue.Length, "ProcessingResult").Direction = ParameterDirection.Output;
+
+            MySqlDataAdapter da = new MySqlDataAdapter();
+            da.InsertCommand = cmd;
+            da.UpdateBatchSize = 4;
+            if (con.State != ConnectionState.Open)
+                con.Open();
+            var state = await da.UpdateAsync(table);
+            return DbResult.Build(state, statusMessage);
         }
 
         private DbTypeDetail GetType(Type ColumnType)

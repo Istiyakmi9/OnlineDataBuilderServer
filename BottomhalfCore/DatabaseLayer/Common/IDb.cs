@@ -15,7 +15,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         DataSet GetDataset(string ProcedureName, DbParam[] param);
         DataSet GetDataset(string ProcedureName);
         int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam);
-        Task<int> BatchInsertAsync(string ProcedureName, DataSet TableSet, Boolean IsOutparam);
+        Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam);
         DataSet GetDataset(string ProcedureName, DbParam[] param, bool OutParam, ref string ProcessingStatus);
         Object ExecuteSingle(string ProcedureName, DbParam[] param, bool OutParam);
         string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam);
