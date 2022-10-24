@@ -8,6 +8,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -183,7 +184,7 @@ namespace ServiceLayer.Code
             return leavePlanTypes;
         }
 
-        public LeavePlan LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes)
+        public async Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes)
         {
             if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan id.");
@@ -195,9 +196,9 @@ namespace ServiceLayer.Code
             leavePlanTypes.ForEach(item => item.PlanConfigurationDetail = "");
             leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
 
-            var result = _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to add leave type.");
+            var result = await _db.ExecuteAsync("sp_leave_plan_insupd", leavePlan, true);
+            if (result.rowsEffected != 1 || string.IsNullOrEmpty(result.statusMessage))
+                throw new HiringBellException("Unable to add leave type. Please contact to admin.");
             return leavePlan;
         }
 

@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using ModalLayer;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -712,6 +713,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         }
 
         public Task<string> BatchUpdateAsync(string ProcedureName, DataTable table, bool OutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false)
         {
             throw new NotImplementedException();
         }

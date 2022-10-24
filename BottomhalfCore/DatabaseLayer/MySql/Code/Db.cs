@@ -1,7 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using ModalLayer;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
-using MySql.Data.Types;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -162,6 +162,40 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 else
                     state = result.ToString();
                 return state;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
+            }
+        }
+
+        public async Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false)
+        {
+            try
+            {
+                DbResult dbResult = new DbResult();
+                string status = string.Empty;
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = ProcedureName;
+                this.PrepareArguments<string>(instance);
+
+                if (OutParam)
+                {
+                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                }
+
+                con.Open();
+                var result = await cmd.ExecuteNonQueryAsync();
+                if (OutParam)
+                    status = cmd.Parameters["_ProcessingResult"].Value.ToString();
+                dbResult.Build(result, status);
+                return dbResult;
             }
             catch (Exception ex)
             {
