@@ -1,6 +1,7 @@
 ﻿using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -9,7 +10,7 @@ namespace ServiceLayer.Interface
         dynamic GetLeavePlansService(FilterModel filterModel);
         List<LeavePlanType> AddLeavePlanTypeService(LeavePlanType leavePlanType);
         List<LeavePlan> AddLeavePlansService(LeavePlan leavePlanType);
-        LeavePlan LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes);
+        Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes);
         List<LeavePlanType> UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType);
         string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail);
         LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId);
