@@ -481,89 +481,89 @@ namespace ServiceLayer.Code
 
         public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating)
         {
-            if (IsUpdating == true)
+            try
             {
-                if (employee.EmployeeUid <= 0)
-                    throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
-            }
-            this.ValidateEmployee(employee);
-            this.ValidateEmployeeDetails(employee);
-
-            //TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-            //employee.DOB = TimeZoneInfo.ConvertTimeFromUtc(employee.DOB, istTimeZome);
-            //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
-            int empId = Convert.ToInt32(employee.EmployeeUid);
-
-            Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive ? 1 : 0);
-            if (employeeDetail == null)
-            {
-                employeeDetail = new Employee
+                if (IsUpdating == true)
                 {
-                    EmpProfDetailUid = -1
-                };
-            }
-
-            employee.OrganizationId = employeeDetail.OrganizationId;
-            var professionalDetail = new EmployeeProfessionDetail
-            {
-                AadharNo = employee.AadharNo,
-                AccountNumber = employee.AccountNumber,
-                BankName = employee.BankName,
-                BranchName = employee.BranchName,
-                CreatedBy = employee.EmployeeUid,
-                CreatedOn = employee.CreatedOn,
-                Domain = employee.Domain,
-                Email = employee.Email,
-                EmployeeUid = employee.EmployeeUid,
-                EmpProfDetailUid = employeeDetail.EmpProfDetailUid,
-                ExperienceInYear = employee.ExperienceInYear,
-                FirstName = employee.FirstName,
-                IFSCCode = employee.IFSCCode,
-                LastCompanyName = employee.LastCompanyName,
-                LastName = employee.LastName,
-                Mobile = employee.Mobile,
-                PANNo = employee.PANNo,
-                SecomdaryMobile = employee.SecondaryMobile,
-                Specification = employee.Specification,
-            };
-            employeeDetail.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
-
-
-            EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
-            {
-                SalaryDetail = new EmployeeSalaryDetail
-                {
-                    CTC = employee.CTC
+                    if (employee.EmployeeUid <= 0)
+                        throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
                 }
-            };
+                this.ValidateEmployee(employee);
+                this.ValidateEmployeeDetails(employee);
 
-            EmployeeSalaryDetail employeeSalaryDetail = new EmployeeSalaryDetail
-            {
-                CTC = 0,
-                GrossIncome = 0,
-                NetSalary = 0,
-                CompleteSalaryDetail = "[]",
-                TaxDetail = "[]",
-            };
+                //TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+                //employee.DOB = TimeZoneInfo.ConvertTimeFromUtc(employee.DOB, istTimeZome);
+                //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
+                int empId = Convert.ToInt32(employee.EmployeeUid);
 
-            if (employee.EmployeeUid > 0 || employee.CTC > 0)
-            {
-                employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
-                if (employeeSalaryDetail == null)
+                Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive ? 1 : 0);
+                if (employeeDetail == null)
                 {
-                    employeeSalaryDetail = new EmployeeSalaryDetail
+                    employeeDetail = new Employee
                     {
-                        CTC = 0,
-                        GrossIncome = 0,
-                        NetSalary = 0,
-                        CompleteSalaryDetail = "[]",
-                        TaxDetail = "[]",
+                        EmpProfDetailUid = -1
                     };
                 }
-            }
 
-            return await Task.Run(() =>
-            {
+                employee.OrganizationId = employeeDetail.OrganizationId;
+                var professionalDetail = new EmployeeProfessionDetail
+                {
+                    AadharNo = employee.AadharNo,
+                    AccountNumber = employee.AccountNumber,
+                    BankName = employee.BankName,
+                    BranchName = employee.BranchName,
+                    CreatedBy = employee.EmployeeUid,
+                    CreatedOn = employee.CreatedOn,
+                    Domain = employee.Domain,
+                    Email = employee.Email,
+                    EmployeeUid = employee.EmployeeUid,
+                    EmpProfDetailUid = employeeDetail.EmpProfDetailUid,
+                    ExperienceInYear = employee.ExperienceInYear,
+                    FirstName = employee.FirstName,
+                    IFSCCode = employee.IFSCCode,
+                    LastCompanyName = employee.LastCompanyName,
+                    LastName = employee.LastName,
+                    Mobile = employee.Mobile,
+                    PANNo = employee.PANNo,
+                    SecomdaryMobile = employee.SecondaryMobile,
+                    Specification = employee.Specification,
+                };
+                employeeDetail.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
+
+
+                EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+                {
+                    SalaryDetail = new EmployeeSalaryDetail
+                    {
+                        CTC = employee.CTC
+                    }
+                };
+
+                EmployeeSalaryDetail employeeSalaryDetail = new EmployeeSalaryDetail
+                {
+                    CTC = 0,
+                    GrossIncome = 0,
+                    NetSalary = 0,
+                    CompleteSalaryDetail = "[]",
+                    TaxDetail = "[]",
+                };
+
+                if (employee.EmployeeUid > 0 || employee.CTC > 0)
+                {
+                    employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
+                    if (employeeSalaryDetail == null)
+                    {
+                        employeeSalaryDetail = new EmployeeSalaryDetail
+                        {
+                            CTC = 0,
+                            GrossIncome = 0,
+                            NetSalary = 0,
+                            CompleteSalaryDetail = "[]",
+                            TaxDetail = "[]",
+                        };
+                    }
+                }
+
                 string EncreptedPassword = _authenticationService.Encrypt(
                     _configuration.GetSection("DefaultNewEmployeePassword").Value,
                     _configuration.GetSection("EncryptSecret").Value
@@ -658,13 +658,18 @@ namespace ServiceLayer.Code
 
                     DataTable table = Converter.ToDataTable(fileInfo);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, false);
+                    var result = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
                     _db.Commit();
                 }
 
                 var ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
                 return ResultSet;
-            });
+            }
+            catch (Exception ex)
+            {
+                _db.RollBack();
+                throw new HiringBellException("Fail to insert or update student data.", ex);
+            }
         }
 
         private void ValidateEmployeeDetails(Employee employee)

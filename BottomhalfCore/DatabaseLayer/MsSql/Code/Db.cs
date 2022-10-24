@@ -722,6 +722,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, bool IsOutparam)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }
