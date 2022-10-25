@@ -268,7 +268,7 @@ namespace ServiceLayer.Code
                 };
 
                 ds = this.db.GetDataset("sp_Billing_detail", dbParams);
-                if (ds.Tables.Count == 5)
+                if (ds.Tables.Count == 4)
                 {
                     sender = Converter.ToType<Organization>(ds.Tables[0]);
                     receiver = Converter.ToType<Organization>(ds.Tables[1]);
@@ -296,9 +296,9 @@ namespace ServiceLayer.Code
                     }
 
                     List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
-                    if (ds.Tables[4].Rows.Count > 0)
+                    if (ds.Tables[3].Rows.Count > 0)
                     {
-                        var currentAttendance = Converter.ToType<Attendance>(ds.Tables[4]);
+                        var currentAttendance = Converter.ToType<Attendance>(ds.Tables[3]);
                         attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
                     }
 
