@@ -90,5 +90,12 @@ namespace OnlineDataBuilder.Controllers
             var result = this.loginService.ResetEmployeePassword(authUser, Role.Employee);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("ForgotPassword")]
+        public IResponse<ApiResponse> ForgotPassword([FromBody]string email)
+        {
+            var result = this.loginService.ForgotPasswordService(email);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
