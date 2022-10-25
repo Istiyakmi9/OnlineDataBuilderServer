@@ -1,8 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Service;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using SocialMediaServices;
@@ -11,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using CacheTable = ServiceLayer.Caching.CacheTable;
 
@@ -24,11 +27,15 @@ namespace ServiceLayer.Code
         private readonly IAuthenticationService _authenticationService;
         private readonly ICacheManager _cacheManager;
         private readonly IConfiguration _configuration;
+        private readonly IEMailManager _emailManager;
+        private readonly ICommonService _commonService;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             IMediaService mediaService,
             IAuthenticationService authenticationService,
             ICacheManager cacheManager,
+            IEMailManager emailManager,
+            ICommonService commonService,
             IConfiguration configuration)
         {
             this.db = db;
@@ -37,6 +44,8 @@ namespace ServiceLayer.Code
             _mediaService = mediaService;
             _authenticationService = authenticationService;
             _cacheManager = cacheManager;
+            _emailManager = emailManager;
+            _commonService = commonService;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -305,16 +314,47 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Email is null or empty");
 
             UserDetail authUser = new UserDetail();
-            authUser.Email = email;
+            authUser.EmailId = email;
             var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
 
             if (string.IsNullOrEmpty(encryptedPassword))
                 throw new HiringBellException("Email id is not registered. Please contact to admin");
 
             var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
-            
+
+            EmailSenderModal emailSenderModal = new EmailSenderModal();
+            EmailTemplate template = _commonService.GetTemplate(3, emailSenderModal);
+            BuildEmailBody(template, password);
+
+            emailSenderModal.Body = template.BodyContent;
+            emailSenderModal.To = new List<string> { email };
+            emailSenderModal.Subject = template.SubjectLine;
+            emailSenderModal.UserName = "BottomHalf";
+            emailSenderModal.Title = template.EmailTitle;
+
+            Task.Run(() =>
+            {
+                _emailManager.SendMail(emailSenderModal);
+            });
 
             return Status;
+        }
+
+        private void BuildEmailBody(EmailTemplate emailTemplate, string password)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append("<div>" + emailTemplate.Salutation + "</div>");
+            string body = JsonConvert.DeserializeObject<string>(emailTemplate.BodyContent);
+            stringBuilder.Append(body.Replace("[[NEW-PASSWORD]]", password));
+
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine();
+
+            stringBuilder.Append("<div>" + emailTemplate.EmailClosingStatement + "</div>");
+            stringBuilder.Append("<div>" + emailTemplate.SignatureDetail + "</div>");
+            stringBuilder.Append("<div>" + emailTemplate.ContactNo + "</div>");
+
+            emailTemplate.BodyContent = stringBuilder.ToString();
         }
     }
 }
