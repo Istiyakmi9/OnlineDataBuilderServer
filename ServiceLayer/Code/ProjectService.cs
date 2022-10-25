@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ServiceLayer.Code
 {
-    public class ProjectService: IProjectService
+    public class ProjectService : IProjectService
     {
         private readonly IDb _db;
         public ProjectService(IDb db)
@@ -42,7 +42,8 @@ namespace ServiceLayer.Code
             if (project == null)
             {
                 project = projectDetail;
-                project.TeamMemberIds = JsonConvert.SerializeObject(project.TeamMemberIds);
+                project.TeamMemberIds = project.TeamMemberIds == null ? "[]" 
+                                        : JsonConvert.SerializeObject(project.TeamMemberIds);
                 project.PageIndexDetail = "[]";
                 project.KeywordDetail = "[]";
                 project.DocumentationDetail = "[]";
@@ -52,13 +53,15 @@ namespace ServiceLayer.Code
                 project.ProjectName = projectDetail.ProjectName;
                 project.ProjectDescription = projectDetail.ProjectDescription;
                 project.ProjectManagerId = projectDetail.ProjectManagerId;
-                project.TeamMemberIds = JsonConvert.SerializeObject(projectDetail.TeamMemberIds);
+                project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
+                                        : project.TeamMemberIds;
                 project.ArchitectId = projectDetail.ArchitectId;
                 project.IsClientProject = projectDetail.IsClientProject;
                 project.ClientId = projectDetail.ClientId;
                 project.HomePageUrl = projectDetail.HomePageUrl;
                 project.ProjectStartedOn = projectDetail.ProjectStartedOn;
                 project.ProjectEndedOn = projectDetail.ProjectEndedOn;
+                project.CompanyId = projectDetail.CompanyId;
             }
             var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
             if (string.IsNullOrEmpty(result))
@@ -68,7 +71,7 @@ namespace ServiceLayer.Code
 
         public Project GetAllWikiService(long ProjectId)
         {
-            var result = _db.Get<Project>("sp_project_getBy_id", new { ProjectId });
+            var result = _db.Get<Project>("sp_project_detail_getby_id", new { ProjectId });
             return result;
         }
 
@@ -83,14 +86,17 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(project.ProjectName))
                 throw new HiringBellException("Project name is null or empty");
 
-            if (string.IsNullOrEmpty(project.ProjectDescription))
-                throw new HiringBellException("Project description is null or empty");
+            if (project.CompanyId <= 0)
+                throw new HiringBellException("Compnay is not selected. Please selete your company.");
 
-            if (string.IsNullOrEmpty(project.TeamMemberIds))
-                throw new HiringBellException("Team members are null or empty");
+            //if (string.IsNullOrEmpty(project.ProjectDescription))
+            //    throw new HiringBellException("Project description is null or empty");
 
-            if (project.ProjectManagerId < 0)
-                throw new HiringBellException("Project manager is null or empty");
+            //if (string.IsNullOrEmpty(project.TeamMemberIds))
+            //    throw new HiringBellException("Team members are null or empty");
+
+            //if (project.ProjectManagerId < 0)
+            //    throw new HiringBellException("Project manager is null or empty");
         }
     }
 }
