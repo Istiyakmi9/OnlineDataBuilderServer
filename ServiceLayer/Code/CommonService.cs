@@ -28,6 +28,21 @@ namespace ServiceLayer.Code
             return employeeTable;
         }
 
+        public EmailTemplate GetTemplate(int EmailTemplateId, EmailSenderModal emailSenderModal)
+        {
+            (EmailTemplate emailTemplate, EmailSettingDetail emailSetting) = 
+                _db.GetMulti<EmailTemplate, EmailSettingDetail>("sp_email_template_by_id", new { EmailTemplateId });
+
+            if (emailSetting == null)
+                throw new HiringBellException("Email setting detail not found. Please contact to admin.");
+
+            if (emailTemplate == null)
+                throw new HiringBellException("Email template not found. Please contact to admin.");
+
+            emailSenderModal.EmailSettingDetails = emailSetting;
+            return emailTemplate;
+        }
+
         public bool IsEmptyJson(string json)
         {
             if (!string.IsNullOrEmpty(json))

@@ -84,16 +84,17 @@ namespace EMailService.Service
             if (emailSenderModal == null || emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
 
-            var fromAddress = new System.Net.Mail.MailAddress(emailSenderModal.From, emailSenderModal.Title);
+            EmailSettingDetail emailSettingDetail = emailSenderModal.EmailSettingDetails;
+            var fromAddress = new System.Net.Mail.MailAddress(emailSettingDetail.EmailAddress, emailSenderModal.Title);
 
             var smtp = new SmtpClient
             {
-                Host = emailSenderModal.EmailSettingDetails.EmailHost,
-                Port = emailSenderModal.EmailSettingDetails.PortNo,
-                EnableSsl = emailSenderModal.EmailSettingDetails.EnableSsl,
+                Host = emailSettingDetail.EmailHost,
+                Port = emailSettingDetail.PortNo,
+                EnableSsl = emailSettingDetail.EnableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                UseDefaultCredentials = emailSenderModal.EmailSettingDetails.UserDefaultCredentials,
-                Credentials = new NetworkCredential(fromAddress.Address, emailSenderModal.EmailSettingDetails.Credentials)
+                UseDefaultCredentials = emailSettingDetail.UserDefaultCredentials,
+                Credentials = new NetworkCredential(fromAddress.Address, emailSettingDetail.Credentials)
             };
 
             var message = new MailMessage();
