@@ -47,7 +47,7 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
 
         private void SendMail()
         {
-            _eMailManager.SendMail();
+            // _eMailManager.SendMail();
         }
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);

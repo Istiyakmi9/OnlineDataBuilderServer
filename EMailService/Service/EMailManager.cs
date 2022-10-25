@@ -79,23 +79,9 @@ namespace EMailService.Service
                 sequence);
         }
 
-        private EmailSettingDetail GetSettingDetail()
+        public string SendMail(EmailSenderModal emailSenderModal)
         {
-            var emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
-            if (emailSettingDetail == null)
-                throw new HiringBellException("Fail to get emaill detail. Please contact to admin.");
-
-            return emailSettingDetail;
-        }
-
-        public string SendMail()
-        {
-            string status = string.Empty;
-            EmailSenderModal emailSenderModal = null;
-            EmailSettingDetail emailSettingDetail = GetSettingDetail();
-            Employee employee = null;
-
-            if (emailSenderModal.To == null || emailSenderModal.To.Count == 0)
+            if (emailSenderModal == null || emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
 
             var fromAddress = new System.Net.Mail.MailAddress(emailSenderModal.From, emailSenderModal.Title);
@@ -111,8 +97,8 @@ namespace EMailService.Service
             };
 
             var message = new MailMessage();
-            message.Subject = emailSenderModal.Title;
-            message.Body = this.GetClientBillingBody(employee);
+            message.Subject = emailSenderModal.Subject;
+            message.Body = emailSenderModal.Body;
             message.IsBodyHtml = true;
             message.From = fromAddress;
 
@@ -138,122 +124,13 @@ namespace EMailService.Service
                     }
 
                 smtp.Send(message);
-                status = "success";
             }
             catch (Exception ex)
             {
                 var _e = ex;
                 throw;
             }
-            return status;
-        }
-
-        private string GetClientBillingBody(Employee employee)
-        {
-            StringBuilder firstPhase = new StringBuilder();
-            StringBuilder body = new StringBuilder();
-            StringBuilder endPhase = new StringBuilder();
-            GenerateBillFileDetail emailTemplateDetail = null;
-            var emailTemplate = emailTemplateDetail.EmailTemplateDetail;
-
-            body.AppendLine(emailTemplate.BodyContent);
-
-            string style = @"
-                    <style>                        
-                        .fw-bold {
-                            font-weight: 700!important;
-                        }
-
-                        .ps-2 {
-                            padding-left: 0.5rem!important;
-                        }
-                        .w-100 {
-                            width: 100%!important;
-                        }
-
-                        .mt-3 {
-                            margin-top: 1rem!important;
-                        }
-                    </style>
-                ";
-
-            string htmlBody = $@"<!DOCTYPE html>            
-                    <html>
-                        <head>
-                            <title>STAFFING BILL</title> 
-                            {style}
-                         </head> 
-                         <body>
-                            <div>
-                              <div style='margin-top: 1.5rem!important;'>
-                                <div style='margin-bottom: 0.25rem!important;'>
-                                  {emailTemplate.Salutation}
-                                </div>
-                                <div style='border: 1px solid #dee2e6!important; padding - top: 1rem!important;
-                                    padding-bottom: 1rem!important; padding - right: 0.5rem!important;
-                                    padding-left: 0.5rem!important;'>
-
-                                  <div style='flex: 0 0 auto; width: 100%;'>
-                                    <div>
-                                      <div>
-                                        {body.ToString()}
-                                      </div> 
-                                    </div>
-                                  </div>
-
-                                  <div style='flex: 0 0 auto; width: 100%; margin-top: 1.5rem!important;
-                                        margin-bottom: 1.5rem!important;'>
-                                    <div>
-                                      <div>
-                                        <div style='display: flex!important;'>
-                                          <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
-                                                CANDIDATE NAME: 
-                                          </span>
-                                          <span>{employee.FirstName + ' ' + employee.LastName}</span>
-                                        </div>
-
-                                        <div style='display: flex!important;'>
-                                          <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
-                                            CANDIDATE ROLE: 
-                                          </span>
-                                          <span>SOFTWARE DEVELOPER</span>
-                                        </div>
-                        
-                                        <div style='display: flex!important;'>
-                                          <span style='padding-right 1.5rem !important; padding-left 1.5rem !important; font-weight: 700!important;'>
-                                            BILLING MONTH: 
-                                          </span>
-                                          <span>{emailTemplateDetail.MonthName}, {emailTemplateDetail.ForYear}</span>
-                                        </div>
-                                      </div> 
-                                    </div>
-                                  </div>
-
-                                </div>
-                                <div style='display: flex!important;'>
-                                  <div style='font-weight: 700!important;'>Note: </div> 
-                                  <div>
-                                    {emailTemplate.EmailNote}
-                                  </div>
-                                </div>
-                                <div style='margin-top: 1rem !important;'>
-                                  {emailTemplate.EmailClosingStatement}
-                                </div>
-                                <div>
-                                  <div>{emailTemplate.SignatureDetail}</div>
-                                </div>
-                                <div>
-                                  Contact No#:
-                                  <div>
-                                    +91-{emailTemplate.ContactNo}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                        </body> 
-                    </html>";
-
-            return htmlBody;
+            return ApplicationConstants.Successfull;
         }
     }
 }
