@@ -468,6 +468,43 @@ namespace ServiceLayer.Code
             return value;
         }
 
+        public SalaryGroup RemoveAndUpdateSalaryGroupService(string componentId, int groupId)
+        {
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = groupId });
+            if (salaryGrp == null)
+                throw new HiringBellException("Salary Group already exist.");
+
+            if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
+                throw new HiringBellException("Salary Group already exist.", System.Net.HttpStatusCode.NotFound);
+
+            var components = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGrp.SalaryComponents);
+            var component = components.FirstOrDefault(x => x.ComponentId == componentId);
+            if (component != null)
+            {
+                if (components.Remove(component))
+                {
+                    salaryGrp.SalaryComponents = JsonConvert.SerializeObject(components);
+                    var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+                    if (string.IsNullOrEmpty(result))
+                        throw new HiringBellException("Fail to insert or update.");
+                }
+                else
+                {
+                    throw new HiringBellException("Component does not exist in the group.", System.Net.HttpStatusCode.NotFound);
+                }
+            }
+            else
+            {
+                components = components.Where(x => x.ComponentId != null && x.ComponentId != "").ToList();
+                salaryGrp.SalaryComponents = JsonConvert.SerializeObject(components);
+                var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Fail to insert or update.");
+            }
+
+            return salaryGrp;
+        }
+
         public List<SalaryComponents> UpdateSalaryGroupComponentService(SalaryGroup salaryGroup)
         {
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
@@ -595,7 +632,7 @@ namespace ServiceLayer.Code
         private decimal GetEmployeeContributionAmount(List<SalaryComponents> salaryComponents, decimal CTC)
         {
             decimal finalAmount = 0;
-            var gratutity = salaryComponents.Find(x => x.ComponentId.ToUpper() == "GRA");
+            var gratutity = salaryComponents.FirstOrDefault(x => x.ComponentId.ToUpper() == "GRA");
             if (gratutity != null && !string.IsNullOrEmpty(gratutity.Formula))
             {
                 if (gratutity.Formula.Contains("[CTC]"))
@@ -604,7 +641,7 @@ namespace ServiceLayer.Code
                 finalAmount += this.calculateExpressionUsingInfixDS(gratutity.Formula, gratutity.DeclaredValue);
             }
 
-            var employeePF = salaryComponents.Find(x => x.ComponentId.ToUpper() == "EPER-PF");
+            var employeePF = salaryComponents.FirstOrDefault(x => x.ComponentId.ToUpper() == "EPER-PF");
             if (employeePF != null && !string.IsNullOrEmpty(employeePF.Formula))
             {
                 if (employeePF.Formula.Contains("[CTC]"))
@@ -613,7 +650,7 @@ namespace ServiceLayer.Code
                 finalAmount += this.calculateExpressionUsingInfixDS(employeePF.Formula, employeePF.DeclaredValue);
             }
 
-            var employeeInsurance = salaryComponents.Find(x => x.ComponentId.ToUpper() == "ECI");
+            var employeeInsurance = salaryComponents.FirstOrDefault(x => x.ComponentId.ToUpper() == "ECI");
             if (employeeInsurance != null && !string.IsNullOrEmpty(employeeInsurance.Formula))
             {
                 if (employeeInsurance.Formula.Contains("[CTC]"))
