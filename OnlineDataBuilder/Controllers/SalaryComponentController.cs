@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
@@ -76,6 +77,14 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> UpdateSalaryGroup(SalaryGroup salaryGroup)
         {
             var result = _salaryComponentService.UpdateSalaryGroup(salaryGroup);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpDelete("RemoveAndUpdateSalaryGroup/{componentId}/{groupId}")]
+        public IResponse<ApiResponse> RemoveAndUpdateSalaryGroup(string componentId, int groupId)
+        {
+            var result = _salaryComponentService.RemoveAndUpdateSalaryGroupService(componentId, groupId);
             return BuildResponse(result);
         }
 

@@ -76,12 +76,12 @@ namespace ServiceLayer.Code
 
         public RequestModel GetManagerAndUnAssignedRequestService(long employeeId)
         {
-            return GetEmployeeRequestedDataService(employeeId, "sp_approval_requests_get_by_role");
+            return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get_by_role");
         }
 
         public RequestModel FetchPendingRequestService(long employeeId)
         {
-            return GetEmployeeRequestedDataService(employeeId, "sp_approval_requests_get");
+            return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get");
         }
 
         public RequestModel ApproveAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)

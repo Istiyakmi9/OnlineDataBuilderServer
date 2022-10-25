@@ -15,8 +15,12 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using TimeZoneConverter;
 
 namespace ServiceLayer.Code
@@ -645,7 +649,6 @@ namespace ServiceLayer.Code
 
         public string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail)
         {
-            string result = null;
             var resultSet = db.FetchDataSet("sp_sendingbill_email_get_detail", new
             {
                 generateBillFileDetail.SenderId,
@@ -656,35 +659,48 @@ namespace ServiceLayer.Code
 
             if (resultSet != null && resultSet.Tables.Count == 4)
             {
-                var organizations = Converter.ToList<Organization>(resultSet.Tables[0]);
-                var file = Converter.ToList<FileDetail>(resultSet.Tables[1]);
-                var employee = Converter.ToType<Employee>(resultSet.Tables[2]);
-                var emailSetting = Converter.ToType<EmailSettingDetail>(resultSet.Tables[3]);
-
-                var receiver = organizations.Find(x => x.ClientId == generateBillFileDetail.ClientId);
-                var sender = organizations.Find(x => x.ClientId == generateBillFileDetail.SenderId);
+                var file = Converter.ToList<FileDetail>(resultSet.Tables[0]);
+                var employee = Converter.ToType<Employee>(resultSet.Tables[1]);
+                var emailSetting = Converter.ToType<EmailSettingDetail>(resultSet.Tables[2]);
+                var emailTempalte = Converter.ToType<EmailTemplate>(resultSet.Tables[3]);
 
                 List<string> emails = generateBillFileDetail.EmailTemplateDetail.Emails;
                 if (emails.Count == 0)
                     throw new HiringBellException("No receiver address added. Please add atleast one email address.");
 
-                EmailSenderModal emailSenderModal = new EmailSenderModal
+                UpdateTemplateData(emailTempalte, employee, generateBillFileDetail.MonthName, generateBillFileDetail.ForYear);
+                Task.Run(() =>
                 {
-                    To = emails, //receiver.Email,
-                    From = emailSetting.EmailAddress, //sender.Email,
-                    UserName = emailSetting.EmailName,
-                    CC = new List<string>(),
-                    BCC = new List<string>(),
-                    Title = generateBillFileDetail.EmailTemplateDetail.EmailTitle,
-                    Subject = generateBillFileDetail.EmailTemplateDetail.SubjectLine,
-                    FileDetails = file,
-                    EmailSettingDetails = emailSetting
-                };
+                    EmailSenderModal emailSenderModal = new EmailSenderModal
+                    {
+                        To = emails, //receiver.Email,
+                        From = emailSetting.EmailAddress, //sender.Email,
+                        UserName = emailSetting.EmailName,
+                        CC = new List<string>(),
+                        BCC = new List<string>(),
+                        Subject = emailTempalte.SubjectLine,
+                        FileDetails = file,
+                        Body = emailTempalte.BodyContent,
+                        EmailSettingDetails = emailSetting
+                    };
 
-                result = _eMailManager.SendMail();
+                    _eMailManager.SendMail(emailSenderModal);
+                });
+
             }
 
-            return result;
+            return ApplicationConstants.Successfull;
+        }
+
+        private void UpdateTemplateData(EmailTemplate template, Employee employee, string month, int year)
+        {
+            if (template != null && !string.IsNullOrEmpty(template.BodyContent))
+            {
+                template.BodyContent = JsonConvert.DeserializeObject<string>(template.BodyContent
+                    .Replace("[[DEVELOPER-NAME]]", employee.FirstName + " " + employee.LastName)
+                    .Replace("[[YEAR]]", year.ToString())
+                    .Replace("[[MONTH]]", month));
+            }
         }
     }
 }

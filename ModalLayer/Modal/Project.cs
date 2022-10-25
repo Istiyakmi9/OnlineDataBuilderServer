@@ -20,6 +20,7 @@ namespace ModalLayer.Modal
         public string PageIndexDetail { set; get; }
         public string KeywordDetail { set; get; }
         public string DocumentationDetail { set; get; }
+        public int CompanyId { set; get; }
     }
     public class WikiDetail
     {

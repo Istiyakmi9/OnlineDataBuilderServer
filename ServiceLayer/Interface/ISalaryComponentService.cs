@@ -14,6 +14,7 @@ namespace ServiceLayer.Interface
         SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId);
         List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup);
         List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup);
+        SalaryGroup RemoveAndUpdateSalaryGroupService(string componentId, int groupId);
         List<SalaryComponents> UpdateSalaryGroupComponentService(SalaryGroup salaryGroup);
         List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId);
         List<SalaryComponents> AddUpdateRecurringComponents(SalaryStructure salaryStructure);
