@@ -297,5 +297,24 @@ namespace ServiceLayer.Code
                 return statusFlag;
             });
         }
+
+        public string ForgotPasswordService(string email)
+        {
+            string Status = string.Empty;
+            if (string.IsNullOrEmpty(email))
+                throw new HiringBellException("Email is null or empty");
+
+            UserDetail authUser = new UserDetail();
+            authUser.Email = email;
+            var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
+
+            if (string.IsNullOrEmpty(encryptedPassword))
+                throw new HiringBellException("Email id is not registered. Please contact to admin");
+
+            var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+            
+
+            return Status;
+        }
     }
 }
