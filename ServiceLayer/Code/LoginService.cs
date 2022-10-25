@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 using CacheTable = ServiceLayer.Caching.CacheTable;
@@ -313,6 +314,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(email))
                 throw new HiringBellException("Email is null or empty");
 
+            ValidateEmailId(email);
             UserDetail authUser = new UserDetail();
             authUser.EmailId = email;
             var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
@@ -336,7 +338,7 @@ namespace ServiceLayer.Code
             {
                 _emailManager.SendMail(emailSenderModal);
             });
-
+            Status = ApplicationConstants.Successfull;
             return Status;
         }
 
@@ -355,6 +357,14 @@ namespace ServiceLayer.Code
             stringBuilder.Append("<div>" + emailTemplate.ContactNo + "</div>");
 
             emailTemplate.BodyContent = stringBuilder.ToString();
+        }
+
+        private void ValidateEmailId(string email)
+        {
+            var mail = new MailAddress(email);
+            bool isValidEmail = mail.Host.Contains(".");
+            if (!isValidEmail)
+                throw new HiringBellException("The email is invalid");
         }
     }
 }
