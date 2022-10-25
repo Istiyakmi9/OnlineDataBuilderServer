@@ -38,6 +38,10 @@ public class ApplicationConstants
     public const string Fail = "Fail";
 
 
+    public const int BillingTemplate = 1;
+    public const int RequestTemplate = 2;
+    public const int ForgetPasswordTemplate = 3;
+
     public static bool IsExecuted(string Result)
     {
         if (Result != null && (Result.ToLower() == Inserted || Result.ToLower() == Updated))

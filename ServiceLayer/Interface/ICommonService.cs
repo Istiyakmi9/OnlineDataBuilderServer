@@ -7,6 +7,6 @@ namespace ServiceLayer.Interface
     {
         List<Employee> LoadEmployeeData();
         bool IsEmptyJson(string json);
-        EmailTemplate GetTemplate(int EmailTemplateId, EmailSenderModal emailSenderModal);
+        EmailTemplate GetTemplate(int EmailTemplateId);
     }
 }

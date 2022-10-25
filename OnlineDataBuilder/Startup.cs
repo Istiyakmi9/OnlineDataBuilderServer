@@ -109,7 +109,6 @@ namespace OnlineDataBuilder
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
             services.AddScoped<PdfGenerateHelper>();
-            services.AddSingleton<IEMailManager, EMailManager>();
             services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
             services.AddScoped<IMediaService, GooogleService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
@@ -144,6 +143,10 @@ namespace OnlineDataBuilder
 
                 return locationDetail;
             });
+
+            services.AddSingleton<IEMailManager, EMailManager>(x =>
+                EMailManager.GetInstance(x.GetRequiredService<FileLocationDetail>())
+            );
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
             services.AddScoped<HtmlToPdfConverter>();
