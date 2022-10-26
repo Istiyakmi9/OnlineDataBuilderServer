@@ -356,7 +356,7 @@ namespace ServiceLayer.Code
             stringBuilder.Append("<div>" + emailTemplate.SignatureDetail + "</div>");
             stringBuilder.Append("<div>" + emailTemplate.ContactNo + "</div>");
 
-            emailTemplate.BodyContent = stringBuilder.ToString();
+            emailTemplate.BodyContent += stringBuilder.ToString();
         }
 
         private void ValidateEmailId(string email)

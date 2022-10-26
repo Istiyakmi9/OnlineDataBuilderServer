@@ -146,8 +146,7 @@ namespace OnlineDataBuilder
 
             services.AddSingleton<IEMailManager, EMailManager>(x =>
                 EMailManager.GetInstance(
-                    x.GetRequiredService<FileLocationDetail>(),
-                    x.GetRequiredService<IDb>())
+                    x.GetRequiredService<FileLocationDetail>())
             );
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
