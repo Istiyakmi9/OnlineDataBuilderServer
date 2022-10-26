@@ -100,7 +100,8 @@ namespace EMailService.Service
             if (_emailSettingDetail == null)
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");
 
-            Task.Run(() => Send(emailSenderModal));
+            // Task.Run(() => Send(emailSenderModal));
+            Send(emailSenderModal);
             return Task.CompletedTask;
         }
 
