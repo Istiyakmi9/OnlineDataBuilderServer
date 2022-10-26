@@ -11,9 +11,12 @@ namespace ServiceLayer.Code
     public class ProjectService : IProjectService
     {
         private readonly IDb _db;
-        public ProjectService(IDb db)
+        private readonly CurrentSession _currentSession;
+
+        public ProjectService(IDb db, CurrentSession currentSession)
         {
             _db = db;
+            _currentSession = currentSession;
         }
         public string AddWikiService(WikiDetail project)
         {
@@ -28,6 +31,7 @@ namespace ServiceLayer.Code
                 projectDetail.PageIndexDetail = "[]";
                 projectDetail.KeywordDetail = "[]";
                 projectDetail.DocumentationDetail = JsonConvert.SerializeObject(project);
+                projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             var result = _db.Execute<Project>("sp_wiki_detail_upd", projectDetail, true);
             if (string.IsNullOrEmpty(result))
@@ -63,6 +67,8 @@ namespace ServiceLayer.Code
                 project.ProjectEndedOn = projectDetail.ProjectEndedOn;
                 project.CompanyId = projectDetail.CompanyId;
             }
+            projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
+
             var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to Insert or Update");
@@ -75,9 +81,18 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public List<Project> GetAllProjectDeatilService()
+        public List<Project> GetAllProjectDeatilService(FilterModel filterModel)
         {
-            var result = _db.GetList<Project>("sp_project_detail_getall");
+            var result = _db.GetList<Project>("sp_project_detail_getall", new
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
+            });
+            if (result == null)
+                throw new HiringBellException("Unable to load projext list data.");
+
             return result;
         }
 
@@ -89,14 +104,6 @@ namespace ServiceLayer.Code
             if (project.CompanyId <= 0)
                 throw new HiringBellException("Compnay is not selected. Please selete your company.");
 
-            //if (string.IsNullOrEmpty(project.ProjectDescription))
-            //    throw new HiringBellException("Project description is null or empty");
-
-            //if (string.IsNullOrEmpty(project.TeamMemberIds))
-            //    throw new HiringBellException("Team members are null or empty");
-
-            //if (project.ProjectManagerId < 0)
-            //    throw new HiringBellException("Project manager is null or empty");
         }
     }
 }

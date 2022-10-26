@@ -21,6 +21,8 @@ namespace ModalLayer.Modal
         public string KeywordDetail { set; get; }
         public string DocumentationDetail { set; get; }
         public int CompanyId { set; get; }
+        public long AdminId { get; set; }
+        public int Total { get; set; }
     }
     public class WikiDetail
     {

@@ -35,10 +35,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetAllProjectDeatil")]
-        public IResponse<ApiResponse> GetAllProjectDeatil()
+        [HttpPost("GetAllProjectDeatil")]
+        public IResponse<ApiResponse> GetAllProjectDeatil(FilterModel filterModel)
         {
-            var result = _projectService.GetAllProjectDeatilService();
+            var result = _projectService.GetAllProjectDeatilService(filterModel);
             return BuildResponse(result);
         }
     }
