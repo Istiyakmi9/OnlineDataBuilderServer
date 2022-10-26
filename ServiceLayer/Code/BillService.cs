@@ -657,36 +657,29 @@ namespace ServiceLayer.Code
                 generateBillFileDetail.EmployeeId
             });
 
-            if (resultSet != null && resultSet.Tables.Count == 4)
+            if (resultSet != null && resultSet.Tables.Count == 3)
             {
                 var file = Converter.ToList<FileDetail>(resultSet.Tables[0]);
                 var employee = Converter.ToType<Employee>(resultSet.Tables[1]);
-                var emailSetting = Converter.ToType<EmailSettingDetail>(resultSet.Tables[2]);
-                var emailTempalte = Converter.ToType<EmailTemplate>(resultSet.Tables[3]);
+                var emailTempalte = Converter.ToType<EmailTemplate>(resultSet.Tables[2]);
 
                 List<string> emails = generateBillFileDetail.EmailTemplateDetail.Emails;
                 if (emails.Count == 0)
                     throw new HiringBellException("No receiver address added. Please add atleast one email address.");
 
                 UpdateTemplateData(emailTempalte, employee, generateBillFileDetail.MonthName, generateBillFileDetail.ForYear);
-                Task.Run(() =>
+
+                EmailSenderModal emailSenderModal = new EmailSenderModal
                 {
-                    EmailSenderModal emailSenderModal = new EmailSenderModal
-                    {
-                        To = emails, //receiver.Email,
-                        From = emailSetting.EmailAddress, //sender.Email,
-                        UserName = emailSetting.EmailName,
-                        CC = new List<string>(),
-                        BCC = new List<string>(),
-                        Subject = emailTempalte.SubjectLine,
-                        FileDetails = file,
-                        Body = emailTempalte.BodyContent,
-                        EmailSettingDetails = emailSetting
-                    };
+                    To = emails, //receiver.Email,
+                    CC = new List<string>(),
+                    BCC = new List<string>(),
+                    Subject = emailTempalte.SubjectLine,
+                    FileDetails = file,
+                    Body = emailTempalte.BodyContent
+                };
 
-                    _eMailManager.SendMail(emailSenderModal);
-                });
-
+                _eMailManager.SendMailAsync(emailSenderModal);
             }
 
             return ApplicationConstants.Successfull;

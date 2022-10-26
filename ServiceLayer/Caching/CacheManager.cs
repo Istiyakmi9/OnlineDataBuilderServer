@@ -69,7 +69,7 @@ namespace ServiceLayer.Caching
             if (IsEmpty() || isReload)
             {
                 var _db = new Db(_connectionString);
-                DataSet Result = _db.GetDataset("SP_ApplicationData_Get", null);
+                DataSet Result = _db.FetchDataSet("SP_ApplicationData_Get");
                 if (Result.Tables.Count == 3)
                 {
                     _cache.Clean();

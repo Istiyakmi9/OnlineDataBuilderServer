@@ -81,6 +81,8 @@ namespace ServiceLayer.Code
                     "declarated_documents"
                 );
 
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+
                 var result = _db.Execute<EmployeeDeclaration>("sp_employee_declaration_insupd", new
                 {
                     EmployeeDeclarationId = declaration.EmployeeDeclarationId,
@@ -111,9 +113,11 @@ namespace ServiceLayer.Code
                                         });
 
                         DataTable table = Converter.ToDataTable(fileInfo);
-                        var insertedStatus = await _db.BatchUpdateAsync("sp_userfiledetail_Upload", table);
+                        var insertedStatus = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
                     }
                 }
+
+                _db.Commit();
 
                 empDeclaration.SalaryComponentItems = salaryComponents;
                 this.BuildSectionWiseComponents(empDeclaration);
@@ -123,10 +127,12 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(result))
                     throw new HiringBellException("Unable to insert or update salary breakup");
 
+
                 return this.GetEmployeeDeclarationDetailById(EmployeeDeclarationId);
             }
             catch
             {
+                _db.RollBack();
                 if (!string.IsNullOrEmpty(declarationDoc))
                     File.Delete(declarationDoc);
                 throw;
@@ -155,13 +161,12 @@ namespace ServiceLayer.Code
         {
             List<Files> files = default;
             EmployeeDeclaration employeeDeclaration = default;
-            DbParam[] param = new DbParam[]
+            DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
             {
-                new DbParam(EmployeeId, typeof(long), "_EmployeeId"),
-                new DbParam(UserType.Compnay, typeof(int), "_UserTypeId")
-            };
+                EmployeeId = EmployeeId,
+                UserTypeId = (int)UserType.Compnay
+            });
 
-            DataSet resultSet = _db.GetDataset("sp_employee_declaration_get_byEmployeeId", param);
             if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 4)
                 throw new HiringBellException("Unable to get the detail");
 

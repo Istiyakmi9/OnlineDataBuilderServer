@@ -1,24 +1,39 @@
-﻿using ModalLayer.Modal;
+﻿using EAGetMail;
+using ModalLayer.Modal;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
-using EAGetMail;
-using System.Globalization;
-using System.Text;
-using BottomhalfCore.DatabaseLayer.Common.Code;
+using System.Threading.Tasks;
 
 namespace EMailService.Service
 {
     public class EMailManager : IEMailManager
     {
+        private static EMailManager _instance;
+        private static object _lock = new object();
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IDb _db;
+        private EmailSettingDetail _emailSettingDetail;
 
-        public EMailManager(FileLocationDetail fileLocationDetail, IDb db)
+        private EMailManager(FileLocationDetail fileLocationDetail)
         {
             _fileLocationDetail = fileLocationDetail;
-            _db = db;
+        }
+
+        public static void SetEmailDetail(EmailSettingDetail emailSettingDetail)
+        {
+            _instance._emailSettingDetail = emailSettingDetail;
+        }
+
+        public static EMailManager GetInstance(FileLocationDetail fileLocationDetail)
+        {
+            if (_instance == null)
+                lock (_lock)
+                    if (_instance == null)
+                        _instance = new EMailManager(fileLocationDetail);
+
+            return _instance;
         }
 
         public void ReadMails(EmailSettingDetail emailSettingDetail)
@@ -79,22 +94,32 @@ namespace EMailService.Service
                 sequence);
         }
 
+        public Task SendMailAsync(EmailSenderModal emailSenderModal)
+        {
+            Task.Run(() => Send(emailSenderModal));
+            return Task.CompletedTask;
+        }
+
         public string SendMail(EmailSenderModal emailSenderModal)
+        {
+            return Send(emailSenderModal);
+        }
+
+        private string Send(EmailSenderModal emailSenderModal)
         {
             if (emailSenderModal == null || emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
 
-            EmailSettingDetail emailSettingDetail = emailSenderModal.EmailSettingDetails;
-            var fromAddress = new System.Net.Mail.MailAddress(emailSettingDetail.EmailAddress, emailSenderModal.Title);
+            var fromAddress = new System.Net.Mail.MailAddress(_emailSettingDetail.EmailAddress, emailSenderModal.Title);
 
             var smtp = new SmtpClient
             {
-                Host = emailSettingDetail.EmailHost,
-                Port = emailSettingDetail.PortNo,
-                EnableSsl = emailSettingDetail.EnableSsl,
+                Host = _emailSettingDetail.EmailHost,
+                Port = _emailSettingDetail.PortNo,
+                EnableSsl = _emailSettingDetail.EnableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                UseDefaultCredentials = emailSettingDetail.UserDefaultCredentials,
-                Credentials = new NetworkCredential(fromAddress.Address, emailSettingDetail.Credentials)
+                UseDefaultCredentials = _emailSettingDetail.UserDefaultCredentials,
+                Credentials = new NetworkCredential(fromAddress.Address, _emailSettingDetail.Credentials)
             };
 
             var message = new MailMessage();
