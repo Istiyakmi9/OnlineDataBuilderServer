@@ -96,19 +96,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
-        public DataSet FetchResult(string ProcedureName)
-        {
-            ds = null;
-            cmd.Connection = con;
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = ProcedureName;
-            da = new MySqlDataAdapter();
-            da.SelectCommand = cmd;
-            ds = new DataSet();
-            da.Fill(ds);
-            return ds;
-        }
-
         /*===========================================  GetDataSet =============================================================*/
 
         #region GetDataSet
@@ -184,7 +171,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
                 }
 
-                con.Open();
+                if (con.State != ConnectionState.Open)
+                    con.Open();
                 var result = cmd.ExecuteNonQuery();
                 if (OutParam)
                     state = cmd.Parameters["_ProcessingResult"].Value.ToString();
@@ -198,7 +186,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
                     con.Close();
             }
         }
@@ -222,7 +210,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 var result = await cmd.ExecuteNonQueryAsync();
                 if (OutParam)
                     status = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                
+
                 return DbResult.Build(result, status);
             }
             catch (Exception ex)
@@ -272,51 +260,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return result;
         }
 
-        public DataSet Get(string ProcedureName, object Parameters, bool OutParam = false)
-        {
-            try
-            {
-                ds = null;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-
-                if (Parameters != null)
-                {
-                    List<PropertyInfo> props = Parameters.GetType().GetProperties().ToList();
-                    PrepareArguments(Parameters, props);
-                }
-
-                con.Open();
-
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
-
-                da = new MySqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-            }
-            catch (MySqlException MySqlException)
-            {
-                throw MySqlException;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
-            }
-
-            return ds;
-        }
-
-        public List<T> GetList<T>(string ProcedureName, List<PropertyInfo> properties, dynamic Parameters = null, bool OutParam = false) where T : new()
+        private List<T> GetList<T>(string ProcedureName, List<PropertyInfo> properties, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             List<T> result = null;
             try
@@ -358,19 +302,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return result;
         }
 
-        public T Get<T>(string ProcedureName, bool OutParam = false) where T : new()
-        {
-            T data = default(T);
-            var result = this.GetList<T>(ProcedureName, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = (T)result.FirstOrDefault();
-            }
-
-            return data;
-        }
-
         public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             T data = default(T);
@@ -382,76 +313,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             {
                 if (result.Count > 0)
                     data = result.FirstOrDefault();
-            }
-
-            return data;
-        }
-
-        public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            T data = default(T);
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = result.FirstOrDefault();
-            }
-
-            return data;
-        }
-
-        public T Get<T>(string ProcedureName, T instance, bool OutParam = false) where T : new()
-        {
-            T t = new T();
-            try
-            {
-                List<PropertyInfo> properties = GetProperties<T>();
-
-                ds = null;
-                cmd.Parameters.Clear();
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                this.PrepareArguments<T>(instance);
-
-                if (OutParam)
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-
-                reader = cmd.ExecuteReader();
-                var resultData = this.ReadAndConvertToType<T>(reader);
-                t = resultData.FirstOrDefault();
-            }
-            catch (MySqlException MySqlException)
-            {
-                throw MySqlException;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
-            }
-
-            return t;
-        }
-
-        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            List<T> data = new List<T>();
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = result;
             }
 
             return data;
@@ -582,10 +443,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
                 throw ex;
             }
             finally
@@ -735,31 +600,51 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         #region Bulk Insert Update
 
-        public string SqlBulkInsert(DataTable talble, string TableName)
+        private async Task<DbResult> BatchInsertUpdateCoreAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
         {
-            string Status = "";
-            using (MySqlCommand cmd = new MySqlCommand())
+            string statusMessage = string.Empty;
+            cmd.Connection = con;
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = ProcedureName;
+            cmd.UpdatedRowSource = UpdateRowSource.None;
+
+            int Initial = 0;
+            Type ColumnType = null;
+            string ColumnValue = string.Empty;
+            cmd.Parameters.Clear();
+            foreach (DataColumn column in table.Columns)
             {
-                con.Open();
-                using (MySqlTransaction tran = con.BeginTransaction(IsolationLevel.Serializable))
-                {
-                    cmd.Connection = con;
-                    cmd.Transaction = tran;
-                    cmd.CommandText = "SELECT * FROM " + TableName;
-                    using (MySqlDataAdapter da = new MySqlDataAdapter(cmd))
-                    {
-                        da.UpdateBatchSize = 1000;
-                        using (MySqlCommandBuilder cb = new MySqlCommandBuilder(da))
-                        {
-                            int i = da.Update(talble);
-                            if (i > 0)
-                                Status = "Record inserted count: " + i.ToString();
-                            tran.Commit();
-                        }
-                    }
-                }
+                ColumnType = table.Rows[Initial][column].GetType();
+                if (ColumnType == typeof(System.String))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
+                else if (ColumnType == typeof(System.Int16))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int16, 2, column.ColumnName);
+                else if (ColumnType == typeof(System.Int32))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int32, 4, column.ColumnName);
+                else if (ColumnType == typeof(System.Double) || ColumnType == typeof(System.Single))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Decimal, 8, column.ColumnName);
+                else if (ColumnType == typeof(System.Int64) || ColumnType == typeof(System.Decimal))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int64, 8, column.ColumnName);
+                else if (ColumnType == typeof(System.Char))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, 1, column.ColumnName);
+                else if (ColumnType == typeof(System.Boolean))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Bit, 1, column.ColumnName);
+                else if (ColumnType == typeof(System.DateTime))
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.DateTime, 8, column.ColumnName);
+                else
+                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
             }
-            return Status;
+
+            if (IsOutparam)
+                cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, ColumnValue.Length, "ProcessingResult").Direction = ParameterDirection.Output;
+
+            MySqlDataAdapter da = new MySqlDataAdapter();
+            da.InsertCommand = cmd;
+            da.UpdateBatchSize = 4;
+            if (con.State != ConnectionState.Open)
+                con.Open();
+            var state = await da.UpdateAsync(table);
+            return DbResult.Build(state, statusMessage);
         }
 
         public int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam)
@@ -814,7 +699,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+                if (!IsTransactionStarted && (con.State == ConnectionState.Broken || con.State == ConnectionState.Open))
                     con.Close();
             }
 
@@ -838,94 +723,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
-        public string XmlBatchInsertUpdate(string ProcedureName, string XmlData, bool OutParam)
-        {
-            string state = "";
-            try
-            {
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd.Parameters.Add("_xmldata", MySqlDbType.VarChar, XmlData.Length).Value = XmlData;
-
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.Int32).Direction = ParameterDirection.Output;
-                }
-
-                con.Open();
-                int effectedRows = cmd.ExecuteNonQuery();
-                if (OutParam)
-                    state = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                return state;
-            }
-            catch (MySqlException exception)
-            {
-                return exception.Message;
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
-            }
-        }
-
         public class DbTypeDetail
         {
             public MySqlDbType DbType { set; get; }
             public int Size { set; get; }
         }
 
-        private async Task<DbResult> BatchInsertUpdateCoreAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
-        {
-            string statusMessage = string.Empty;
-            cmd.Connection = con;
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = ProcedureName;
-            cmd.UpdatedRowSource = UpdateRowSource.None;
-
-            int Initial = 0;
-            Type ColumnType = null;
-            string ColumnValue = string.Empty;
-            cmd.Parameters.Clear();
-            foreach (DataColumn column in table.Columns)
-            {
-                ColumnType = table.Rows[Initial][column].GetType();
-                if (ColumnType == typeof(System.String))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-                else if (ColumnType == typeof(System.Int16))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int16, 2, column.ColumnName);
-                else if (ColumnType == typeof(System.Int32))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int32, 4, column.ColumnName);
-                else if (ColumnType == typeof(System.Double) || ColumnType == typeof(System.Single))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Decimal, 8, column.ColumnName);
-                else if (ColumnType == typeof(System.Int64) || ColumnType == typeof(System.Decimal))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int64, 8, column.ColumnName);
-                else if (ColumnType == typeof(System.Char))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, 1, column.ColumnName);
-                else if (ColumnType == typeof(System.Boolean))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Bit, 1, column.ColumnName);
-                else if (ColumnType == typeof(System.DateTime))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.DateTime, 8, column.ColumnName);
-                else
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-            }
-
-            if (IsOutparam)
-                cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, ColumnValue.Length, "ProcessingResult").Direction = ParameterDirection.Output;
-
-            MySqlDataAdapter da = new MySqlDataAdapter();
-            da.InsertCommand = cmd;
-            da.UpdateBatchSize = 4;
-            if (con.State != ConnectionState.Open)
-                con.Open();
-            var state = await da.UpdateAsync(table);
-            return DbResult.Build(state, statusMessage);
-        }
 
         private DbTypeDetail GetType(Type ColumnType)
         {
@@ -972,48 +775,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 da.UpdateBatchSize = 2;
                 con.Open();
                 int Count = da.Update(table);
-                if (OutParam)
-                    state = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                else if (Count > 0)
-                    state = "Successfull";
-                return state;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
-            }
-        }
-
-        public async Task<string> BatchUpdateAsync(string ProcedureName, DataTable table, Boolean OutParam = false)
-        {
-            try
-            {
-                string state = "";
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd.UpdatedRowSource = UpdateRowSource.None;
-                cmd.Parameters.Clear();
-
-                foreach (DataColumn column in table.Columns)
-                {
-                    var DbType = this.GetType(column.DataType);
-                    cmd.Parameters.Add("_" + column.ColumnName, DbType.DbType, DbType.Size, column.ColumnName);
-                }
-
-                if (OutParam)
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.Int32).Direction = ParameterDirection.Output;
-
-                da = new MySqlDataAdapter();
-                da.InsertCommand = cmd;
-                da.UpdateBatchSize = 2;
-                con.Open();
-                int Count = await da.UpdateAsync(table);
                 if (OutParam)
                     state = cmd.Parameters["_ProcessingResult"].Value.ToString();
                 else if (Count > 0)
@@ -1294,12 +1055,10 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return Tuple.Create(firstResult, secondResult);
         }
 
-        public DataSet FetchDataSet(string ProcedureName, dynamic Parameters, bool OutParam = false)
+        public DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
         {
             try
             {
-                object userType = Parameters;
-                var properties = userType.GetType().GetProperties().ToList();
                 ds = null;
                 cmd = new MySqlCommand();
                 cmd.Connection = con;
@@ -1308,6 +1067,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
                 if (Parameters != null)
                 {
+                    object userType = Parameters;
+                    var properties = userType.GetType().GetProperties().ToList();
                     PrepareArguments(Parameters, properties);
                 }
 
@@ -1329,10 +1090,16 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+
                 throw MySqlException;
             }
             catch (Exception ex)
             {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+
                 throw ex;
             }
             finally
@@ -1346,5 +1113,4 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         #endregion
     }
-
 }

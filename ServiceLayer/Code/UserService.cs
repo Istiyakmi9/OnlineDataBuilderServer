@@ -270,16 +270,15 @@ namespace ServiceLayer.Code
             {
                 FilterModel filterModel = new FilterModel();
                 filterModel.PageSize = 1000;
-                DbParam[] param = new DbParam[]
+                
+                ds = _db.FetchDataSet("sp_employee_and_all_clients_get", new
                 {
-                    new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
-                    new DbParam(filterModel.SortBy, typeof(string), "_SortBy"),
-                    new DbParam(filterModel.PageIndex, typeof(int), "_PageIndex"),
-                    new DbParam(filterModel.PageSize, typeof(int), "_PageSize"),
-                    new DbParam(filterModel.IsActive, typeof(int), "_IsActive")
-                };
-
-                ds = _db.GetDataset("sp_employee_and_all_clients_get", param);
+                    SearchString = filterModel.SearchString,
+                    SortBy = filterModel.SortBy,
+                    PageIndex = filterModel.PageIndex,
+                    PageSize = filterModel.PageSize,
+                    IsActive = filterModel.IsActive
+                });
 
                 if (ds == null || ds.Tables.Count != 2)
                     throw new HiringBellException("Unable to find employees");

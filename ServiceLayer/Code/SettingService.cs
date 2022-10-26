@@ -27,7 +27,7 @@ namespace ServiceLayer.Code
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
         {
-            salaryComponents = _db.Get<SalaryComponents>("");
+            salaryComponents = _db.Get<SalaryComponents>("", null);
             return null;
         }
 
