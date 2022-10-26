@@ -180,7 +180,7 @@ namespace ServiceLayer.Code
             };
 
             DataSet ds = db.GetDataset(ProcedureName, param);
-            if (ds != null && ds.Tables.Count >= 3)
+            if (ds != null && ds.Tables.Count == 5)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -219,15 +219,18 @@ namespace ServiceLayer.Code
 
                         if (authUser.UserTypeId == (int)UserType.Admin)
                         {
-                            if (ds.Tables[3] == null || ds.Tables[3].Rows.Count == 0)
-                                throw new HiringBellException("Fail to get list of employees. Please contact to admin.");
-
                             loginResponse.EmployeeList = ds.Tables[3].AsEnumerable()
                                                            .Select(x => new AutoCompleteEmployees
                                                            {
                                                                value = x.Field<long>("EmployeeUid"),
                                                                text = x.Field<string>("Name")
                                                            }).ToList<AutoCompleteEmployees>();
+                        }
+
+                        if (ds.Tables[4] != null)
+                        {
+                            EmailSettingDetail emailSettingDetail = Converter.ToType<EmailSettingDetail>(ds.Tables[4]);
+                            EMailManager.SetEmailDetail(emailSettingDetail);
                         }
                     }
                 }
@@ -325,19 +328,16 @@ namespace ServiceLayer.Code
             var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
 
             EmailSenderModal emailSenderModal = new EmailSenderModal();
-            EmailTemplate template = _commonService.GetTemplate(3, emailSenderModal);
+            EmailTemplate template = _commonService.GetTemplate(ApplicationConstants.ForgetPasswordTemplate);
             BuildEmailBody(template, password);
 
             emailSenderModal.Body = template.BodyContent;
             emailSenderModal.To = new List<string> { email };
             emailSenderModal.Subject = template.SubjectLine;
             emailSenderModal.UserName = "BottomHalf";
-            emailSenderModal.Title = template.EmailTitle;
+            emailSenderModal.Title = "[BottomHalf] Temporary password request.";
 
-            Task.Run(() =>
-            {
-                _emailManager.SendMail(emailSenderModal);
-            });
+            _emailManager.SendMailAsync(emailSenderModal);
             Status = ApplicationConstants.Successfull;
             return Status;
         }

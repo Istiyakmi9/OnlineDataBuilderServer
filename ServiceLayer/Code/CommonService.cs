@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Service;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ namespace ServiceLayer.Code
             return employeeTable;
         }
 
-        public EmailTemplate GetTemplate(int EmailTemplateId, EmailSenderModal emailSenderModal)
+        public EmailTemplate GetTemplate(int EmailTemplateId)
         {
             (EmailTemplate emailTemplate, EmailSettingDetail emailSetting) = 
                 _db.GetMulti<EmailTemplate, EmailSettingDetail>("sp_email_template_by_id", new { EmailTemplateId });
@@ -39,7 +40,7 @@ namespace ServiceLayer.Code
             if (emailTemplate == null)
                 throw new HiringBellException("Email template not found. Please contact to admin.");
 
-            emailSenderModal.EmailSettingDetails = emailSetting;
+            EMailManager.SetEmailDetail(emailSetting);
             return emailTemplate;
         }
 
