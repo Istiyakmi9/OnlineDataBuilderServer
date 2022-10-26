@@ -128,7 +128,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to insert or update salary breakup");
 
 
-                return this.GetEmployeeDeclarationDetailById(EmployeeDeclarationId);
+                return this.GetEmployeeDeclarationDetailById(employeeDeclaration.EmployeeId);
             }
             catch
             {
@@ -208,7 +208,7 @@ namespace ServiceLayer.Code
             return employeeDeclaration;
         }
 
-        public EmployeeDeclaration HousingPropertyDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> files)
+        public async Task<EmployeeDeclaration> HousingPropertyDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> files)
         {
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             (List<EmployeeDeclaration> declarations, List<SalaryComponents> dbSalaryComponents) = this.GetDeclarationWithComponents(EmployeeDeclarationId);
@@ -267,7 +267,7 @@ namespace ServiceLayer.Code
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, false);
+                var insertedCount = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
                 _db.Commit();
             }
             var housingTax = JsonConvert.SerializeObject(DeclarationDetail.HousePropertyDetail);

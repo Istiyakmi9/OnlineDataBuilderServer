@@ -11,6 +11,6 @@ namespace ServiceLayer.Interface
         string AddWikiService(WikiDetail project);
         Project GetAllWikiService(long ProjectId);
         string AddUpdateProjectDetailService(Project projectDetail);
-        List<Project> GetAllProjectDeatilService();
+        List<Project> GetAllProjectDeatilService(FilterModel filterModel);
     }
 }
