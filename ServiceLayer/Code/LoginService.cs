@@ -345,7 +345,7 @@ namespace ServiceLayer.Code
             }
             catch(Exception ex)
             {
-                throw new HiringBellException("Server Error", ex);
+                throw new HiringBellException("Getting some server error. Please contact to admin.");
             }
         }
 
