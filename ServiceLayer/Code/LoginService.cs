@@ -353,17 +353,14 @@ namespace ServiceLayer.Code
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Append("<div>" + emailTemplate.Salutation + "</div>");
-            string body = JsonConvert.DeserializeObject<string>(emailTemplate.BodyContent);
-            stringBuilder.Append(body.Replace("[[NEW-PASSWORD]]", password));
-
-            stringBuilder.AppendLine();
-            stringBuilder.AppendLine();
+            string body = JsonConvert.DeserializeObject<string>(emailTemplate.BodyContent)
+                          .Replace("[[NEW-PASSWORD]]", password);
 
             stringBuilder.Append("<div>" + emailTemplate.EmailClosingStatement + "</div>");
             stringBuilder.Append("<div>" + emailTemplate.SignatureDetail + "</div>");
             stringBuilder.Append("<div>" + emailTemplate.ContactNo + "</div>");
 
-            emailTemplate.BodyContent += stringBuilder.ToString();
+            emailTemplate.BodyContent = body + stringBuilder.ToString();
         }
 
         private void ValidateEmailId(string email)
