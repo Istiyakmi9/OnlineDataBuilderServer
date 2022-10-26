@@ -1,4 +1,5 @@
-﻿using EAGetMail;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EAGetMail;
 using ModalLayer.Modal;
 using System;
 using System.Globalization;
@@ -16,9 +17,14 @@ namespace EMailService.Service
         private readonly FileLocationDetail _fileLocationDetail;
         private EmailSettingDetail _emailSettingDetail;
 
-        private EMailManager(FileLocationDetail fileLocationDetail)
+        private EMailManager(FileLocationDetail fileLocationDetail, IDb _db)
         {
             _fileLocationDetail = fileLocationDetail;
+            if (_emailSettingDetail == null)
+            {
+                _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get",
+                    new { EmailSettingDetailId = 0 });
+            }
         }
 
         public static void SetEmailDetail(EmailSettingDetail emailSettingDetail)
@@ -26,12 +32,12 @@ namespace EMailService.Service
             _instance._emailSettingDetail = emailSettingDetail;
         }
 
-        public static EMailManager GetInstance(FileLocationDetail fileLocationDetail)
+        public static EMailManager GetInstance(FileLocationDetail fileLocationDetail, IDb _db)
         {
             if (_instance == null)
                 lock (_lock)
                     if (_instance == null)
-                        _instance = new EMailManager(fileLocationDetail);
+                        _instance = new EMailManager(fileLocationDetail, _db);
 
             return _instance;
         }

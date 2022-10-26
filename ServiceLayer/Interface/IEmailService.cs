@@ -14,6 +14,5 @@ namespace ServiceLayer.Interface
         string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate);
         List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
         EmailTemplate GetEmailTemplateByIdService(long EmailTemplateId);
-        void PrepareSendEmailNotification(EmployeeNotificationModel notification);
     }
 }
