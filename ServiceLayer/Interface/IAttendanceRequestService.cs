@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using ModalLayer;
+using ModalLayer.Modal;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
@@ -11,5 +12,6 @@ namespace ServiceLayer.Interface
         RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only);
         RequestModel GetRequestPageData(long employeeId, int filterId);
         List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail);
+        EmailSenderModal PrepareSendEmailNotification(EmployeeNotificationModel notification, EmailTemplate template);
     }
 }

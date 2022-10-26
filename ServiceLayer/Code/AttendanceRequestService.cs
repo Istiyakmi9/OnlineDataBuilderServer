@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -7,6 +8,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -16,17 +18,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        private readonly IEmailService _eEmailService;
+        private readonly IEMailManager _eMailManager;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            IEmailService eEmailService)
+            IEMailManager eMailManager)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
-            _eEmailService = eEmailService;
+            _eMailManager = eMailManager;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure)
@@ -125,14 +127,14 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(Result))
                     throw new HiringBellException("Unable to update attendance status");
 
-                var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+                var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.RequestTemplate });
 
                 if (template == null)
                     throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
-                Task.Run(() =>
-                {
-                    _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+
+                var emailSenderModal = PrepareSendEmailNotification(
+                    new EmployeeNotificationModel
                     {
                         DeveloperName = currentAttendance.EmployeeName,
                         AttendanceRequestType = "Work From Home",
@@ -148,8 +150,9 @@ namespace ServiceLayer.Code
                         Message = string.IsNullOrEmpty(currentAttendance.UserComments)
                                     ? "NA"
                                     : currentAttendance.UserComments,
-                    });
-                });
+                    }, template);
+
+                _eMailManager.SendMailAsync(emailSenderModal);
             }
             catch (Exception)
             {
@@ -160,6 +163,46 @@ namespace ServiceLayer.Code
         public List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail)
         {
             return null;
+        }
+
+        public EmailSenderModal PrepareSendEmailNotification(EmployeeNotificationModel notification, EmailTemplate template)
+        {
+            EmailSenderModal emailSenderModal = null;
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime(notification.FromDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime(notification.ToDate, _currentSession.TimeZone);
+            if (notification != null)
+            {
+                var totalDays = notification.ToDate.Date.Subtract(notification.FromDate.Date).TotalDays + 1;
+                string subject = notification.Subject
+                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
+
+                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
+                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
+                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
+                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
+                                .Replace("[[USER-MESSAGE]]", notification.Message);
+
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine();
+                builder.AppendLine();
+                builder.Append("<div>" + template.EmailClosingStatement + "</div>");
+                builder.Append("<div>" + template.SignatureDetail + "</div>");
+                builder.Append("<div>" + template.ContactNo + "</div>");
+
+                emailSenderModal = new EmailSenderModal
+                {
+                    To = notification.To,
+                    Subject = subject,
+                    Body = string.Concat(body, builder.ToString()),
+                };
+            }
+
+            return emailSenderModal;
         }
     }
 }

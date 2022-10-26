@@ -251,38 +251,5 @@ namespace ServiceLayer.Code
             var result = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
             return result;
         }
-
-        public void PrepareSendEmailNotification(EmployeeNotificationModel notification)
-        {
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime(notification.FromDate, _currentSession.TimeZone);
-            var toDate = _timezoneConverter.ToTimeZoneDateTime(notification.ToDate, _currentSession.TimeZone);
-            if (notification != null)
-            {
-                var totalDays = notification.ToDate.Date.Subtract(notification.FromDate.Date).TotalDays + 1;
-                string subject = notification.Subject
-                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
-                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
-
-                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
-                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
-                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
-                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
-                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
-                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
-                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
-                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
-                                .Replace("[[USER-MESSAGE]]", notification.Message)
-                                .Replace("[[COMPANY-NAME]]", notification.CompanyName);
-
-                EmailSenderModal emailSenderModal = new EmailSenderModal
-                {
-                    To = notification.To,
-                    Subject = subject,
-                    Body = body,
-                };
-
-                this.SendEmailRequestService(emailSenderModal, null);
-            }
-        }
     }
 }
