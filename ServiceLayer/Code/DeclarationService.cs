@@ -128,7 +128,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to insert or update salary breakup");
 
 
-                return this.GetEmployeeDeclarationDetailById(EmployeeDeclarationId);
+                return this.GetEmployeeDeclarationDetailById(employeeDeclaration.EmployeeId);
             }
             catch
             {
