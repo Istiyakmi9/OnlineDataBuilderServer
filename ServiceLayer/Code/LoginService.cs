@@ -313,33 +313,40 @@ namespace ServiceLayer.Code
 
         public string ForgotPasswordService(string email)
         {
-            string Status = string.Empty;
-            if (string.IsNullOrEmpty(email))
-                throw new HiringBellException("Email is null or empty");
+            try
+            {
+                string Status = string.Empty;
+                if (string.IsNullOrEmpty(email))
+                    throw new HiringBellException("Email is null or empty");
 
-            ValidateEmailId(email);
-            UserDetail authUser = new UserDetail();
-            authUser.EmailId = email;
-            var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
+                ValidateEmailId(email);
+                UserDetail authUser = new UserDetail();
+                authUser.EmailId = email;
+                var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
 
-            if (string.IsNullOrEmpty(encryptedPassword))
-                throw new HiringBellException("Email id is not registered. Please contact to admin");
+                if (string.IsNullOrEmpty(encryptedPassword))
+                    throw new HiringBellException("Email id is not registered. Please contact to admin");
 
-            var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+                var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
 
-            EmailSenderModal emailSenderModal = new EmailSenderModal();
-            EmailTemplate template = _commonService.GetTemplate(ApplicationConstants.ForgetPasswordTemplate);
-            BuildEmailBody(template, password);
+                EmailSenderModal emailSenderModal = new EmailSenderModal();
+                EmailTemplate template = _commonService.GetTemplate(ApplicationConstants.ForgetPasswordTemplate);
+                BuildEmailBody(template, password);
 
-            emailSenderModal.Body = template.BodyContent;
-            emailSenderModal.To = new List<string> { email };
-            emailSenderModal.Subject = template.SubjectLine;
-            emailSenderModal.UserName = "BottomHalf";
-            emailSenderModal.Title = "[BottomHalf] Temporary password request.";
+                emailSenderModal.Body = template.BodyContent;
+                emailSenderModal.To = new List<string> { email };
+                emailSenderModal.Subject = template.SubjectLine;
+                emailSenderModal.UserName = "BottomHalf";
+                emailSenderModal.Title = "[BottomHalf] Temporary password request.";
 
-            _emailManager.SendMailAsync(emailSenderModal);
-            Status = ApplicationConstants.Successfull;
-            return Status;
+                _emailManager.SendMailAsync(emailSenderModal);
+                Status = ApplicationConstants.Successfull;
+                return Status;
+            }
+            catch(Exception ex)
+            {
+                throw new HiringBellException("Server Error", ex);
+            }
         }
 
         private void BuildEmailBody(EmailTemplate emailTemplate, string password)
