@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
+using Microsoft.Extensions.Logging;
 using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -9,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -19,16 +19,19 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IEMailManager _eMailManager;
+        private readonly ILogger<AttendanceRequestService> _logger;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
+            ILogger<AttendanceRequestService> logger,
             IEMailManager eMailManager)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _eMailManager = eMailManager;
+            _logger = logger;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure)
@@ -114,10 +117,14 @@ namespace ServiceLayer.Code
                 if (currentAttendance == null)
                     throw new HiringBellException("Unable to update present request. Please contact to admin.");
 
+                _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
+
                 currentAttendance.PresentDayStatus = (int)status;
                 currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
                 currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
                 // this call is used for only upadate AttendanceDetail json object
+
+                _logger.LogInformation("Final Attendance: " + JsonConvert.SerializeObject(allAttendance));
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
