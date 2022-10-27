@@ -262,7 +262,7 @@ namespace ServiceLayer.Code
             return resultset;
         }
 
-        public DataSet UpdateEmployeeDetailService(Employee employee, bool IsUpdating)
+        public DataSet UpdateEmployeeMappedClientDetailService(Employee employee, bool IsUpdating)
         {
             if (employee.EmployeeUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
@@ -492,33 +492,72 @@ namespace ServiceLayer.Code
             return employees;
         }
 
-        public async Task<DataSet> RegisterEmployee(Employee employee, List<AssignedClients> assignedClients, IFormFileCollection fileCollection, bool IsUpdating)
+        public async Task<DataSet> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection)
+        {
+            if (employee.EmployeeUid <= 0)
+                throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
+
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employee);
+
+            if (employeeEmailMobileCheck.EmployeeCount == 0)
+                throw new HiringBellException("Employee record not found. Please contact to admin.");
+
+            return await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
+        }
+
+        public async Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
+        {
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employee);
+
+            if (employeeEmailMobileCheck.EmployeeCount > 0)
+                throw new HiringBellException("Employee already exists. Please login first and update detail.");
+
+            return await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
+        }
+
+        private EmployeeEmailMobileCheck GetEmployeeDetail(Employee employee)
+        {
+            (Employee employeeDetail, EmployeeEmailMobileCheck employeeEmailMobileCheck) =
+                _db.GetMulti<Employee, EmployeeEmailMobileCheck>("sp_employee_getbyid_to_reg_or_upd", new
+                {
+                    EmployeeId = employee.EmployeeUid,
+                    employee.Mobile,
+                    employee.Email
+                });
+
+            if (employeeDetail != null)
+            {
+                employee.OrganizationId = employeeDetail.OrganizationId;
+                employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
+            }
+            else
+            {
+                employee.OrganizationId = 0;
+                employee.EmpProfDetailUid = -1;
+            }
+
+            if(employeeEmailMobileCheck == null)
+            {
+                employeeEmailMobileCheck = new EmployeeEmailMobileCheck();
+            }
+
+            if (employeeEmailMobileCheck.EmailCount > 0)
+                throw new HiringBellException($"Email id: {employee.Email} already exists.");
+
+            if (employeeEmailMobileCheck.MobileCount > 0)
+                throw new HiringBellException($"Mobile no: {employee.Mobile} already exists.");
+
+            return employeeEmailMobileCheck;
+        }
+
+        private async Task<DataSet> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection)
         {
             try
             {
-                if (IsUpdating == true)
-                {
-                    if (employee.EmployeeUid <= 0)
-                        throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
-                }
                 this.ValidateEmployee(employee);
                 this.ValidateEmployeeDetails(employee);
-
-                //TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-                //employee.DOB = TimeZoneInfo.ConvertTimeFromUtc(employee.DOB, istTimeZome);
-                //employee.DateOfJoining = TimeZoneInfo.ConvertTimeFromUtc(employee.DateOfJoining, istTimeZome);
                 int empId = Convert.ToInt32(employee.EmployeeUid);
 
-                Employee employeeDetail = this.GetEmployeeByIdService(empId, employee.IsActive ? 1 : 0);
-                if (employeeDetail == null)
-                {
-                    employeeDetail = new Employee
-                    {
-                        EmpProfDetailUid = -1
-                    };
-                }
-
-                employee.OrganizationId = employeeDetail.OrganizationId;
                 var professionalDetail = new EmployeeProfessionDetail
                 {
                     AadharNo = employee.AadharNo,
@@ -530,7 +569,7 @@ namespace ServiceLayer.Code
                     Domain = employee.Domain,
                     Email = employee.Email,
                     EmployeeUid = employee.EmployeeUid,
-                    EmpProfDetailUid = employeeDetail.EmpProfDetailUid,
+                    EmpProfDetailUid = employee.EmpProfDetailUid,
                     ExperienceInYear = employee.ExperienceInYear,
                     FirstName = employee.FirstName,
                     IFSCCode = employee.IFSCCode,
@@ -541,8 +580,8 @@ namespace ServiceLayer.Code
                     SecomdaryMobile = employee.SecondaryMobile,
                     Specification = employee.Specification,
                 };
-                employeeDetail.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
+                employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
                 EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
                 {
@@ -623,7 +662,7 @@ namespace ServiceLayer.Code
                     employee.TakeHomeByCandidate,
                     employee.ReportingManagerId,
                     employee.DesignationId,
-                    employeeDetail.ProfessionalDetail_Json,
+                    employee.ProfessionalDetail_Json,
                     Password = EncreptedPassword,
                     employee.AccessLevelId,
                     employee.UserTypeId,
@@ -729,7 +768,6 @@ namespace ServiceLayer.Code
 
             if (employee.AccessLevelId <= 0)
                 throw new HiringBellException { UserMessage = "Role is a mandatory field.", FieldName = nameof(employee.AccessLevelId), FieldValue = employee.AccessLevelId.ToString() };
-
         }
     }
 }

@@ -78,10 +78,10 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Authorize(Roles = Role.Admin)]
-        [Route("UpdateEmployeeDetail/{IsUpdating}")]
-        public ApiResponse UpdateEmployeeDetail([FromBody] Employee employee, bool IsUpdating)
+        [Route("UpdateEmployeeMappedClientDetail/{IsUpdating}")]
+        public ApiResponse UpdateEmployeeMappedClientDetail([FromBody] Employee employee, bool IsUpdating)
         {
-            var Result = _employeeService.UpdateEmployeeDetailService(employee, IsUpdating);
+            var Result = _employeeService.UpdateEmployeeMappedClientDetailService(employee, IsUpdating);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
@@ -101,21 +101,44 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpPost("employeeregistration/{IsUpdating}")]
-        public async Task<ApiResponse> EmployeeRegistration(bool IsUpdating)
+        [HttpPost("employeeregistration")]
+        public async Task<ApiResponse> EmployeeRegistration()
         {
             try
             {
                 StringValues UserInfoData = default(string);
-                StringValues Clients = default(string);
                 _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
-                _httpContext.Request.Form.TryGetValue("allocatedClients", out Clients);
                 if (UserInfoData.Count > 0)
                 {
                     Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
-                    List<AssignedClients> assignedClients = JsonConvert.DeserializeObject<List<AssignedClients>>(Clients);
                     IFormFileCollection files = _httpContext.Request.Form.Files;
-                    var resetSet = await _employeeService.RegisterEmployee(employee, assignedClients, files, IsUpdating);
+                    var resetSet = await _employeeService.RegisterEmployeeService(employee, files);
+                    return BuildResponse(resetSet);
+                }
+                else
+                {
+                    return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("updateemployeedetail")]
+        public async Task<ApiResponse> UpdateEmployeeDetail()
+        {
+            try
+            {
+                StringValues UserInfoData = default(string);
+                _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
+                if (UserInfoData.Count > 0)
+                {
+                    Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
+                    IFormFileCollection files = _httpContext.Request.Form.Files;
+                    var resetSet = await _employeeService.UpdateEmployeeService(employee, files);
                     return BuildResponse(resetSet);
                 }
                 else

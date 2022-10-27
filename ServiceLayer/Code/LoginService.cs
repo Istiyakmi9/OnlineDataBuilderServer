@@ -97,14 +97,43 @@ namespace ServiceLayer.Code
         }
 
 
-        public string FetchUserLoginDetail(UserDetail authUser, string role)
+        public string FetchUserLoginDetail(UserDetail authUser, UserType userType)
         {
             string encryptedPassword = string.Empty;
 
             if (!string.IsNullOrEmpty(authUser.EmailId))
                 authUser.EmailId = authUser.EmailId.Trim().ToLower();
 
-            var loginDetail = db.Get<UserDetail>("sp_Password_GetByRole", new
+            var loginDetail = db.Get<UserDetail>("sp_password_get_by_email_mobile", new
+            {
+                authUser.UserId,
+                MobileNo = authUser.Mobile,
+                authUser.EmailId,
+                UserTypeId = (int)userType
+            });
+
+            if (loginDetail != null)
+            {
+                encryptedPassword = loginDetail.Password;
+                authUser.OrganizationId = loginDetail.OrganizationId;
+                authUser.CompanyId = loginDetail.CompanyId;
+            }
+            else
+            {
+                throw new HiringBellException("Incorrect user detail provided.");
+            }
+
+            return encryptedPassword;
+        }
+
+        public string FetchUserLoginDetail(UserDetail authUser)
+        {
+            string encryptedPassword = string.Empty;
+
+            if (!string.IsNullOrEmpty(authUser.EmailId))
+                authUser.EmailId = authUser.EmailId.Trim().ToLower();
+
+            var loginDetail = db.Get<UserDetail>("sp_password_get", new
             {
                 authUser.UserId,
                 MobileNo = authUser.Mobile,
@@ -124,21 +153,6 @@ namespace ServiceLayer.Code
 
             return encryptedPassword;
         }
-
-        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser, string role)
-        {
-            return await Task.Run(() =>
-            {
-                LoginResponse loginResponse = default;
-                if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
-                {
-                    loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth", role);
-                }
-
-                return loginResponse;
-            });
-        }
-
         public async Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser)
         {
             string ProcedureName = string.Empty;
@@ -160,16 +174,45 @@ namespace ServiceLayer.Code
             });
         }
 
-        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName, string role = Role.Other)
+        public async Task<LoginResponse> FetchAuthenticatedAdminDetail(UserDetail authUser)
         {
             LoginResponse loginResponse = default;
-            var encryptedPassword = this.FetchUserLoginDetail(authUser, role);
-            encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
-            if (encryptedPassword.CompareTo(authUser.Password) != 0)
+            if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
             {
-                throw new HiringBellException("Invalid userId or password.");
+                var encryptedPassword = this.FetchUserLoginDetail(authUser, UserType.Admin);
+                encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+                if (encryptedPassword.CompareTo(authUser.Password) != 0)
+                {
+                    throw new HiringBellException("Invalid userId or password.");
+                }
+
+                loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
             }
 
+            return await Task.FromResult(loginResponse);
+        }
+
+        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)
+        {
+            LoginResponse loginResponse = default;
+            if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
+            {
+                var encryptedPassword = this.FetchUserLoginDetail(authUser, UserType.Employee);
+                encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+                if (encryptedPassword.CompareTo(authUser.Password) != 0)
+                {
+                    throw new HiringBellException("Invalid userId or password.");
+                }
+
+                loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
+            }
+
+            return await Task.FromResult(loginResponse);
+        }
+
+        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
+        {
+            LoginResponse loginResponse = default;
             DbParam[] param = new DbParam[]
             {
                 new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
@@ -239,10 +282,10 @@ namespace ServiceLayer.Code
             return loginResponse;
         }
 
-        public string ResetEmployeePassword(UserDetail authUser, string role)
+        public string ResetEmployeePassword(UserDetail authUser)
         {
             string Status = string.Empty;
-            var encryptedPassword = this.FetchUserLoginDetail(authUser, role);
+            var encryptedPassword = this.FetchUserLoginDetail(authUser);
             encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
             if (encryptedPassword != authUser.Password)
                 throw new HiringBellException("Incorrect old password");
@@ -322,7 +365,7 @@ namespace ServiceLayer.Code
                 ValidateEmailId(email);
                 UserDetail authUser = new UserDetail();
                 authUser.EmailId = email;
-                var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
+                var encryptedPassword = this.FetchUserLoginDetail(authUser);
 
                 if (string.IsNullOrEmpty(encryptedPassword))
                     throw new HiringBellException("Email id is not registered. Please contact to admin");
@@ -343,7 +386,7 @@ namespace ServiceLayer.Code
                 Status = ApplicationConstants.Successfull;
                 return Status;
             }
-            catch(Exception ex)
+            catch (Exception)
             {
                 throw new HiringBellException("Getting some server error. Please contact to admin.");
             }
