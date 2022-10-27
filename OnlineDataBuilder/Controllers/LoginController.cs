@@ -55,7 +55,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("AuthenticateUser")]
         public async Task<ApiResponse> AuthenticateUser(UserDetail authUser)
         {
-            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser, Role.Employee);
+            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser);
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
@@ -64,7 +64,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("Authenticate")]
         public async Task<ApiResponse> Authenticate(UserDetail authUser)
         {
-            var userDetail = await this.loginService.FetchAuthenticatedUserDetail(authUser, Role.Admin);
+            var userDetail = await this.loginService.FetchAuthenticatedAdminDetail(authUser);
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
@@ -87,7 +87,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("ResetEmployeePassword")]
         public IResponse<ApiResponse> ResetEmployeePassword(UserDetail authUser)
         {
-            var result = this.loginService.ResetEmployeePassword(authUser, Role.Employee);
+            var result = this.loginService.ResetEmployeePassword(authUser);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
