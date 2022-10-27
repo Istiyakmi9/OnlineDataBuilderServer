@@ -11,5 +11,10 @@ namespace ModalLayer.Modal.Leaves
         public decimal NumOfDays { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
+        public decimal AvailableLeaves { get; set; }
+        public decimal TotalLeaveApplied {get; set;}
+        public decimal TotalApprovedLeave {get; set;}
+        public decimal TotalLeaveQuota {get; set;}
+        public string LeaveQuotaDetail {get; set;}
     }
 }

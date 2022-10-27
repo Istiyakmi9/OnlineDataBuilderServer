@@ -108,6 +108,7 @@ namespace ServiceLayer.Code
                         FirstName = employeeJson.EmployeeDetail.FirstName,
                         LastName = employeeJson.EmployeeDetail.LastName,
                         Mobile = employeeJson.EmployeeDetail.Mobile,
+                        EmployeeUid = item.EmployeeId,
                         Email = employeeJson.EmployeeDetail.Email,
                         LeavePlanId = employeeJson.EmployeeDetail.LeavePlanId,
                         IsActive = employeeJson.EmployeeDetail.IsActive,
@@ -123,7 +124,7 @@ namespace ServiceLayer.Code
                         FinalPackage = employeeJson.EmployeeDetail.FinalPackage,
                         TakeHomeByCandidate = employeeJson.EmployeeDetail.TakeHomeByCandidate,
                         ClientJson = employeeJson.EmployeeDetail.ClientJson,
-                        Total = employeeJson.EmployeeDetail.Total,
+                        Total = employeeArchiveModal[0].Total,
                         UpdatedOn = employeeJson.EmployeeProfessionalDetail.UpdatedOn,
                         CreatedOn = employeeJson.EmployeeProfessionalDetail.CreatedOn
                     });
@@ -345,6 +346,8 @@ namespace ServiceLayer.Code
                 EmployeeCompleteDetailModal = JsonConvert.SerializeObject(employeeCompleteDetailModal),
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to dea-active the employee. Please contact to admin");
 
             return result;
         }
@@ -363,7 +366,7 @@ namespace ServiceLayer.Code
                 LastName = employeeCompleteDetailModal.EmployeeDetail.LastName,
                 Mobile = employeeCompleteDetailModal.EmployeeDetail.Mobile,
                 Email = employeeCompleteDetailModal.EmployeeDetail.Email,
-                IsActive = employeeCompleteDetailModal.EmployeeDetail.IsActive,
+                IsActive = true,
                 ReportingManagerId = employeeCompleteDetailModal.EmployeeDetail.ReportingManagerId,
                 DesignationId = employeeCompleteDetailModal.EmployeeDetail.DesignationId,
                 UserTypeId = employeeCompleteDetailModal.EmployeeDetail.UserTypeId,
@@ -449,33 +452,43 @@ namespace ServiceLayer.Code
                 DaysPerWeek = employeeCompleteDetailModal.MappedClient.DaysPerWeek,
                 DateOfJoining = employeeCompleteDetailModal.MappedClient.DateOfJoining,
                 DateOfLeaving = employeeCompleteDetailModal.MappedClient.DateOfLeaving,
+                DOB = employeeCompleteDetailModal.EmployeeDetail.DOB,
+                OrganizationId = employeeCompleteDetailModal.EmployeeLoginDetail.OrganizationId,
+                AvailableLeaves = employeeCompleteDetailModal.LeaveRequestDetail.AvailableLeaves ,
+                TotalLeaveApplied = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveApplied ,
+                TotalApprovedLeave = employeeCompleteDetailModal.LeaveRequestDetail.TotalApprovedLeave ,
+                TotalLeaveQuota = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveQuota ,
+                LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
-
             }, true);
-            return null;
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to active the employee. Please contact to admin");
+
+            return result;
         }
 
         public List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive)
         {
             List<Employee> employees = null;
             var status = string.Empty;
-
-            if (!IsActive)
-                status = DeActivateEmployee(EmployeeId);
-            else
-                status = ActivateEmployee(EmployeeId);
-
-            if (!string.IsNullOrEmpty(status))
+            FilterModel filterModel = new FilterModel
             {
-                employees = _db.GetList<Employee>("SP_Employee_GetAll", new
-                {
-                    SearchString = "1=1",
-                    SortBy = "",
-                    PageIndex = 1,
-                    PageSize = 10
-                });
+                SearchString = "1=1",
+                SortBy = "",
+                PageIndex = 1,
+                PageSize = 10
+            };
+            if (!IsActive)
+            {
+                status = DeActivateEmployee(EmployeeId);
+                employees = FilterInActiveEmployees(filterModel);
             }
-
+            else
+            {
+                status = ActivateEmployee(EmployeeId);
+                employees = FilterActiveEmployees(filterModel);
+            }
             return employees;
         }
 
