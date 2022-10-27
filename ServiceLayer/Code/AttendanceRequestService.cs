@@ -117,14 +117,14 @@ namespace ServiceLayer.Code
                 if (currentAttendance == null)
                     throw new HiringBellException("Unable to update present request. Please contact to admin.");
 
-                _logger.LogInformation("Attendance: " + JsonConvert.SerializeObject(currentAttendance));
+                _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
 
                 currentAttendance.PresentDayStatus = (int)status;
                 currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
                 currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
                 // this call is used for only upadate AttendanceDetail json object
 
-                _logger.LogInformation("Final Attendance: " + JsonConvert.SerializeObject(currentAttendance));
+                _logger.LogInformation("Final Attendance: " + JsonConvert.SerializeObject(allAttendance));
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
