@@ -108,6 +108,7 @@ namespace ServiceLayer.Code
                         FirstName = employeeJson.EmployeeDetail.FirstName,
                         LastName = employeeJson.EmployeeDetail.LastName,
                         Mobile = employeeJson.EmployeeDetail.Mobile,
+                        EmployeeUid = employeeJson.EmployeeDetail.EmployeeUid,
                         Email = employeeJson.EmployeeDetail.Email,
                         LeavePlanId = employeeJson.EmployeeDetail.LeavePlanId,
                         IsActive = employeeJson.EmployeeDetail.IsActive,
@@ -123,7 +124,7 @@ namespace ServiceLayer.Code
                         FinalPackage = employeeJson.EmployeeDetail.FinalPackage,
                         TakeHomeByCandidate = employeeJson.EmployeeDetail.TakeHomeByCandidate,
                         ClientJson = employeeJson.EmployeeDetail.ClientJson,
-                        Total = employeeJson.EmployeeDetail.Total,
+                        Total = employeeArchiveModal[0].Total,
                         UpdatedOn = employeeJson.EmployeeProfessionalDetail.UpdatedOn,
                         CreatedOn = employeeJson.EmployeeProfessionalDetail.CreatedOn
                     });
@@ -363,7 +364,7 @@ namespace ServiceLayer.Code
                 LastName = employeeCompleteDetailModal.EmployeeDetail.LastName,
                 Mobile = employeeCompleteDetailModal.EmployeeDetail.Mobile,
                 Email = employeeCompleteDetailModal.EmployeeDetail.Email,
-                IsActive = employeeCompleteDetailModal.EmployeeDetail.IsActive,
+                IsActive = true,
                 ReportingManagerId = employeeCompleteDetailModal.EmployeeDetail.ReportingManagerId,
                 DesignationId = employeeCompleteDetailModal.EmployeeDetail.DesignationId,
                 UserTypeId = employeeCompleteDetailModal.EmployeeDetail.UserTypeId,
@@ -450,8 +451,9 @@ namespace ServiceLayer.Code
                 DateOfJoining = employeeCompleteDetailModal.MappedClient.DateOfJoining,
                 DateOfLeaving = employeeCompleteDetailModal.MappedClient.DateOfLeaving,
                 AdminId = _currentSession.CurrentUserDetail.UserId
-
             }, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to active the employee. Please contact to admin");
             return null;
         }
 
