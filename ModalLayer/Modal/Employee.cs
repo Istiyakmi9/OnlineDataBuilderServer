@@ -40,6 +40,12 @@ namespace ModalLayer.Modal
         public int NoticePeriodId { get; set; }
         public DateTime? NoticePeriodAppliedOn { get; set; }
         public DateTime? UpdatedOn { get; set; }
+    }
 
+    public class EmployeeEmailMobileCheck
+    {
+        public int EmployeeCount { get; set; } = 0;
+        public int MobileCount { get; set; } = 0;
+        public int EmailCount { get; set; } = 0;
     }
 }
