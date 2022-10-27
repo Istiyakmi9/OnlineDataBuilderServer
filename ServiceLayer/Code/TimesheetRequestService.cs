@@ -110,8 +110,8 @@ namespace ServiceLayer.Code
                     Subject = template.SubjectLine,
                     To = new List<string> { firstItem.Email },
                     ApprovalType = itemStatus.ToString(),
-                    FromDate = sortedTimesheetByDate.First().PresentDate,
-                    ToDate = sortedTimesheetByDate.Last().PresentDate,
+                    FromDate = sortedTimesheetByDate.Last().PresentDate,
+                    ToDate = sortedTimesheetByDate.First().PresentDate,
                     LeaveType = null,
                     ManagerName = _currentSession.CurrentUserDetail.FullName,
                     Message = string.IsNullOrEmpty(firstItem.UserComments)
