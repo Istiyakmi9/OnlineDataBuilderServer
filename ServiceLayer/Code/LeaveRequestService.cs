@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -7,7 +8,6 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -17,19 +17,19 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
-        private readonly IEmailService _eEmailService;
+        private readonly IEMailManager _eMailManager;
 
         public LeaveRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             IAttendanceRequestService attendanceRequestService,
-            IEmailService eEmailService)
+            IEMailManager eMailManager)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
-            _eEmailService = eEmailService;
+            _eMailManager = eMailManager;
         }
 
         public RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
@@ -109,14 +109,13 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update leave status. Please contact to admin");
             }
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.RequestTemplate });
 
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
-            Task.Run(() =>
-            {
-                _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+            EmailSenderModal emailSenderModal = _attendanceRequestService.PrepareSendEmailNotification(
+                new EmployeeNotificationModel
                 {
                     DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
                     AttendanceRequestType = ApplicationConstants.Leave,
@@ -132,8 +131,9 @@ namespace ServiceLayer.Code
                     Message = string.IsNullOrEmpty(leaveDeatil.Reason)
                                 ? "NA"
                                 : leaveDeatil.Reason
-                });
-            });
+                }, template);
+
+            _eMailManager.SendMailAsync(emailSenderModal);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)

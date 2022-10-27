@@ -1,11 +1,13 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -16,19 +18,19 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
-        private readonly IEmailService _eEmailService;
+        private readonly IEMailManager _eMailManager;
 
         public TimesheetRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             IAttendanceRequestService attendanceRequestService,
-            IEmailService eEmailService)
+            IEMailManager eMailManager)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
-            _eEmailService = eEmailService;
+            _eMailManager = eMailManager;
         }
 
         public RequestModel RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
@@ -92,16 +94,14 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 4 });
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.RequestTemplate });
 
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
             var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);
-
-            Task.Run(() =>
-            {
-                _eEmailService.PrepareSendEmailNotification(new EmployeeNotificationModel
+            EmailSenderModal emailSenderModal = _attendanceRequestService.PrepareSendEmailNotification(
+                new EmployeeNotificationModel
                 {
                     DeveloperName = firstItem.EmployeeName,
                     AttendanceRequestType = ApplicationConstants.Timesheet,
@@ -115,11 +115,51 @@ namespace ServiceLayer.Code
                     LeaveType = null,
                     ManagerName = _currentSession.CurrentUserDetail.FullName,
                     Message = string.IsNullOrEmpty(firstItem.UserComments)
-                                ? "NA"
-                                : firstItem.UserComments,
-                });
-            });
+                            ? "NA"
+                            : firstItem.UserComments,
+                }, template);
+
+            _eMailManager.SendMailAsync(emailSenderModal);
             return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
+        }
+
+        public EmailSenderModal PrepareSendEmailNotification(EmployeeNotificationModel notification, EmailTemplate template)
+        {
+            EmailSenderModal emailSenderModal = null;
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime(notification.FromDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime(notification.ToDate, _currentSession.TimeZone);
+            if (notification != null)
+            {
+                var totalDays = notification.ToDate.Date.Subtract(notification.FromDate.Date).TotalDays + 1;
+                string subject = notification.Subject
+                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
+
+                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
+                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
+                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
+                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
+                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
+                                .Replace("[[USER-MESSAGE]]", notification.Message)
+                                .Replace("[[COMPANY-NAME]]", notification.CompanyName);
+
+                StringBuilder builder = new StringBuilder();
+                builder.Append("<div>" + template.EmailClosingStatement + "</div>");
+                builder.Append("<div>" + template.SignatureDetail + "</div>");
+                builder.Append("<div>" + template.ContactNo + "</div>");
+
+                emailSenderModal = new EmailSenderModal
+                {
+                    To = notification.To,
+                    Subject = subject,
+                    Body = string.Concat(body, builder.ToString()),
+                };
+            }
+
+            return emailSenderModal;
         }
 
         public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)

@@ -1,4 +1,5 @@
-﻿using EAGetMail;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EAGetMail;
 using ModalLayer.Modal;
 using System;
 using System.Globalization;
@@ -96,6 +97,9 @@ namespace EMailService.Service
 
         public Task SendMailAsync(EmailSenderModal emailSenderModal)
         {
+            if (_emailSettingDetail == null)
+                throw new HiringBellException("Email setting detail not found. Please contact to admin.");
+
             Task.Run(() => Send(emailSenderModal));
             return Task.CompletedTask;
         }

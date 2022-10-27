@@ -313,50 +313,54 @@ namespace ServiceLayer.Code
 
         public string ForgotPasswordService(string email)
         {
-            string Status = string.Empty;
-            if (string.IsNullOrEmpty(email))
-                throw new HiringBellException("Email is null or empty");
+            try
+            {
+                string Status = string.Empty;
+                if (string.IsNullOrEmpty(email))
+                    throw new HiringBellException("Email is null or empty");
 
-            ValidateEmailId(email);
-            UserDetail authUser = new UserDetail();
-            authUser.EmailId = email;
-            var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
+                ValidateEmailId(email);
+                UserDetail authUser = new UserDetail();
+                authUser.EmailId = email;
+                var encryptedPassword = this.FetchUserLoginDetail(authUser, null);
 
-            if (string.IsNullOrEmpty(encryptedPassword))
-                throw new HiringBellException("Email id is not registered. Please contact to admin");
+                if (string.IsNullOrEmpty(encryptedPassword))
+                    throw new HiringBellException("Email id is not registered. Please contact to admin");
 
-            var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
+                var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
 
-            EmailSenderModal emailSenderModal = new EmailSenderModal();
-            EmailTemplate template = _commonService.GetTemplate(ApplicationConstants.ForgetPasswordTemplate);
-            BuildEmailBody(template, password);
+                EmailSenderModal emailSenderModal = new EmailSenderModal();
+                EmailTemplate template = _commonService.GetTemplate(ApplicationConstants.ForgetPasswordTemplate);
+                BuildEmailBody(template, password);
 
-            emailSenderModal.Body = template.BodyContent;
-            emailSenderModal.To = new List<string> { email };
-            emailSenderModal.Subject = template.SubjectLine;
-            emailSenderModal.UserName = "BottomHalf";
-            emailSenderModal.Title = "[BottomHalf] Temporary password request.";
+                emailSenderModal.Body = template.BodyContent;
+                emailSenderModal.To = new List<string> { email };
+                emailSenderModal.Subject = template.SubjectLine;
+                emailSenderModal.UserName = "BottomHalf";
+                emailSenderModal.Title = "[BottomHalf] Temporary password request.";
 
-            _emailManager.SendMailAsync(emailSenderModal);
-            Status = ApplicationConstants.Successfull;
-            return Status;
+                _emailManager.SendMailAsync(emailSenderModal);
+                Status = ApplicationConstants.Successfull;
+                return Status;
+            }
+            catch(Exception ex)
+            {
+                throw new HiringBellException("Getting some server error. Please contact to admin.");
+            }
         }
 
         private void BuildEmailBody(EmailTemplate emailTemplate, string password)
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Append("<div>" + emailTemplate.Salutation + "</div>");
-            string body = JsonConvert.DeserializeObject<string>(emailTemplate.BodyContent);
-            stringBuilder.Append(body.Replace("[[NEW-PASSWORD]]", password));
-
-            stringBuilder.AppendLine();
-            stringBuilder.AppendLine();
+            string body = JsonConvert.DeserializeObject<string>(emailTemplate.BodyContent)
+                          .Replace("[[NEW-PASSWORD]]", password);
 
             stringBuilder.Append("<div>" + emailTemplate.EmailClosingStatement + "</div>");
             stringBuilder.Append("<div>" + emailTemplate.SignatureDetail + "</div>");
             stringBuilder.Append("<div>" + emailTemplate.ContactNo + "</div>");
 
-            emailTemplate.BodyContent = stringBuilder.ToString();
+            emailTemplate.BodyContent = body + stringBuilder.ToString();
         }
 
         private void ValidateEmailId(string email)
