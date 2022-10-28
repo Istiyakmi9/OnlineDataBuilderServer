@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
 {
     public interface ILeaveService
     {
-        dynamic GetLeavePlansService(FilterModel filterModel);
+        List<LeavePlan> GetLeavePlansService(FilterModel filterModel);
         List<LeavePlanType> AddLeavePlanTypeService(LeavePlanType leavePlanType);
         List<LeavePlan> AddLeavePlansService(LeavePlan leavePlanType);
         Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes);

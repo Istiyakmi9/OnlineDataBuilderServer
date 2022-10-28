@@ -96,11 +96,30 @@ namespace ServiceLayer.Code
             return leavePlanTypes;
         }
 
-        public dynamic GetLeavePlansService(FilterModel filterModel)
+        public List<LeavePlan> GetLeavePlansService(FilterModel filterModel)
         {
             List<LeavePlan> leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
-            List<Employee> employees = _employeeService.GetEmployees(filterModel);
-            return new { LeavePlan = leavePlans, Employees = employees };
+            if (leavePlans == null)
+                throw new HiringBellException("Leave plans not found.");
+
+            leavePlans.ForEach(item =>
+            {
+                if (!string.IsNullOrEmpty(item.AssociatedPlanTypes))
+                {
+                    var planTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(item.AssociatedPlanTypes);
+                    if (planTypes != null)
+                    {
+                        Parallel.ForEach(planTypes, type =>
+                        {
+                            type.LeavePlanId = item.LeavePlanId;
+                        });
+                    }
+
+                    item.AssociatedPlanTypes = JsonConvert.SerializeObject(planTypes);
+                }
+            });
+
+            return leavePlans;
         }
 
         private void BuildConfigurationDetailObject(LeavePlanType leavePlanType)
