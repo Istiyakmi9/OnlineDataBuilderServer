@@ -3,6 +3,7 @@
     public class LeavePlanType : CreationInfo
     {
         public int LeavePlanTypeId { set; get; }
+        public int LeavePlanId { set; get; }
         public string LeavePlanCode { set; get; }
         public string PlanName { set; get; }
         public string PlanDescription { set; get; }
