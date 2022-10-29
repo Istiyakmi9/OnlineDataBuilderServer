@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -155,7 +156,7 @@ namespace ServiceLayer.Code
                 company.Branch = companyInfo.Branch;
                 company.IFSC = companyInfo.IFSC;
                 company.IsPrimaryCompany = companyInfo.IsPrimaryCompany;
-                if(string.IsNullOrEmpty(companyInfo.FixedComponentsId))
+                if (string.IsNullOrEmpty(companyInfo.FixedComponentsId))
                     companyInfo.FixedComponentsId = "[]";
                 company.FixedComponentsId = companyInfo.FixedComponentsId;
                 company.BranchCode = companyInfo.BranchCode;
@@ -365,6 +366,43 @@ namespace ServiceLayer.Code
                 filterModel.PageSize
             });
             return result;
+        }
+
+        public async Task<CompanySetting> UpdateSettingService(int companyId, CompanySetting companySetting)
+        {
+            if (companyId <= 0)
+                throw new HiringBellException("Invalid company id supplied.");
+
+            var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
+            if (companySettingDetail == null)
+                companySettingDetail = companySetting;
+
+            companySettingDetail.CompanyId = companyId;
+
+            var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
+            {
+                companySettingDetail.CompanyId,
+                companySettingDetail.SettingId,
+                companySettingDetail.ProbationPeriodInDays,
+                companySettingDetail.NoticePeriodInDays,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(status.statusMessage))
+                throw new HiringBellException("Fail to update company setting detail. CompnayId: ",
+                    nameof(companySettingDetail.CompanyId),
+                    " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
+
+            return companySettingDetail;
+        }
+
+        public async Task<CompanySetting> GetCompanySettingService(int companyId)
+        {
+            if (companyId <= 0)
+                throw new HiringBellException("Invalid company id supplied.");
+
+            var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
+            return await Task.FromResult(companySettingDetail);
         }
     }
 }

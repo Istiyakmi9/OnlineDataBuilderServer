@@ -34,47 +34,89 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
+        #region ACCRUAL IF IN PROBATION
+
+        private async Task<decimal> ProbationMonthlyAccrualCalculation(LeaveCalculationModal leaveCalculationModal, decimal perMonthLeaves)
+        {
+            List<Task> tasks = new List<Task>();
+            decimal availableLeaves = 0;
+            if (!_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth)
+            {
+                // Prorated accrual days on first month
+                var t1 = Task.Run(() =>
+                {
+                    var leaves = FirstMonthAccrualInProbation(leaveCalculationModal.employee.CreatedOn.Day);
+                    return leaves;
+                });
+
+                // Prorated accrual days on present month
+                var t2 = Task.Run(() =>
+                {
+                    decimal leaves = 0;
+                    if (leaveCalculationModal.employee.CreatedOn.Month != now.Month)
+                        leaves = MonthAccrualOnDefinedDay(now.Day);
+                    return leaves;
+                });
+
+                await Task.WhenAll(t1, t2);
+                availableLeaves = t1.Result + t2.Result;
+            }
+            else
+            {
+                if (leaveCalculationModal.employee.CreatedOn.Month == now.Month)
+                    availableLeaves = perMonthLeaves;
+                else
+                    availableLeaves = perMonthLeaves * 2;
+            }
+
+            var joiningDate = leaveCalculationModal.employee.CreatedOn;
+            if (now.Month - joiningDate.Month > 1)
+            {
+                availableLeaves += perMonthLeaves * (now.Month - 2);
+            }
+
+            return availableLeaves;
+        }
+
+        #endregion
+
 
         #region LEAVE ACCRUAL CYCLE AUTOMATED
 
-        private decimal YearFirstAndPresentMonthLeavesAccrual(decimal perMonthLeaves, LeaveCalculationModal leaveCalculationModal)
+        private async Task<decimal> MonthlyAccrualCalculation(LeaveCalculationModal leaveCalculationModal, decimal perMonthLeaves)
         {
-            decimal presentMonthLeaves = 0;
-            if (DoesPresentMonthProrateEnabled())
-            {
-                if (_leavePlanConfiguration.leaveAccrual.IsLeaveAccruedProrateDefined)
-                    presentMonthLeaves = DistinctLeavesCalculation(now.Day, leaveCalculationModal.employee.CreatedOn);
-                else
-                    presentMonthLeaves = perMonthLeaves * 2;
-            }
-            return presentMonthLeaves;
-        }
-
-        private decimal MonthlyAccrualCalculation(LeaveCalculationModal leaveCalculationModal, decimal perMonthLeaves)
-        {
+            List<Task> tasks = new List<Task>();
             decimal availableLeaves = 0;
-
-            // will return leave accrualed till now for the present month,
-            // this will be overridden if any leave distribution rule is defined in below code
-
-            if (leaveCalculationModal.employeeType == 0)
+            if (_leavePlanConfiguration.leaveAccrual.IsLeaveAccruedProrateDefined)
             {
-                availableLeaves = YearFirstAndPresentMonthLeavesAccrual(perMonthLeaves, leaveCalculationModal);
-                var joiningDate = leaveCalculationModal.employee.CreatedOn;
-                if (now.Month - joiningDate.Month > 1)
+                // Prorated accrual days on first month
+                var t1 = Task.Run(() =>
                 {
-                    availableLeaves += perMonthLeaves * (now.Month - 2);
-                }
+                    decimal leaves = 0;
+                    if (leaveCalculationModal.employee.CreatedOn.Year == now.Year)
+                        leaves = FirstMonthAccrualInProbation(now.Day);
+                    else
+                        leaves = MonthAccrualOnDefinedDay(now.Day);
+                    return leaves;
+                });
+
+                // Prorated accrual days on present month
+                var t2 = Task.Run(() =>
+                {
+                    var leaves = MonthAccrualOnDefinedDay(leaveCalculationModal.employee.CreatedOn.Day);
+                    return leaves;
+                });
+
+                await Task.WhenAll(t1, t2);
+                availableLeaves = t1.Result + t2.Result;
             }
-            else if (leaveCalculationModal.employeeType == 2) // serving notice period
+            else
+                availableLeaves = perMonthLeaves * 2;
+
+            var joiningDate = leaveCalculationModal.employee.CreatedOn;
+            if (now.Month - joiningDate.Month > 1)
             {
-                if (_leavePlanConfiguration.leaveAccrual.IsNotAllowProratedOnNotice)
-                    availableLeaves = NoticePeriodDistinctLeavesCalculation();
-            }
-            else if (leaveCalculationModal.employeeType == 1) // in probation
-            {
-                if (!_leavePlanConfiguration.leaveAccrual.IsLeavesProratedOnNotice)
-                    availableLeaves = ProbationPeriodDistinctLeavesCalculation();
+                availableLeaves += perMonthLeaves * (now.Month - 2);
             }
 
             return availableLeaves;
@@ -82,9 +124,6 @@ namespace ServiceLayer.Code
 
         private async Task<decimal> ExecuteLeaveAccrualDetail(LeaveCalculationModal leaveCalculationModal)
         {
-            if (_leavePlanConfiguration.leaveDetail.LeaveLimit <= 0)
-                return 0;
-
             decimal availableLeaveLimit = 0;
             decimal leaveFrequencyForDefinedPeriod = 0;
             var leaveDistributedSeq = _leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
@@ -95,7 +134,7 @@ namespace ServiceLayer.Code
                         leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
                     else
                         leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                    availableLeaveLimit = this.MonthlyAccrualCalculation(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
+                    availableLeaveLimit = await this.MonthlyAccrualCalculation(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
                 case "2":
                     availableLeaveLimit = this.CalculateWhenAccralQuaterly();
@@ -184,7 +223,7 @@ namespace ServiceLayer.Code
                 switch (leaveCalculationModal.employeeType)
                 {
                     case 1:
-                        leavePlanType.AvailableLeave = CalculateLeaveForProbation(leaveCalculationModal);
+                        leavePlanType.AvailableLeave = await CalculateLeaveForProbation(leaveCalculationModal);
                         break;
                     case 2:
                         leavePlanType.AvailableLeave = CalculateLeaveForNotice(leaveCalculationModal);
@@ -345,6 +384,48 @@ namespace ServiceLayer.Code
         }
 
         // Prorate distribution of leave if rule is defined
+
+        public decimal FirstMonthAccrualInProbation(int JoiningDay)
+        {
+            decimal accrualedLeaves = 0;
+            //_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth
+            if (_leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution != null)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
+                                            .JoiningMonthLeaveDistribution.ElementAt(i);
+                    if (allocateTimeBreakup.ToDate >= JoiningDay)
+                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    i++;
+                }
+            }
+
+            return accrualedLeaves;
+        }
+
+        public decimal MonthAccrualOnDefinedDay(int DayOfMonth)
+        {
+            decimal accrualedLeaves = 0;
+            if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod != null)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
+                                            .LeaveDistributionRateOnStartOfPeriod.ElementAt(i);
+                    if (DayOfMonth >= allocateTimeBreakup.FromDate)
+                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    i++;
+                }
+            }
+
+            return accrualedLeaves;
+        }
+
         public decimal DistinctLeavesCalculation(int PresentMonthDay, DateTime FirstMonthDate)
         {
             decimal days = 0;
@@ -485,16 +566,18 @@ namespace ServiceLayer.Code
 
         #endregion
 
-        private decimal CalculateLeaveForProbation(LeaveCalculationModal leaveCalculationModal)
+        private async Task<decimal> CalculateLeaveForProbation(LeaveCalculationModal leaveCalculationModal)
         {
-            NewJoineeIsEligibleForThisLeave(leaveCalculationModal);
-            decimal leaveCount = CalculateLeaveDetail(leaveCalculationModal);
+            // Check this rule if applying leave
+            // NewJoineeIsEligibleForThisLeave(leaveCalculationModal);
+            var perMonthDays = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12m;
+            decimal leaveCount = await ProbationMonthlyAccrualCalculation(leaveCalculationModal, perMonthDays);
             return leaveCount;
         }
 
         private decimal CalculateLeaveForNotice(LeaveCalculationModal leaveCalculationModal)
         {
-            decimal leaveCount = CalculateLeaveDetail(leaveCalculationModal);
+            decimal leaveCount = CalculateLeaveDetailOnNotice(leaveCalculationModal);
             return leaveCount;
         }
 
@@ -703,38 +786,84 @@ namespace ServiceLayer.Code
             return leaveBalance;
         }
 
-        private decimal CalculateLeaveDetail(LeaveCalculationModal leaveCalculationModal)
+        private decimal CalculateLeaveDetailOnProbation(LeaveCalculationModal leaveCalculationModal)
         {
             if (_leavePlanConfiguration.leaveDetail.LeaveLimit <= 0)
                 return 0;
 
-            decimal availableLeaveLimit = LeaveBalanceIfEntireLeaveAllowed();
-            if (availableLeaveLimit == 0)
-            {
-                decimal leaveFrequencyForDefinedPeriod = 0;
-                var leaveDistributedSeq = _leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
-                switch (leaveDistributedSeq)
-                {
-                    default:
-                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
-                        availableLeaveLimit = this.CalculateWhenAccralMonthly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
-                        break;
-                    case "2":
-                        availableLeaveLimit = this.CalculateWhenAccralQuaterly();
-                        break;
-                    case "3":
-                        availableLeaveLimit = this.CalculateWhenAccralYearly();
-                        break;
-                }
+            // this condition will be check at very begning of Accrual calculation.
+            // decimal availableLeaveLimit = LeaveBalanceIfEntireLeaveAllowed();
+            decimal availableLeaveLimit = 0;
+            decimal leaveFrequencyForDefinedPeriod = 0;
+            var isProrated = _leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth;
 
-                if (leaveCalculationModal.employeeType == 1)
-                {
-                    // calculate leave for experienced people and allowed accrual in probation
-                    decimal extraLeaveLimit = LeaveAccrualForExperienceInProbation(leaveFrequencyForDefinedPeriod);
-                    availableLeaveLimit = availableLeaveLimit + extraLeaveLimit;
-                }
+            if (isProrated)
+            {
+                leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
+                availableLeaveLimit = this.CalculateWhenAccralMonthly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
             }
 
+
+            if (leaveCalculationModal.employeeType == 1)
+            {
+                // calculate leave for experienced people and allowed accrual in probation
+                decimal extraLeaveLimit = LeaveAccrualForExperienceInProbation(leaveFrequencyForDefinedPeriod);
+                availableLeaveLimit = availableLeaveLimit + extraLeaveLimit;
+            }
+
+            /* -------------------------------------  this condition will be use for attendance -------------------------
+            
+            // check weekoff as absent if rule applicable
+            CheckWeekOffRuleApplicable(perMonthLeaves);
+
+            // check weekoff as absent if rule applicable
+            CheckHolidayRuleApplicable(perMonthLeaves);
+            
+            -----------------------------------------------------------------------------------------------------------*/
+
+
+            // check weather can apply for leave based on future date projected balance
+            // availableLeaveLimit = CheckAddExtraAccrualLeaveBalance(perMonthLeaves, availableLeaveLimit);
+
+            // round up decimal value of available as per rule defined
+            availableLeaveLimit = RoundUpTheLeaves(availableLeaveLimit);
+
+            // check leave expiry
+            availableLeaveLimit = UpdateLeaveIfSetForExpiry(availableLeaveLimit);
+
+            return availableLeaveLimit;
+        }
+
+        private decimal CalculateLeaveDetailOnNotice(LeaveCalculationModal leaveCalculationModal)
+        {
+            if (_leavePlanConfiguration.leaveDetail.LeaveLimit <= 0)
+                return 0;
+
+            // this condition will be check at very begning of Accrual calculation.
+            // decimal availableLeaveLimit = LeaveBalanceIfEntireLeaveAllowed();
+            decimal availableLeaveLimit = 0;
+            decimal leaveFrequencyForDefinedPeriod = 0;
+            var leaveDistributedSeq = _leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
+            switch (leaveDistributedSeq)
+            {
+                default:
+                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
+                    availableLeaveLimit = this.CalculateWhenAccralMonthly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
+                    break;
+                case "2":
+                    availableLeaveLimit = this.CalculateWhenAccralQuaterly();
+                    break;
+                case "3":
+                    availableLeaveLimit = this.CalculateWhenAccralYearly();
+                    break;
+            }
+
+            if (leaveCalculationModal.employeeType == 1)
+            {
+                // calculate leave for experienced people and allowed accrual in probation
+                decimal extraLeaveLimit = LeaveAccrualForExperienceInProbation(leaveFrequencyForDefinedPeriod);
+                availableLeaveLimit = availableLeaveLimit + extraLeaveLimit;
+            }
 
             /* -------------------------------------  this condition will be use for attendance -------------------------
             
@@ -818,7 +947,7 @@ namespace ServiceLayer.Code
         {
             leaveCalculationModal.employeeType = 0;
             if ((leaveCalculationModal.employee.CreatedOn.AddDays(_companySetting.ProbationPeriodInDays))
-                .Subtract(leaveCalculationModal.fromDate).TotalDays > 0)
+                .Subtract(now).TotalDays > 0)
                 leaveCalculationModal.employeeType = 1;
         }
 
@@ -852,9 +981,10 @@ namespace ServiceLayer.Code
             if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation)
             {
                 var dateFromApplyLeave = leaveCalculationModal.employee.CreatedOn.AddDays(
-                    _companySetting.ProbationPeriodInDays + Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation));
+                    _companySetting.ProbationPeriodInDays +
+                    Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation));
 
-                if (leaveCalculationModal.fromDate.Subtract(dateFromApplyLeave).TotalDays < 0)
+                if (dateFromApplyLeave.Subtract(now).TotalDays < 0)
                     throw new HiringBellException("Days restriction after Probation period is not completed to apply this leave.");
             }
             else
@@ -904,37 +1034,34 @@ namespace ServiceLayer.Code
 
         private async Task ExecuteAccrualLeaveCycle(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
-            await Task.Run((Action)(() =>
-            {
-                var planType = Enumerable.FirstOrDefault<EmployeeLeaveQuota>(
-                    leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail,
-                    (Func<EmployeeLeaveQuota, bool>)(x => x.LeavePlanTypeId == leavePlanType.LeavePlanTypeId));
+            var planType = Enumerable.FirstOrDefault<EmployeeLeaveQuota>(
+                leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail,
+                (Func<EmployeeLeaveQuota, bool>)(x => x.LeavePlanTypeId == leavePlanType.LeavePlanTypeId));
 
-                if (planType != null && planType.AvailableLeave > 0)
+            if (planType != null && planType.AvailableLeave > 0)
+            {
+                leavePlanType.AvailableLeave = planType.AvailableLeave;
+            }
+            else
+            {
+                var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+                if (leaveLimit > 0)
                 {
-                    leavePlanType.AvailableLeave = planType.AvailableLeave;
-                }
-                else
-                {
-                    var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                    if (leaveLimit > 0)
+                    switch (leaveCalculationModal.employeeType)
                     {
-                        switch (leaveCalculationModal.employeeType)
-                        {
-                            case 1:
-                                leavePlanType.AvailableLeave = CalculateLeaveForProbation(leaveCalculationModal);
-                                break;
-                            case 2:
-                                leavePlanType.AvailableLeave = CalculateLeaveForNotice(leaveCalculationModal);
-                                break;
-                            default:
-                                decimal availableLeave = CalculateLeaveDetail(leaveCalculationModal);
-                                leavePlanType.AvailableLeave = LeaveLimitForCurrentType(leavePlanType.LeavePlanTypeId, availableLeave, leaveCalculationModal);
-                                break;
-                        }
+                        case 1:
+                            leavePlanType.AvailableLeave = await CalculateLeaveForProbation(leaveCalculationModal);
+                            break;
+                        case 2:
+                            leavePlanType.AvailableLeave = CalculateLeaveForNotice(leaveCalculationModal);
+                            break;
+                        default:
+                            decimal availableLeave = CalculateLeaveDetailOnProbation(leaveCalculationModal);
+                            leavePlanType.AvailableLeave = LeaveLimitForCurrentType(leavePlanType.LeavePlanTypeId, availableLeave, leaveCalculationModal);
+                            break;
                     }
                 }
-            }), cts.Token);
+            }
         }
 
         private LeaveCalculationModal GetCalculationModal(long EmployeeId, DateTime FromDate, DateTime ToDate)

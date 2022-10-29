@@ -2,6 +2,7 @@
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -15,6 +16,8 @@ namespace ServiceLayer.Interface
         OrganizationDetail InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
         List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail);
         List<BankDetail> GetCompanyBankDetail(FilterModel filterModel);
+        Task<CompanySetting> UpdateSettingService(int companyId, CompanySetting companySetting);
+        Task<CompanySetting> GetCompanySettingService(int companyId);
         OrganizationDetail InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
     }
 }
