@@ -146,6 +146,7 @@ namespace ServiceLayer.Code
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
 
+            LeaveAccrualValidationCheck(leaveAccrual, leavePlanConfiguration.leaveDetail);
             ValidateAndPreFillValue(leaveAccrual);
 
             var result = _db.Execute<LeaveAccrual>("sp_leave_accrual_InsUpdate", new
@@ -255,6 +256,67 @@ namespace ServiceLayer.Code
 
             if (leaveAccrual.DoesLeaveExpireAfterSomeTime == false)
                 leaveAccrual.AfterHowManyDays = 0;
+        }
+
+        private void LeaveAccrualValidationCheck(LeaveAccrual leaveAccrual, LeaveDetail leaveDetail)
+        {
+            if (leaveAccrual.IsLeaveAccruedProrateDefined == true && leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count > 0)
+            {
+                decimal allocatedLeave = 0;
+                FromandTodateValidation(leaveAccrual.LeaveDistributionRateOnStartOfPeriod);
+                allocatedLeave = leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Sum(x => x.AllocatedLeave);
+                if (leaveAccrual.IsLeaveAccruedPatternAvail)
+                {
+                    switch (leaveAccrual.LeaveDistributionSequence)
+                    {
+                        case "1":
+                            decimal monthlyLeave = leaveDetail.LeaveLimit / 12;
+                            if (monthlyLeave != allocatedLeave)
+                                throw new HiringBellException("Monthly leave distribution is not matched with actual monthly leave limit");
+                        break;
+                    }
+                }
+            }
+
+            if (leaveAccrual.IsLeavesProratedForJoinigMonth == false && leaveAccrual.JoiningMonthLeaveDistribution.Count > 0)
+                this.FromandTodateValidation(leaveAccrual.JoiningMonthLeaveDistribution);
+
+            if (leaveAccrual.IsNotAllowProratedOnNotice && leaveAccrual.ExitMonthLeaveDistribution.Count > 0)
+                this.FromandTodateValidation(leaveAccrual.ExitMonthLeaveDistribution);
+        }
+
+        private void FromandTodateValidation(List<AllocateTimeBreakup> data)
+        {
+            int i = 0;
+            while (i < data.Count)
+            {
+                if (data[i].FromDate == 0)
+                    throw new HiringBellException("If you submit 0 in from date then first month leave cann't be calculated.");
+
+                if (data[i].ToDate == 0)
+                    throw new HiringBellException("If you submit 0 in to date then last month leave cann't be calculated.");
+
+                if (data[i].AllocatedLeave == 0)
+                    throw new HiringBellException("If you submit 0 in allocate leave then leave cann't be calculated.");
+
+                if (data[i].ToDate > 31)
+                    throw new HiringBellException("Invalid to date enter in leave accrual quota");
+
+                if (i > 0)
+                {
+                    var fromDate = data[i].FromDate;
+                    var toDate = data[i].ToDate;
+                    if (fromDate < data[i - 1].FromDate || fromDate < data[(i - 1)].ToDate)
+                    {
+                        throw new HiringBellException("From date must be greater than previous from date");
+                    }
+                    if (toDate <= data[(i - 1)].ToDate)
+                    {
+                        throw new HiringBellException("To date must be greater than previous to date");
+                    }
+                }
+                i++;
+            }
         }
 
         public void UpdateLeavePlanConfigurationDetail(int leavePlanTypeId, int leavePlanId, LeavePlanConfiguration leavePlanConfiguration)
