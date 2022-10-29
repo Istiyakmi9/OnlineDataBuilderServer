@@ -45,7 +45,7 @@ namespace ServiceLayer.Code
                 if (_leavePlanConfiguration.leaveAccrual.IsLeaveAccruedProrateDefined)
                     presentMonthLeaves = DistinctLeavesCalculation(now.Day, leaveCalculationModal.employee.CreatedOn);
                 else
-                    presentMonthLeaves = perMonthLeaves;
+                    presentMonthLeaves = perMonthLeaves * 2;
             }
             return presentMonthLeaves;
         }
