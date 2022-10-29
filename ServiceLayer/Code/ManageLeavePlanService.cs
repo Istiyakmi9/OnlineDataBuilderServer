@@ -263,7 +263,7 @@ namespace ServiceLayer.Code
             if (leaveAccrual.IsLeaveAccruedProrateDefined == true && leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count > 0)
             {
                 decimal allocatedLeave = 0;
-                accrualFromandTodateValidation(leaveAccrual.LeaveDistributionRateOnStartOfPeriod);
+                FromandTodateValidation(leaveAccrual.LeaveDistributionRateOnStartOfPeriod);
                 allocatedLeave = leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Sum(x => x.AllocatedLeave);
                 if (leaveAccrual.IsLeaveAccruedPatternAvail)
                 {
@@ -277,9 +277,15 @@ namespace ServiceLayer.Code
                     }
                 }
             }
+
+            if (leaveAccrual.IsLeavesProratedForJoinigMonth == false && leaveAccrual.JoiningMonthLeaveDistribution.Count > 0)
+                this.FromandTodateValidation(leaveAccrual.JoiningMonthLeaveDistribution);
+
+            if (leaveAccrual.IsNotAllowProratedOnNotice && leaveAccrual.ExitMonthLeaveDistribution.Count > 0)
+                this.FromandTodateValidation(leaveAccrual.ExitMonthLeaveDistribution);
         }
 
-        private void accrualFromandTodateValidation(List<AllocateTimeBreakup> data)
+        private void FromandTodateValidation(List<AllocateTimeBreakup> data)
         {
             int i = 0;
             while (i < data.Count)
