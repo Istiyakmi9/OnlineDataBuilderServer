@@ -581,39 +581,39 @@ namespace ServiceLayer.Code
                         if (fractionValue >= 0.1m && fractionValue <= 0.2m)
                             availableLeaves = (decimal)integralValue;
                         else if (fractionValue > 0.2m && fractionValue <= 0.5m)
-                            availableLeaves += (decimal)integralValue + 0.5m;
+                            availableLeaves = (decimal)integralValue + 0.5m;
                         else if (fractionValue < 0.8m)
-                            availableLeaves += (decimal)integralValue + 0.5m;
+                            availableLeaves = (decimal)integralValue + 0.5m;
                         else
-                            availableLeaves += (decimal)integralValue++;
+                            availableLeaves = (decimal)integralValue++;
                     }
 
                     if (_leavePlanConfiguration.leaveAccrual.ToNearestFullDay)
                     {
                         if (fractionValue >= 0.5m)
-                            availableLeaves += (decimal)integralValue++;
+                            availableLeaves = (decimal)integralValue++;
                     }
 
                     if (_leavePlanConfiguration.leaveAccrual.ToNextAvailableHalfDay)
                     {
                         if (fractionValue >= 0.1m && fractionValue < 0.5m)
-                            availableLeaves += (decimal)integralValue + 0.5m;
+                            availableLeaves = (decimal)integralValue + 0.5m;
                         else
-                            availableLeaves += (decimal)integralValue++;
+                            availableLeaves = (decimal)integralValue++;
                     }
 
                     if (_leavePlanConfiguration.leaveAccrual.ToNextAvailableFullDay)
                     {
                         if (fractionValue >= 0.1m)
-                            availableLeaves += (decimal)integralValue++;
+                            availableLeaves = (decimal)integralValue++;
                     }
 
                     if (_leavePlanConfiguration.leaveAccrual.ToPreviousHalfDay)
                     {
                         if (fractionValue < 0.5m)
-                            availableLeaves += (decimal)integralValue;
+                            availableLeaves = (decimal)integralValue;
                         else if (fractionValue > 0.5m && fractionValue <= 0.9m)
-                            availableLeaves += (decimal)integralValue + 0.5m;
+                            availableLeaves = (decimal)integralValue + 0.5m;
                     }
                 }
             }
@@ -837,12 +837,12 @@ namespace ServiceLayer.Code
             {
                 days = days * -1;
                 if (_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays == 0 ||
-                    days < _leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays)
+                    days > _leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays)
                     throw new HiringBellException($"Back dated leave more than {_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} days can't be allowed.");
             }
             else // future date
             {
-                if (days < _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
+                if (days > _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
                     throw new HiringBellException($"Apply this leave before {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days.");
             }
         }
