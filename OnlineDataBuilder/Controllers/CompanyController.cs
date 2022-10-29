@@ -6,6 +6,7 @@ using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -37,7 +38,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("UpdateCompanyGroup/{companyId}")]
-        public IResponse<ApiResponse> UpdateCompanyGroup([FromRoute] int companyId, [FromBody]OrganizationDetail companyGroup)
+        public IResponse<ApiResponse> UpdateCompanyGroup([FromRoute] int companyId, [FromBody] OrganizationDetail companyGroup)
         {
             var result = _companyService.UpdateCompanyGroup(companyGroup, companyId);
             return BuildResponse(result);
@@ -99,6 +100,20 @@ namespace OnlineDataBuilder.Controllers
         {
             var bankDetail = _companyService.GetCompanyBankDetail(filterModel);
             return BuildResponse(bankDetail);
+        }
+
+        [HttpPut("UpdateSetting/{companyId}")]
+        public async Task<ApiResponse> UpdateSetting([FromRoute] int companyId, [FromBody] CompanySetting companySetting)
+        {
+            var settingDetail = await _companyService.UpdateSettingService(companyId, companySetting);
+            return BuildResponse(settingDetail);
+        }
+
+        [HttpGet("getcompanysettingdetail/{companyId}")]
+        public async Task<ApiResponse> GetCompanySetting(int companyId)
+        {
+            var settingDetail = await _companyService.GetCompanySettingService(companyId);
+            return BuildResponse(settingDetail);
         }
     }
 }
