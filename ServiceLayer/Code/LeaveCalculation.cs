@@ -36,6 +36,88 @@ namespace ServiceLayer.Code
 
         #region ACCRUAL IF IN PROBATION
 
+        // Prorate distribution of leave if employee is serving probation period
+        public decimal ProbationPeriodDistinctLeavesCalculation()
+        {
+            decimal days = 0;
+            if (_leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution != null
+            && _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count > 0)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.ElementAt(i);
+                    if (now.Day >= allocateTimeBreakup.FromDate)
+                        days += allocateTimeBreakup.AllocatedLeave;
+
+                    i++;
+                }
+            }
+
+            return days;
+        }
+
+        // Prorate distribution of leave if rule is defined
+
+        public decimal FirstMonthAccrualInProbation(int JoiningDay)
+        {
+            decimal accrualedLeaves = 0;
+            //_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth
+            if (_leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution != null &&
+                _leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution.Count > 0)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
+                                            .JoiningMonthLeaveDistribution.ElementAt(i);
+                    if (allocateTimeBreakup.ToDate >= JoiningDay)
+                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    i++;
+                }
+            }
+            else if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod != null)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
+                                            .LeaveDistributionRateOnStartOfPeriod.ElementAt(i);
+                    if (allocateTimeBreakup.ToDate >= JoiningDay)
+                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    i++;
+                }
+            }
+
+            return accrualedLeaves;
+        }
+
+        public decimal MonthAccrualOnDefinedDay(int DayOfMonth, decimal perMonthDays)
+        {
+            decimal accrualedLeaves = 0;
+            if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod != null)
+            {
+                AllocateTimeBreakup allocateTimeBreakup = null;
+                int i = 0;
+                while (i < _leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count)
+                {
+                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
+                                            .LeaveDistributionRateOnStartOfPeriod.ElementAt(i);
+                    if (DayOfMonth >= allocateTimeBreakup.FromDate)
+                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    i++;
+                }
+            }
+
+            if (accrualedLeaves == 0)
+                accrualedLeaves = perMonthDays;
+
+            return accrualedLeaves;
+        }
+
         private async Task<decimal> ProbationMonthlyAccrualCalculation(LeaveCalculationModal leaveCalculationModal, decimal perMonthLeaves)
         {
             List<Task> tasks = new List<Task>();
@@ -54,7 +136,7 @@ namespace ServiceLayer.Code
                 {
                     decimal leaves = 0;
                     if (leaveCalculationModal.employee.CreatedOn.Month != now.Month)
-                        leaves = MonthAccrualOnDefinedDay(now.Day);
+                        leaves = MonthAccrualOnDefinedDay(now.Day, perMonthLeaves);
                     return leaves;
                 });
 
@@ -64,9 +146,15 @@ namespace ServiceLayer.Code
             else
             {
                 if (leaveCalculationModal.employee.CreatedOn.Month == now.Month)
-                    availableLeaves = perMonthLeaves;
+                {
+                    availableLeaves = MonthAccrualOnDefinedDay(leaveCalculationModal.employee.CreatedOn.Day, perMonthLeaves);
+                }
                 else
-                    availableLeaves = perMonthLeaves * 2;
+                {
+                    availableLeaves = await MonthlyAccrualCalculation(leaveCalculationModal, perMonthLeaves);
+                    if (availableLeaves == 0)
+                        availableLeaves = perMonthLeaves * 2;
+                }
             }
 
             var joiningDate = leaveCalculationModal.employee.CreatedOn;
@@ -94,16 +182,22 @@ namespace ServiceLayer.Code
                 {
                     decimal leaves = 0;
                     if (leaveCalculationModal.employee.CreatedOn.Year == now.Year)
-                        leaves = FirstMonthAccrualInProbation(now.Day);
+                    {
+                        leaves = FirstMonthAccrualInProbation(leaveCalculationModal.employee.CreatedOn.Day);
+                        if (leaves == 0)
+                            leaves = perMonthLeaves;
+                    }
                     else
-                        leaves = MonthAccrualOnDefinedDay(now.Day);
+                    {
+                        leaves = MonthAccrualOnDefinedDay(leaveCalculationModal.employee.CreatedOn.Day, perMonthLeaves);
+                    }
                     return leaves;
                 });
 
                 // Prorated accrual days on present month
                 var t2 = Task.Run(() =>
                 {
-                    var leaves = MonthAccrualOnDefinedDay(leaveCalculationModal.employee.CreatedOn.Day);
+                    var leaves = MonthAccrualOnDefinedDay(now.Day, perMonthLeaves);
                     return leaves;
                 });
 
@@ -359,71 +453,6 @@ namespace ServiceLayer.Code
             }
 
             return days;
-        }
-
-        // Prorate distribution of leave if employee is serving probation period
-        public decimal ProbationPeriodDistinctLeavesCalculation()
-        {
-            decimal days = 0;
-            if (_leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution != null
-            && _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count > 0)
-            {
-                AllocateTimeBreakup allocateTimeBreakup = null;
-                int i = 0;
-                while (i < _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.Count)
-                {
-                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual.ExitMonthLeaveDistribution.ElementAt(i);
-                    if (now.Day >= allocateTimeBreakup.FromDate)
-                        days += allocateTimeBreakup.AllocatedLeave;
-
-                    i++;
-                }
-            }
-
-            return days;
-        }
-
-        // Prorate distribution of leave if rule is defined
-
-        public decimal FirstMonthAccrualInProbation(int JoiningDay)
-        {
-            decimal accrualedLeaves = 0;
-            //_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth
-            if (_leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution != null)
-            {
-                AllocateTimeBreakup allocateTimeBreakup = null;
-                int i = 0;
-                while (i < _leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution.Count)
-                {
-                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
-                                            .JoiningMonthLeaveDistribution.ElementAt(i);
-                    if (allocateTimeBreakup.ToDate >= JoiningDay)
-                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
-                    i++;
-                }
-            }
-
-            return accrualedLeaves;
-        }
-
-        public decimal MonthAccrualOnDefinedDay(int DayOfMonth)
-        {
-            decimal accrualedLeaves = 0;
-            if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod != null)
-            {
-                AllocateTimeBreakup allocateTimeBreakup = null;
-                int i = 0;
-                while (i < _leavePlanConfiguration.leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count)
-                {
-                    allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
-                                            .LeaveDistributionRateOnStartOfPeriod.ElementAt(i);
-                    if (DayOfMonth >= allocateTimeBreakup.FromDate)
-                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
-                    i++;
-                }
-            }
-
-            return accrualedLeaves;
         }
 
         public decimal DistinctLeavesCalculation(int PresentMonthDay, DateTime FirstMonthDate)
