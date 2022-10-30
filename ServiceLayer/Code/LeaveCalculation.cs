@@ -147,7 +147,7 @@ namespace ServiceLayer.Code
             {
                 if (leaveCalculationModal.employee.CreatedOn.Month == now.Month)
                 {
-                    availableLeaves = MonthAccrualOnDefinedDay(leaveCalculationModal.employee.CreatedOn.Day, perMonthLeaves);
+                    availableLeaves = FirstMonthAccrualInProbation(leaveCalculationModal.employee.CreatedOn.Day);
                 }
                 else
                 {
