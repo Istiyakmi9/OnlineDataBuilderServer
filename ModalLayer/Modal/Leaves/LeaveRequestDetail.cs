@@ -13,7 +13,9 @@ namespace ModalLayer.Modal.Leaves
         public string Reason { get; set; }
         public string Notify { get; set; }
         public long AssignTo { get; set; }
+        public int LeaveTypeId { get; set; }
         public int LeaveType { get; set; }
+        public string LeavePlanName { get; set; }
         public int RequestType { get; set; }
         public int Year { get; set; }
         public string LeaveDetail { get; set; }
@@ -26,7 +28,7 @@ namespace ModalLayer.Modal.Leaves
         public decimal TotalLeaveQuota { set; get; }
         public int RequestStatusId { get; set; }
         public int LeaveRequestNotificationId { get; set; }
+        public DateTime UpdatedOn { get; set; }
         public List<EmployeeLeaveQuota> EmployeeLeaveQuotaDetail { set; get; }
-
     }
 }

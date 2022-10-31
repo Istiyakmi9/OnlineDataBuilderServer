@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
@@ -89,5 +88,18 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPost("ApplyLeave")]
+        public async Task<ApiResponse> ApplyLeave(LeaveRequestModal leaveRequestModal)
+        {
+            var result = await _leaveService.ApplyLeaveService(leaveRequestModal);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("GetAllLeavesByEmpId")]
+        public async Task<ApiResponse> GetAllLeavesByEmpId(ApplyLeave applyLeave)
+        {
+            var result = await _leaveService.GetEmployeeLeaveDetail(applyLeave);
+            return BuildResponse(result);
+        }
     }
 }

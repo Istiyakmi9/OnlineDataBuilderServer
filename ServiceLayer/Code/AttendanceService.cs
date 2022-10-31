@@ -2,15 +2,12 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -18,13 +15,11 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly ITimezoneConverter _timezoneConverter;
-        private readonly ILeaveCalculation _leaveCalculation;
+        private readonly ITimezoneConverter _timezoneConverter;        
         private readonly IEmailService _emailService;
         private readonly IAttendanceRequestService _requestService;
 
-        public AttendanceService(IDb db, 
-            ILeaveCalculation leaveCalculation, 
+        public AttendanceService(IDb db,              
             ITimezoneConverter timezoneConverter, 
             CurrentSession currentSession,
             IEmailService emailService,
@@ -33,7 +28,6 @@ namespace ServiceLayer.Code
             _db = db;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
-            _leaveCalculation = leaveCalculation;
             _emailService = emailService;
             _requestService = requestService;
         }
@@ -584,60 +578,6 @@ namespace ServiceLayer.Code
             var Result = _db.GetDataset("sp_attendance_get", dbParams);
             return null;
         }
-
-        public async Task<dynamic> ApplyLeaveService(LeaveRequestDetail leaveDetail)
-        {
-            if (leaveDetail.LeaveFromDay == null || leaveDetail.LeaveToDay == null)
-                throw new HiringBellException("Invalid From and To date passed.");
-
-            await _leaveCalculation.CheckAndApplyForLeave(leaveDetail);
-
-            return this.GetEmployeeLeaveDetail(new ApplyLeave
-            {
-                EmployeeId = _currentSession.CurrentUserDetail.UserId,
-                FromDate = leaveDetail.LeaveFromDay,
-                ToDate = leaveDetail.LeaveToDay
-            });
-        }
-
-        #region LeaveCalculation And Assignment
-
-        public async Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave)
-        {
-            if (applyLeave.EmployeeId < 0)
-                throw new HiringBellException("Invalid employee id.");
-
-            var leaveCalculationModal = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, DateTime.Now, DateTime.Now);
-
-            return new
-            {
-                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
-                EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
-                Employee = leaveCalculationModal.employee
-            };
-        }
-
-        public async Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave)
-        {
-            if (applyLeave.EmployeeId < 0)
-                throw new HiringBellException("Invalid employee id.");
-
-            List<LeavePlanType> leavePlanTypes = null;
-            //leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
-            LeaveRequestDetail leaveDetail = new LeaveRequestDetail
-            {
-                EmployeeId = 4,
-                LeaveType = 1,
-                LeaveFromDay = Convert.ToDateTime("2022-10-22"),
-                LeaveToDay = Convert.ToDateTime("2022-10-22")
-            };
-
-            await _leaveCalculation.CheckAndApplyForLeave(leaveDetail);
-
-            return leavePlanTypes;
-        }
-
-        #endregion
 
         private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen, DateTime? monthFirstDate = null)
         {
