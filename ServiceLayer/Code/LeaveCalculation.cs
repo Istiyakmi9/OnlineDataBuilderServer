@@ -981,8 +981,8 @@ namespace ServiceLayer.Code
         {
             if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments)
             {
-                if (string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
-                    throw new HiringBellException("Comment is required for this type");
+                //if (string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
+                //    throw new HiringBellException("Comment is required for this type");
             }
 
         }
@@ -1224,6 +1224,15 @@ namespace ServiceLayer.Code
             string result = string.Empty;
             List<CompleteLeaveDetail> leaveDetails = new List<CompleteLeaveDetail>();
 
+            if(leaveCalculationModal.leaveRequestDetail.LeaveRequestId == 0)
+            {
+                leaveCalculationModal.leaveRequestDetail.EmployeeId = leaveRequestModal.EmployeeId;
+                leaveCalculationModal.leaveRequestDetail.Reason = leaveRequestModal.Reason;
+                leaveCalculationModal.leaveRequestDetail.LeaveFromDay = leaveRequestModal.LeaveFromDay;
+                leaveCalculationModal.leaveRequestDetail.LeaveToDay = leaveRequestModal.LeaveToDay;
+                leaveCalculationModal.leaveRequestDetail.LeaveTypeId = leaveRequestModal.LeaveTypeId;
+            }
+
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
@@ -1309,8 +1318,17 @@ namespace ServiceLayer.Code
 
             if (!_leavePlanConfiguration.leaveHolidaysAndWeekoff.AdjoiningWeekOffIsConsiderAsLeave)
             {
-                var fromDate = leaveCalculationModal.fromDate;
-                while (leaveCalculationModal.toDate.Subtract(fromDate).TotalDays >= 0)
+                var fromDate = _timezoneConverter.ToTimeZoneDateTime(
+                    leaveCalculationModal.fromDate,
+                    _currentSession.TimeZone
+                    );
+
+                var toDate = _timezoneConverter.ToTimeZoneDateTime(
+                    leaveCalculationModal.toDate,
+                    _currentSession.TimeZone
+                    );
+
+                while(toDate.Subtract(fromDate).TotalDays >= 0)
                 {
                     if (fromDate.DayOfWeek != DayOfWeek.Saturday && fromDate.DayOfWeek != DayOfWeek.Sunday)
                         leaveCalculationModal.totalNumOfLeaveApplied++;
@@ -1382,8 +1400,8 @@ namespace ServiceLayer.Code
         {
             if (!_leavePlanConfiguration.leaveApplyDetail.IsAllowForHalfDay)
             {
-                if (leaveCalculationModal.leaveRequestDetail.Session.Contains("halfday"))
-                    throw new HiringBellException("Apply halfday is not allowed for this type");
+                //if (leaveCalculationModal.leaveRequestDetail.Session.Contains("halfday"))
+                //    throw new HiringBellException("Apply halfday is not allowed for this type");
             }
         }
 

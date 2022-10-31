@@ -18,6 +18,6 @@ namespace ServiceLayer.Interface
         List<LeavePlan> SetDefaultPlanService(int leavePlanId, LeavePlan leavePlan);
         string LeaveRquestManagerActionService(LeaveRequestNotification approvalRequest, ItemStatus status);
         Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal);
-        Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave);
+        Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal);
     }
 }

@@ -96,9 +96,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("GetAllLeavesByEmpId")]
-        public async Task<ApiResponse> GetAllLeavesByEmpId(ApplyLeave applyLeave)
+        public async Task<ApiResponse> GetAllLeavesByEmpId(LeaveRequestModal leaveRequestModal)
         {
-            var result = await _leaveService.GetEmployeeLeaveDetail(applyLeave);
+            var result = await _leaveService.GetEmployeeLeaveDetail(leaveRequestModal);
             return BuildResponse(result);
         }
     }

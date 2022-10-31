@@ -9,6 +9,7 @@
         public string PlanDescription { set; get; }
         public decimal MaxLeaveLimit { set; get; }
         public decimal AvailableLeave { set; get; }
+        public decimal ConsumedLeave { set; get; }
         public bool ShowDescription { set; get; }
         public bool IsPaidLeave { set; get; }
         public bool IsSickLeave { set; get; }
