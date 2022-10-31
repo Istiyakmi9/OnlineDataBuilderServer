@@ -1,5 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -16,16 +18,21 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly IEmployeeService _employeeService;
         private readonly ICommonService _commonService;
         private readonly ICacheManager _cacheManager;
-        public LeaveService(IDb db, CurrentSession currentSession, IEmployeeService employeeService, ICommonService commonService, ICacheManager cacheManager)
+        private readonly ILeaveCalculation _leaveCalculation;
+
+        public LeaveService(IDb db,
+            CurrentSession currentSession,
+            ICommonService commonService,
+            ICacheManager cacheManager,
+            ILeaveCalculation leaveCalculation)
         {
             _db = db;
             _currentSession = currentSession;
-            _employeeService = employeeService;
             _commonService = commonService;
             _cacheManager = cacheManager;
+            _leaveCalculation = leaveCalculation;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -270,7 +277,7 @@ namespace ServiceLayer.Code
                                  Reason = n.Reason,
                                  Session = n.Session,
                                  AssignTo = n.AssignTo,
-                                 LeaveType = n.LeaveType,
+                                 LeaveType = n.LeaveTypeId,
                                  NumOfDays = n.NumOfDays,
                                  ProjectId = n.ProjectId,
                                  UpdatedOn = n.UpdatedOn,
@@ -319,6 +326,110 @@ namespace ServiceLayer.Code
                 }
             }
             return message;
+        }
+
+        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal)
+        {
+            if (leaveRequestModal.LeaveFromDay == null || leaveRequestModal.LeaveToDay == null)
+                throw new HiringBellException("Invalid From and To date passed.");
+
+            var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal);
+
+            return new
+            {
+                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
+                EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
+                Employee = leaveCalculationModal.employee
+            };
+        }
+
+        private async Task<LeaveCalculationModal> GetCalculatedLeaveDetail(LeaveCalculationModal leaveCalculationModal)
+        {
+            var requestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_filter", new
+            {
+                EmployeeId = leaveCalculationModal.employee.EmployeeId,
+                SearchString = " 1=1 ",
+                SortBy = string.Empty,
+                PageIndex = 1,
+                PageSize = 1
+            });
+
+            decimal totalLeaveLimit = 0;
+            decimal totalAvailableLeave = 0;
+            leaveCalculationModal.leavePlanTypes.ForEach(x =>
+            {
+                totalAvailableLeave += x.AvailableLeave;
+                totalLeaveLimit += x.MaxLeaveLimit;
+            });
+
+            var leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+            if (leaveDetails == null)
+                throw new HiringBellException("Unable to get leave detail. Please contact to admin.");
+
+            //leaveDetails.Where(x => x.LeaveTypeId == )
+
+            //var status = _db.Execute<string>("sp_employee_leave_request_InsUpdate", new
+            //{
+            //    LeaveRequestId = 0,
+            //    EmployeeId = leaveCalculationModal.employee.EmployeeId,
+            //    LeaveDetail = JsonConvert.SerializeObject(leaveCalculationModal.leaveRequestDetail.LeaveDetail),
+            //    Year = DateTime.UtcNow.Year,
+            //    AvailableLeaves = totalAvailableLeave,
+            //    TotalLeaveApplied = 0,
+            //    TotalApprovedLeave = 0,
+            //    TotalLeaveQuota = totalLeaveLimit,
+            //    LeaveQuotaDetail = JsonConvert.SerializeObject(leaveCalculationModal),
+            //}, true);
+
+            //if (ApplicationConstants.IsExecuted(status))
+            //    throw new HiringBellException("Unable to update leave detail.");
+
+            return leaveCalculationModal;
+        }
+
+        private async Task<LeaveCalculationModal> GetLatestLeaveDetail(long employeeId)
+        {
+            if (employeeId < 0)
+                throw new HiringBellException("Invalid employee id.");
+
+            LeaveCalculationModal leaveCalculationModal = default(LeaveCalculationModal);
+            leaveCalculationModal = await _leaveCalculation.GetBalancedLeave(employeeId, DateTime.Now, DateTime.Now);
+            if (leaveCalculationModal == null)
+                throw new HiringBellException("Unable to calculate leave balance detail. Please contact to admin.");
+
+            return leaveCalculationModal;
+        }
+
+        public async Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave)
+        {
+            var leaveCalculationModal = await GetLatestLeaveDetail(applyLeave.EmployeeId);
+
+            return new
+            {
+                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
+                EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
+                Employee = leaveCalculationModal.employee
+            };
+        }
+
+        public async Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave)
+        {
+            if (applyLeave.EmployeeId < 0)
+                throw new HiringBellException("Invalid employee id.");
+
+            List<LeavePlanType> leavePlanTypes = null;
+            //leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
+            LeaveRequestModal leaveDetail = new LeaveRequestModal
+            {
+                EmployeeId = 4,
+                LeaveTypeId = 1,
+                LeaveFromDay = Convert.ToDateTime("2022-10-22"),
+                LeaveToDay = Convert.ToDateTime("2022-10-22")
+            };
+
+            await _leaveCalculation.CheckAndApplyForLeave(leaveDetail);
+
+            return leavePlanTypes;
         }
     }
 }

@@ -65,34 +65,5 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.EnablePermission(attendenceDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
-
-        [HttpPost("ApplyLeave")]
-        public async Task<ApiResponse> ApplyLeave(LeaveRequestDetail leaveDetail)
-        {
-            var result = await _attendanceService.ApplyLeaveService(leaveDetail);
-            return BuildResponse(result);
-        }
-
-        [HttpPost("GetAllLeavesByEmpId")]
-        public async Task<ApiResponse> GetAllLeavesByEmpId(ApplyLeave applyLeave)
-        {
-            var result = await _attendanceService.GetEmployeeLeaveDetail(applyLeave);
-            return BuildResponse(result);
-        }
-
-        [HttpPost("ApplyLeaveService_Testing")]
-        public async Task<ApiResponse> ApplyForLeave(ApplyLeave applyLeave)
-        {
-            try
-            {
-                var result = await _attendanceService.ApplyLeaveService_Testing(applyLeave);
-                return BuildResponse(result);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
     }
 }

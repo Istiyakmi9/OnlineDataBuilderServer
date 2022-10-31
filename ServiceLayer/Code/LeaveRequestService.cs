@@ -70,6 +70,7 @@ namespace ServiceLayer.Code
                 {
                     singleLeaveDetail.LeaveStatus = (int)status;
                     singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
+                    singleLeaveDetail.FeedBack = String.Empty;
                     leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
                 }
                 else
@@ -85,7 +86,7 @@ namespace ServiceLayer.Code
             if (leaveRequestDetail != null)
             {
                 leaveRequestDetail.RequestStatusId = (int)status;
-                message = _db.Execute<LeaveRequestNotification>("sp_employee_leave_request_InsUpdate", new
+                message = _db.Execute<LeaveRequestNotification>("sp_leave_notification_and_request_InsUpdate", new
                 {
                     leaveRequestDetail.LeaveRequestId,
                     leaveRequestDetail.EmployeeId,
@@ -95,7 +96,7 @@ namespace ServiceLayer.Code
                     leaveRequestDetail.Year,
                     leaveRequestDetail.LeaveFromDay,
                     leaveRequestDetail.LeaveToDay,
-                    leaveRequestDetail.LeaveType,
+                    leaveRequestDetail.LeaveTypeId,
                     leaveRequestDetail.RequestStatusId,
                     leaveRequestDetail.AvailableLeaves,
                     leaveRequestDetail.TotalLeaveApplied,
