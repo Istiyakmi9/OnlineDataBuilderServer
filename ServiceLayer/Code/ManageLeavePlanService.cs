@@ -256,6 +256,9 @@ namespace ServiceLayer.Code
 
             if (leaveAccrual.DoesLeaveExpireAfterSomeTime == false)
                 leaveAccrual.AfterHowManyDays = 0;
+
+            if (leaveAccrual.IsLeaveAccruedPatternAvail == true)
+                leaveAccrual.CanApplyEntireLeave = false;
         }
 
         private void LeaveAccrualValidationCheck(LeaveAccrual leaveAccrual, LeaveDetail leaveDetail)
