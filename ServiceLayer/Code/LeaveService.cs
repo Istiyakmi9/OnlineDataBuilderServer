@@ -328,13 +328,43 @@ namespace ServiceLayer.Code
             return message;
         }
 
-        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal)
+        private void UpdateLeavePlanDetail(LeaveCalculationModal leaveCalculationModal)
         {
+            var leaves = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(
+                leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+            if (leaves != null)
+            {
+                Parallel.ForEach(leaveCalculationModal.leavePlanTypes, i =>
+                {
+                    var consumed = leaves
+                    .Where(x => x.LeaveTypeId == i.LeavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected)
+                    .Sum(x => x.NumOfDays);
+
+                    i.ConsumedLeave = consumed;
+                });
+            }
+        }
+
+        private void ValidateRequestModal(LeaveRequestModal leaveRequestModal)
+        {
+            if (leaveRequestModal == null)
+                throw new HiringBellException("Invalid request detail sumitted.");
+
+            if (leaveRequestModal.EmployeeId <= 0)
+                throw new HiringBellException("Invalid Employee Id submitted.");
+
             if (leaveRequestModal.LeaveFromDay == null || leaveRequestModal.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
+        }
+
+        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal)
+        {
+            this.ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal);
 
+            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
+                this.UpdateLeavePlanDetail(leaveCalculationModal);
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
@@ -400,10 +430,13 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
-        public async Task<dynamic> GetEmployeeLeaveDetail(ApplyLeave applyLeave)
+        public async Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal)
         {
-            var leaveCalculationModal = await GetLatestLeaveDetail(applyLeave.EmployeeId);
+            this.ValidateRequestModal(leaveRequestModal);
+            var leaveCalculationModal = await GetLatestLeaveDetail(leaveRequestModal.EmployeeId);
 
+            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
+                this.UpdateLeavePlanDetail(leaveCalculationModal);
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
