@@ -962,14 +962,24 @@ namespace ServiceLayer.Code
             return false;
         }
 
-        private bool DoesLeaveRequiredComments()
+        private void DoesLeaveRequiredComments(LeaveCalculationModal leaveCalculationModal)
         {
-            return false;
+            if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments)
+            {
+                if (string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
+                    throw new HiringBellException("Comment is required for this type");
+            }
+
         }
 
-        private void RequiredDocumentForExtending()
+        private void RequiredDocumentForExtending(LeaveCalculationModal leaveCalculationModal)
         {
-
+            if (_leavePlanConfiguration.leaveApplyDetail.ProofRequiredIfDaysExceeds)
+            {
+                var leaveDay = leaveCalculationModal.toDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays;
+                if (leaveDay > _leavePlanConfiguration.leaveApplyDetail.NoOfDaysExceeded)
+                    throw new HiringBellException("Document proof is required");
+            }
         }
 
         private void CheckForProbationPeriod(LeaveCalculationModal leaveCalculationModal)
@@ -1181,10 +1191,10 @@ namespace ServiceLayer.Code
                 LeaveEligibilityCheck(leaveCalculationModal);
 
                 //4. check if leave required comments
-                DoesLeaveRequiredComments();
+                DoesLeaveRequiredComments(leaveCalculationModal);
 
                 //5. check if required any document proof for this leave
-                RequiredDocumentForExtending();
+                RequiredDocumentForExtending(leaveCalculationModal);
 
                 //6. check total available leave quota till now            
                 leavePlanType = DoesRequestedLeaveAvailable(leaveDetail.LeaveType, leaveCalculationModal);
@@ -1368,6 +1378,18 @@ namespace ServiceLayer.Code
             if (_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth > 0 &&
                 leaveCalculationModal.fromDate.Day <= _leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth)
                 throw new HiringBellException($"Apply this leave before {_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth} day of any month.");
+
+            //Check for apply halfday
+            CheckForHalfDayRestriction(leaveCalculationModal);
+        }
+
+        private void CheckForHalfDayRestriction(LeaveCalculationModal leaveCalculationModal)
+        {
+            if (!_leavePlanConfiguration.leaveApplyDetail.IsAllowForHalfDay)
+            {
+                if (leaveCalculationModal.leaveRequestDetail.Session.Contains("halfday"))
+                    throw new HiringBellException("Apply halfday is not allowed for this type");
+            }
         }
 
         public async Task<bool> CanApplyForHalfDay(long EmployeeId)
