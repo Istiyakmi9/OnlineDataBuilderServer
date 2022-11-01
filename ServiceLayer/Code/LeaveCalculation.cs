@@ -255,6 +255,27 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
+        public async Task<LeaveCalculationModal> GetRequestTypeBalancedLeave(LeaveRequestModal leaveRequestModal)
+        {
+            var leaveCalculationModal = GetCalculationModal(
+                leaveRequestModal.EmployeeId,
+                leaveRequestModal.LeaveFromDay,
+                leaveRequestModal.LeaveToDay);
+
+            LeavePlanType leavePlanType = leavePlanType =
+                leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
+
+            if (leavePlanType == null)
+                throw new HiringBellException("Request leave type not found. Please contact to admin.");
+
+            ValidateAndGetLeavePlanConfiguration(leavePlanType);
+            await RunEmployeeLeaveAccrualCycle(leaveCalculationModal, leavePlanType);
+
+            SameDayRequestValidationCheck(leaveCalculationModal);
+
+            return leaveCalculationModal;
+        }
+
         #endregion
 
 
@@ -770,8 +791,8 @@ namespace ServiceLayer.Code
                         {
                             if (i.LeaveFromDay.Month == startDate.Month)
                             {
-                                if (startDate.Subtract(i.LeaveFromDay).TotalDays >= 0 &&
-                                    startDate.Subtract(i.LeaveToDay).TotalDays <= 0)
+                                if (startDate.Date.Subtract(i.LeaveFromDay.Date).TotalDays >= 0 &&
+                                    startDate.Date.Subtract(i.LeaveToDay.Date).TotalDays <= 0)
                                     throw new HiringBellException($"From date: " +
                                         $"{_timezoneConverter.ToTimeZoneDateTime(startDate, _currentSession.TimeZone)} " +
                                         $"already exist in another leave request");
@@ -779,8 +800,8 @@ namespace ServiceLayer.Code
 
                             if (i.LeaveToDay.Month == endDate.Month)
                             {
-                                if (endDate.Subtract(i.LeaveFromDay).TotalDays >= 0 &&
-                                    endDate.Subtract(i.LeaveToDay).TotalDays <= 0)
+                                if (endDate.Date.Subtract(i.LeaveFromDay.Date).TotalDays >= 0 &&
+                                    endDate.Date.Subtract(i.LeaveToDay.Date).TotalDays <= 0)
                                     throw new HiringBellException($"To date: " +
                                         $"{_timezoneConverter.ToTimeZoneDateTime(endDate, _currentSession.TimeZone)} " +
                                         $"already exist in another leave request");
@@ -796,6 +817,8 @@ namespace ServiceLayer.Code
                     var hex = ax.Flatten().InnerExceptions.ElementAt(0) as HiringBellException;
                     throw hex;
                 }
+
+                throw;
             }
         }
 
@@ -808,17 +831,31 @@ namespace ServiceLayer.Code
                 List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
                 if (completeLeaveDetails.Count > 0)
                 {
-                    alreadyAppliedLeave = completeLeaveDetails.FindAll(x => x.LeaveTypeId == leavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected).Sum(x => x.NumOfDays);
-                    CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
+                    alreadyAppliedLeave = completeLeaveDetails
+                        .FindAll(x => x.LeaveTypeId == leavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected)
+                        .Sum(x => x.NumOfDays);
 
-                    leaveCalculationModal.lastApprovedLeaveDetail = completeLeaveDetails.Where(x => x.LeaveStatus != (int)ItemStatus.Rejected)
-                                                                    .OrderByDescending(x => x.LeaveToDay).FirstOrDefault();
+                    leaveCalculationModal.lastApprovedLeaveDetail = completeLeaveDetails
+                        .Where(x => x.LeaveStatus != (int)ItemStatus.Rejected)
+                        .OrderByDescending(x => x.LeaveToDay).FirstOrDefault();
                 }
 
             }
 
             alreadyAppliedLeave = availableLeaves - alreadyAppliedLeave;
             return alreadyAppliedLeave;
+        }
+
+        private void SameDayRequestValidationCheck(LeaveCalculationModal leaveCalculationModal)
+        {
+            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
+            {
+                List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+                if (completeLeaveDetails.Count > 0)
+                {
+                    CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
+                }
+            }
         }
 
         // check to allow entire leave at a time or leave will be add a prorated manner
@@ -1019,13 +1056,14 @@ namespace ServiceLayer.Code
             if (days < 0) // past date
             {
                 days = days * -1;
-                if (_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays == 0 ||
+                if (_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays != -1 &&
                     days > _leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays)
                     throw new HiringBellException($"Back dated leave more than {_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} days can't be allowed.");
             }
             else // future date
             {
-                if (days > _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
+                if (_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate != -1 &&
+                    days > _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
                     throw new HiringBellException($"Apply this leave before {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days.");
             }
         }
@@ -1151,42 +1189,22 @@ namespace ServiceLayer.Code
             }
         }
 
-        private LeavePlanType DoesRequestedLeaveAvailable(int leavePlanTypeId, LeaveCalculationModal leaveCalculationModal)
+        private void DoesRequestedLeaveAvailable(LeavePlanType leavePlanType, LeaveCalculationModal leaveCalculationModal)
         {
-            var leaveType = leaveCalculationModal.leavePlanTypes.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
-            if (leaveType == null)
-                throw new HiringBellException("Unable to find requested leave type. Please contact to admin.");
-
             CalculateLeaveDays(leaveCalculationModal);
 
-            if (leaveCalculationModal.totalNumOfLeaveApplied > leaveType.AvailableLeave)
-                CanApplyEntireLeave(leaveCalculationModal, leaveType);
-
-            return leaveType;
+            if (leaveCalculationModal.totalNumOfLeaveApplied > leavePlanType.AvailableLeave)
+                CanApplyEntireLeave(leaveCalculationModal, leavePlanType);
         }
 
         public async Task<LeaveCalculationModal> CheckAndApplyForLeave(LeaveRequestModal leaveRequestModal)
         {
             try
             {
-                var leaveCalculationModal = await GetBalancedLeave(
-                    leaveRequestModal.EmployeeId, leaveRequestModal.LeaveFromDay, leaveRequestModal.LeaveToDay);
+                var leaveCalculationModal = await GetRequestTypeBalancedLeave(leaveRequestModal);
 
-                LeavePlanType leavePlanType = default(LeavePlanType);
-                leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
-                if (leavePlanType == null)
-                    throw new HiringBellException("Request leave detail not found. Please contact to admin.");
-
-
-                #region CHECK ALL ACCRUAL RESTRICTION & CONDITION
-
-                // round up decimal value of available as per rule defined
-                leavePlanType.AvailableLeave = RoundUpTheLeaves(leavePlanType.AvailableLeave);
-
-                // check leave expiry
-                leavePlanType.AvailableLeave = UpdateLeaveIfSetForExpiry(leavePlanType.AvailableLeave);
-
-                #endregion
+                LeavePlanType leavePlanType =
+                    leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
                 //1. Check all leave restriction
                 CheckAllRestrictionForCurrentLeaveType(leaveCalculationModal, leavePlanType.AvailableLeave);
@@ -1204,7 +1222,7 @@ namespace ServiceLayer.Code
                 RequiredDocumentForExtending(leaveCalculationModal);
 
                 //6. check total available leave quota till now            
-                leavePlanType = DoesRequestedLeaveAvailable(leaveRequestModal.LeaveTypeId, leaveCalculationModal);
+                DoesRequestedLeaveAvailable(leavePlanType, leaveCalculationModal);
 
                 //7. save detail to employee leave request table and reaise leave request
                 var appliedDetail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal);
@@ -1224,14 +1242,11 @@ namespace ServiceLayer.Code
             string result = string.Empty;
             List<CompleteLeaveDetail> leaveDetails = new List<CompleteLeaveDetail>();
 
-            if(leaveCalculationModal.leaveRequestDetail.LeaveRequestId == 0)
-            {
-                leaveCalculationModal.leaveRequestDetail.EmployeeId = leaveRequestModal.EmployeeId;
-                leaveCalculationModal.leaveRequestDetail.Reason = leaveRequestModal.Reason;
-                leaveCalculationModal.leaveRequestDetail.LeaveFromDay = leaveRequestModal.LeaveFromDay;
-                leaveCalculationModal.leaveRequestDetail.LeaveToDay = leaveRequestModal.LeaveToDay;
-                leaveCalculationModal.leaveRequestDetail.LeaveTypeId = leaveRequestModal.LeaveTypeId;
-            }
+            leaveCalculationModal.leaveRequestDetail.EmployeeId = leaveRequestModal.EmployeeId;
+            leaveCalculationModal.leaveRequestDetail.Reason = leaveRequestModal.Reason;
+            leaveCalculationModal.leaveRequestDetail.LeaveFromDay = leaveRequestModal.LeaveFromDay;
+            leaveCalculationModal.leaveRequestDetail.LeaveToDay = leaveRequestModal.LeaveToDay;
+            leaveCalculationModal.leaveRequestDetail.LeaveTypeId = leaveRequestModal.LeaveTypeId;
 
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
@@ -1328,7 +1343,7 @@ namespace ServiceLayer.Code
                     _currentSession.TimeZone
                     );
 
-                while(toDate.Subtract(fromDate).TotalDays >= 0)
+                while (toDate.Subtract(fromDate).TotalDays >= 0)
                 {
                     if (fromDate.DayOfWeek != DayOfWeek.Saturday && fromDate.DayOfWeek != DayOfWeek.Sunday)
                         leaveCalculationModal.totalNumOfLeaveApplied++;
