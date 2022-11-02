@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using DocumentFormat.OpenXml.Office2021.DocumentTasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -34,32 +36,32 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("ApprovalAction")]
-        public IResponse<ApiResponse> ApprovalAction(AttendanceDetails attendanceDetail)
+        public async Task<ApiResponse> ApprovalAction(AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.ApproveAttendanceService(attendanceDetail);
+            var result = await _requestService.ApproveAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction([FromBody] AttendanceDetails attendanceDetail)
+        public async Task<ApiResponse> RejectAction([FromBody] AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.RejectAttendanceService(attendanceDetail);
+            var result = await _requestService.RejectAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("ApproveAttendanceRequest/{filterId}")]
-        public IResponse<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
+        public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.ApproveAttendanceService(attendanceDetail, filterId);
+            var result = await _requestService.ApproveAttendanceService(attendanceDetail, filterId);
             return BuildResponse(result);
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("RejectAttendanceRequest/{filterId}")]
-        public IResponse<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
+        public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] AttendanceDetails attendanceDetail)
         {
-            var result = _requestService.RejectAttendanceService(attendanceDetail, filterId);
+            var result = await _requestService.RejectAttendanceService(attendanceDetail, filterId);
             return BuildResponse(result);
         }
 

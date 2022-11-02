@@ -19,11 +19,13 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
         private readonly IEMailManager _eMailManager;
+        private readonly ICommonService _commonService;
 
         public TimesheetRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             IAttendanceRequestService attendanceRequestService,
+            ICommonService commonService,
             IEMailManager eMailManager)
         {
             _db = db;
@@ -31,27 +33,28 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
             _eMailManager = eMailManager;
+            _commonService = commonService;
         }
 
-        public RequestModel RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
         {
             if (dailyTimesheetDetails == null)
                 throw new HiringBellException("Invalid operation. Please contact to admin.");
 
-            UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
+            await UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
         {
             if (dailyTimesheetDetails == null)
                 throw new HiringBellException("Invalid operation. Please contact to admin.");
 
-            UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
+            await UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
+        public async Task<RequestModel> UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
         {
             var firstItem = dailyTimesheetDetails.FirstOrDefault();
             if (firstItem.TimesheetId <= 0)
@@ -99,17 +102,17 @@ namespace ServiceLayer.Code
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
-            var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);
-            EmailSenderModal emailSenderModal = _attendanceRequestService.PrepareSendEmailNotification(
-                new EmployeeNotificationModel
+            var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);            
+            var emailSenderModal = await _commonService.ReplaceActualData(
+                new TemplateReplaceModal
                 {
                     DeveloperName = firstItem.EmployeeName,
-                    AttendanceRequestType = ApplicationConstants.Timesheet,
+                    RequestType = ApplicationConstants.Timesheet,
                     CompanyName = template.SignatureDetail,
                     BodyContent = template.BodyContent,
                     Subject = template.SubjectLine,
-                    To = new List<string> { firstItem.Email },
-                    ApprovalType = itemStatus.ToString(),
+                    ToAddress = new List<string> { firstItem.Email },
+                    ActionType = itemStatus.ToString(),
                     FromDate = sortedTimesheetByDate.Last().PresentDate,
                     ToDate = sortedTimesheetByDate.First().PresentDate,
                     LeaveType = null,
@@ -117,49 +120,11 @@ namespace ServiceLayer.Code
                     Message = string.IsNullOrEmpty(firstItem.UserComments)
                             ? "NA"
                             : firstItem.UserComments,
-                }, template);
+                },
+            template);
 
-            _eMailManager.SendMailAsync(emailSenderModal);
+            await _eMailManager.SendMailAsync(emailSenderModal);
             return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
-        }
-
-        public EmailSenderModal PrepareSendEmailNotification(EmployeeNotificationModel notification, EmailTemplate template)
-        {
-            EmailSenderModal emailSenderModal = null;
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime(notification.FromDate, _currentSession.TimeZone);
-            var toDate = _timezoneConverter.ToTimeZoneDateTime(notification.ToDate, _currentSession.TimeZone);
-            if (notification != null)
-            {
-                var totalDays = notification.ToDate.Date.Subtract(notification.FromDate.Date).TotalDays + 1;
-                string subject = notification.Subject
-                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
-                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
-
-                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
-                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
-                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
-                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
-                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
-                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
-                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
-                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
-                                .Replace("[[USER-MESSAGE]]", notification.Message)
-                                .Replace("[[COMPANY-NAME]]", notification.CompanyName);
-
-                StringBuilder builder = new StringBuilder();
-                builder.Append("<div>" + template.EmailClosingStatement + "</div>");
-                builder.Append("<div>" + template.SignatureDetail + "</div>");
-                builder.Append("<div>" + template.ContactNo + "</div>");
-
-                emailSenderModal = new EmailSenderModal
-                {
-                    To = notification.To,
-                    Subject = subject,
-                    Body = string.Concat(body, builder.ToString()),
-                };
-            }
-
-            return emailSenderModal;
         }
 
         public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)

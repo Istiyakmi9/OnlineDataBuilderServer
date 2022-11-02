@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
+using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System.Data;
 using System.Linq;
@@ -10,9 +11,11 @@ namespace ServiceLayer.Code
     public class RolesAndMenuService : IRolesAndMenuService
     {
         private readonly IDb _db;
-        public RolesAndMenuService(IDb db)
+        private readonly ICacheManager _cacheManager;
+        public RolesAndMenuService(IDb db, ICacheManager cacheManager)
         {
             _db = db;
+            _cacheManager = cacheManager;
         }
         public string AddUpdatePermission(RolesAndMenu rolesAndMenus)
         {
@@ -67,6 +70,10 @@ namespace ServiceLayer.Code
 
             string message = string.Empty;
             var result = _db.GetDataset("sp_AccessLevel_InsUpd", dbParams, true, ref message);
+            if(result != null && result.Tables.Count > 0)
+            {
+                _cacheManager.LoadApplicationData(true);
+            }
             return result;
         }
     }

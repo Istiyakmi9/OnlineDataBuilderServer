@@ -3,7 +3,6 @@ using BottomhalfCore.Services.Interface;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -20,25 +19,22 @@ namespace ServiceLayer.Code
         private readonly ILogger<EmailService> _logger;
         private readonly IEMailManager _eMailManager;
         private readonly IDb _db;
-        private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private EmailSettingDetail _emailSettingDetail;
         public EmailService(IDb db, 
             ILogger<EmailService> logger, 
             IEMailManager eMailManager, 
-            CurrentSession currentSession,
-            ITimezoneConverter timezoneConverter)
+            CurrentSession currentSession)
         {
             _db = db;
             _logger = logger;
             _eMailManager = eMailManager;
             _currentSession = currentSession;
-            _timezoneConverter = timezoneConverter;
-            this.GetSettingDetail();
         }
 
         public List<string> GetMyMailService()
         {
+            this.GetSettingDetail();
             _eMailManager.ReadMails(_emailSettingDetail);
             return null;
         }
@@ -46,6 +42,7 @@ namespace ServiceLayer.Code
         public string SendEmailRequestService(EmailSenderModal mailRequest, IFormFileCollection files)
         {
             string result = null;
+            this.GetSettingDetail();
             EmailSenderModal emailSenderModal = new EmailSenderModal
             {
                 To = mailRequest.To, //receiver.Email,

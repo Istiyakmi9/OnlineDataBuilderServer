@@ -30,6 +30,7 @@ public class ApplicationConstants
     public const string WorkFromHome = "Work From Home";
     public const string WorkFromOffice = "Work From Office";
     public const string Leave = "Leave";
+    public const string LeaveRequest = "Leave Request";
     public const string Timesheet = "Timesheet";
     public const int Only = 1;
     public const int All = 0;
@@ -41,6 +42,8 @@ public class ApplicationConstants
     public const int BillingTemplate = 1;
     public const int RequestTemplate = 2;
     public const int ForgetPasswordTemplate = 3;
+    public const int NewRegistrationTemplate = 4;
+    public const int ApplyLeaveRequestTemplate = 5;
 
     public static bool IsExecuted(string Result)
     {
