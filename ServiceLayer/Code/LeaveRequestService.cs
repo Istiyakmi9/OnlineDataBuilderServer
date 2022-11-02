@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -18,11 +19,13 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
         private readonly IEMailManager _eMailManager;
+        private readonly ICommonService _commonService;
 
         public LeaveRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             IAttendanceRequestService attendanceRequestService,
+            ICommonService commonService,
             IEMailManager eMailManager)
         {
             _db = db;
@@ -30,21 +33,22 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
             _eMailManager = eMailManager;
+            _commonService = commonService;
         }
 
-        public RequestModel ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
-            UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
+            await UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
-            UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
+            await UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public void UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
+        public async Task UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
         {
             string message = string.Empty;
             var leaveRequestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_GetById", new
@@ -115,26 +119,27 @@ namespace ServiceLayer.Code
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
-            EmailSenderModal emailSenderModal = _attendanceRequestService.PrepareSendEmailNotification(
-                new EmployeeNotificationModel
+            var emailSenderModal = await _commonService.ReplaceActualData(
+                new TemplateReplaceModal
                 {
                     DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
-                    AttendanceRequestType = ApplicationConstants.Leave,
+                    RequestType = ApplicationConstants.Leave,
                     CompanyName = template.SignatureDetail,
                     BodyContent = template.BodyContent,
                     Subject = template.SubjectLine,
-                    To = new List<string> { leaveRequestDetail.Email },
-                    ApprovalType = status.ToString(),
+                    ToAddress = new List<string> { leaveRequestDetail.Email },
+                    ActionType = status.ToString(),
                     FromDate = leaveDeatil.LeaveFromDay,
                     ToDate = leaveDeatil.LeaveToDay,
                     LeaveType = leaveDeatil.LeaveToDay.ToString(),
                     ManagerName = _currentSession.CurrentUserDetail.FullName,
                     Message = string.IsNullOrEmpty(leaveDeatil.Reason)
-                                ? "NA"
-                                : leaveDeatil.Reason
-                }, template);
+                                    ? "NA"
+                                    : leaveDeatil.Reason
+                }, 
+               template);
 
-            _eMailManager.SendMailAsync(emailSenderModal);
+            await _eMailManager.SendMailAsync(emailSenderModal);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)

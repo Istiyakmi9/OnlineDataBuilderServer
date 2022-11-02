@@ -100,7 +100,7 @@ namespace ServiceLayer.Code
             return new { OrganizationDetail = organizationDetail, Files = fileDetail };
         }
 
-        public OrganizationDetail InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        public async Task<OrganizationDetail> InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             OrganizationDetail company = new OrganizationDetail();
             if (string.IsNullOrEmpty(companyInfo.Email))
@@ -181,7 +181,7 @@ namespace ServiceLayer.Code
 
             if (fileCollection.Count == 1)
             {
-                UpdateOrganizationLogo(companyInfo, fileCollection);
+                await UpdateOrganizationLogo(companyInfo, fileCollection);
             }
             List<OrganizationDetail> organizationDetails = this.GetAllCompany();
             _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
@@ -193,7 +193,7 @@ namespace ServiceLayer.Code
 
         }
 
-        private void UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        private async Task UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             string companyLogo = String.Empty;
             try
@@ -237,7 +237,7 @@ namespace ServiceLayer.Code
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_Files_InsUpd", table, false);
+                var taskResult = await _db.BatchInsertUpdateAsync("sp_Files_InsUpd", table, false);
                 _db.Commit();
             }
             catch
@@ -248,9 +248,11 @@ namespace ServiceLayer.Code
 
                 throw;
             }
+
+            await Task.CompletedTask;
         }
 
-        public OrganizationDetail InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        public async Task<OrganizationDetail> InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             OrganizationDetail company = new OrganizationDetail();
             if (string.IsNullOrEmpty(companyInfo.Email))
@@ -300,7 +302,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
 
             if (fileCollection.Count > 0)
-                UpdateOrganizationLogo(companyInfo, fileCollection);
+                await UpdateOrganizationLogo(companyInfo, fileCollection);
 
             return company;
         }

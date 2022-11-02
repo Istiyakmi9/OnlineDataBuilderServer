@@ -45,7 +45,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("InsertUpdateOrganizationDetail")]
-        public IResponse<ApiResponse> InsertUpdateOrganizationDetail()
+        public async Task<ApiResponse> InsertUpdateOrganizationDetail()
         {
             StringValues compnyinfo = default(string);
             OrganizationDetail org = null;
@@ -54,13 +54,13 @@ namespace OnlineDataBuilder.Controllers
             {
                 OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                org = _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
+                org = await _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
             }
             return BuildResponse(org);
         }
 
         [HttpPost("UpdateCompanyDetails")]
-        public IResponse<ApiResponse> UpdateCompanyDetails()
+        public async Task<ApiResponse> UpdateCompanyDetails()
         {
             StringValues compnyinfo = default(string);
             OrganizationDetail org = null;
@@ -69,7 +69,7 @@ namespace OnlineDataBuilder.Controllers
             {
                 OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                org = _companyService.InsertUpdateCompanyDetailService(organizationSettings, files);
+                org = await _companyService.InsertUpdateCompanyDetailService(organizationSettings, files);
             }
             return BuildResponse(org);
         }

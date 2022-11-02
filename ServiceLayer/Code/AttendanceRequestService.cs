@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -20,10 +21,12 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IEMailManager _eMailManager;
         private readonly ILogger<AttendanceRequestService> _logger;
+        private readonly ICommonService _commonService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
+            ICommonService commonService,
             ILogger<AttendanceRequestService> logger,
             IEMailManager eMailManager)
         {
@@ -32,6 +35,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _eMailManager = eMailManager;
             _logger = logger;
+            _commonService = commonService;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure)
@@ -89,19 +93,19 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get");
         }
 
-        public RequestModel ApproveAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> ApproveAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
         {
-            UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
+            await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public RequestModel RejectAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> RejectAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
         {
-            UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
+            await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public void UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
+        public async Task UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
         {
             if (attendanceDetail.AttendanceId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
@@ -140,26 +144,26 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
 
-                var emailSenderModal = PrepareSendEmailNotification(
-                    new EmployeeNotificationModel
+                var emailSenderModal = await _commonService.ReplaceActualData(
+                    new TemplateReplaceModal //EmployeeNotificationModel
                     {
                         DeveloperName = currentAttendance.EmployeeName,
-                        AttendanceRequestType = "Work From Home",
+                        RequestType = "Work From Home",
                         CompanyName = template.SignatureDetail,
                         BodyContent = template.BodyContent,
                         Subject = template.SubjectLine,
-                        To = new List<string> { currentAttendance.Email },
-                        ApprovalType = status.ToString(),
+                        ToAddress = new List<string> { currentAttendance.Email },
+                        ActionType = status.ToString(),
                         FromDate = currentAttendance.AttendanceDay,
                         ToDate = currentAttendance.AttendanceDay,
-                        LeaveType = null,
                         ManagerName = _currentSession.CurrentUserDetail.FullName,
                         Message = string.IsNullOrEmpty(currentAttendance.UserComments)
                                     ? "NA"
                                     : currentAttendance.UserComments,
                     }, template);
 
-                _eMailManager.SendMailAsync(emailSenderModal);
+
+                await _eMailManager.SendMailAsync(emailSenderModal);
             }
             catch (Exception)
             {
@@ -170,46 +174,6 @@ namespace ServiceLayer.Code
         public List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail)
         {
             return null;
-        }
-
-        public EmailSenderModal PrepareSendEmailNotification(EmployeeNotificationModel notification, EmailTemplate template)
-        {
-            EmailSenderModal emailSenderModal = null;
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime(notification.FromDate, _currentSession.TimeZone);
-            var toDate = _timezoneConverter.ToTimeZoneDateTime(notification.ToDate, _currentSession.TimeZone);
-            if (notification != null)
-            {
-                var totalDays = notification.ToDate.Date.Subtract(notification.FromDate.Date).TotalDays + 1;
-                string subject = notification.Subject
-                                 .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
-                                 .Replace("[[ACTION-TYPE]]", notification.ApprovalType);
-
-                string body = JsonConvert.DeserializeObject<string>(notification.BodyContent)
-                                .Replace("[[DEVELOPER-NAME]]", notification.DeveloperName)
-                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
-                                .Replace("[[REQUEST-TYPE]]", notification.AttendanceRequestType)
-                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
-                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
-                                .Replace("[[ACTION-TYPE]]", notification.ApprovalType)
-                                .Replace("[[MANAGER-NAME]]", notification.ManagerName)
-                                .Replace("[[USER-MESSAGE]]", notification.Message);
-
-                StringBuilder builder = new StringBuilder();
-                builder.AppendLine();
-                builder.AppendLine();
-                builder.Append("<div>" + template.EmailClosingStatement + "</div>");
-                builder.Append("<div>" + template.SignatureDetail + "</div>");
-                builder.Append("<div>" + template.ContactNo + "</div>");
-
-                emailSenderModal = new EmailSenderModal
-                {
-                    To = notification.To,
-                    Subject = subject,
-                    Body = string.Concat(body, builder.ToString()),
-                };
-            }
-
-            return emailSenderModal;
         }
     }
 }

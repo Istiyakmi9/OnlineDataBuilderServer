@@ -1,7 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using EMailService.Service;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -21,11 +20,13 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly ICacheManager _cacheManager;
         private readonly ILeaveCalculation _leaveCalculation;
+        private readonly IEMailManager _emailManager;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             ICacheManager cacheManager,
+            IEMailManager eMailManager,
             ILeaveCalculation leaveCalculation)
         {
             _db = db;
@@ -33,6 +34,7 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _cacheManager = cacheManager;
             _leaveCalculation = leaveCalculation;
+            _emailManager = eMailManager;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -365,12 +367,44 @@ namespace ServiceLayer.Code
 
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
                 this.UpdateLeavePlanDetail(leaveCalculationModal);
+
+            await this.GetTemplateSendNotification(leaveCalculationModal, leaveRequestModal.Reason);
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee
             };
+        }
+
+        private async Task GetTemplateSendNotification(LeaveCalculationModal leaveCalculationModal, string reason)
+        {
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.ApplyLeaveRequestTemplate });
+
+            if (template == null)
+                throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
+
+            var emailSenderModal = await _commonService.ReplaceActualData(
+                new TemplateReplaceModal
+                {
+                    DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
+                    RequestType = ApplicationConstants.LeaveRequest,
+                    CompanyName = template.SignatureDetail,
+                    BodyContent = template.BodyContent,
+                    Subject = template.SubjectLine,
+                    ToAddress = new List<string> { leaveCalculationModal.employee.Email },
+                    ActionType = ItemStatus.Pending.ToString(),
+                    FromDate = leaveCalculationModal.fromDate,
+                    ToDate = leaveCalculationModal.toDate,
+                    LeaveType = null,
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    Message = string.IsNullOrEmpty(reason)
+                            ? "NA"
+                            : reason,
+                },
+            template);
+
+            await _emailManager.SendMailAsync(emailSenderModal);
         }
 
         private async Task<LeaveCalculationModal> GetCalculatedLeaveDetail(LeaveCalculationModal leaveCalculationModal)

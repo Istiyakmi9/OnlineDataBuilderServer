@@ -1,18 +1,26 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Interface;
 using EMailService.Service;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
     public class CommonService : ICommonService
     {
         private readonly IDb _db;
+        private readonly CurrentSession _currentSession;
+        private readonly ITimezoneConverter _timezoneConverter;
 
-        public CommonService(IDb db)
+        public CommonService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _db = db;
+            _timezoneConverter = timezoneConverter;
+            _currentSession = currentSession;
         }
 
         public List<Employee> LoadEmployeeData()
@@ -55,6 +63,46 @@ namespace ServiceLayer.Code
                 return true;
 
             return false;
+        }
+
+        public async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, EmailTemplate template)
+        {
+            EmailSenderModal emailSenderModal = null;
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime(templateReplaceModal.FromDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime(templateReplaceModal.ToDate, _currentSession.TimeZone);
+            if (templateReplaceModal != null)
+            {
+                var totalDays = templateReplaceModal.ToDate.Date.Subtract(templateReplaceModal.FromDate.Date).TotalDays + 1;
+                string subject = templateReplaceModal.Subject
+                                 .Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
+                                 .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType);
+
+                string body = JsonConvert.DeserializeObject<string>(templateReplaceModal.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", templateReplaceModal.DeveloperName)
+                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
+                                .Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
+                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType)
+                                .Replace("[[MANAGER-NAME]]", templateReplaceModal.ManagerName)
+                                .Replace("[[USER-MESSAGE]]", templateReplaceModal.Message);
+
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine();
+                builder.AppendLine();
+                builder.Append("<div>" + template.EmailClosingStatement + "</div>");
+                builder.Append("<div>" + template.SignatureDetail + "</div>");
+                builder.Append("<div>" + template.ContactNo + "</div>");
+
+                emailSenderModal = new EmailSenderModal
+                {
+                    To = templateReplaceModal.ToAddress,
+                    Subject = subject,
+                    Body = string.Concat(body, builder.ToString()),
+                };
+            }
+
+            return await Task.FromResult(emailSenderModal);
         }
     }
 }

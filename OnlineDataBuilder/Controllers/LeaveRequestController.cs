@@ -5,6 +5,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -20,16 +21,16 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("ApprovalAction")]
-        public IResponse<ApiResponse> ApprovalAction(LeaveRequestDetail leaveRequestDetail)
+        public async Task<ApiResponse> ApprovalAction(LeaveRequestDetail leaveRequestDetail)
         {
-            var result = _requestService.ApprovalLeaveService(leaveRequestDetail);
+            var result = await _requestService.ApprovalLeaveService(leaveRequestDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public IResponse<ApiResponse> RejectAction(LeaveRequestDetail leaveRequestDetail)
+        public async Task<ApiResponse> RejectAction(LeaveRequestDetail leaveRequestDetail)
         {
-            var result = _requestService.RejectLeaveService(leaveRequestDetail);
+            var result = await _requestService.RejectLeaveService(leaveRequestDetail);
             return BuildResponse(result);
         }
 
@@ -42,17 +43,17 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("ApproveLeaveRequest/{filterId}")]
-        public IResponse<ApiResponse> ApproveLeaveRequest([FromRoute]int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
+        public async Task<ApiResponse> ApproveLeaveRequest([FromRoute]int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
         {
-            var result = _requestService.ApprovalLeaveService(leaveRequestDetail, filterId);
+            var result = await _requestService.ApprovalLeaveService(leaveRequestDetail, filterId);
             return BuildResponse(result);
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("RejectLeaveRequest/{filterId}")]
-        public IResponse<ApiResponse> RejectLeaveRequest([FromRoute] int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
+        public async Task<ApiResponse> RejectLeaveRequest([FromRoute] int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
         {
-            var result = _requestService.RejectLeaveService(leaveRequestDetail, filterId);
+            var result = await _requestService.RejectLeaveService(leaveRequestDetail, filterId);
             return BuildResponse(result);
         }
 
