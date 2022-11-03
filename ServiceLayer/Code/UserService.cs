@@ -108,7 +108,7 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public Files UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
+        public async Task<Files> UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
             if (Int32.Parse(userId) <= 0)
             {
@@ -141,12 +141,9 @@ namespace ServiceLayer.Code
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, true);
+                var status = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, true);
                 _db.Commit();
-                if (insertedCount != 1)
-                    throw new HiringBellException("Fail to insert or update the resume");
-                else
-                    file = files[0];
+                file = files[0];
             }
 
             return file;

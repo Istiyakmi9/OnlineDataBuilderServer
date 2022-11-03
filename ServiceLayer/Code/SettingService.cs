@@ -205,7 +205,7 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public List<SalaryComponents> ActivateCurrentComponentService(List<SalaryComponents> components)
+        public async Task<List<SalaryComponents>> ActivateCurrentComponentService(List<SalaryComponents> components)
         {
             List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
@@ -261,7 +261,7 @@ namespace ServiceLayer.Code
                 if (statue <= 0)
                     throw new HiringBellException("Unable to update detail");
                 else
-                    this.AddRemoveSalaryComponents(components, salaryGroups);
+                    await AddRemoveSalaryComponents(components, salaryGroups);
             }
             else
             {
@@ -271,7 +271,7 @@ namespace ServiceLayer.Code
             return salaryComponent;
         }
 
-        private void AddRemoveSalaryComponents(List<SalaryComponents> components, List<SalaryGroup> salaryGroups)
+        private async Task AddRemoveSalaryComponents(List<SalaryComponents> components, List<SalaryGroup> salaryGroups)
         {
             if (salaryGroups.Count > 0)
             {
@@ -282,7 +282,13 @@ namespace ServiceLayer.Code
                     Parallel.For(0, components.Count, i =>
                     {
                         if (components[i].IsOpted == true)
-                            salaryComponents.Add(components[i]);
+                        {
+                            var existingComponent = salaryComponents.Find(x => x.ComponentId == components[i].ComponentId);
+                            if (existingComponent != null)
+                                existingComponent = components[i];
+                            else
+                                salaryComponents.Add(components[i]);
+                        }
                         else
                             salaryComponents.RemoveAll(x => x.ComponentId == components[i].ComponentId);
 
@@ -290,9 +296,11 @@ namespace ServiceLayer.Code
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
                 DataTable table = Converter.ToDataTable(salaryGroups);
-                int statue = _db.BatchInsert("sp_salary_group_insupd", table, true);
-                if (statue <= 0)
-                    throw new HiringBellException("Unable to update detail");
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
+                _db.Commit();
+
+                await Task.CompletedTask;
             }
         }
 

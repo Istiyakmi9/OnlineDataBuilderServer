@@ -10,6 +10,7 @@ using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -98,9 +99,9 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("AddUpdateRecurringComponents")]
-        public IResponse<ApiResponse> AddUpdateRecurringComponents(SalaryStructure salaryStructure)
+        public async Task<ApiResponse> AddUpdateRecurringComponents(SalaryStructure salaryStructure)
         {
-            var result = _salaryComponentService.AddUpdateRecurringComponents(salaryStructure);
+            var result = await _salaryComponentService.AddUpdateRecurringComponents(salaryStructure);
             return BuildResponse(result);
         }
 
