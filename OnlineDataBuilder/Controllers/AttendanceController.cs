@@ -25,13 +25,6 @@ namespace OnlineDataBuilder.Controllers
             _attendanceService = attendanceService;
         }
 
-        [HttpPost("InsertUpdateTimesheet")]
-        public IResponse<ApiResponse> InsertUpdateTimesheet(List<AttendenceDetail> attendenceDetail)
-        {
-            var result = _attendanceService.InsertUpdateTimesheet(attendenceDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
-        }
-
         [HttpPost("GetAttendanceByUserId")]
         public IResponse<ApiResponse> GetAttendanceByUserId(AttendenceDetail attendenceDetail)
         {
@@ -53,9 +46,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("SubmitAttendance")]
-        public IResponse<ApiResponse> SubmitAttendance(AttendenceDetail commentDetails)
+        public async Task<ApiResponse> SubmitAttendance(AttendenceDetail commentDetails)
         {
-            var result = _attendanceService.SubmitAttendanceService(commentDetails);
+            var result = await _attendanceService.SubmitAttendanceService(commentDetails);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

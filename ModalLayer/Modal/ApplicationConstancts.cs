@@ -1,3 +1,7 @@
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+
 public class ApplicationConstants
 {
     public static int TDS = 10;
@@ -50,6 +54,52 @@ public class ApplicationConstants
         if (Result != null && (Result.ToLower() == Inserted || Result.ToLower() == Updated))
             return true;
         return false;
+    }
+
+    public static bool IsValidDataSet(DataSet dataSet)
+    {
+        if (dataSet == null || dataSet.Tables.Count == 0)
+            return false;
+
+        return true;
+    }
+
+    public static bool ContainSingleRow(DataSet dataSet)
+    {
+        bool flag = true;
+        if (dataSet == null || dataSet.Tables.Count == 0)
+            flag = false;
+
+        int i = 0;
+        while (i < dataSet.Tables.Count)
+        {
+            if (dataSet.Tables[i].Rows.Count == 0)
+            {
+                flag = false;
+                break;
+            }
+            i++;
+        }
+
+        return flag;
+    }
+
+    public static bool IsValidDataTable(DataTable table)
+    {
+        bool flag = true;
+        if (table == null || table.Rows.Count == 0)
+            flag = false;
+
+        return flag;
+    }
+
+    public static bool ContainSingleRow(DataTable table)
+    {
+        bool flag = false;
+        if (table != null && table.Rows.Count == 1)
+            flag = true;
+
+        return flag;
     }
 }
 
