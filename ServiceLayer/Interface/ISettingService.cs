@@ -1,5 +1,6 @@
 ﻿using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -13,7 +14,7 @@ namespace ServiceLayer.Interface
         string InsertUpdatePayrollSetting(Payroll payroll);
         Payroll GetPayrollSetting(int companyId);
         string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure);
-        List<SalaryComponents> ActivateCurrentComponentService(List<SalaryComponents> components);
+        Task<List<SalaryComponents>> ActivateCurrentComponentService(List<SalaryComponents> components);
         string UpdateGroupSalaryComponentDetailService(string componentId, int groupId,SalaryComponents component);
         List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component);
         List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);

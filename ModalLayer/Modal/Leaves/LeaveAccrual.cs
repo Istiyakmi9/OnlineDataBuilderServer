@@ -15,7 +15,7 @@ namespace ModalLayer.Modal.Leaves
         public bool IsLeaveAccruedProrateDefined { get; set; }
         public string LeaveDistributionSequence { get; set; }
         public decimal LeaveDistributionAppliedFrom { get; set; }
-        public bool IsLeavesProratedForJoinigMonth { get; set; }
+        public bool IsLeavesProratedForJoinigMonth { get; set; } = true;
         public bool IsLeavesProratedOnNotice { get; set; }
         public bool IsNotAllowProratedOnNotice { get; set; }
         public bool IsNoLeaveOnNoticePeriod { get; set; }

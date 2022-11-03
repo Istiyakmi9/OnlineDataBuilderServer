@@ -64,43 +64,43 @@ namespace ServiceLayer.Code
 
         public async Task<Organization> RegisterClient(Organization client, IFormFileCollection fileCollection, bool isUpdating)
         {
-            if (isUpdating == true)
+            try
             {
-                if (client.ClientId <= 0)
-                    throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(client.ClientId), FieldValue = client.ClientId.ToString() };
-            }
+                if (isUpdating == true)
+                {
+                    if (client.ClientId <= 0)
+                        throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(client.ClientId), FieldValue = client.ClientId.ToString() };
+                }
 
-            return await Task.Run(() =>
-            {
                 Organization organization = null;
                 DbParam[] param = new DbParam[]
                 {
-                    new DbParam(client.ClientId, typeof(long), "_ClientId"),
-                    new DbParam(client.ClientName, typeof(string), "_ClientName"),
-                    new DbParam(client.PrimaryPhoneNo, typeof(string), "_PrimaryPhoneNo"),
-                    new DbParam(client.SecondaryPhoneNo, typeof(string), "_SecondaryPhoneNo"),
-                    new DbParam(client.MobileNo, typeof(string), "_MobileNo"),
-                    new DbParam(client.Email, typeof(string), "_Email"),
-                    new DbParam(client.OtherEmail_1, typeof(string), "_OtherEmail_1"),
-                    new DbParam(client.OtherEmail_2, typeof(string), "_OtherEmail_2"),
-                    new DbParam(client.OtherEmail_3, typeof(string), "_OtherEmail_3"),
-                    new DbParam(client.OtherEmail_4, typeof(string), "_OtherEmail_4"),
-                    new DbParam(client.Fax, typeof(string), "_Fax"),
-                    new DbParam(client.GSTNO, typeof(string), "_GSTNO"),
-                    new DbParam(client.PanNo, typeof(string), "_PanNo"),
-                    new DbParam(client.Pincode, typeof(int), "_Pincode"),
-                    new DbParam(client.Country, typeof(string), "_Country"),
-                    new DbParam(client.State, typeof(string), "_State"),
-                    new DbParam(client.City, typeof(string), "_City"),
-                    new DbParam(client.FirstAddress, typeof(string), "_FirstAddress"),
-                    new DbParam(client.SecondAddress, typeof(string), "_SecondAddress"),
-                    new DbParam(client.ThirdAddress, typeof(string), "_ThirdAddress"),
-                    new DbParam(client.ForthAddress, typeof(string), "_ForthAddress"),
-                    new DbParam(client.IFSC, typeof(string), "_IFSC"),
-                    new DbParam(client.AccountNo, typeof(string), "_AccountNo"),
-                    new DbParam(client.BankName, typeof(string), "_BankName"),
-                    new DbParam(client.BranchName, typeof(string), "_BranchName"),
-                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
+                new DbParam(client.ClientId, typeof(long), "_ClientId"),
+                new DbParam(client.ClientName, typeof(string), "_ClientName"),
+                new DbParam(client.PrimaryPhoneNo, typeof(string), "_PrimaryPhoneNo"),
+                new DbParam(client.SecondaryPhoneNo, typeof(string), "_SecondaryPhoneNo"),
+                new DbParam(client.MobileNo, typeof(string), "_MobileNo"),
+                new DbParam(client.Email, typeof(string), "_Email"),
+                new DbParam(client.OtherEmail_1, typeof(string), "_OtherEmail_1"),
+                new DbParam(client.OtherEmail_2, typeof(string), "_OtherEmail_2"),
+                new DbParam(client.OtherEmail_3, typeof(string), "_OtherEmail_3"),
+                new DbParam(client.OtherEmail_4, typeof(string), "_OtherEmail_4"),
+                new DbParam(client.Fax, typeof(string), "_Fax"),
+                new DbParam(client.GSTNO, typeof(string), "_GSTNO"),
+                new DbParam(client.PanNo, typeof(string), "_PanNo"),
+                new DbParam(client.Pincode, typeof(int), "_Pincode"),
+                new DbParam(client.Country, typeof(string), "_Country"),
+                new DbParam(client.State, typeof(string), "_State"),
+                new DbParam(client.City, typeof(string), "_City"),
+                new DbParam(client.FirstAddress, typeof(string), "_FirstAddress"),
+                new DbParam(client.SecondAddress, typeof(string), "_SecondAddress"),
+                new DbParam(client.ThirdAddress, typeof(string), "_ThirdAddress"),
+                new DbParam(client.ForthAddress, typeof(string), "_ForthAddress"),
+                new DbParam(client.IFSC, typeof(string), "_IFSC"),
+                new DbParam(client.AccountNo, typeof(string), "_AccountNo"),
+                new DbParam(client.BankName, typeof(string), "_BankName"),
+                new DbParam(client.BranchName, typeof(string), "_BranchName"),
+                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 
                 var status = string.Empty;
@@ -130,7 +130,7 @@ namespace ServiceLayer.Code
 
                     DataTable table = Converter.ToDataTable(fileInfo);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, false);
+                    var taskResult = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
                     _db.Commit();
                 }
 
@@ -140,7 +140,13 @@ namespace ServiceLayer.Code
                 }
 
                 return organization;
-            });
+            }
+            catch (Exception)
+            {
+                _db.RollBack();
+                throw;
+            }
+            
         }
 
         public DataSet DeactivateClient(Employee employee)
