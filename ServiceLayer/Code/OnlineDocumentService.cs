@@ -327,70 +327,6 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
-        {
-            BillingDetail billingDetail = default(BillingDetail);
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
-                new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
-                new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                new DbParam(fileDetail.UserTypeId, typeof(long), "_UserTypeId"),
-                new DbParam(fileDetail.ForMonth, typeof(long), "_ForMonth"),
-                new DbParam(fileDetail.ForYear, typeof(long), "_ForYear")
-            };
-
-            var Result = this.db.GetDataset("sp_EmployeeBillDetail_ById", dbParams);
-            if (Result.Tables.Count == 3)
-            {
-                billingDetail = new BillingDetail();
-                billingDetail.FileDetail = Result.Tables[0];
-                billingDetail.Employees = Result.Tables[1];
-
-                TimesheetDetail timesheetDetail = default(TimesheetDetail);
-                if (Result.Tables[2] == null || Result.Tables[2].Rows.Count == 0)
-                {
-                    bool flag = false;
-                    timesheetDetail = new TimesheetDetail
-                    {
-                        ForMonth = 0,
-                        ForYear = 0
-                    };
-
-                    if (billingDetail.FileDetail.Rows[0]["BillForMonth"] == DBNull.Value)
-                        flag = true;
-                    else
-                        timesheetDetail.ForMonth = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillForMonth"]);
-
-                    if (billingDetail.FileDetail.Rows[0]["BillYear"] == DBNull.Value)
-                        flag = true;
-                    else
-                        timesheetDetail.ForYear = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillYear"]);
-
-                    DateTime billingOn = DateTime.Now;
-                    if (flag)
-                    {
-                        billingOn = Convert.ToDateTime(billingDetail.FileDetail.Rows[0]["BillYear"]);
-                        timesheetDetail.ForMonth = billingOn.Month;
-                        timesheetDetail.ForYear = billingOn.Year;
-                    }
-
-                }
-                else
-                    timesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
-
-                var attrs = _timesheetService.BuildFinalTimesheet(timesheetDetail);
-                billingDetail.TimesheetDetails = attrs.Item1;
-                billingDetail.MissingDate = attrs.Item2;
-
-                var companies = _cacheManager.Get(CacheTable.Company);
-                billingDetail.Organizations = companies;
-            }
-
-            return billingDetail;
-        }
-
         public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, GenerateBillFileDetail generateBillFileDetail)
         {
             FileDetail fileDetail = new FileDetail
@@ -534,7 +470,13 @@ namespace ServiceLayer.Code
                     var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
                     _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
 
-                    _billService.CreateFiles(_buildPdfTable, pdfModal, organization, receiverOrganization);
+                    BillGenerationModal billModal = new BillGenerationModal
+                    {
+                        PdfModal = pdfModal,
+                        Sender = organization,
+                        Receiver = receiverOrganization
+                    };
+                    _billService.CreateFiles(_buildPdfTable, billModal);
                 }
 
                 return fileDetail;

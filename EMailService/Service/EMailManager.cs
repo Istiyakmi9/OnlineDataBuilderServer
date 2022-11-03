@@ -16,10 +16,17 @@ namespace EMailService.Service
         private static object _lock = new object();
         private readonly FileLocationDetail _fileLocationDetail;
         private EmailSettingDetail _emailSettingDetail;
+        private readonly IDb _db;
 
-        private EMailManager(FileLocationDetail fileLocationDetail)
+        private EMailManager(FileLocationDetail fileLocationDetail, IDb db)
         {
             _fileLocationDetail = fileLocationDetail;
+            _db = db;
+        }
+
+        private void GetDefaultEmailDetail()
+        {
+            _instance._emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
         }
 
         public static void SetEmailDetail(EmailSettingDetail emailSettingDetail)
@@ -27,12 +34,15 @@ namespace EMailService.Service
             _instance._emailSettingDetail = emailSettingDetail;
         }
 
-        public static EMailManager GetInstance(FileLocationDetail fileLocationDetail)
+        public static EMailManager GetInstance(FileLocationDetail fileLocationDetail, IDb db)
         {
             if (_instance == null)
                 lock (_lock)
                     if (_instance == null)
-                        _instance = new EMailManager(fileLocationDetail);
+                    {
+                        _instance = new EMailManager(fileLocationDetail, db);
+                        _instance.GetDefaultEmailDetail();
+                    }
 
             return _instance;
         }

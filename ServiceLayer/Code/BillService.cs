@@ -1,10 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Service;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
@@ -15,11 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -39,6 +36,8 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly ITemplateService _templateService;
         private readonly ITimesheetService _timesheetService;
+        private readonly ITimezoneConverter _timezoneConverter;
+
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
@@ -47,6 +46,7 @@ namespace ServiceLayer.Code
             HtmlToPdfConverter htmlToPdfConverter,
             IEMailManager eMailManager,
             ITemplateService templateService,
+            ITimezoneConverter timezoneConverter,
             ITimesheetService timesheetService,
             IFileMaker fileMaker)
         {
@@ -62,46 +62,49 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _templateService = templateService;
             _timesheetService = timesheetService;
+            _timezoneConverter = timezoneConverter;
         }
 
-        public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfModal, Organization sender, Organization receiver)
+        public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, BillGenerationModal billModal)
         {
             FileDetail fileDetail = new FileDetail();
-            string templatePath = Path.Combine(_fileLocationDetail.RootPath,
+            billModal.BillTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
                 Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
                 _fileLocationDetail.StaffingBillTemplate
             );
 
-            string pdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+            billModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
                 Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
                 _fileLocationDetail.StaffingBillPdfTemplate
             );
 
-            string headerLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, "logo.png");
-            if (File.Exists(templatePath) && File.Exists(templatePath) && File.Exists(headerLogo))
+            billModal.HeaderLogoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, "logo.png");
+            if (File.Exists(billModal.BillTemplatePath) && File.Exists(billModal.HeaderLogoPath))
             {
-                fileDetail.LogoPath = headerLogo;
+                fileDetail.LogoPath = billModal.HeaderLogoPath;
                 string html = string.Empty;
 
-                fileDetail.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, pdfModal.FilePath);
+                fileDetail.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, billModal.PdfModal.FilePath);
                 if (!Directory.Exists(fileDetail.DiskFilePath)) Directory.CreateDirectory(fileDetail.DiskFilePath);
-                fileDetail.FileName = pdfModal.FileName;
+                fileDetail.FileName = billModal.PdfModal.FileName;
                 string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
-                html = this.GetHtmlString(templatePath, pdfModal, sender, receiver);
-                this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
+                
+                html = this.GetHtmlString(billModal.BillTemplatePath, billModal);
+                this.iHTMLConverter.ToDocx(html, destinationFilePath, billModal.HeaderLogoPath);
 
                 _fileMaker._fileDetail = fileDetail;
                 destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
-                html = this.GetHtmlString(pdfTemplatePath, pdfModal, sender, receiver, headerLogo);
+                
+                html = this.GetHtmlString(billModal.PdfTemplatePath, billModal, true);
                 _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
             }
 
             return fileDetail;
         }
 
-        private string GetHtmlString(string templatePath, PdfModal pdfModal, Organization sender, Organization receiver, string logoPath = null)
+        private string GetHtmlString(string templatePath, BillGenerationModal billModal, bool isHeaderLogoRequired = false)
         {
             string html = string.Empty;
             using (FileStream stream = File.Open(templatePath, FileMode.Open))
@@ -109,43 +112,43 @@ namespace ServiceLayer.Code
                 StreamReader reader = new StreamReader(stream);
                 html = reader.ReadToEnd();
 
-                html = html.Replace("[[BILLNO]]", pdfModal.billNo).
-                Replace("[[dateOfBilling]]", pdfModal.dateOfBilling.ToString("dd MMM, yyyy")).
-                Replace("[[senderFirstAddress]]", sender.FirstAddress).
-                Replace("[[senderCompanyName]]", sender.CompanyName).
-                Replace("[[senderGSTNo]]", sender.GSTNO).
-                Replace("[[senderSecondAddress]]", sender.SecondAddress).
-                Replace("[[senderPrimaryContactNo]]", sender.PrimaryPhoneNo).
-                Replace("[[senderEmail]]", sender.Email).
-                Replace("[[receiverCompanyName]]", receiver.ClientName).
-                Replace("[[receiverGSTNo]]", receiver.GSTNO).
-                Replace("[[receiverFirstAddress]]", receiver.FirstAddress).
-                Replace("[[receiverSecondAddress]]", receiver.SecondAddress).
-                Replace("[[receiverPrimaryContactNo]]", receiver.PrimaryPhoneNo).
-                Replace("[[receiverEmail]]", receiver.Email).
-                Replace("[[developerName]]", pdfModal.developerName).
-                Replace("[[billingMonth]]", pdfModal.billingMonth.ToString("MMMM")).
-                Replace("[[packageAmount]]", pdfModal.packageAmount.ToString()).
-                Replace("[[cGST]]", pdfModal.cGST.ToString()).
-                Replace("[[cGSTAmount]]", pdfModal.cGstAmount.ToString()).
-                Replace("[[sGST]]", pdfModal.sGST.ToString()).
-                Replace("[[sGSTAmount]]", pdfModal.sGstAmount.ToString()).
-                Replace("[[iGST]]", pdfModal.iGST.ToString()).
-                Replace("[[iGSTAmount]]", pdfModal.iGstAmount.ToString()).
-                Replace("[[grandTotalAmount]]", pdfModal.grandTotalAmount.ToString()).
-                Replace("[[bankName]]", sender.BankName).
-                Replace("[[clientName]]", sender.CompanyName).
-                Replace("[[accountNumber]]", sender.AccountNo).
-                Replace("[[iFSCCode]]", sender.IFSC).
-                Replace("[[city]]", sender.City).
-                Replace("[[state]]", sender.State);
+                html = html.Replace("[[BILLNO]]", billModal.PdfModal.billNo).
+                Replace("[[dateOfBilling]]", billModal.PdfModal.dateOfBilling.ToString("dd MMM, yyyy")).
+                Replace("[[senderFirstAddress]]", billModal.Sender.FirstAddress).
+                Replace("[[senderCompanyName]]", billModal.Sender.CompanyName).
+                Replace("[[senderGSTNo]]", billModal.Sender.GSTNO).
+                Replace("[[senderSecondAddress]]", billModal.Sender.SecondAddress).
+                Replace("[[senderPrimaryContactNo]]", billModal.Sender.PrimaryPhoneNo).
+                Replace("[[senderEmail]]", billModal.Sender.Email).
+                Replace("[[receiverCompanyName]]", billModal.Receiver.ClientName).
+                Replace("[[receiverGSTNo]]", billModal.Receiver.GSTNO).
+                Replace("[[receiverFirstAddress]]", billModal.Receiver.FirstAddress).
+                Replace("[[receiverSecondAddress]]", billModal.Receiver.SecondAddress).
+                Replace("[[receiverPrimaryContactNo]]", billModal.Receiver.PrimaryPhoneNo).
+                Replace("[[receiverEmail]]", billModal.Receiver.Email).
+                Replace("[[developerName]]", billModal.PdfModal.developerName).
+                Replace("[[billingMonth]]", billModal.PdfModal.billingMonth.ToString("MMMM")).
+                Replace("[[packageAmount]]", billModal.PdfModal.packageAmount.ToString()).
+                Replace("[[cGST]]", billModal.PdfModal.cGST.ToString()).
+                Replace("[[cGSTAmount]]", billModal.PdfModal.cGstAmount.ToString()).
+                Replace("[[sGST]]", billModal.PdfModal.sGST.ToString()).
+                Replace("[[sGSTAmount]]", billModal.PdfModal.sGstAmount.ToString()).
+                Replace("[[iGST]]", billModal.PdfModal.iGST.ToString()).
+                Replace("[[iGSTAmount]]", billModal.PdfModal.iGstAmount.ToString()).
+                Replace("[[grandTotalAmount]]", billModal.PdfModal.grandTotalAmount.ToString()).
+                Replace("[[state]]", billModal.Sender.State).
+                Replace("[[clientName]]", billModal.Sender.CompanyName).
+                Replace("[[city]]", billModal.SenderBankDetail.Branch).
+                Replace("[[bankName]]", billModal.SenderBankDetail.BankName).
+                Replace("[[accountNumber]]", billModal.SenderBankDetail.AccountNo).
+                Replace("[[iFSCCode]]", billModal.SenderBankDetail.IFSC);
             }
 
-            if (logoPath != null)
+            if (!string.IsNullOrEmpty(billModal.HeaderLogoPath) && isHeaderLogoRequired)
             {
                 string extension = string.Empty;
-                int lastPosition = logoPath.LastIndexOf(".");
-                extension = logoPath.Substring(lastPosition + 1);
+                int lastPosition = billModal.HeaderLogoPath.LastIndexOf(".");
+                extension = billModal.HeaderLogoPath.Substring(lastPosition + 1);
                 ImageFormat imageFormat = null;
                 if (extension == "png")
                     imageFormat = ImageFormat.Png;
@@ -168,7 +171,7 @@ namespace ServiceLayer.Code
                 }
 
                 string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
-                var fs = new FileStream(logoPath, FileMode.Open);
+                var fs = new FileStream(billModal.HeaderLogoPath, FileMode.Open);
                 using (BinaryReader br = new BinaryReader(fs))
                 {
                     Byte[] bytes = br.ReadBytes((Int32)fs.Length);
@@ -201,252 +204,15 @@ namespace ServiceLayer.Code
             pdfModal.receiverGSTNo = organization.GSTNO;
         }
 
-        public dynamic UpdateGeneratedBillService(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
-            TimesheetDetail timesheetDetail, string Comment)
+        public async Task<dynamic> UpdateGeneratedBillService(BillGenerationModal billModal)
         {
-            if (timesheetDetail == null || timesheetDetail.TimesheetId == 0)
+            if (billModal.TimesheetDetail == null || billModal.TimesheetDetail.TimesheetId == 0)
                 throw new HiringBellException("Invalid timesheet submitted. Please check you detail.");
 
-            return GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
+            return await GenerateBillService(billModal);
         }
 
-        public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
-            TimesheetDetail timesheetDetail, string Comment)
-        {
-            List<string> emails = new List<string>();
-            FileDetail fileDetail = new FileDetail();
-            try
-            {
-                TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-                pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
-                pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
-
-                Bills bill = this.GetBillData();
-                if (string.IsNullOrEmpty(pdfModal.billNo))
-                {
-                    if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
-                    {
-                        throw new HiringBellException("Fail to generate bill no.");
-                    }
-
-                    pdfModal.billNo = bill.GeneratedBillNo;
-                }
-                else
-                {
-                    string GeneratedBillNo = "";
-                    int len = pdfModal.billNo.Length;
-                    int i = 0;
-                    while (i < bill.BillNoLength)
-                    {
-                        if (i < len)
-                        {
-                            GeneratedBillNo += pdfModal.billNo[i];
-                        }
-                        else
-                        {
-                            GeneratedBillNo = '0' + GeneratedBillNo;
-                        }
-                        i++;
-                    }
-                    pdfModal.billNo = GeneratedBillNo;
-                }
-
-                pdfModal.billNo = pdfModal.billNo.Replace("#", "");
-
-                Organization sender = null;
-                Organization receiver = null;
-                DataSet ds = new DataSet();
-                DbParam[] dbParams = new DbParam[]
-                {
-                    new DbParam(pdfModal.receiverCompanyId, typeof(long), "_receiver"),
-                    new DbParam(pdfModal.senderId, typeof(long), "_sender"),
-                    new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
-                    new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
-                    new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
-                    new DbParam(pdfModal.billingMonth.Month, typeof(long), "_forMonth"),
-                    new DbParam(pdfModal.billYear, typeof(long), "_forYear")
-                };
-
-                ds = this.db.GetDataset("sp_Billing_detail", dbParams);
-                if (ds.Tables.Count == 4)
-                {
-                    sender = Converter.ToType<Organization>(ds.Tables[0]);
-                    receiver = Converter.ToType<Organization>(ds.Tables[1]);
-
-                    emails.Add(receiver.Email);
-                    if (!string.IsNullOrEmpty(receiver.OtherEmail_1))
-                        emails.Add(receiver.OtherEmail_1);
-                    if (!string.IsNullOrEmpty(receiver.OtherEmail_2))
-                        emails.Add(receiver.OtherEmail_2);
-                    emails.Add(sender.Email);
-
-                    fileDetail = Converter.ToType<FileDetail>(ds.Tables[2]);
-
-                    this.FillReceiverDetail(receiver, pdfModal);
-                    this.FillSenderDetail(sender, pdfModal);
-
-                    this.ValidateBillModal(pdfModal);
-
-                    if (fileDetail == null)
-                    {
-                        fileDetail = new FileDetail
-                        {
-                            ClientId = pdfModal.ClientId
-                        };
-                    }
-
-                    List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
-                    if (ds.Tables[3].Rows.Count > 0)
-                    {
-                        var currentAttendance = Converter.ToType<Attendance>(ds.Tables[3]);
-                        attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
-                    }
-
-                    string templatePath = Path.Combine(_fileLocationDetail.RootPath,
-                        _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
-                        _fileLocationDetail.StaffingBillTemplate
-                    );
-
-                    string pdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
-                        _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
-                        _fileLocationDetail.StaffingBillPdfTemplate
-                    );
-
-                    string headerLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, "logo.png");
-                    if (File.Exists(templatePath) && File.Exists(pdfTemplatePath) && File.Exists(headerLogo))
-                    {
-                        this.CleanOldFiles(fileDetail);
-                        pdfModal.UpdateSeqNo++;
-                        fileDetail.FileExtension = string.Empty;
-
-                        string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
-                        string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
-                        string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
-                        if (!Directory.Exists(folderPath))
-                            Directory.CreateDirectory(folderPath);
-
-                        string destinationFilePath = Path.Combine(
-                            folderPath,
-                            pdfModal.developerName.Replace(" ", "_") + "_" +
-                            pdfModal.billingMonth.ToString("MMM_yyyy") + "_" +
-                            pdfModal.billNo + "_" +
-                            pdfModal.UpdateSeqNo + $".{ApplicationConstants.Excel}");
-
-                        if (File.Exists(destinationFilePath))
-                            File.Delete(destinationFilePath);
-
-                        var timesheetData = (from n in attendanceSet
-                                             orderby n.AttendanceDay ascending
-                                             select new TimesheetModel
-                                             {
-                                                 Date = n.AttendanceDay.ToString("dd MMM yyyy"),
-                                                 ResourceName = pdfModal.developerName,
-                                                 StartTime = "10:00 AM",
-                                                 EndTime = "06:00 PM",
-                                                 TotalHrs = 9,
-                                                 Comments = n.UserComments,
-                                                 Status = "Approved"
-                                             }
-                        ).ToList<TimesheetModel>();
-
-                        // UpdateTimesheet
-                        _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
-
-                        var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
-                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
-
-                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
-                        fileDetail.LogoPath = headerLogo;
-                        // Converting html context for docx conversion.
-                        string html = this.GetHtmlString(templatePath, pdfModal, sender, receiver);
-                        destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
-                        this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
-
-                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
-                        _fileMaker._fileDetail = fileDetail;
-                        // Converting html context for pdf conversion.
-                        html = this.GetHtmlString(pdfTemplatePath, pdfModal, sender, receiver, headerLogo);
-                        destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
-                        _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
-
-                        dbParams = new DbParam[]
-                        {
-                            new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                            new DbParam(pdfModal.receiverCompanyId, typeof(long), "_ClientId"),
-                            new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
-                            new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
-                            new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                            new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
-                            new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
-                            new DbParam(bill.BillUid, typeof(int), "_BillUid"),
-                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
-                            new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
-                            new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
-                            new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                            new DbParam(pdfModal.billYear, typeof(int), "_BillYear"),
-                            new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
-                            new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
-                            new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
-                            new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
-                            new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
-                            new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                            new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
-                            new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
-                            new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
-                            new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
-                            new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
-                            new DbParam(pdfModal.IsCustomBill, typeof(bool), "_IsCustomBill"),
-                            new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                            new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                        };
-
-                        var fileId = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                        if (string.IsNullOrEmpty(fileId))
-                        {
-                            List<Files> files = new List<Files>();
-                            files.Add(new Files
-                            {
-                                FilePath = fileDetail.FilePath,
-                                FileName = fileDetail.FileName
-                            });
-                            this.fileService.DeleteFiles(files);
-                        }
-                        else
-                        {
-                            fileDetail.FileId = Convert.ToInt32(fileId);
-                            fileDetail.DiskFilePath = null;
-                        }
-                    }
-                    else
-                    {
-                        throw new HiringBellException("HTML template or Logo file path is invalid");
-                    }
-                }
-                else
-                {
-                    throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
-                }
-            }
-            catch (HiringBellException e)
-            {
-                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
-                throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                throw new HiringBellException(ex.Message, ex);
-            }
-
-            EmailTemplate emailTemplate = _templateService.GetBillingTemplateDetailService();
-            emailTemplate.Emails = emails;
-            return new { FileDetail = fileDetail, EmailTemplate = emailTemplate };
-        }
-
-        private void ValidateBillModal(PdfModal pdfModal)
+        private void ValidateRequestDetail(PdfModal pdfModal)
         {
             decimal grandTotalAmount = 0;
             decimal sGSTAmount = 0;
@@ -523,13 +289,597 @@ namespace ServiceLayer.Code
             }
         }
 
-        private Bills GetBillData()
-        {
-            Bills bill = db.Get<Bills>("sp_billdata_get", new { BillTypeUid = 1 });
-            if (bill == null)
-                throw new HiringBellException("Unable to get bill detail for current employee.");
 
-            return bill;
+        private async Task GetBillNumber(PdfModal pdfModal, BillGenerationModal billGenerationModal)
+        {
+            Bills bill = Converter.ToType<Bills>(billGenerationModal.ResultSet.Tables[4]);
+            if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
+                throw new HiringBellException("Bill sequence number not found. Please contact to admin.");
+
+            billGenerationModal.BillSequence = bill;
+            if (string.IsNullOrEmpty(pdfModal.billNo))
+            {
+                pdfModal.billNo = bill.GeneratedBillNo.Replace("#", "");
+            }
+            else
+            {
+                pdfModal.billNo = pdfModal.billNo.Replace("#", "");
+                string GeneratedBillNo = "";
+                int len = pdfModal.billNo.Length;
+                int i = 0;
+                while (i < bill.BillNoLength)
+                {
+                    if (i < len)
+                    {
+                        GeneratedBillNo += pdfModal.billNo[i];
+                    }
+                    else
+                    {
+                        GeneratedBillNo = '0' + GeneratedBillNo;
+                    }
+                    i++;
+                }
+                pdfModal.billNo = GeneratedBillNo;
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private async Task<DataSet> PrepareRequestForBillGeneration(BillGenerationModal billGenerationModal)
+        {
+            DataSet ds = this.db.FetchDataSet("sp_Billing_detail", new
+            {
+                Sender = billGenerationModal.PdfModal.senderId,
+                Receiver = billGenerationModal.PdfModal.receiverCompanyId,
+                BillNo = billGenerationModal.PdfModal.billNo,
+                billGenerationModal.PdfModal.EmployeeId,
+                UserTypeId = (int)UserType.Employee,
+                ForMonth = billGenerationModal.PdfModal.billingMonth.Month,
+                ForYear = billGenerationModal.PdfModal.billYear,
+                BillTypeUid = 1,
+                CompanyId = 0
+            });
+
+            if (ds == null || ds.Tables.Count != 6)
+                throw new HiringBellException("Fail to get billing detail. Please contact to admin.");
+
+            billGenerationModal.ResultSet = ds;
+            await GetBillNumber(billGenerationModal.PdfModal, billGenerationModal);
+
+            await BuildBackAccountDetail(billGenerationModal);
+
+            return ds;
+        }
+
+        private async Task BuildBackAccountDetail(BillGenerationModal billModal)
+        {
+            if (billModal.ResultSet.Tables[5] == null || billModal.ResultSet.Tables[5].Rows.Count != 1)
+                throw new HiringBellException("Unable to find sender back account detail.");
+
+            billModal.SenderBankDetail = Converter.ToType<BankDetail>(billModal.ResultSet.Tables[5]);
+
+            await Task.CompletedTask;
+        }
+
+        private async Task<Organization> GetSenderDetail(DataSet ds, List<string> emails)
+        {
+            if (ds.Tables[0].Rows.Count != 1)
+                throw new HiringBellException("Fail to get company detail. Please contact to admin.");
+
+            Organization sender = Converter.ToType<Organization>(ds.Tables[0]);
+            if (sender == null)
+                throw new HiringBellException("Fail to get company detail. Please contact to admin.");
+
+            emails.Add(sender.Email);
+            return await Task.FromResult(sender);
+        }
+
+        private async Task<Organization> GetReceiverDetail(DataSet ds, List<string> emails)
+        {
+            if (ds.Tables[1].Rows.Count != 1)
+                throw new HiringBellException("Fail to get client detail. Please contact to admin.");
+
+            Organization receiver = Converter.ToType<Organization>(ds.Tables[1]);
+            if (receiver == null)
+                throw new HiringBellException("Fail to get client detail. Please contact to admin.");
+
+            emails.Add(receiver.Email);
+            if (!string.IsNullOrEmpty(receiver.OtherEmail_1))
+                emails.Add(receiver.OtherEmail_1);
+            if (!string.IsNullOrEmpty(receiver.OtherEmail_2))
+                emails.Add(receiver.OtherEmail_2);
+
+            return await Task.FromResult(receiver);
+        }
+
+        private async Task<FileDetail> GetBillFileDetail(PdfModal pdfModal, DataSet ds)
+        {
+            FileDetail fileDetail = Converter.ToType<FileDetail>(ds.Tables[2]);
+            if (fileDetail == null)
+            {
+                fileDetail = new FileDetail
+                {
+                    ClientId = pdfModal.ClientId
+                };
+            }
+
+            return await Task.FromResult(fileDetail);
+        }
+
+        private async Task CaptureFileFolderLocations(BillGenerationModal billModal)
+        {
+            billModal.BillTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+                        _fileLocationDetail.Location,
+                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        _fileLocationDetail.StaffingBillTemplate
+                    );
+
+            if (!File.Exists(billModal.BillTemplatePath))
+                throw new HiringBellException("Billing template not found. Please contact to admin.");
+
+
+
+            billModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+                _fileLocationDetail.Location,
+                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                _fileLocationDetail.StaffingBillPdfTemplate
+            );
+
+            if (!File.Exists(billModal.PdfTemplatePath))
+                throw new HiringBellException("PDF template not found. Please contact to admin.");
+
+            billModal.HeaderLogoPath = Path.Combine(_fileLocationDetail.RootPath,
+                _fileLocationDetail.LogoPath, "logo.png");
+
+            if (!File.Exists(billModal.HeaderLogoPath))
+                throw new HiringBellException("Logo image not found. Please contact to admin.");
+
+            await Task.CompletedTask;
+        }
+
+        private async Task GenerateUpdateTimesheet(BillGenerationModal billModal)
+        {
+
+            List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
+            if (billModal.ResultSet.Tables[3].Rows.Count > 0)
+            {
+                var currentAttendance = Converter.ToType<Attendance>(billModal.ResultSet.Tables[3]);
+                attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
+            }
+
+            string FolderLocation = Path.Combine(
+                _fileLocationDetail.Location,
+                _fileLocationDetail.BillsPath,
+                billModal.PdfModal.billingMonth.ToString("MMM_yyyy"));
+
+            string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+
+            string destinationFilePath = Path.Combine(
+                folderPath,
+                billModal.PdfModal.developerName.Replace(" ", "_") + "_" +
+                billModal.PdfModal.billingMonth.ToString("MMM_yyyy") + "_" +
+                billModal.PdfModal.billNo + "_" +
+                billModal.PdfModal.UpdateSeqNo + $".{ApplicationConstants.Excel}");
+
+            if (File.Exists(destinationFilePath))
+                File.Delete(destinationFilePath);
+
+            var timesheetData = (from n in attendanceSet
+                                 orderby n.AttendanceDay ascending
+                                 select new TimesheetModel
+                                 {
+                                     Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                     ResourceName = billModal.PdfModal.developerName,
+                                     StartTime = "10:00 AM",
+                                     EndTime = "06:00 PM",
+                                     TotalHrs = 9,
+                                     Comments = n.UserComments,
+                                     Status = ItemStatus.Approved.ToString()
+                                 }
+            ).ToList<TimesheetModel>();
+
+            // UpdateTimesheet
+            _timesheetService.UpdateTimesheetService(billModal.FullTimeSheet,
+                billModal.TimesheetDetail, billModal.Comment);
+
+            var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
+            _excelWriter.ToExcel(timeSheetDataSet.Tables[0],
+                destinationFilePath,
+                billModal.PdfModal.billingMonth.ToString("MMM_yyyy"));
+
+            await Task.CompletedTask;
+        }
+
+        private async Task GeneratePdfFile(BillGenerationModal billModal)
+        {
+            GetFileDetail(billModal.PdfModal, billModal.FileDetail, ApplicationConstants.Pdf);
+            _fileMaker._fileDetail = billModal.FileDetail;
+
+            // Converting html context for pdf conversion.
+            var html = this.GetHtmlString(billModal.PdfTemplatePath, billModal, true);
+
+            var destinationFilePath = Path.Combine(billModal.FileDetail.DiskFilePath,
+                billModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
+            _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+
+            await Task.CompletedTask;
+        }
+
+        private async Task GenerateDocxFile(BillGenerationModal billModal)
+        {
+            GetFileDetail(billModal.PdfModal, billModal.FileDetail, ApplicationConstants.Docx);
+            billModal.FileDetail.LogoPath = billModal.HeaderLogoPath;
+
+            // Converting html context for docx conversion.
+            string html = this.GetHtmlString(billModal.BillTemplatePath, billModal);
+
+            var destinationFilePath = Path.Combine(billModal.FileDetail.DiskFilePath,
+                billModal.FileDetail.FileName + $".{ApplicationConstants.Docx}");
+            this.iHTMLConverter.ToDocx(html, destinationFilePath, billModal.HeaderLogoPath);
+
+            await Task.CompletedTask;
+        }
+
+        private async Task SaveExecuteBill(BillGenerationModal billModal)
+        {
+            var dbResult = await this.db.ExecuteAsync("sp_filedetail_insupd", new
+            {
+                FileId = billModal.FileDetail.FileId,
+                ClientId = billModal.PdfModal.receiverCompanyId,
+                FileName = billModal.FileDetail.FileName,
+                FilePath = billModal.FileDetail.FilePath,
+                FileExtension = billModal.FileDetail.FileExtension,
+                StatusId = billModal.PdfModal.StatusId,
+                GeneratedBillNo = billModal.BillSequence.NextBillNo,
+                BillUid = billModal.BillSequence.BillUid,
+                BillDetailId = billModal.PdfModal.billId,
+                BillNo = billModal.PdfModal.billNo,
+                PaidAmount = billModal.PdfModal.packageAmount,
+                BillForMonth = billModal.PdfModal.billingMonth.Month,
+                BillYear = billModal.PdfModal.billYear,
+                NoOfDays = billModal.PdfModal.workingDay,
+                NoOfDaysAbsent = billModal.PdfModal.daysAbsent,
+                IGST = billModal.PdfModal.iGST,
+                SGST = billModal.PdfModal.sGST,
+                CGST = billModal.PdfModal.cGST,
+                TDS = ApplicationConstants.TDS,
+                BillStatusId = ApplicationConstants.Pending,
+                PaidOn = billModal.PdfModal.PaidOn,
+                FileDetailId = billModal.PdfModal.FileId,
+                UpdateSeqNo = billModal.PdfModal.UpdateSeqNo,
+                EmployeeUid = billModal.PdfModal.EmployeeId,
+                BillUpdatedOn = billModal.PdfModal.dateOfBilling,
+                IsCustomBill = billModal.PdfModal.IsCustomBill,
+                UserTypeId = (int)UserType.Employee,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (dbResult.rowsEffected != 0 || string.IsNullOrEmpty(dbResult.statusMessage))
+            {
+                List<Files> files = new List<Files>();
+                files.Add(new Files
+                {
+                    FilePath = billModal.FileDetail.FilePath,
+                    FileName = billModal.FileDetail.FileName
+                });
+                this.fileService.DeleteFiles(files);
+
+                throw new HiringBellException("Bill generated task fail. Please contact to admin.");
+            }
+
+            billModal.FileDetail.FileId = Convert.ToInt32(dbResult.statusMessage);
+            billModal.FileDetail.DiskFilePath = null;
+        }
+
+        public async Task<dynamic> GenerateBillService(BillGenerationModal billModal)
+        {
+            List<string> emails = new List<string>();
+            try
+            {
+                billModal.PdfModal.billingMonth = _timezoneConverter.ToTimeZoneDateTime(
+                    billModal.PdfModal.billingMonth,
+                    _currentSession.TimeZone
+                    );
+                billModal.PdfModal.dateOfBilling = _timezoneConverter.ToTimeZoneDateTime(
+                    billModal.PdfModal.dateOfBilling,
+                    _currentSession.TimeZone
+                    );
+
+
+                // validate all the fields and request data.
+                ValidateRequestDetail(billModal.PdfModal);
+
+                // fetch and all the nessary data from database required to bill generation.
+                var resultSet = await PrepareRequestForBillGeneration(billModal);
+
+                Organization sender = await GetSenderDetail(resultSet, emails);
+                billModal.Sender = sender;
+                this.FillSenderDetail(sender, billModal.PdfModal);
+
+                Organization receiver = await GetReceiverDetail(resultSet, emails);
+                billModal.Receiver = receiver;
+                this.FillReceiverDetail(receiver, billModal.PdfModal);
+
+                FileDetail fileDetail = await GetBillFileDetail(billModal.PdfModal, resultSet);
+                billModal.PdfModal.UpdateSeqNo++;
+                fileDetail.FileExtension = string.Empty;
+                billModal.FileDetail = fileDetail;
+
+                // store template logo and file locations
+                await CaptureFileFolderLocations(billModal);
+                this.CleanOldFiles(fileDetail);
+
+                // execute and build timesheet if missing
+                await GenerateUpdateTimesheet(billModal);
+
+                // generate pdf, docx and excel files
+                await GeneratePdfFile(billModal);
+
+                // execute billing data and store into database.
+                await GenerateDocxFile(billModal);
+
+                // save file in filesystem
+                await SaveExecuteBill(billModal);
+
+                // get email notification detail
+                EmailTemplate emailTemplate = _templateService.GetBillingTemplateDetailService();
+                emailTemplate.Emails = emails;
+
+                // return result data
+                return new { FileDetail = fileDetail, EmailTemplate = emailTemplate };
+            }
+            catch (HiringBellException e)
+            {
+                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
+                throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw new HiringBellException(ex.Message, ex);
+            }
+        }
+
+        public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
+            TimesheetDetail timesheetDetail, string Comment)
+        {
+            List<string> emails = new List<string>();
+            FileDetail fileDetail = new FileDetail();
+            try
+            {
+                TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
+                pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
+                pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
+
+                Bills bill = null; //this.GetBillData();
+                if (string.IsNullOrEmpty(pdfModal.billNo))
+                {
+                    if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
+                    {
+                        throw new HiringBellException("Fail to generate bill no.");
+                    }
+
+                    pdfModal.billNo = bill.GeneratedBillNo;
+                }
+                else
+                {
+                    string GeneratedBillNo = "";
+                    int len = pdfModal.billNo.Length;
+                    int i = 0;
+                    while (i < bill.BillNoLength)
+                    {
+                        if (i < len)
+                        {
+                            GeneratedBillNo += pdfModal.billNo[i];
+                        }
+                        else
+                        {
+                            GeneratedBillNo = '0' + GeneratedBillNo;
+                        }
+                        i++;
+                    }
+                    pdfModal.billNo = GeneratedBillNo;
+                }
+
+                pdfModal.billNo = pdfModal.billNo.Replace("#", "");
+
+                Organization sender = null;
+                Organization receiver = null;
+                DataSet ds = new DataSet();
+                DbParam[] dbParams = new DbParam[]
+                {
+                    new DbParam(pdfModal.receiverCompanyId, typeof(long), "_receiver"),
+                    new DbParam(pdfModal.senderId, typeof(long), "_sender"),
+                    new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
+                    new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
+                    new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
+                    new DbParam(pdfModal.billingMonth.Month, typeof(long), "_forMonth"),
+                    new DbParam(pdfModal.billYear, typeof(long), "_forYear")
+                };
+
+                ds = this.db.GetDataset("sp_Billing_detail", dbParams);
+                if (ds.Tables.Count == 4)
+                {
+                    sender = Converter.ToType<Organization>(ds.Tables[0]);
+                    receiver = Converter.ToType<Organization>(ds.Tables[1]);
+
+                    emails.Add(receiver.Email);
+                    if (!string.IsNullOrEmpty(receiver.OtherEmail_1))
+                        emails.Add(receiver.OtherEmail_1);
+                    if (!string.IsNullOrEmpty(receiver.OtherEmail_2))
+                        emails.Add(receiver.OtherEmail_2);
+                    emails.Add(sender.Email);
+
+                    fileDetail = Converter.ToType<FileDetail>(ds.Tables[2]);
+
+                    this.FillReceiverDetail(receiver, pdfModal);
+                    this.FillSenderDetail(sender, pdfModal);
+
+                    // this.ValidateBillModal(pdfModal);
+
+                    if (fileDetail == null)
+                    {
+                        fileDetail = new FileDetail
+                        {
+                            ClientId = pdfModal.ClientId
+                        };
+                    }
+
+                    List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
+                    if (ds.Tables[3].Rows.Count > 0)
+                    {
+                        var currentAttendance = Converter.ToType<Attendance>(ds.Tables[3]);
+                        attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
+                    }
+
+                    string templatePath = Path.Combine(_fileLocationDetail.RootPath,
+                        _fileLocationDetail.Location,
+                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        _fileLocationDetail.StaffingBillTemplate
+                    );
+
+                    string pdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+                        _fileLocationDetail.Location,
+                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        _fileLocationDetail.StaffingBillPdfTemplate
+                    );
+
+                    string headerLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, "logo.png");
+                    if (File.Exists(templatePath) && File.Exists(pdfTemplatePath) && File.Exists(headerLogo))
+                    {
+                        this.CleanOldFiles(fileDetail);
+                        pdfModal.UpdateSeqNo++;
+                        fileDetail.FileExtension = string.Empty;
+
+                        string MonthName = pdfModal.billingMonth.ToString("MMM_yyyy");
+                        string FolderLocation = Path.Combine(_fileLocationDetail.Location, _fileLocationDetail.BillsPath, MonthName);
+                        string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+                        if (!Directory.Exists(folderPath))
+                            Directory.CreateDirectory(folderPath);
+
+                        string destinationFilePath = Path.Combine(
+                            folderPath,
+                            pdfModal.developerName.Replace(" ", "_") + "_" +
+                            pdfModal.billingMonth.ToString("MMM_yyyy") + "_" +
+                            pdfModal.billNo + "_" +
+                            pdfModal.UpdateSeqNo + $".{ApplicationConstants.Excel}");
+
+                        if (File.Exists(destinationFilePath))
+                            File.Delete(destinationFilePath);
+
+                        var timesheetData = (from n in attendanceSet
+                                             orderby n.AttendanceDay ascending
+                                             select new TimesheetModel
+                                             {
+                                                 Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                                 ResourceName = pdfModal.developerName,
+                                                 StartTime = "10:00 AM",
+                                                 EndTime = "06:00 PM",
+                                                 TotalHrs = 9,
+                                                 Comments = n.UserComments,
+                                                 Status = "Approved"
+                                             }
+                        ).ToList<TimesheetModel>();
+
+                        // UpdateTimesheet
+                        _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
+
+                        var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
+                        _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
+
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
+                        fileDetail.LogoPath = headerLogo;
+                        
+                        // Converting html context for docx conversion.
+                        // string html = this.GetHtmlString(templatePath, pdfModal, sender, receiver);
+                        string html = this.GetHtmlString(templatePath, null);
+                        destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
+                        this.iHTMLConverter.ToDocx(html, destinationFilePath, headerLogo);
+
+                        GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Pdf);
+                        _fileMaker._fileDetail = fileDetail;
+
+                        // Converting html context for pdf conversion.
+                        // html = this.GetHtmlString(pdfTemplatePath, pdfModal, sender, receiver, headerLogo);
+                        html = this.GetHtmlString(pdfTemplatePath, null, true);
+                        destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
+                        _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+
+                        dbParams = new DbParam[]
+                        {
+                            new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
+                            new DbParam(pdfModal.receiverCompanyId, typeof(long), "_ClientId"),
+                            new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
+                            new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
+                            new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
+                            new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
+                            new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
+                            new DbParam(bill.BillUid, typeof(int), "_BillUid"),
+                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
+                            new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
+                            new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
+                            new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
+                            new DbParam(pdfModal.billYear, typeof(int), "_BillYear"),
+                            new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
+                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
+                            new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
+                            new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
+                            new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
+                            new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
+                            new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
+                            new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
+                            new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
+                            new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
+                            new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
+                            new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
+                            new DbParam(pdfModal.IsCustomBill, typeof(bool), "_IsCustomBill"),
+                            new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
+                            new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
+                        };
+
+                        var fileId = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
+                        if (string.IsNullOrEmpty(fileId))
+                        {
+                            List<Files> files = new List<Files>();
+                            files.Add(new Files
+                            {
+                                FilePath = fileDetail.FilePath,
+                                FileName = fileDetail.FileName
+                            });
+                            this.fileService.DeleteFiles(files);
+                        }
+                        else
+                        {
+                            fileDetail.FileId = Convert.ToInt32(fileId);
+                            fileDetail.DiskFilePath = null;
+                        }
+                    }
+                    else
+                    {
+                        throw new HiringBellException("HTML template or Logo file path is invalid");
+                    }
+                }
+                else
+                {
+                    throw new HiringBellException("Amount calculation is not matching", nameof(pdfModal.grandTotalAmount), pdfModal.grandTotalAmount.ToString());
+                }
+            }
+            catch (HiringBellException e)
+            {
+                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
+                throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw new HiringBellException(ex.Message, ex);
+            }
+
+            EmailTemplate emailTemplate = _templateService.GetBillingTemplateDetailService();
+            emailTemplate.Emails = emails;
+            return new { FileDetail = fileDetail, EmailTemplate = emailTemplate };
         }
 
         private void CleanOldFiles(FileDetail fileDetail)
@@ -676,7 +1026,8 @@ namespace ServiceLayer.Code
                     BCC = new List<string>(),
                     Subject = emailTempalte.SubjectLine,
                     FileDetails = file,
-                    Body = emailTempalte.BodyContent
+                    Body = emailTempalte.BodyContent,
+                    Title = emailTempalte.EmailTitle
                 };
 
                 _eMailManager.SendMailAsync(emailSenderModal);
