@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -15,12 +16,12 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly ITimezoneConverter _timezoneConverter;        
+        private readonly ITimezoneConverter _timezoneConverter;
         private readonly IEmailService _emailService;
         private readonly IAttendanceRequestService _requestService;
 
-        public AttendanceService(IDb db,              
-            ITimezoneConverter timezoneConverter, 
+        public AttendanceService(IDb db,
+            ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             IEmailService emailService,
             IAttendanceRequestService requestService)
@@ -32,88 +33,106 @@ namespace ServiceLayer.Code
             _requestService = requestService;
         }
 
+        private List<AttendenceDetail> CreateAttendanceTillDate(Attendance attendence, DateTime FromDate, DateTime ToDate)
+        {
+            List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
+            if (!string.IsNullOrEmpty(attendence.AttendanceDetail))
+                attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendence.AttendanceDetail);
+
+            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(ToDate, _currentSession.TimeZone);
+            var firstDate = _timezoneConverter.ToTimeZoneDateTime(FromDate, _currentSession.TimeZone);
+
+            while (presentDate.Date.Subtract(firstDate.Date).TotalDays >= 0)
+            {
+                var detail = attendenceDetails
+                    .Find(x => _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDay, _currentSession.TimeZone).Date
+                    .Subtract(firstDate.Date).TotalDays == 0);
+
+                if (detail == null)
+                {
+                    attendenceDetails.Add(new AttendenceDetail
+                    {
+                        IsActiveDay = false,
+                        TotalDays = DateTime.DaysInMonth(presentDate.Year, presentDate.Month),
+                        AttendanceDay = firstDate,
+                        AttendanceId = 0,
+                        AttendenceStatus = (int)DayStatus.WorkFromOffice,
+                        BillingHours = 480,
+                        ClientId = 0,
+                        DaysPending = DateTime.DaysInMonth(firstDate.Year, firstDate.Month),
+                        EmployeeUid = attendence.EmployeeId,
+                        ForMonth = firstDate.Month,
+                        ForYear = firstDate.Year,
+                        TotalMinutes = 480,
+                        IsHoliday = (firstDate.DayOfWeek == DayOfWeek.Saturday
+                                        ||
+                                    firstDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
+                        IsOnLeave = false,
+                        LeaveId = 0,
+                        UserComments = string.Empty,
+                        UserTypeId = (int)UserType.Employee,
+                        IsOpen = true
+                    });
+                }
+
+
+                firstDate = firstDate.AddDays(1);
+            }
+
+            return attendenceDetails;
+        }
+
         public AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail)
         {
-            List<AttendenceDetail> attendenceDetails = null;
+            List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             Employee employee = null;
+            Attendance attendance = null;
 
             if (attendenceDetail.ForMonth <= 0)
                 throw new HiringBellException("Invalid month num. passed.", nameof(attendenceDetail.ForMonth), attendenceDetail.ForMonth.ToString());
 
-            if (Convert.ToDateTime(attendenceDetail.AttendenceFromDay).Subtract(DateTime.UtcNow).TotalDays > 0)
+            var Result = _db.FetchDataSet("sp_attendance_get", new
             {
-                throw new HiringBellException("Ohh!!!. Future dates are now allowed.");
-            }
+                EmployeeId = attendenceDetail.EmployeeUid,
+                ClientId = attendenceDetail.ClientId,
+                UserTypeId = attendenceDetail.UserTypeId,
+                ForYear = attendenceDetail.ForYear,
+                ForMonth = attendenceDetail.ForMonth
+            });
 
-
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_EmployeeId"),
-                new DbParam(attendenceDetail.ClientId, typeof(int), "_ClientId"),
-                new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear"),
-                new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth")
-            };
-
-            var Result = _db.GetDataset("sp_attendance_get", dbParams);
             if (Result.Tables.Count == 2)
             {
-                if (Result.Tables[1].Rows.Count > 0)
+                if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
+                    throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
+
+                employee = Converter.ToType<Employee>(Result.Tables[1]);
+
+                if (ApplicationConstants.ContainSingleRow(Result.Tables[0]) && !string.IsNullOrEmpty(Result.Tables[0].Rows[0]["AttendanceDetail"].ToString()))
                 {
-                    employee = Converter.ToType<Employee>(Result.Tables[1]);
-                    if (Convert.ToDateTime(attendenceDetail.AttendenceToDay?.Date).Subtract(employee.CreatedOn.Date).TotalDays < 0)
-                    {
-                        throw new HiringBellException("Past date before DOJ not allowed.");
-                    }
-                }
-
-                if (Result.Tables[0].Rows.Count > 0 && employee != null)
-                {
-                    var data = Result.Tables[0].Rows[0]["AttendanceDetail"].ToString();
-                    var attendanceId = Convert.ToInt64(Result.Tables[0].Rows[0]["AttendanceId"]);
-                    attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(data);
-                    int status = this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, attendenceDetails);
-
-                    attendenceDetails.ForEach(x =>
-                    {
-                        x.AttendanceId = attendanceId;
-                        x.IsActiveDay = false;
-                        x.IsOpen = status == 1 ? true : false;
-                    });
-
-                    int i = 0;
-                    var generatedAttendance = this.GenerateWeekAttendaceData(attendenceDetail, status);
-                    AttendenceDetail attrDetail = null;
-                    foreach (var item in attendenceDetails)
-                    {
-                        i = 0;
-                        while (i < generatedAttendance.Count)
-                        {
-                            attrDetail = generatedAttendance.ElementAt(i);
-                            if (attrDetail.AttendanceDay.Date.Subtract(item.AttendanceDay.Date).TotalDays == 0)
-                            {
-                                generatedAttendance[i] = item;
-                                break;
-                            }
-                            i++;
-                        }
-                    }
-
-                    attendenceDetails = generatedAttendance;
+                    attendance = Converter.ToType<Attendance>(Result.Tables[0]);
                 }
                 else
                 {
-                    int status = this.IsGivenDateAllowed((DateTime)attendenceDetail.AttendenceFromDay, (DateTime)attendenceDetail.AttendenceToDay, null);
-                    attendenceDetails = this.GenerateWeekAttendaceData(attendenceDetail, status);
-                }
+                    attendance = new Attendance
+                    {
+                        AttendanceDetail = "[]",
+                        EmployeeId = attendenceDetail.EmployeeUid,
+                    };
 
-                if (this.IsRegisteredOnPresentMonth(employee.CreatedOn) == 1)
-                {
-                    attendenceDetails = attendenceDetails.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
                 }
             }
 
-            return new AttendanceWithClientDetail { EmployeeDetail = employee, AttendacneDetails = attendenceDetails.OrderByDescending(x => x.AttendanceDay).ToList() };
+            DateTime presentDate = (DateTime)attendenceDetail.AttendenceToDay;
+            var firstDate = _timezoneConverter.GetUtcFirstDay(presentDate.Year, presentDate.Month);
+            if (presentDate.Year == employee.CreatedOn.Year && presentDate.Month == employee.CreatedOn.Month)
+                firstDate = employee.CreatedOn;
+
+            attendenceDetails = CreateAttendanceTillDate(attendance, firstDate, presentDate);
+            return new AttendanceWithClientDetail
+            {
+                EmployeeDetail = employee,
+                AttendacneDetails = attendenceDetails.OrderBy(x => x.AttendanceDay).ToList()
+            };
         }
 
         public List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId)
@@ -139,217 +158,7 @@ namespace ServiceLayer.Code
             return attendanceSet;
         }
 
-        public List<AttendenceDetail> InsertUpdateTimesheet(List<AttendenceDetail> attendenceDetail)
-        {
-            string result = string.Empty;
-            var firstItem = attendenceDetail.FirstOrDefault();
-            if (firstItem == null)
-            {
-                throw new HiringBellException("Invalid AttendanceDetail submitted.");
-            }
-
-            var invalidAttendaceData = attendenceDetail.FindAll(x => x.EmployeeUid <= 0 || x.ClientId <= 0);
-            if (invalidAttendaceData.Count > 0)
-                throw new HiringBellException("Invalid Employee/Client Id passed.");
-
-            DateTime firstDate = firstItem.AttendanceDay.AddYears(2);
-            DateTime lastDate = firstItem.AttendanceDay.AddYears(-2);
-            int j = 0;
-            while (j < attendenceDetail.Count)
-            {
-                var x = attendenceDetail.ElementAt(j);
-                if ((x.AttendanceDay - firstDate).TotalDays < 0)
-                    firstDate = _timezoneConverter.ToIstTime(x.AttendanceDay);
-
-                if ((x.AttendanceDay - lastDate).TotalDays > 0)
-                    lastDate = _timezoneConverter.ToIstTime(x.AttendanceDay);
-
-                j++;
-            }
-
-            ValidateDateOfAttendanceSubmission(firstDate, lastDate);
-
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(firstItem.EmployeeUid, typeof(int), "_EmployeeId"),
-                new DbParam(firstItem.ClientId, typeof(int), "_ClientId"),
-                new DbParam(firstItem.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(firstItem.ForYear, typeof(int), "_ForYear"),
-                new DbParam(firstItem.ForMonth, typeof(int), "_ForMonth")
-            };
-
-            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
-            if (Result.Tables.Count != 2 && Result.Tables[0].Rows.Count == 0)
-            {
-                throw new HiringBellException("Attendance detail is invalid.");
-            }
-
-            List<AttendenceDetail> otherMonthAttendanceDetail = new List<AttendenceDetail>();
-            List<AttendenceDetail> finalAttendanceSet = new List<AttendenceDetail>();
-
-            int status = 1;
-            Attendance currentAttendance = null;
-            if (Result.Tables[0].Rows.Count > 0)
-            {
-                currentAttendance = new Attendance();
-                currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
-                finalAttendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
-                status = this.IsGivenDateAllowed(firstDate, lastDate, finalAttendanceSet);
-            }
-            else
-            {
-                status = 0;
-                var currentMonthDateTime = _timezoneConverter.ToIstTime(DateTime.UtcNow);
-                int totalDays = DateTime.DaysInMonth(currentMonthDateTime.Year, currentMonthDateTime.Month);
-                currentAttendance = new Attendance
-                {
-                    EmployeeId = firstItem.EmployeeUid,
-                    AttendanceId = 0,
-                    ForYear = currentMonthDateTime.Year,
-                    AttendanceDetail = "[]",
-                    UserTypeId = (int)UserType.Employee,
-                    TotalDays = totalDays,
-                    TotalWeekDays = (int)_timezoneConverter.GetBusinessDays(
-                                        _timezoneConverter.GetUtcFirstDay(currentMonthDateTime.Year, currentMonthDateTime.Month),
-                                        _timezoneConverter.GetUtcDateTime(currentMonthDateTime.Year, currentMonthDateTime.Month, totalDays)),
-                    DaysPending = totalDays,
-                    ForMonth = currentMonthDateTime.Month
-                };
-
-                firstItem.AttendenceFromDay = firstDate;
-                firstItem.AttendenceToDay = lastDate;
-                finalAttendanceSet = this.GenerateWeekAttendaceData(firstItem, status);
-            }
-
-            Employee employee = new Employee();
-            if (Result.Tables[1].Rows.Count > 0)
-            {
-                employee = Converter.ToType<Employee>(Result.Tables[1]);
-            }
-            else
-            {
-                throw new HiringBellException("User detail not found.");
-            }
-
-            if (finalAttendanceSet == null)
-            {
-                throw new HiringBellException("Unable to get record. Please contact to admin.");
-            }
-
-            int i = 0;
-            int dayStatus = (int)DayStatus.Empty;
-            DateTime clientKindDateTime = DateTime.Now;
-            while (i < attendenceDetail.Count)
-            {
-                var x = attendenceDetail.ElementAt(i);
-                x.AttendanceDay = _timezoneConverter.ToIstTime(x.AttendanceDay);
-                var item = finalAttendanceSet.Find(i => i.AttendanceDay.Subtract(x.AttendanceDay).TotalDays == 0);
-                if (item != null)
-                {
-                    clientKindDateTime = _timezoneConverter.ToIstTime(x.AttendanceDay);
-                    switch (clientKindDateTime.DayOfWeek)
-                    {
-                        case DayOfWeek.Sunday:
-                        case DayOfWeek.Saturday:
-                            dayStatus = (int)DayStatus.Weekend;
-                            break;
-                        default:
-                            dayStatus = item.PresentDayStatus;
-                            break;
-                    }
-                    item.TotalMinutes = x.TotalMinutes;
-                    item.UserTypeId = x.UserTypeId;
-                    item.EmployeeUid = x.EmployeeUid;
-                    item.PresentDayStatus = dayStatus;
-                    item.IsOnLeave = false;
-                    item.AttendanceId = firstItem.AttendanceId;
-                    item.UserComments = x.UserComments;
-                    item.AttendanceDay = x.AttendanceDay;
-                    item.AttendenceStatus = x.AttendenceStatus;
-                    item.ClientId = x.ClientId;
-                }
-                else
-                {
-                    if (x.AttendanceDay.Month != currentAttendance.ForMonth)
-                    {
-                        x.AttendanceId = -1;
-                        x.ForMonth = x.AttendanceDay.Month;
-                        x.ForYear = x.AttendanceDay.Year;
-                        x.PresentDayStatus = dayStatus;
-                        x.IsOnLeave = false;
-                        x.PresentDayStatus = 1;
-                        otherMonthAttendanceDetail.Add(x);
-                    }
-                    else
-                    {
-                        finalAttendanceSet.Add(new AttendenceDetail
-                        {
-                            TotalMinutes = x.TotalMinutes,
-                            UserTypeId = x.UserTypeId,
-                            EmployeeUid = x.EmployeeUid,
-                            PresentDayStatus = dayStatus,
-                            IsOnLeave = false,
-                            AttendanceId = firstItem.AttendanceId,
-                            UserComments = x.UserComments,
-                            AttendanceDay = x.AttendanceDay,
-                            AttendenceStatus = x.AttendenceStatus,
-                            ClientId = x.ClientId
-                        });
-                    }
-                }
-
-                i++;
-            }
-
-            if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
-            {
-                finalAttendanceSet = finalAttendanceSet.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
-            }
-
-            result = this.UpdateOrInsertAttendanceDetail(finalAttendanceSet, currentAttendance, ApplicationConstants.InserUpdateAttendance);
-            if (string.IsNullOrEmpty(result))
-            {
-                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
-            }
-
-            List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
-            finalAttendanceSet.ForEach(x =>
-            {
-                if (x.AttendanceDay >= TimeZoneInfo.ConvertTimeToUtc(firstDate) && x.AttendanceDay <= TimeZoneInfo.ConvertTimeToUtc(lastDate))
-                {
-                    attendenceDetails.Add(x);
-                }
-            });
-
-            if (otherMonthAttendanceDetail.Count > 0)
-            {
-                currentAttendance.ForMonth = otherMonthAttendanceDetail.First().ForMonth;
-                currentAttendance.ForYear = otherMonthAttendanceDetail.First().ForYear;
-
-                if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
-                {
-                    otherMonthAttendanceDetail = otherMonthAttendanceDetail.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
-                }
-
-                result = this.UpdateOrInsertAttendanceDetail(otherMonthAttendanceDetail, currentAttendance, "sp_attendance_insupd_by_monthandyear");
-                if (string.IsNullOrEmpty(result))
-                {
-                    throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
-                }
-
-                otherMonthAttendanceDetail.ForEach(x =>
-                {
-                    if (x.AttendanceDay >= TimeZoneInfo.ConvertTimeToUtc(firstDate) && x.AttendanceDay <= TimeZoneInfo.ConvertTimeToUtc(lastDate))
-                    {
-                        attendenceDetails.Add(x);
-                    }
-                });
-            }
-
-            return attendenceDetails;
-        }
-
-        private DateTime GetPreviousThreeWorkingDaysBackDate()
+        private DateTime GetOpenDateForAttendance()
         {
             int i = 4;
             DateTime todayDate = DateTime.UtcNow.Date;
@@ -376,10 +185,17 @@ namespace ServiceLayer.Code
             return todayDate;
         }
 
-        public string SubmitAttendanceService(AttendenceDetail commentDetails)
+        public async Task<string> SubmitAttendanceService(AttendenceDetail attendenceApplied)
         {
             string Result = string.Empty;
-            bool flag = false;
+            // this value should come from database as configured by user.
+            int dailyWorkingHours = 9;
+            DateTime workingDate = (DateTime)attendenceApplied.AttendenceFromDay;
+            DateTime workingDateUserTimezone = _timezoneConverter.ToTimeZoneDateTime(workingDate, _currentSession.TimeZone);
+
+            if (workingDate.Subtract((DateTime)attendenceApplied.AttendenceToDay).TotalDays != 0)
+                throw new HiringBellException("Apply attendace only for one day. Multiple days attendance is not allowed.");
+
             Employee employee = _db.Get<Employee>("SP_Employees_ById", new
             {
                 EmployeeId = _currentSession.CurrentUserDetail.UserId,
@@ -387,169 +203,111 @@ namespace ServiceLayer.Code
             });
 
             if (employee == null)
-            {
                 throw new HiringBellException("No employee found. Please login again.");
-            }
 
-            DateTime barrierDate = this.GetPreviousThreeWorkingDaysBackDate();
-            if (commentDetails.AttendanceDay.Subtract(barrierDate).TotalDays >= 0)
+            Attendance attendance = new Attendance();
+            var attendanceList = new List<AttendenceDetail>();
+
+            // check back date limit to allow attendance
+            DateTime barrierDate = this.GetOpenDateForAttendance();
+            if (attendenceApplied.AttendanceDay.Subtract(barrierDate).TotalDays < 0)
+                throw new HiringBellException("Ops!!! You are not allow to submit this date attendace. Please raise a request to your direct manager.");
+
+            // check for leave, holiday and weekends
+            await this.IsGivenDateAllowed(workingDate, workingDateUserTimezone);
+            attendenceApplied.AttendanceDay = workingDate;
+
+            var result = _db.FetchDataSet("sp_Attendance_YearMonth", new
             {
-                int totalDays = DateTime.DaysInMonth(commentDetails.AttendanceDay.Year, commentDetails.AttendanceDay.Month);
-                var currentAttendence = new Attendance
-                {
-                    EmployeeId = commentDetails.EmployeeUid,
-                    AttendanceId = 0,
-                    ForYear = commentDetails.AttendanceDay.Year,
-                    AttendanceDetail = "[]",
-                    UserTypeId = (int)UserType.Employee,
-                    TotalDays = totalDays,
-                    TotalWeekDays = (int)_timezoneConverter.GetBusinessDays(
-                                        _timezoneConverter.GetUtcFirstDay(commentDetails.AttendanceDay.Year, commentDetails.AttendanceDay.Month),
-                                        _timezoneConverter.GetUtcDateTime(commentDetails.AttendanceDay.Year, commentDetails.AttendanceDay.Month, totalDays)),
-                    DaysPending = totalDays,
-                    ForMonth = commentDetails.AttendanceDay.Month
-                };
+                EmployeeId = attendenceApplied.EmployeeUid,
+                UserTypeId = attendenceApplied.UserTypeId,
+                ForMonth = attendenceApplied.AttendanceDay.Month,
+                ForYear = attendenceApplied.AttendanceDay.Year
+            });
 
-                DateTime requestedDate = (DateTime)commentDetails.AttendenceFromDay;
-                var attendanceList = new List<AttendenceDetail>();
-                DbParam[] dbParams = new DbParam[]
+            if (result.Tables.Count == 1 && result.Tables[0].Rows.Count == 1)
+            {
+                attendance = Converter.ToType<Attendance>(result.Tables[0]);
+                if (attendance != null && !string.IsNullOrEmpty(attendance.AttendanceDetail))
                 {
-                    new DbParam(commentDetails.EmployeeUid, typeof(long), "_EmployeeId"),
-                    new DbParam(commentDetails.UserTypeId, typeof(int), "_UserTypeId"),
-                    new DbParam(commentDetails.AttendanceDay.Month, typeof(int), "_ForMonth"),
-                    new DbParam(commentDetails.AttendanceDay.Year, typeof(int), "_ForYear")
-                };
-
-                var result = _db.GetDataset("sp_Attendance_YearMonth", dbParams);
-                if (result.Tables.Count == 1 && result.Tables[0].Rows.Count > 0)
-                {
-                    currentAttendence = Converter.ToType<Attendance>(result.Tables[0]);
-                    attendanceList = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendence.AttendanceDetail);
-
-                    if (attendanceList.Count == 0)
+                    attendanceList = JsonConvert
+                        .DeserializeObject<List<AttendenceDetail>>(result.Tables[0].Rows[0]["AttendanceDetail"].ToString());
+                    if (attendanceList.Count != 0)
                     {
-                        flag = true;
-                        int status = this.IsGivenDateAllowed((DateTime)commentDetails.AttendenceFromDay, (DateTime)commentDetails.AttendenceToDay, attendanceList);
-                        DateTime now = (DateTime)commentDetails.AttendenceToDay;
-                        var monthFirstDate = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
-                        attendanceList = this.GenerateWeekAttendaceData(commentDetails, status, monthFirstDate);
+                        var workingAttendance = attendanceList
+                            .Find(x => x.AttendanceDay.Date.Subtract(workingDate.Date).TotalDays == 0);
 
-                        if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
+                        if (workingAttendance == null)
                         {
-                            attendanceList = attendanceList.Where(x => employee.CreatedOn.Date.Subtract(x.AttendanceDay.Date).TotalDays <= 0).ToList();
+                            await this.CreatePresentDayAttendance(attendenceApplied, workingDateUserTimezone);
+                            attendanceList.Add(attendenceApplied);
                         }
-                    }
-                }
-                else
-                {
-                    int status = this.IsGivenDateAllowed((DateTime)commentDetails.AttendenceFromDay, (DateTime)commentDetails.AttendenceToDay, attendanceList);
-                    DateTime now = (DateTime)commentDetails.AttendenceToDay;
-                    var monthFirstDate = _timezoneConverter.ToUtcTime(new DateTime(now.Year, now.Month, 1));
-                    attendanceList = this.GenerateWeekAttendaceData(commentDetails, status, monthFirstDate);
-                }
-
-                AttendenceDetail attendanceOn = null;
-                if (employee.CreatedOn.Year == commentDetails.AttendanceDay.Year && employee.CreatedOn.Month == commentDetails.AttendanceDay.Month)
-                {
-                    attendanceList = attendanceList
-                        .Where(x => x.AttendanceDay.Subtract(employee.CreatedOn).TotalDays >= 0)
-                        .ToList();
-                }
-
-                while (requestedDate.Date.Subtract(((DateTime)commentDetails.AttendenceToDay).Date).TotalDays <= 0)
-                {
-                    attendanceOn = attendanceList.Find(x => x.AttendanceDay.Date.Subtract(requestedDate.Date).TotalDays == 0);
-
-                    if (attendanceOn == null)
-                    {
-                        attendanceOn = new AttendenceDetail
+                        else
                         {
-                            AttendanceDay = commentDetails.AttendanceDay,
-                            PresentDayStatus = (int)ItemStatus.Pending,
-                            AttendanceId = 0,
-                            AttendenceFromDay = commentDetails.AttendenceToDay,
-                            AttendenceStatus = (int)DayStatus.WorkFromOffice,
-                            AttendenceToDay = commentDetails.AttendenceToDay,
-                            BillingHours = 9 * 5,
-                            EmployeeUid = commentDetails.EmployeeUid,
-                            ForMonth = commentDetails.ForMonth,
-                            ForYear = commentDetails.ForYear,
-                            IsActiveDay = true,
-                            IsHoliday = false,
-                            IsOnLeave = false,
-                            IsOpen = false,
-                            SubmittedBy = _currentSession.CurrentUserDetail.UserId,
-                            SubmittedOn = DateTime.Now,
-                            UserComments = commentDetails.UserComments,
-                            UserId = commentDetails.EmployeeUid,
-                            UserTypeId = (int)UserType.Employee
-                        };
+                            await this.CheckAndCreateAttendance(workingAttendance);
+                        }
 
-                        attendanceList.Add(attendanceOn);
+                        int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
+                        attendance.DaysPending = pendingDays;
+                        attendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
                     }
-                    else
-                    {
-                        attendanceOn.PresentDayStatus = (int)ItemStatus.Pending;
-                        attendanceOn.UserComments = commentDetails.UserComments;
-                    }
-
-                    if (flag) break;
-                    requestedDate = requestedDate.AddDays(1);
                 }
-
-                var AttendaceDetail = JsonConvert
-                                        .SerializeObject((
-                                            from n in attendanceList
-                                            select new AttendanceDetails
-                                            {
-                                                TotalMinutes = n.TotalMinutes,
-                                                UserTypeId = n.UserTypeId,
-                                                PresentDayStatus = n.PresentDayStatus,
-                                                EmployeeUid = n.EmployeeUid,
-                                                AttendanceId = n.AttendanceId,
-                                                UserComments = n.UserComments,
-                                                AttendanceDay = n.AttendanceDay,
-                                                AttendenceStatus = n.AttendenceStatus,
-                                                Email = employee.Email,
-                                                EmployeeName = string.Concat(employee.FirstName, 
-                                                                " ",
-                                                                employee.LastName).Trim(),
-                                                Mobile = employee.Mobile,
-                                                ReportingManagerId = employee.ReportingManagerId,
-                                                ManagerName = "NA"
-                                            }));
-
-                double MonthsMinutes = 0;
-                currentAttendence.DaysPending = 0;
-                attendanceList.ForEach(x =>
-                {
-                    MonthsMinutes += x.TotalMinutes;
-                    if (x.AttendenceStatus == 8)
-                        currentAttendence.DaysPending++;
-                });
-
-
-                Result = _db.Execute<Attendance>("sp_attendance_insupd", new
-                {
-                    AttendanceId = currentAttendence.AttendanceId,
-                    AttendanceDetail = AttendaceDetail,
-                    UserTypeId = (int)UserType.Employee,
-                    EmployeeId = commentDetails.EmployeeUid,
-                    TotalDays = currentAttendence.TotalDays,
-                    TotalWeekDays = currentAttendence.TotalWeekDays,
-                    DaysPending = currentAttendence.DaysPending,
-                    TotalBurnedMinutes = MonthsMinutes,
-                    ForYear = currentAttendence.ForYear,
-                    ForMonth = currentAttendence.ForMonth,
-                    UserId = _currentSession.CurrentUserDetail.UserId
-                }, true);
-                if (string.IsNullOrEmpty(Result))
-                    throw new HiringBellException("Unable submit the attendace");
             }
             else
             {
-                Result = "Ops!!! You are not allow to submit this date attendace. Please raise a request to your direct manager.";
+                await this.CreatePresentDayAttendance(attendenceApplied, workingDateUserTimezone);
+                attendanceList.Add(attendenceApplied);
+                attendance.AttendanceId = 0;
+                attendance.EmployeeId = attendenceApplied.EmployeeUid;
+                attendance.TotalDays = attendenceApplied.TotalDays;
+                attendance.TotalWeekDays = 0;
+                attendance.DaysPending = attendenceApplied.DaysPending;
+                attendance.ForYear = workingDateUserTimezone.Year;
+                attendance.ForMonth = workingDateUserTimezone.Month;
+                attendance.TotalHoursBurend = 0;
             }
+
+
+            var AttendaceDetail = JsonConvert
+                                    .SerializeObject((
+                                        from n in attendanceList
+                                        select new AttendanceDetails
+                                        {
+                                            TotalMinutes = n.TotalMinutes,
+                                            UserTypeId = n.UserTypeId,
+                                            PresentDayStatus = n.PresentDayStatus,
+                                            EmployeeUid = n.EmployeeUid,
+                                            AttendanceId = n.AttendanceId,
+                                            UserComments = n.UserComments,
+                                            AttendanceDay = n.AttendanceDay,
+                                            AttendenceStatus = n.AttendenceStatus,
+                                            Email = employee.Email,
+                                            EmployeeName = string.Concat(employee.FirstName,
+                                                            " ",
+                                                            employee.LastName).Trim(),
+                                            Mobile = employee.Mobile,
+                                            ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                                            ManagerName = "NA"
+                                        }));
+
+
+            Result = _db.Execute<Attendance>("sp_attendance_insupd", new
+            {
+                AttendanceId = attendance.AttendanceId,
+                AttendanceDetail = AttendaceDetail,
+                UserTypeId = (int)UserType.Employee,
+                EmployeeId = attendance.EmployeeId,
+                TotalDays = attendance.TotalDays,
+                TotalWeekDays = attendance.TotalWeekDays,
+                DaysPending = attendance.DaysPending,
+                TotalBurnedMinutes = attendance.TotalHoursBurend,
+                ForYear = attendance.ForYear,
+                ForMonth = attendance.ForMonth,
+                UserId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable submit the attendace");
 
             return Result;
         }
@@ -579,45 +337,47 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        private List<AttendenceDetail> GenerateWeekAttendaceData(AttendenceDetail attendenceDetail, int isOpen, DateTime? monthFirstDate = null)
+        private async Task CheckAndCreateAttendance(AttendenceDetail workingAttendance)
         {
-            List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
-            DateTime startDate = (DateTime)attendenceDetail.AttendenceFromDay;
-            if (monthFirstDate != null)
-                startDate = (DateTime)monthFirstDate;
-
-            var endDate = (DateTime)attendenceDetail.AttendenceToDay;
-
-            while (startDate.Subtract(endDate).TotalDays <= 0)
+            switch (workingAttendance.PresentDayStatus)
             {
-                attendenceDetails.Add(new AttendenceDetail
-                {
-                    IsActiveDay = false,
-                    TotalDays = DateTime.DaysInMonth(startDate.Year, startDate.Month),
-                    AttendanceDay = startDate,
-                    AttendanceId = 0,
-                    AttendenceStatus = (int)DayStatus.WorkFromOffice,
-                    BillingHours = 480,
-                    ClientId = attendenceDetail.ClientId,
-                    DaysPending = DateTime.DaysInMonth(startDate.Year, startDate.Month),
-                    EmployeeUid = attendenceDetail.EmployeeUid,
-                    ForMonth = startDate.Month,
-                    ForYear = startDate.Year,
-                    TotalMinutes = 480,
-                    IsHoliday = (startDate.DayOfWeek == DayOfWeek.Saturday
-                                    ||
-                                startDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
-                    IsOnLeave = false,
-                    LeaveId = 0,
-                    UserComments = string.Empty,
-                    UserTypeId = (int)UserType.Employee,
-                    IsOpen = isOpen == 1 ? true : false
-                });
-
-                startDate = startDate.AddDays(1);
+                case (int)ItemStatus.Approved:
+                    throw new HiringBellException($"Attendance for: {workingAttendance.AttendanceDay.ToString("dd MMM, yyyy")} " +
+                        $"already has been {nameof(ItemStatus.Approved)}");
+                case (int)ItemStatus.Pending:
+                    throw new HiringBellException($"Attendance for: {workingAttendance.AttendanceDay.ToString("dd MMM, yyyy")} " +
+                        $"currently is in {nameof(ItemStatus.Approved)} state.");
             }
 
-            return attendenceDetails;
+            workingAttendance.PresentDayStatus = (int)ItemStatus.Pending;
+            await Task.CompletedTask;
+        }
+
+        private async Task CreatePresentDayAttendance(AttendenceDetail attendenceDetail, DateTime workingTimezoneDate)
+        {
+            var totalDays = DateTime.DaysInMonth(workingTimezoneDate.Year, workingTimezoneDate.Month);
+
+            attendenceDetail.IsActiveDay = false;
+            attendenceDetail.TotalDays = totalDays;
+            attendenceDetail.AttendanceId = 0;
+            attendenceDetail.AttendenceStatus = (int)DayStatus.WorkFromOffice;
+            attendenceDetail.BillingHours = 480;
+            attendenceDetail.ClientId = attendenceDetail.ClientId;
+            attendenceDetail.DaysPending = totalDays;
+            attendenceDetail.EmployeeUid = attendenceDetail.EmployeeUid;
+            attendenceDetail.ForMonth = workingTimezoneDate.Month;
+            attendenceDetail.ForYear = workingTimezoneDate.Year;
+            attendenceDetail.TotalMinutes = 480;
+            attendenceDetail.IsHoliday = (workingTimezoneDate.DayOfWeek == DayOfWeek.Saturday
+                            ||
+                        workingTimezoneDate.DayOfWeek == DayOfWeek.Sunday) ? true : false;
+            attendenceDetail.IsOnLeave = false;
+            attendenceDetail.LeaveId = 0;
+            attendenceDetail.PresentDayStatus = (int)ItemStatus.Pending;
+            attendenceDetail.UserTypeId = (int)UserType.Employee;
+            attendenceDetail.IsOpen = true;
+
+            await Task.CompletedTask;
         }
 
         private int IsRegisteredOnPresentWeek(DateTime RegistratedOn)
@@ -645,86 +405,22 @@ namespace ServiceLayer.Code
             return 1;
         }
 
-        private int IsGivenDateAllowed(DateTime From, DateTime To, List<AttendenceDetail> attendanceData)
+        private async Task IsGivenDateAllowed(DateTime workingDate, DateTime workingDateUserTimezone)
         {
-            var startDate = _timezoneConverter.ToIstTime(From);
-            var endDate = _timezoneConverter.ToIstTime(To);
-            var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
-            var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
+            // check if from date is holiday
 
-            if (startDate.Date.Subtract(weekFirstDate.Date).TotalDays == 0 && endDate.Date.Subtract(weekLastDate.Date).TotalDays == 0)
+            // check if from date already applied for leave
+
+            // check if from date is weekend
+            switch (workingDateUserTimezone.DayOfWeek)
             {
-                return 1;
-            }
-            else
-            {
-                if (attendanceData == null)
-                    return 0;
-
-                var workingWeek = attendanceData.Where(x => x.AttendanceDay.Date.Subtract(From.Date).TotalDays == 0).FirstOrDefault();
-                if (workingWeek == null || !workingWeek.IsOpen)
-                    return 0;
-
-                // if (!workingWeek.IsOpen)
-                // {
-                //     throw new HiringBellException("Only present week attendance is allowed. For previous week please raise a permission to your manager or HR.");
-                // }
+                case DayOfWeek.Sunday:
+                case DayOfWeek.Saturday:
+                    throw new HiringBellException("You are trying to apply weekends. Weekends attendacen not allowed.");
             }
 
-            return 0;
+            await Task.CompletedTask;
         }
-
-        //public void GenerateCurrentMonthAttendaceSheet()
-        //{
-        //    DbParam[] dbParams = new DbParam[]
-        //    {
-        //        new DbParam("1=1", typeof(int), "_searchString"),
-        //        new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_sortBy"),
-        //        new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_pageIndex"),
-        //        new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_pageSize")
-        //    };
-
-        //    var Result = _db.GetDataset("SP_Employees_Get", dbParams);
-
-        //    List<AttendenceDetail> finalAttendanceSet = new List<AttendenceDetail>();
-        //    DateTime firstDay = _timezoneConverter.GetUtcFirstDay(DateTime.Now.Year, DateTime.Now.Month);
-        //    int days = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-        //    int i = 0;
-        //    while (i < days)
-        //    {
-        //        finalAttendanceSet.Add(new AttendenceDetail
-        //        {
-        //            TotalMinutes = 0,
-        //            UserTypeId = 0,
-        //            EmployeeUid = 0,
-        //            IsHoliday = false,
-        //            IsOnLeave = false,
-        //            AttendanceId = 0,
-        //            UserComments = "NA",
-        //            AttendanceDay = DateTime.Now.AddDays(i + 1),
-        //            AttendenceStatus = 1,
-        //            ClientId = 0
-        //        });
-
-        //        i++;
-        //    }
-
-        //    Attendance attendance = new Attendance
-        //    {
-        //        AttendanceDetail = null,
-        //        AttendanceId = 0,
-        //        EmployeeId = 0,
-        //        UserTypeId = (int)UserType.Employee,
-        //        TotalDays = 0,
-        //        TotalWeekDays = 0,
-        //        DaysPending = 0,
-        //        ForYear = 0,
-        //        ForMonth = 0
-        //    };
-
-        //    this.UpdateOrInsertAttendanceDetail(finalAttendanceSet, attendance, ApplicationConstants.InserUpdateAttendance);
-        //}
-
         private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
         {
             var firstAttn = finalAttendanceSet.FirstOrDefault();
