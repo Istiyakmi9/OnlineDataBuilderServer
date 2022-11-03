@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTagModel;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -11,9 +11,10 @@ namespace ServiceLayer.Interface
         dynamic GenerateDocument(PdfModal pdfmodal, List<DailyTimesheetDetail> dailyTimesheetDetails,
             TimesheetDetail timesheetDetail, string Comment);
 
-        dynamic UpdateGeneratedBillService(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
-            TimesheetDetail timesheetDetail, string Comment);
-        FileDetail CreateFiles(BuildPdfTable _buildPdfTable, PdfModal pdfmodal, Organization organization, Organization receiverOrganization);
+        Task<dynamic> UpdateGeneratedBillService(BillGenerationModal billModal);
+
+        Task<dynamic> GenerateBillService(BillGenerationModal billModal);
+        FileDetail CreateFiles(BuildPdfTable _buildPdfTable, BillGenerationModal billModal);
         string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail);
     }
 }
