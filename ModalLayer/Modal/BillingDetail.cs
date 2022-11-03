@@ -11,5 +11,6 @@ namespace ModalLayer.Modal
         public List<DailyTimesheetDetail> TimesheetDetails { get; set; }
         public List<DateTime> MissingDate { get; set; }
         public DataTable Organizations { get; set; }
+        public TimesheetDetail TimesheetDetail { get; set; }
     }
 }
