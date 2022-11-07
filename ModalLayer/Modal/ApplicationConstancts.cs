@@ -50,12 +50,12 @@ public class ApplicationConstants
     public const string Submitted = "Submitted";
 
 
-    public const int AttendanceRequestTemplate = 1;
-    public const int ApplyLeaveRequestTemplate = 2;
-    public const int ApplyTimesheetRequestTemplate = 2;
-    public const int NewRegistrationTemplate = 3;
-    public const int ForgetPasswordTemplate = 4;
-    public const int BillingTemplate = 5;
+    public const int BillingTemplate = 1;
+    public const int AttendanceRequestTemplate = 2;
+    public const int ApplyLeaveRequestTemplate = 5;
+    public const int ApplyTimesheetRequestTemplate = 5;
+    public const int ForgetPasswordTemplate = 3;
+    public const int NewRegistrationTemplate = 4;
 
     public static bool IsExecuted(string Result)
     {

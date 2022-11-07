@@ -53,7 +53,9 @@ namespace EMailService.Service
             footer.Append($"<div>{emailTemplate.SignatureDetail}</div>");
             footer.Append($"<div>{emailTemplate.ContactNo}</div>");
 
-            emailTemplate.EmailTitle = emailTemplate.EmailTitle
+            emailTemplate.Footer = footer.ToString();
+
+            emailTemplate.SubjectLine = emailTemplate.EmailTitle
                 .Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType)
                 .Replace("[[ACTION-TYPE]]", emailRequestModal.ActionType);
 
@@ -63,9 +65,8 @@ namespace EMailService.Service
                 .Replace("[[FROM-DATE]]", emailRequestModal.FromDate.ToString("dd MMM, yyy"))
                 .Replace("[[TO-DATE]]", emailRequestModal.ToDate.ToString("dd MMM, yyy"))
                 .Replace("[[MANAGER-NAME]]", emailRequestModal.ManagerName)
+                .Replace("[[USER-MESSAGE]]", emailRequestModal.Message)
                 .Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType);
-
-            emailTemplate.BodyContent = emailTemplate.BodyContent + footer.ToString();
 
             return emailTemplate;
         }

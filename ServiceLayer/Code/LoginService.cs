@@ -243,6 +243,7 @@ namespace ServiceLayer.Code
                             UserTypeId = loginDetail.UserTypeId,
                             OrganizationId = loginDetail.OrganizationId,
                             CompanyId = loginDetail.CompanyId,
+                            ManagerName = loginDetail.ManagerName,
                             ReportingManagerId = loginDetail.ReportingManagerId
                         };
 
