@@ -114,7 +114,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update leave status. Please contact to admin");
             }
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.RequestTemplate });
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.ApplyLeaveRequestTemplate });
 
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);

@@ -51,7 +51,8 @@ public class ApplicationConstants
 
 
     public const int AttendanceRequestTemplate = 1;
-    public const int ApplyLeaveRequestTemplate = 1;
+    public const int ApplyLeaveRequestTemplate = 2;
+    public const int ApplyTimesheetRequestTemplate = 2;
     public const int NewRegistrationTemplate = 3;
     public const int ForgetPasswordTemplate = 4;
     public const int BillingTemplate = 5;
