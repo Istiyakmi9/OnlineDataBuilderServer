@@ -1,6 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -17,19 +19,19 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly IEmailService _emailService;
+        private readonly IEMailManager _eMailManager;
         private readonly IAttendanceRequestService _requestService;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            IEmailService emailService,
+            IEMailManager eMailManager,
             IAttendanceRequestService requestService)
         {
             _db = db;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
-            _emailService = emailService;
+            _eMailManager = eMailManager;
             _requestService = requestService;
         }
 
@@ -196,15 +198,6 @@ namespace ServiceLayer.Code
             if (workingDate.Subtract((DateTime)attendenceApplied.AttendenceToDay).TotalDays != 0)
                 throw new HiringBellException("Apply attendace only for one day. Multiple days attendance is not allowed.");
 
-            Employee employee = _db.Get<Employee>("SP_Employees_ById", new
-            {
-                EmployeeId = _currentSession.CurrentUserDetail.UserId,
-                IsActive = 1
-            });
-
-            if (employee == null)
-                throw new HiringBellException("No employee found. Please login again.");
-
             Attendance attendance = new Attendance();
             var attendanceList = new List<AttendenceDetail>();
 
@@ -281,13 +274,11 @@ namespace ServiceLayer.Code
                                             UserComments = n.UserComments,
                                             AttendanceDay = n.AttendanceDay,
                                             AttendenceStatus = n.AttendenceStatus,
-                                            Email = employee.Email,
-                                            EmployeeName = string.Concat(employee.FirstName,
-                                                            " ",
-                                                            employee.LastName).Trim(),
-                                            Mobile = employee.Mobile,
+                                            Email = _currentSession.CurrentUserDetail.Email,
+                                            EmployeeName = _currentSession.CurrentUserDetail.FullName,
+                                            Mobile = _currentSession.CurrentUserDetail.Mobile,
                                             ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                                            ManagerName = "NA"
+                                            ManagerName = _currentSession.CurrentUserDetail.ManagerName
                                         }));
 
 
@@ -309,6 +300,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable submit the attendace");
 
+            await SendAttendanceNotification(attendenceApplied);
             return Result;
         }
 
@@ -380,31 +372,6 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private int IsRegisteredOnPresentWeek(DateTime RegistratedOn)
-        {
-            var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
-            var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
-
-            if (RegistratedOn.Date.Subtract(weekFirstDate.Date).TotalDays >= 0 && RegistratedOn.Date.Subtract(weekLastDate.Date).TotalDays <= 0)
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-
-        private int IsRegisteredOnPresentMonth(DateTime RegistratedOn)
-        {
-            var monthFirstDay = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-
-            if (RegistratedOn.Date.Subtract(monthFirstDay.Date).TotalDays <= 0)
-            {
-                return 0;
-            }
-
-            return 1;
-        }
-
         private async Task IsGivenDateAllowed(DateTime workingDate, DateTime workingDateUserTimezone)
         {
             // check if from date is holiday
@@ -421,6 +388,7 @@ namespace ServiceLayer.Code
 
             await Task.CompletedTask;
         }
+
         private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
         {
             var firstAttn = finalAttendanceSet.FirstOrDefault();
@@ -488,18 +456,30 @@ namespace ServiceLayer.Code
             }
         }
 
-        private string PrepareSendEmailNotification(AttendanceDetails attendance, EmailTemplate emailTemplateDetail)
+        private async Task SendAttendanceNotification(AttendenceDetail attendenceApplied)
         {
-            var body = JsonConvert.DeserializeObject<string>(emailTemplateDetail.BodyContent);
+            EmailTemplate template = _eMailManager.GetTemplate(
+                new EmailRequestModal
+                {
+                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                    RequestType = ApplicationConstants.DailyAttendance,
+                    FromDate = (DateTime)attendenceApplied.AttendenceFromDay,
+                    ToDate = (DateTime)attendenceApplied.AttendenceToDay,
+                    ActionType = nameof(ItemStatus.Submitted),
+                    TemplateId = ApplicationConstants.ApplyLeaveRequestTemplate
+                });
+
+            var body = JsonConvert.DeserializeObject<string>(template.BodyContent);
             EmailSenderModal emailSenderModal = new EmailSenderModal
             {
-                To = new List<string> { attendance.Email, "istiyaq.4game@gmail.com" },
+                To = new List<string> { _currentSession.CurrentUserDetail.Email },
                 Body = body,
-                Subject = $"{attendance.EmployeeName} | Work From Home request | Approved"
+                Title = template.EmailTitle ?? "Request",
+                Subject = $"{_currentSession.CurrentUserDetail.FullName} | {ApplicationConstants.WorkFromHome} request | {nameof(ItemStatus.Submitted)}"
             };
 
-            _emailService.SendEmailRequestService(emailSenderModal, null);
-            return String.Empty;
+            await _eMailManager.SendMailAsync(emailSenderModal);
         }
     }
 }
