@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -754,7 +755,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(employee.LastName))
                 throw new HiringBellException { UserMessage = "Last Name is a mandatory field.", FieldName = nameof(employee.LastName), FieldValue = employee.LastName.ToString() };
 
-            if (string.IsNullOrEmpty(employee.Mobile))
+            if (string.IsNullOrEmpty(employee.Mobile) || employee.Mobile.Contains("."))
                 throw new HiringBellException { UserMessage = "Mobile number is a mandatory field.", FieldName = nameof(employee.Mobile), FieldValue = employee.Mobile.ToString() };
 
             if (employee.DesignationId <= 0)
@@ -768,6 +769,20 @@ namespace ServiceLayer.Code
 
             if (employee.AccessLevelId <= 0)
                 throw new HiringBellException { UserMessage = "Role is a mandatory field.", FieldName = nameof(employee.AccessLevelId), FieldValue = employee.AccessLevelId.ToString() };
+
+            if (employee.CTC <= 0)
+                throw new HiringBellException { UserMessage = "CTC is a mandatory field.", FieldName = nameof(employee.CTC), FieldValue = employee.CTC.ToString() };
+
+            if (employee.OrganizationId <= 0)
+                throw new HiringBellException("Invalid organization selected. Please contact to admin");
+
+            if (employee.CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected. Please contact to admin");
+
+            var mail = new MailAddress(employee.Email);
+            bool isValidEmail = mail.Host.Contains(".");
+            if (!isValidEmail)
+                throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
         }
     }
 }
