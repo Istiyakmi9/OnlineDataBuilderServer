@@ -458,6 +458,11 @@ namespace ServiceLayer.Code
 
         private async Task SendAttendanceNotification(AttendenceDetail attendenceApplied)
         {
+            var fromData = (DateTime)attendenceApplied.AttendenceFromDay;
+            var toDate = (DateTime)attendenceApplied.AttendenceToDay;
+
+            var numOfDays = fromData.Date.Subtract(toDate.Date).TotalDays + 1;
+
             EmailTemplate template = _eMailManager.GetTemplate(
                 new EmailRequestModal
                 {
@@ -467,15 +472,17 @@ namespace ServiceLayer.Code
                     FromDate = (DateTime)attendenceApplied.AttendenceFromDay,
                     ToDate = (DateTime)attendenceApplied.AttendenceToDay,
                     ActionType = nameof(ItemStatus.Submitted),
-                    TemplateId = ApplicationConstants.ApplyLeaveRequestTemplate
+                    Message = attendenceApplied.UserComments,
+                    TotalNumberOfDays = numOfDays,
+                    TemplateId = ApplicationConstants.AttendanceRequestTemplate
                 });
 
             var body = JsonConvert.DeserializeObject<string>(template.BodyContent);
             EmailSenderModal emailSenderModal = new EmailSenderModal
             {
                 To = new List<string> { _currentSession.CurrentUserDetail.Email },
-                Body = body,
-                Title = template.EmailTitle ?? "Request",
+                Body = body + template.Footer,
+                Title = String.IsNullOrEmpty(template.EmailTitle) ? "Attendance Request" : template.EmailTitle,
                 Subject = $"{_currentSession.CurrentUserDetail.FullName} | {ApplicationConstants.WorkFromHome} request | {nameof(ItemStatus.Submitted)}"
             };
 
