@@ -97,7 +97,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.RequestTemplate });
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.ApplyTimesheetRequestTemplate });
 
             if (template == null)
                 throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
