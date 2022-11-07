@@ -58,7 +58,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UploadResume/{userId}/{UserTypeId}")]
-        public IResponse<ApiResponse> UploadResume(string userId, int UserTypeId)
+        public async Task<ApiResponse> UploadResume(string userId, int UserTypeId)
         {
             StringValues UserInfoData = default(string);
             _httpContext.Request.Form.TryGetValue("userInfo", out UserInfoData);
@@ -66,7 +66,7 @@ namespace OnlineDataBuilder.Controllers
             {
                 var userInfo = JsonConvert.DeserializeObject<ProfessionalUser>(UserInfoData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = _userService.UploadResume(userId, userInfo, files, UserTypeId);
+                var Result = await _userService.UploadResume(userId, userInfo, files, UserTypeId);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);

@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -74,9 +75,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("ActivateCurrentComponent")]
-        public IResponse<ApiResponse> ActivateCurrentComponent(List<SalaryComponents> components)
+        public async Task<ApiResponse> ActivateCurrentComponent(List<SalaryComponents> components)
         {
-            var result = _settingService.ActivateCurrentComponentService(components);
+            var result = await _settingService.ActivateCurrentComponentService(components);
             return BuildResponse(result);
         }
 

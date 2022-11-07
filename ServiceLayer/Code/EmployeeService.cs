@@ -532,7 +532,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                employee.OrganizationId = 0;
+                employee.OrganizationId = employee.OrganizationId;
                 employee.EmpProfDetailUid = -1;
             }
 

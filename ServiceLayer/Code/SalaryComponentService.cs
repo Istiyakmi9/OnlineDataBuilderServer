@@ -254,7 +254,7 @@ namespace ServiceLayer.Code
             return value;
         }
 
-        public List<SalaryComponents> AddUpdateRecurringComponents(SalaryStructure recurringComponent)
+        public async Task<List<SalaryComponents>> AddUpdateRecurringComponents(SalaryStructure recurringComponent)
         {
             if (string.IsNullOrEmpty(recurringComponent.ComponentName))
                 throw new HiringBellException("Invalid component name.");
@@ -291,12 +291,12 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail insert salary component.");
 
             List<SalaryComponents> salaryComponents = this.GetSalaryComponentsDetailService();
-            updateSalaryGroupByUdatingComponent(recurringComponent);
+            await updateSalaryGroupByUdatingComponent(recurringComponent);
 
             return salaryComponents;
         }
 
-        private void updateSalaryGroupByUdatingComponent(SalaryStructure recurringComponent)
+        private async Task updateSalaryGroupByUdatingComponent(SalaryStructure recurringComponent)
         {
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
             if (salaryGroups.Count > 0)
@@ -323,9 +323,11 @@ namespace ServiceLayer.Code
                     item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
                 var table = Converter.ToDataTable(salaryGroups);
-                var result = _db.BatchInsert("sp_salary_group_insupd", table, true);
-                if (result <= 0)
-                    throw new HiringBellException("Fail to insert or update salary group.");
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
+                _db.Commit();
+
+                await Task.CompletedTask;
             }
         }
 

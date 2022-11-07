@@ -17,7 +17,7 @@ namespace OnlineDataBuilder.Controllers
             _dashboardService = dashboardService;
         }
 
-        [Authorize(Role.Admin)]
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("GetSystemDashboard")]
         public IResponse<ApiResponse> GetSystemDashboard(AttendenceDetail userDetail)
         {
