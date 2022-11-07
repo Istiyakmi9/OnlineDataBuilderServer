@@ -2,7 +2,7 @@
 
 namespace ModalLayer.Modal.Accounts
 {
-    public class EmployeeSalaryDetail
+    public class EmployeeSalaryDetail : ManagerDetail
     {
         public long EmployeeId { set; get; }
         public decimal CTC { set; get; }

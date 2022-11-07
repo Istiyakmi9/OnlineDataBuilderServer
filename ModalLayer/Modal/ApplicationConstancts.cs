@@ -13,6 +13,11 @@ public class ApplicationConstants
 
     public static string OrganizationId = "OrganizationId";
     public static string CompanyId = "CompanyId";
+    public static string ManagerName = "ManagerName";
+    public static string ManagerId = "ManagerId";
+    public static string EmployeeName = "EmployeeName";
+    public static string EmployeeId = "EmployeeId";
+    public static string JBot = "JBot";
 
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
@@ -36,18 +41,20 @@ public class ApplicationConstants
     public const string Leave = "Leave";
     public const string LeaveRequest = "Leave Request";
     public const string Timesheet = "Timesheet";
+    public const string DailyAttendance = "Daily Attendance";
     public const int Only = 1;
     public const int All = 0;
 
     public const string Successfull = "Successfull";
     public const string Fail = "Fail";
+    public const string Submitted = "Submitted";
 
 
-    public const int BillingTemplate = 1;
-    public const int RequestTemplate = 2;
-    public const int ForgetPasswordTemplate = 3;
-    public const int NewRegistrationTemplate = 4;
-    public const int ApplyLeaveRequestTemplate = 5;
+    public const int AttendanceRequestTemplate = 1;
+    public const int ApplyLeaveRequestTemplate = 1;
+    public const int NewRegistrationTemplate = 3;
+    public const int ForgetPasswordTemplate = 4;
+    public const int BillingTemplate = 5;
 
     public static bool IsExecuted(string Result)
     {

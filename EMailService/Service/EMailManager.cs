@@ -1,11 +1,13 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using EAGetMail;
+using ModalLayer;
 using ModalLayer.Modal;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace EMailService.Service
@@ -29,9 +31,43 @@ namespace EMailService.Service
             _instance._emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
         }
 
-        public static void SetEmailDetail(EmailSettingDetail emailSettingDetail)
+        public EmailTemplate GetTemplate(EmailRequestModal emailRequestModal)
         {
-            _instance._emailSettingDetail = emailSettingDetail;
+            if (emailRequestModal.TemplateId <= 0)
+                throw new HiringBellException("No email template has been selected.");
+
+            if (string.IsNullOrEmpty(emailRequestModal.ManagerName))
+                throw new HiringBellException("Manager name is missing.");
+
+            if (string.IsNullOrEmpty(emailRequestModal.DeveloperName))
+                throw new HiringBellException("Developer name is missing.");
+
+
+            EmailTemplate emailTemplate = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = emailRequestModal.TemplateId });
+
+            if (emailTemplate == null)
+                throw new HiringBellException("Email template not found. Please contact to admin.");
+
+            var footer = new StringBuilder();
+            footer.Append($"<div>{emailTemplate.EmailClosingStatement}</div>");
+            footer.Append($"<div>{emailTemplate.SignatureDetail}</div>");
+            footer.Append($"<div>{emailTemplate.ContactNo}</div>");
+
+            emailTemplate.EmailTitle = emailTemplate.EmailTitle
+                .Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType)
+                .Replace("[[ACTION-TYPE]]", emailRequestModal.ActionType);
+
+            emailTemplate.BodyContent = emailTemplate.BodyContent
+                .Replace("[[DEVELOPER-NAME]]", emailRequestModal.DeveloperName)
+                .Replace("[[ACTION-TYPE]]", emailRequestModal.ActionType)
+                .Replace("[[FROM-DATE]]", emailRequestModal.FromDate.ToString("dd MMM, yyy"))
+                .Replace("[[TO-DATE]]", emailRequestModal.ToDate.ToString("dd MMM, yyy"))
+                .Replace("[[MANAGER-NAME]]", emailRequestModal.ManagerName)
+                .Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType);
+
+            emailTemplate.BodyContent = emailTemplate.BodyContent + footer.ToString();
+
+            return emailTemplate;
         }
 
         public static EMailManager GetInstance(FileLocationDetail fileLocationDetail, IDb db)
@@ -41,7 +77,6 @@ namespace EMailService.Service
                     if (_instance == null)
                     {
                         _instance = new EMailManager(fileLocationDetail, db);
-                        _instance.GetDefaultEmailDetail();
                     }
 
             return _instance;
@@ -49,6 +84,7 @@ namespace EMailService.Service
 
         public void ReadMails(EmailSettingDetail emailSettingDetail)
         {
+            _instance.GetDefaultEmailDetail();
             string localInbox = string.Format("{0}\\inbox", Directory.GetCurrentDirectory());
             MailServer oServer = new MailServer("pop.secureserver.net",
                 emailSettingDetail.EmailAddress, // "info@bottomhalf.in",
@@ -107,6 +143,7 @@ namespace EMailService.Service
 
         public Task SendMailAsync(EmailSenderModal emailSenderModal)
         {
+            _instance.GetDefaultEmailDetail();
             if (_emailSettingDetail == null)
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");
 
@@ -114,15 +151,13 @@ namespace EMailService.Service
             return Task.CompletedTask;
         }
 
-        public string SendMail(EmailSenderModal emailSenderModal)
-        {
-            return Send(emailSenderModal);
-        }
-
         private string Send(EmailSenderModal emailSenderModal)
         {
             if (emailSenderModal == null || emailSenderModal.To == null || emailSenderModal.To.Count == 0)
                 throw new HiringBellException("To send email receiver address is mandatory. Receiver address not found.");
+
+            if (string.IsNullOrEmpty(emailSenderModal.Title))
+                throw new HiringBellException("Please add emial Title.");
 
             var fromAddress = new System.Net.Mail.MailAddress(_emailSettingDetail.EmailAddress, emailSenderModal.Title);
 

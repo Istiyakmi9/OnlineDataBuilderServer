@@ -223,13 +223,12 @@ namespace ServiceLayer.Code
             };
 
             DataSet ds = db.GetDataset(ProcedureName, param);
-            if (ds != null && ds.Tables.Count == 5)
+            if (ds != null && ds.Tables.Count == 3)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
                     loginResponse = new LoginResponse();
                     var loginDetail = Converter.ToType<LoginDetail>(ds.Tables[0]);
-                    var employee = Converter.ToType<Employee>(ds.Tables[1]);
                     if (loginDetail != null)
                     {
                         var userDetail = new UserDetail
@@ -238,14 +237,13 @@ namespace ServiceLayer.Code
                             LastName = loginDetail.LastName,
                             Address = loginDetail.Address,
                             Mobile = loginDetail.Mobile,
-                            EmailId = loginDetail.EmailId,
+                            Email = loginDetail.Email,
                             UserId = loginDetail.UserId,
                             CompanyName = loginDetail.CompanyName,
                             UserTypeId = loginDetail.UserTypeId,
                             OrganizationId = loginDetail.OrganizationId,
                             CompanyId = loginDetail.CompanyId,
-                            ReportingManagerId = loginDetail.ReportingManagerId,
-                            CreatedOn = employee.UpdatedOn
+                            ReportingManagerId = loginDetail.ReportingManagerId
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);
@@ -256,24 +254,17 @@ namespace ServiceLayer.Code
                             userDetail.RefreshToken = _token.RefreshToken;
                         }
 
-                        loginResponse.Menu = ds.Tables[2];
+                        loginResponse.Menu = ds.Tables[1];
                         loginResponse.UserDetail = userDetail;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
-
                         if (authUser.UserTypeId == (int)UserType.Admin)
                         {
-                            loginResponse.EmployeeList = ds.Tables[3].AsEnumerable()
+                            loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
                                                            .Select(x => new AutoCompleteEmployees
                                                            {
                                                                value = x.Field<long>("EmployeeUid"),
                                                                text = x.Field<string>("Name")
                                                            }).ToList<AutoCompleteEmployees>();
-                        }
-
-                        if (ds.Tables[4] != null)
-                        {
-                            EmailSettingDetail emailSettingDetail = Converter.ToType<EmailSettingDetail>(ds.Tables[4]);
-                            EMailManager.SetEmailDetail(emailSettingDetail);
                         }
                     }
                 }

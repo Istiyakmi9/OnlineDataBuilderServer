@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,6 +13,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace ServiceLayer.Code
 {
@@ -90,18 +92,20 @@ namespace ServiceLayer.Code
         private string GenerateAccessToken(UserDetail userDetail, string role)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
+            var num = new Random().Next(1, 10);
+            //userDetail.EmployeeId += num + 7;
+            //userDetail.ReportingManagerId += num + 7;
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new System.Security.Claims.ClaimsIdentity(new Claim[] {
-                    new Claim(JwtRegisteredClaimNames.Sub, userDetail.UserId.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Sid, userDetail.UserId.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Email, userDetail.Email),
                     new Claim(ClaimTypes.Role, role),
-                    new Claim(ApplicationConstants.OrganizationId, userDetail.OrganizationId.ToString()),
-                    new Claim(ApplicationConstants.CompanyId, userDetail.CompanyId.ToString()),
-                    new Claim(ClaimTypes.Name, String.Concat(userDetail.FirstName, " ", userDetail.LastName)),
+                    new Claim(JwtRegisteredClaimNames.Aud, num.ToString()),
                     new Claim(ClaimTypes.Version, "1.0.0"),
-                    new Claim(ClaimTypes.Sid, userDetail.ReportingManagerId.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(ApplicationConstants.JBot, JsonConvert.SerializeObject(userDetail))
                 }),
 
                 //----------- Expiry time at after what time token will get expired -----------------------------

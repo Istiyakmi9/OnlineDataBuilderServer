@@ -11,7 +11,6 @@ namespace ModalLayer.Modal
         public string State { set; get; }
         public string City { set; get; }
         public string Designation { set; get; }
-        public DateTime? CreatedOn { set; get; }
         public string Token { set; get; }
         public DateTime? TokenExpiryDuration { set; get; }
         public string RefreshToken { set; get; }
@@ -30,6 +29,7 @@ namespace ModalLayer.Modal
         public string FirstName { set; get; }
         public string LastName { set; get; }
         public string FullName { set; get; }
+        public string ManagerName { set; get; }
         public string Mobile { set; get; }
         public string EmailId { set; get; }
         public string Email { set; get; }

@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -55,45 +57,8 @@ namespace SchoolInMindServer.MiddlewareServices
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["jwtSetting:Key"]))
                         }, out SecurityToken validatedToken);
 
-                        var securityToken = handler.ReadToken(token) as JwtSecurityToken;
-                        userId = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub).Value;
-                        currentSession.CurrentUserDetail.ReportingManagerId = Convert.ToInt32(
-                            securityToken.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid").Value);
-                        var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
-                        switch (roleName)
-                        {
-                            case nameof(Role.Admin):
-                                currentSession.CurrentUserDetail.RoleId = 1;
-                                break;
-                            case nameof(Role.Employee):
-                                currentSession.CurrentUserDetail.RoleId = 2;
-                                break;
-                            case nameof(Role.Candidate):
-                                currentSession.CurrentUserDetail.RoleId = 3;
-                                break;
-                            case nameof(Role.Client):
-                                currentSession.CurrentUserDetail.RoleId = 4;
-                                break;
-                            default:
-                                currentSession.CurrentUserDetail.RoleId = 5;
-                                break;
-                        }
-
-                        var orgId = securityToken.Claims
-                            .FirstOrDefault(x => x.Type == ApplicationConstants.OrganizationId).Value;
-
-                        var companyId = securityToken.Claims.
-                            FirstOrDefault(x => x.Type == ApplicationConstants.CompanyId).Value;
-
-                        if (string.IsNullOrEmpty(orgId) || string.IsNullOrEmpty(companyId))
-                            throw new HiringBellException("Invalid Organization id or Company id. Please contact to admin.");
-
-                        currentSession.CurrentUserDetail.OrganizationId = Convert.ToInt32(orgId);
-                        currentSession.CurrentUserDetail.CompanyId = Convert.ToInt32(companyId);
-                        currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
-                        currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
-                        currentSession.CurrentUserDetail.FullName = securityToken.Claims.FirstOrDefault(x => x.Type == "unique_name").Value;
-                        currentSession.CurrentUserDetail.ReportingManagerId = Convert.ToInt64(securityToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Sid).Value);
+                        JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
+                        ReadToken(securityToken, currentSession);
                     }
                 }
 
@@ -107,6 +72,49 @@ namespace SchoolInMindServer.MiddlewareServices
             {
                 throw ex;
             }
+        }
+
+        private void ReadToken(JwtSecurityToken securityToken, CurrentSession currentSession)
+        {
+            var userId = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sid).Value;
+            var userDetail = securityToken.Claims.FirstOrDefault(x => x.Type == ApplicationConstants.JBot).Value;
+            currentSession.CurrentUserDetail = JsonConvert.DeserializeObject<UserDetail>(userDetail);
+            var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
+            switch (roleName)
+            {
+                case nameof(Role.Admin):
+                    currentSession.CurrentUserDetail.RoleId = 1;
+                    break;
+                case nameof(Role.Employee):
+                    currentSession.CurrentUserDetail.RoleId = 2;
+                    break;
+                case nameof(Role.Candidate):
+                    currentSession.CurrentUserDetail.RoleId = 3;
+                    break;
+                case nameof(Role.Client):
+                    currentSession.CurrentUserDetail.RoleId = 4;
+                    break;
+                default:
+                    currentSession.CurrentUserDetail.RoleId = 5;
+                    break;
+            }
+
+            if (currentSession.CurrentUserDetail == null)
+                throw new HiringBellException("Invalid token found. Please contact to admin.");
+
+            if (currentSession.CurrentUserDetail.OrganizationId <= 0
+                || currentSession.CurrentUserDetail.CompanyId <= 0)
+                throw new HiringBellException("Invalid Organization id or Company id. Please contact to admin.");
+
+            if (string.IsNullOrEmpty(userId))
+                throw new HiringBellException("Invalid employee id used. Please contact to admin.");
+
+            currentSession.CurrentUserDetail.FullName = currentSession.CurrentUserDetail.FirstName
+                                                        + " " +
+                                                        currentSession.CurrentUserDetail.LastName;
+
+            currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
+            currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
         }
     }
 }

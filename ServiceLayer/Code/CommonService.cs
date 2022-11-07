@@ -48,7 +48,6 @@ namespace ServiceLayer.Code
             if (emailTemplate == null)
                 throw new HiringBellException("Email template not found. Please contact to admin.");
 
-            EMailManager.SetEmailDetail(emailSetting);
             return emailTemplate;
         }
 
