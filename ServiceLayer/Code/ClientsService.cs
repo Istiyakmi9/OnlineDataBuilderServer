@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -72,6 +73,7 @@ namespace ServiceLayer.Code
                         throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(client.ClientId), FieldValue = client.ClientId.ToString() };
                 }
 
+                ClientValidation(client);
                 Organization organization = null;
                 DbParam[] param = new DbParam[]
                 {
@@ -147,6 +149,23 @@ namespace ServiceLayer.Code
                 throw;
             }
             
+        }
+
+        private void ClientValidation(Organization organization)
+        {
+            if (string.IsNullOrEmpty(organization.Email))
+                throw new HiringBellException { UserMessage = "Email id is a mandatory field.", FieldName = nameof(organization.Email), FieldValue = organization.Email.ToString() };
+
+            if (string.IsNullOrEmpty(organization.ClientName))
+                throw new HiringBellException { UserMessage = "First Name is a mandatory field.", FieldName = nameof(organization.ClientName), FieldValue = organization.ClientName.ToString() };
+
+            if (string.IsNullOrEmpty(organization.PrimaryPhoneNo) || organization.PrimaryPhoneNo.Contains("."))
+                throw new HiringBellException { UserMessage = "Mobile number is a mandatory field.", FieldName = nameof(organization.PrimaryPhoneNo), FieldValue = organization.PrimaryPhoneNo.ToString() };
+
+            var mail = new MailAddress(organization.Email);
+            bool isValidEmail = mail.Host.Contains(".");
+            if (!isValidEmail)
+                throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(organization.Email), FieldValue = organization.Email.ToString() };
         }
 
         public DataSet DeactivateClient(Employee employee)
