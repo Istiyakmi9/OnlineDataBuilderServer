@@ -14,7 +14,7 @@ namespace ServiceLayer.Interface
         Task<dynamic> UpdateGeneratedBillService(BillGenerationModal billModal);
 
         Task<dynamic> GenerateBillService(BillGenerationModal billModal);
-        FileDetail CreateFiles(BuildPdfTable _buildPdfTable, BillGenerationModal billModal);
+        FileDetail CreateFiles(BillGenerationModal billModal);
         string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail);
     }
 }

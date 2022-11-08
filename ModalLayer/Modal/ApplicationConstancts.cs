@@ -57,6 +57,9 @@ public class ApplicationConstants
     public const int ForgetPasswordTemplate = 3;
     public const int NewRegistrationTemplate = 4;
 
+
+    public const string ApplicationJson = @"application/json";
+
     public static bool IsExecuted(string Result)
     {
         if (Result != null && (Result.ToLower() == Inserted || Result.ToLower() == Updated))

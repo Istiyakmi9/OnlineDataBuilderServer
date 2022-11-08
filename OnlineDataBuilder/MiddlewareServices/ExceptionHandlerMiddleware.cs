@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SchoolInMindServer.MiddlewareServices
@@ -16,15 +13,15 @@ namespace SchoolInMindServer.MiddlewareServices
     public class ExceptionHandlerMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IConfiguration configuration;
+        public static bool LoggingFlag = false;
+        public static string FileLocation;
 
-        public ExceptionHandlerMiddleware(RequestDelegate next, IConfiguration configuration)
+        public ExceptionHandlerMiddleware(RequestDelegate next)
         {
-            this.configuration = configuration;
             _next = next;
         }
 
-        public async Task Invoke(HttpContext context, CurrentSession currentSession)
+        public async Task Invoke(HttpContext context, ApplicationConfiguration applicationConfiguration)
         {
             try
             {
@@ -32,7 +29,10 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (HiringBellException exception)
             {
-                await HandleHiringBellExceptionMessageAsync(context, exception);
+                if (applicationConfiguration.IsLoggingEnabled)
+                    await HandleExceptionWriteToFile(context, exception, applicationConfiguration);
+                else
+                    await HandleHiringBellExceptionMessageAsync(context, exception);
             }
             catch (Exception ex)
             {
@@ -40,9 +40,9 @@ namespace SchoolInMindServer.MiddlewareServices
             }
         }
 
-        private static Task HandleHiringBellExceptionMessageAsync(HttpContext context, HiringBellException e)
+        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context, HiringBellException e)
         {
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
             int statusCode = (int)e.HttpStatusCode;
             var result = JsonConvert.SerializeObject(new ApiResponse
             {
@@ -51,9 +51,34 @@ namespace SchoolInMindServer.MiddlewareServices
                 HttpStatusMessage = e.UserMessage,
                 ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message, e.StackTraceDetail }
             });
-            context.Response.ContentType = "application/json";
+
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
             context.Response.StatusCode = statusCode;
-            return context.Response.WriteAsync(result);
+            return await Task.FromResult(context.Response.WriteAsync(result));
+        }
+
+        private static async Task<Task> HandleExceptionWriteToFile(HttpContext context, HiringBellException e, ApplicationConfiguration applicationConfiguration)
+        {
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
+            int statusCode = (int)e.HttpStatusCode;
+            var result = new ApiResponse
+            {
+                AuthenticationToken = string.Empty,
+                HttpStatusCode = e.HttpStatusCode,
+                HttpStatusMessage = e.UserMessage
+            };
+
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
+            context.Response.StatusCode = statusCode;
+            await Task.Run(() =>
+            {
+                var path = Path.Combine(applicationConfiguration.LoggingFilePath, DateTime.Now.ToString("dd_MM_yyyy") + ".txt");
+                result.ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message, e.StackTrace };
+                File.AppendAllTextAsync(path, JsonConvert.SerializeObject(result));
+            });
+
+            result.ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message };
+            return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
         }
 
         private static Task HandleExceptionMessageAsync(HttpContext context, Exception e)

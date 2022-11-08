@@ -14,10 +14,9 @@ namespace ServiceLayer.Interface
         string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
         DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel);
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
-        ResponseModel<FileDetail> InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal);
         List<Files> EditFileService(Files files);
         string DeleteDataService(string Uid);
-        FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, GenerateBillFileDetail fileDetail);
+        FileDetail ReGenerateService(GenerateBillFileDetail fileDetail);
         string UpdateRecord(FileDetail fileDetail, long Uid);
         string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
