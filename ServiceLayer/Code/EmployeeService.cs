@@ -528,7 +528,7 @@ namespace ServiceLayer.Code
 
             if (employeeDetail != null)
             {
-                employee.OrganizationId = employeeDetail.OrganizationId;
+                employee.OrganizationId = employee.OrganizationId;
                 employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
             }
             else
