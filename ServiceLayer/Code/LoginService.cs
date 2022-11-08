@@ -120,7 +120,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                throw new HiringBellException("Incorrect user detail provided.");
+                throw new HiringBellException("Incorrect user detail provided.", "UserDetail", JsonConvert.SerializeObject(authUser));
             }
 
             return encryptedPassword;

@@ -64,13 +64,13 @@ namespace SchoolInMindServer.MiddlewareServices
 
                 await _next(context);
             }
-            catch (HiringBellException e)
+            catch (HiringBellException)
             {
-                throw e;
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
         }
 
