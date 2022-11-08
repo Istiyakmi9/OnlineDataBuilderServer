@@ -65,7 +65,7 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
         }
 
-        public FileDetail CreateFiles(BuildPdfTable _buildPdfTable, BillGenerationModal billModal)
+        public FileDetail CreateFiles(BillGenerationModal billModal)
         {
             FileDetail fileDetail = new FileDetail();
             billModal.BillTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
@@ -628,7 +628,7 @@ namespace ServiceLayer.Code
                 emailTemplate.Emails = emails;
 
                 // return result data
-                return new { FileDetail = fileDetail, EmailTemplate = emailTemplate };
+                return await Task.FromResult(new { FileDetail = fileDetail, EmailTemplate = emailTemplate });
             }
             catch (HiringBellException e)
             {

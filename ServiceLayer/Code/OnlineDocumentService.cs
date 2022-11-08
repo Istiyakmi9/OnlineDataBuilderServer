@@ -185,109 +185,6 @@ namespace ServiceLayer.Code
             return bill;
         }
 
-        public ResponseModel<FileDetail> InsertGeneratedBillRecord(BuildPdfTable _buildPdfTable, PdfModal pdfModal)
-        {
-            ResponseModel<FileDetail> responseModel = new ResponseModel<FileDetail>();
-            try
-            {
-                TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-                pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
-                pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
-                FileDetail fileDetail = new FileDetail();
-                Bills bill = GetBillData();
-                if (string.IsNullOrEmpty(pdfModal.billNo))
-                {
-                    if (bill == null || string.IsNullOrEmpty(bill.GeneratedBillNo))
-                    {
-                        responseModel.ErroMessage = "Fail to generate bill no. Please contact admin.";
-                        return responseModel;
-                    }
-                    pdfModal.billNo = bill.GeneratedBillNo;
-                }
-                else
-                {
-                    string GeneratedBillNo = "";
-                    int len = pdfModal.billNo.Length;
-                    int i = 0;
-                    while (i < bill.BillNoLength)
-                    {
-                        if (i < len)
-                        {
-                            GeneratedBillNo += pdfModal.billNo[i];
-                        }
-                        else
-                        {
-                            GeneratedBillNo = '0' + GeneratedBillNo;
-                        }
-                        i++;
-                    }
-                    pdfModal.billNo = GeneratedBillNo;
-                }
-
-                _iFileMaker.BuildPdfBill(_buildPdfTable, pdfModal, new Organization());
-                if (fileDetail.Status == 1)
-                {
-                    int Year = Convert.ToInt32(pdfModal.billingMonth.ToString("yyyy"));
-                    DbParam[] dbParams = new DbParam[]
-                    {
-                        new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                        new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                        new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
-                        new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
-                        new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                        new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
-                        new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
-                        new DbParam(bill.BillUid, typeof(int), "_BillUid"),
-                        new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
-                        new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
-                        new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
-                        new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                        new DbParam(Year, typeof(int), "_BillYear"),
-                        new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                        new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
-                        new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
-                        new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
-                        new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
-                        new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
-                        new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                        new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
-                        new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
-                        new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
-                        new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
-                        new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
-                        new DbParam(pdfModal.IsCustomBill, typeof(bool), "_isCustomBill"),
-                        new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                        new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                    };
-
-                    var fileId = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                    if (string.IsNullOrEmpty(fileId))
-                    {
-                        List<Files> files = new List<Files>();
-                        files.Add(new Files
-                        {
-                            FilePath = fileDetail.FilePath,
-                            FileName = fileDetail.FileName
-                        });
-                        _fileService.DeleteFiles(files);
-                    }
-                    else
-                    {
-                        fileDetail.FileId = Convert.ToInt32(fileId);
-                        fileDetail.DiskFilePath = null;
-                    }
-                }
-
-                responseModel.Result = fileDetail;
-            }
-            catch (Exception ex)
-            {
-                responseModel.ErroMessage = ex.Message;
-            }
-
-            return responseModel;
-        }
-
         public DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel)
         {
             DbParam[] dbParams = new DbParam[]
@@ -327,7 +224,7 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public FileDetail ReGenerateService(BuildPdfTable _buildPdfTable, GenerateBillFileDetail generateBillFileDetail)
+        public FileDetail ReGenerateService(GenerateBillFileDetail generateBillFileDetail)
         {
             FileDetail fileDetail = new FileDetail
             {
@@ -476,7 +373,7 @@ namespace ServiceLayer.Code
                         Sender = organization,
                         Receiver = receiverOrganization
                     };
-                    _billService.CreateFiles(_buildPdfTable, billModal);
+                    _billService.CreateFiles(billModal);
                 }
 
                 return fileDetail;
