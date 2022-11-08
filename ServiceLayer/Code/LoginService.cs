@@ -120,7 +120,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                throw new HiringBellException("Fail to get user detail.", "UserDetail", JsonConvert.SerializeObject(authUser));
+                throw new HiringBellException("Fail to get user detail. UserDetail" + JsonConvert.SerializeObject(authUser));
             }
 
             return encryptedPassword;
