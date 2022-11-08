@@ -203,6 +203,7 @@ namespace ServiceLayer.Code
 
         public string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate)
         {
+            ValidateEmailTemplate(emailTemplate);
             var existingTemplate = _db.Get<EmailTemplate>("sp_email_template_get", new { emailTemplate.EmailTemplateId });
             if (existingTemplate == null)
             {
@@ -219,6 +220,7 @@ namespace ServiceLayer.Code
                 existingTemplate.EmailNote = emailTemplate.EmailNote;
                 existingTemplate.SignatureDetail = emailTemplate.SignatureDetail;
                 existingTemplate.ContactNo = emailTemplate.ContactNo;
+                existingTemplate.EmailTitle = emailTemplate.EmailTitle;
                 existingTemplate.BodyContent = JsonConvert.SerializeObject(emailTemplate.BodyContent);
                 existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
@@ -226,6 +228,30 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or updfate");
             return result;
+        }
+
+        private void ValidateEmailTemplate(EmailTemplate emailTemplate)
+        {
+            if (emailTemplate.CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected");
+
+            if (string.IsNullOrEmpty(emailTemplate.TemplateName))
+                throw new HiringBellException("Template name is mandatory");
+
+            if (string.IsNullOrEmpty(emailTemplate.EmailTitle))
+                throw new HiringBellException("Tiltle is mandatory");
+
+            if (string.IsNullOrEmpty(emailTemplate.SubjectLine))
+                throw new HiringBellException("Subject is mandatory");
+
+            if (string.IsNullOrEmpty(emailTemplate.Salutation))
+                throw new HiringBellException("Salutation is mandatory");
+
+            if (string.IsNullOrEmpty(emailTemplate.EmailClosingStatement))
+                throw new HiringBellException("Email closing statement is mandatory");
+
+            if (string.IsNullOrEmpty(emailTemplate.SignatureDetail))
+                throw new HiringBellException("Signature is mandatory");
         }
 
         public List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel)

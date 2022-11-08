@@ -60,6 +60,12 @@ namespace ServiceLayer.Code
 
         public DataSet AddRole (AddRole addRole)
         {
+            if (string.IsNullOrEmpty(addRole.RoleName))
+                throw new HiringBellException("Role name is null or empty");
+
+            if (string.IsNullOrEmpty(addRole.AccessCodeDefination))
+                throw new HiringBellException("Access code defination is null or empty");
+
             string accessLevelId = "-1";
             DbParam[] dbParams = new DbParam[]
             {
