@@ -101,14 +101,12 @@ namespace OnlineDataBuilder
             services.AddScoped<IUserService, UserService>();
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
-            services.Configure<BuildPdfTable>(o => Configuration.GetSection("StaffingBill").Bind(o));
             services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
 
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>();
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
-            services.AddScoped<PdfGenerateHelper>();
             services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
             services.AddScoped<IMediaService, GooogleService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
@@ -168,6 +166,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
             services.AddScoped<ILeaveRequestService, LeaveRequestService>();
             services.AddScoped<ITimesheetRequestService, TimesheetRequestService>();
+            services.AddSingleton<ApplicationConfiguration>();
 
             services.AddCors(options =>
             {
@@ -201,12 +200,12 @@ namespace OnlineDataBuilder
             {
                 app.UseDeveloperExceptionPage();
             }
+            app.UseMiddleware<ExceptionHandlerMiddleware>();
 
             app.UseRouting();
 
             app.UseCors(CorsPolicy);
 
-            app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseMiddleware<RequestMiddleware>();
 
             app.UseAuthentication();

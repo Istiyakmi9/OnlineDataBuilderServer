@@ -20,22 +20,17 @@ namespace OnlineDataBuilder.Controllers
     [ApiController]
     public class FileMakerController : BaseController
     {
-        private readonly BuildPdfTable _buildPdfTable;
         private readonly IOnlineDocumentService _onlineDocumentService;
-        private readonly IFileMaker _iFileMaker;
         private readonly IFileService _fileService;
         private readonly IBillService _billService;
         private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
         private readonly HttpContext _httpContext;
-        public FileMakerController(IFileMaker iFileMaker, IConfiguration configuration,
+        public FileMakerController(IConfiguration configuration,
             IOnlineDocumentService onlineDocumentService,
             IFileService fileService, IBillService billService,
-            IOptions<BuildPdfTable> options,
             IHttpContextAccessor httpContext,
             IDOCXToHTMLConverter iDOCXToHTMLConverter)
         {
-            _iFileMaker = iFileMaker;
-            _buildPdfTable = options.Value;
             _onlineDocumentService = onlineDocumentService;
             _fileService = fileService;
             _billService  = billService;
@@ -43,13 +38,6 @@ namespace OnlineDataBuilder.Controllers
             _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }
 
-        [HttpPost]
-        [Route("GeneratePdf")]
-        public IResponse<ApiResponse> GeneratePdf([FromBody] PdfModal pdfModal)
-        {
-            var fileDetail = _onlineDocumentService.InsertGeneratedBillRecord(_buildPdfTable, pdfModal);
-            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
-        }
 
         [HttpPost]
         [Route("GenerateBill")]
@@ -94,7 +82,7 @@ namespace OnlineDataBuilder.Controllers
         [Route("ReGenerateBill")]
         public IResponse<ApiResponse> ReGenerateBill([FromBody] GenerateBillFileDetail fileDetail)
         {
-            var Result = _onlineDocumentService.ReGenerateService(_buildPdfTable, fileDetail);
+            var Result = _onlineDocumentService.ReGenerateService(fileDetail);
             return BuildResponse(Result, System.Net.HttpStatusCode.OK);
         }
 

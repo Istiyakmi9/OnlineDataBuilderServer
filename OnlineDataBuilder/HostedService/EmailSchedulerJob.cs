@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OnlineDataBuilder.MiddlewareServices.Src
+namespace OnlineDataBuilder.HostedService
 {
     public class EmailSchedulerJob : IHostedService
     {
@@ -36,7 +36,7 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
                     await Task.Delay(value, cancellationToken);
 
                     SendMail();
-                    
+
                     _logger.LogInformation("Working cron service");
                     _nextCron = _cron.GetNextOccurrence(DateTime.Now);
                 }
@@ -54,7 +54,7 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }
