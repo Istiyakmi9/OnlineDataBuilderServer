@@ -5,6 +5,7 @@ using DocMaker.PdfService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
@@ -242,6 +243,7 @@ namespace ServiceLayer.Code
                 FileDetail currentFileDetail = null;
                 Organization receiverOrganization = null;
                 Organization organization = null;
+                BankDetail senderBankDetail = null;
                 List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
                 DbParam[] dbParams = new DbParam[]
                 {
@@ -253,13 +255,13 @@ namespace ServiceLayer.Code
                 };
 
                 var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
-                if (Result.Tables.Count == 5)
+                if (Result.Tables.Count == 6)
                 {
                     billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
                     currentFileDetail = Converter.ToType<FileDetail>(Result.Tables[1]);
                     receiverOrganization = Converter.ToType<Organization>(Result.Tables[2]);
                     organization = Converter.ToType<Organization>(Result.Tables[3]);
-
+                    senderBankDetail = Converter.ToType<BankDetail>(Result.Tables[5]);
                     if (Result.Tables[4].Rows.Count > 0)
                     {
                         var currentAttendance = Converter.ToType<Attendance>(Result.Tables[4]);
@@ -371,7 +373,8 @@ namespace ServiceLayer.Code
                     {
                         PdfModal = pdfModal,
                         Sender = organization,
-                        Receiver = receiverOrganization
+                        Receiver = receiverOrganization,
+                        SenderBankDetail = senderBankDetail
                     };
                     _billService.CreateFiles(billModal);
                 }
