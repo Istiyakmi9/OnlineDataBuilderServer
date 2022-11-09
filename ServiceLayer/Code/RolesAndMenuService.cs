@@ -5,6 +5,7 @@ using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -17,9 +18,8 @@ namespace ServiceLayer.Code
             _db = db;
             _cacheManager = cacheManager;
         }
-        public string AddUpdatePermission(RolesAndMenu rolesAndMenus)
+        public async Task<string> AddUpdatePermission(RolesAndMenu rolesAndMenus)
         {
-            int result = 0;
             var permissionMenu = (from n in rolesAndMenus.Menu
                                   select new RoleAccessibilityMapping
                                   {
@@ -30,8 +30,8 @@ namespace ServiceLayer.Code
                                   }).ToList<RoleAccessibilityMapping>();
 
             DataSet ds = Converter.ToDataSet<RoleAccessibilityMapping>(permissionMenu);
-            result = _db.BatchInsert("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
-            if (result != rolesAndMenus.Menu.Count)
+            var result = await _db.BatchInsertUpdateAsync("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
+            if (result.rowsEffected != rolesAndMenus.Menu.Count)
                 throw new HiringBellException("Fail to insert or update roles permission.");
 
             return ApplicationConstants.Successfull;

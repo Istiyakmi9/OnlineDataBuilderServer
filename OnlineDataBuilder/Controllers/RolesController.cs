@@ -4,6 +4,7 @@ using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -23,9 +24,9 @@ namespace OnlineDataBuilder.Controllers
         
 
         [HttpPost("AddUpdatePermission")]
-        public IResponse<ApiResponse> AddUpdatePermission(RolesAndMenu rolesAndMenus)
+        public async Task<ApiResponse> AddUpdatePermission(RolesAndMenu rolesAndMenus)
         {
-            var result = _rolesAndMenuService.AddUpdatePermission(rolesAndMenus);
+            var result = await _rolesAndMenuService.AddUpdatePermission(rolesAndMenus);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

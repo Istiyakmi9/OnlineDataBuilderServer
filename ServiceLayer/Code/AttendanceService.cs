@@ -458,10 +458,10 @@ namespace ServiceLayer.Code
 
         private async Task SendAttendanceNotification(AttendenceDetail attendenceApplied)
         {
-            var fromData = (DateTime)attendenceApplied.AttendenceFromDay;
-            var toDate = (DateTime)attendenceApplied.AttendenceToDay;
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceFromDay, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceToDay, _currentSession.TimeZone);
 
-            var numOfDays = fromData.Date.Subtract(toDate.Date).TotalDays + 1;
+            var numOfDays = fromDate.Date.Subtract(toDate.Date).TotalDays + 1;
 
             EmailTemplate template = _eMailManager.GetTemplate(
                 new EmailRequestModal
@@ -469,8 +469,8 @@ namespace ServiceLayer.Code
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
                     ManagerName = _currentSession.CurrentUserDetail.ManagerName,
                     RequestType = ApplicationConstants.DailyAttendance,
-                    FromDate = (DateTime)attendenceApplied.AttendenceFromDay,
-                    ToDate = (DateTime)attendenceApplied.AttendenceToDay,
+                    FromDate = fromDate,
+                    ToDate = toDate,
                     ActionType = nameof(ItemStatus.Submitted),
                     Message = attendenceApplied.UserComments,
                     TotalNumberOfDays = numOfDays,
