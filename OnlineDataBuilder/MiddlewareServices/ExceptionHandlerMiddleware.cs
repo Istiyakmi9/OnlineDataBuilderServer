@@ -36,7 +36,10 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (Exception ex)
             {
-                await HandleExceptionMessageAsync(context, ex);
+                if (applicationConfiguration.IsLoggingEnabled)
+                    await HandleExceptionWriteToFile(context, ex, applicationConfiguration);
+                else
+                    await HandleExceptionMessageAsync(context, ex);
             }
         }
 
@@ -78,6 +81,30 @@ namespace SchoolInMindServer.MiddlewareServices
             });
 
             result.ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message };
+            return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
+        }
+
+        private static async Task<Task> HandleExceptionWriteToFile(HttpContext context, Exception e, ApplicationConfiguration applicationConfiguration)
+        {
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
+            int statusCode = (int)HttpStatusCode.InternalServerError;
+            var result = new ApiResponse
+            {
+                AuthenticationToken = string.Empty,
+                HttpStatusCode = HttpStatusCode.InternalServerError,
+                HttpStatusMessage = e.Message
+            };
+
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
+            context.Response.StatusCode = statusCode;
+            await Task.Run(() =>
+            {
+                var path = Path.Combine(applicationConfiguration.LoggingFilePath, DateTime.Now.ToString("dd_MM_yyyy") + ".txt");
+                result.ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message, e.StackTrace };
+                File.AppendAllTextAsync(path, JsonConvert.SerializeObject(result));
+            });
+
+            result.ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message };
             return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
         }
 
