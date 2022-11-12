@@ -62,6 +62,7 @@ namespace EMailService.Service
             emailTemplate.BodyContent = emailTemplate.BodyContent
                 .Replace("[[DEVELOPER-NAME]]", emailRequestModal.DeveloperName)
                 .Replace("[[ACTION-TYPE]]", emailRequestModal.ActionType)
+                .Replace("[[DAYS-COUNT]]", emailRequestModal.TotalNumberOfDays.ToString())
                 .Replace("[[FROM-DATE]]", emailRequestModal.FromDate.ToString("dd MMM, yyy"))
                 .Replace("[[TO-DATE]]", emailRequestModal.ToDate.ToString("dd MMM, yyy"))
                 .Replace("[[MANAGER-NAME]]", emailRequestModal.ManagerName)
