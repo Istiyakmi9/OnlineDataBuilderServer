@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
@@ -8,7 +9,9 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 
@@ -21,15 +24,21 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private EmailSettingDetail _emailSettingDetail;
-        public EmailService(IDb db, 
-            ILogger<EmailService> logger, 
-            IEMailManager eMailManager, 
-            CurrentSession currentSession)
+        private readonly FileLocationDetail _fileLocationDetail;
+        private readonly IFileService _fileService;
+
+        public EmailService(IDb db,
+            ILogger<EmailService> logger,
+            IEMailManager eMailManager,
+            CurrentSession currentSession,
+            FileLocationDetail fileLocationDetail, IFileService fileService)
         {
             _db = db;
             _logger = logger;
             _eMailManager = eMailManager;
             _currentSession = currentSession;
+            _fileLocationDetail = fileLocationDetail;
+            _fileService = fileService;
         }
 
         public List<string> GetMyMailService()
@@ -201,9 +210,23 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid port number");
         }
 
-        public string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate)
+        public string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection fileCollection)
         {
+            var filepath = string.Empty;
             ValidateEmailTemplate(emailTemplate);
+            if (fileCollection.Count > 0)
+            {
+                var files = fileCollection.Select(x => new Files
+                {
+                    FileUid = emailTemplate.FileId,
+                    FileName = fileCollection[0].Name,
+                    FileExtension = string.Empty
+                }).ToList<Files>();
+                _fileService.SaveFileToLocation(_fileLocationDetail.LogoPath, files, fileCollection);
+
+                filepath = files[0].FilePath;
+
+            }
             var existingTemplate = _db.Get<EmailTemplate>("sp_email_template_get", new { emailTemplate.EmailTemplateId });
             if (existingTemplate == null)
             {
@@ -224,10 +247,12 @@ namespace ServiceLayer.Code
                 existingTemplate.BodyContent = JsonConvert.SerializeObject(emailTemplate.BodyContent);
                 existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
-            var result = _db.Execute<EmailTemplate>("sp_email_template_insupd", existingTemplate, true);
-            if (string.IsNullOrEmpty(result))
+            existingTemplate.FilePath = filepath;
+            var tempId = _db.Execute<EmailTemplate>("sp_email_template_insupd", existingTemplate, true);
+            if (string.IsNullOrEmpty(tempId))
                 throw new HiringBellException("Fail to insert or updfate");
-            return result;
+
+            return tempId;
         }
 
         private void ValidateEmailTemplate(EmailTemplate emailTemplate)

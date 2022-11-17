@@ -5,7 +5,6 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ServiceLayer.Code
 {
@@ -73,57 +72,67 @@ namespace ServiceLayer.Code
             return (Cess + Surcharges);
         }
 
-        public void OldTaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome)
+        public void OldTaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs)
         {
-            decimal taxableIncome = employeeDeclaration.TotalAmount;
-            if (taxableIncome < 0)
-                throw new HiringBellException("Invalid TaxableIncome");
-
-            decimal tax = 0;
-            decimal value = 0;
-            decimal secondSalab = 0;
-            decimal thirdSlab = 0;
-            decimal fourthSlab = 0;
-            decimal remainingAmount = taxableIncome;
-            var taxSlab = new Dictionary<string, decimal>();
-            taxSlab.Add("0% Tax on income up to 250000", 0);
-
-            while (remainingAmount > (decimal)250000)
+            employeeDeclaration.TaxRegimeDescId = 1;
+            if (employeeDeclaration.TaxRegimeDescId > 0)
             {
-                if (remainingAmount > (decimal)250000 && remainingAmount <= (decimal)500000)
+                taxRegimeSlabs = taxRegimeSlabs.FindAll(x => x.RegimeDescId == employeeDeclaration.TaxRegimeDescId && x.StartAgeGroup == 10 && x.EndAgeGroup == 60);
+                if (taxRegimeSlabs.Count == 0)
+                    throw new HiringBellException("No tax slabs found. Please contact to admin");
+
+                decimal taxableIncome = employeeDeclaration.TotalAmount;
+                if (taxableIncome < 0)
+                    throw new HiringBellException("Invalid TaxableIncome");
+
+                decimal tax = 0;
+                decimal value = 0;
+                decimal remainingAmount = taxableIncome;
+                var taxSlab = new Dictionary<int, TaxSlabDetail>();
+                var i = taxRegimeSlabs.Count-1;
+                while (remainingAmount > 0)
                 {
-                    value = (250000 - remainingAmount);
-                    if (value < 0) value = value * -1;
-                    remainingAmount = remainingAmount - value;
-                    tax += (value * 5) / 100;
-                    secondSalab = (value * 5) / 100;
+                    decimal minAmount = 0;
+                    decimal slabAmount = 0;
+                    if (remainingAmount > taxRegimeSlabs[i].MinTaxSlab )
+                    {
+                        if (i > 0)
+                        {
+                            if (taxRegimeSlabs[i].MinTaxSlab - taxRegimeSlabs[i - 1].MaxTaxSlab == 1)
+                                minAmount = (taxRegimeSlabs[i].MinTaxSlab - 1);
+                        }
+                        else
+                            minAmount = (taxRegimeSlabs[i].MinTaxSlab);
+                        if (minAmount < 0) minAmount = minAmount * -1;
+                        value = (minAmount - remainingAmount);
+                        if (value < 0) value = value * -1;
+                        if (value != 0)
+                            remainingAmount = remainingAmount - value;
+                        else
+                            remainingAmount = value;
+                        tax += (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
+                        slabAmount = (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
+                    }
+                    var maxSlabAmount = taxRegimeSlabs[i].MaxTaxSlab.ToString() == "0" ? "Above" : taxRegimeSlabs[i].MaxTaxSlab.ToString();
+                    var taxSlabDetail = new TaxSlabDetail
+                    {
+                        Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and { maxSlabAmount}",
+                        Value = slabAmount
+                    };
+                    taxSlab.Add(i, taxSlabDetail);
+
+                    if (i > 0)
+                        i--;
+
                 }
-                else if (remainingAmount > (decimal)500000 && remainingAmount <= (decimal)1000000)
-                {
-                    value = (500000 - remainingAmount);
-                    if (value < 0) value = value * -1;
-                    remainingAmount = remainingAmount - value;
-                    tax += (value * 20) / 100;
-                    thirdSlab = (value * 20) / 100;
-                }
-                else if (remainingAmount > (decimal)1000000)
-                {
-                    value = (1000000 - remainingAmount);
-                    if (value < 0) value = value * -1;
-                    remainingAmount = remainingAmount - value;
-                    tax += (value * 30) / 100;
-                    fourthSlab = (value * 30) / 100;
-                }
+
+                employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
+                taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
+
+                employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", tax + employeeDeclaration.SurChargesAndCess));
+                employeeDeclaration.IncomeTaxSlab = taxSlab;
             }
 
-            taxSlab.Add("5% Tax on income between 250001 and 500000", secondSalab);
-            taxSlab.Add("20% Tax on income between 500001 and 1000000", thirdSlab);
-            taxSlab.Add("30% Tax on income above 1000000", fourthSlab);
-            employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
-            taxSlab.Add("Gross Income Tax", tax);
-
-            employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", tax + employeeDeclaration.SurChargesAndCess));
-            employeeDeclaration.IncomeTaxSlab = taxSlab;
         }
 
         public void NewTaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome)
@@ -225,10 +234,8 @@ namespace ServiceLayer.Code
                         i++;
                     }
                 }
-
                 employeeDeclaration.TaxPaid = 0;
             }
-
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
         }
     }

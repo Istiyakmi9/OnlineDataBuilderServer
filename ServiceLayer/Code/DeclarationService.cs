@@ -404,9 +404,12 @@ namespace ServiceLayer.Code
 
             employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}", (employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction + hraAmount))));
 
+            //Tax regime calculation 
+            var ageGroup = DateTime.UtcNow.Year -  Convert.ToDateTime(_currentSession.CurrentUserDetail.Dob).Year;
             if (employeeDeclaration.TotalAmount < 0)
                 employeeDeclaration.TotalAmount = 0;
-            _componentsCalculationService.OldTaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome);
+            var taxRegimeSlabs = _db.GetList<TaxRegime>("sp_tax_regime_getall");
+            _componentsCalculationService.OldTaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs);
 
             //Tac Calculation for every month
             TaxDetailsCalculation(EmployeeId, salaryBreakup, employeeDeclaration);

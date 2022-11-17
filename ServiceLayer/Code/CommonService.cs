@@ -1,6 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
-using EMailService.Service;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -87,12 +86,12 @@ namespace ServiceLayer.Code
                                 .Replace("[[USER-MESSAGE]]", templateReplaceModal.Message);
 
                 StringBuilder builder = new StringBuilder();
+                builder.Append("<div style=\"border-bottom:1px solid black; margin-top: 14px; margin-bottom:5px\">" + "" + "</div>");
                 builder.AppendLine();
                 builder.AppendLine();
                 builder.Append("<div>" + template.EmailClosingStatement + "</div>");
                 builder.Append("<div>" + template.SignatureDetail + "</div>");
                 builder.Append("<div>" + template.ContactNo + "</div>");
-
                 emailSenderModal = new EmailSenderModal
                 {
                     To = templateReplaceModal.ToAddress,
@@ -100,6 +99,8 @@ namespace ServiceLayer.Code
                     Body = string.Concat(body, builder.ToString()),
                 };
             }
+
+            emailSenderModal.Title = templateReplaceModal.Title;
 
             return await Task.FromResult(emailSenderModal);
         }

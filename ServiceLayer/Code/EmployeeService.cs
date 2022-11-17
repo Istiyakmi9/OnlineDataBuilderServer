@@ -757,6 +757,9 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(employee.Mobile) || employee.Mobile.Contains("."))
                 throw new HiringBellException { UserMessage = "Mobile number is a mandatory field.", FieldName = nameof(employee.Mobile), FieldValue = employee.Mobile.ToString() };
+            
+            if (employee.Mobile.Length < 10 || employee.Mobile.Length > 10)
+                throw new HiringBellException { UserMessage = "Mobile number must be only 10 digit.", FieldName = nameof(employee.Mobile), FieldValue = employee.Mobile.ToString() };
 
             if (employee.DesignationId <= 0)
                 throw new HiringBellException { UserMessage = "Designation is a mandatory field.", FieldName = nameof(employee.DesignationId), FieldValue = employee.DesignationId.ToString() };

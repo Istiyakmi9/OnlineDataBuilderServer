@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -178,6 +179,7 @@ namespace EMailService.Service
             message.Body = emailSenderModal.Body;
             message.IsBodyHtml = true;
             message.From = fromAddress;
+            //message.AlternateViews.Add(CreateHtmlMessage(emailSenderModal.Body, logoPath));
 
             foreach (var emailAddress in emailSenderModal.To)
                 message.To.Add(emailAddress);
@@ -208,6 +210,18 @@ namespace EMailService.Service
                 throw;
             }
             return ApplicationConstants.Successfull;
+        }
+
+        private AlternateView CreateHtmlMessage(string message, string logoPath)
+        {
+            string path = @"E:\WorkSpace\OnlineDataBuilderServer\OnlineDataBuilder\Documents\logos\info_bottomhalf_in\signwithoutStamp.jpeg";
+            LinkedResource Img = new LinkedResource(path, MediaTypeNames.Image.Jpeg);
+            Img.ContentId = "MyImage";
+            string str = message;
+            AlternateView AV =
+            AlternateView.CreateAlternateViewFromString(str, null, MediaTypeNames.Text.Html);
+            AV.LinkedResources.Add(Img);
+            return AV;
         }
     }
 }

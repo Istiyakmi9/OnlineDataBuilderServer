@@ -22,5 +22,7 @@ namespace ModalLayer.Modal
         public DateTime UpdatedOn { set; get; }
         public int Total { set; get; }
         public int CompanyId { get; set; }
+        public int FileId { get; set; }
+        public string FilePath { get; set; }
     }
 }

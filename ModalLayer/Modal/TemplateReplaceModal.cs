@@ -20,5 +20,7 @@ namespace ModalLayer.Modal
         public string RequestType { set; get; }
         public string ActionType { set; get; }
         public string LeaveType { set; get; }
+        public string Title { set; get; }
+
     }
 }

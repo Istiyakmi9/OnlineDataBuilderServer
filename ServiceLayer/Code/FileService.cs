@@ -135,7 +135,13 @@ namespace CoreServiceLayer.Implementation
 
                         if (!string.IsNullOrEmpty(currentFile.AlternateName))
                             currentFile.FileName = currentFile.AlternateName + "_" + i + "." + Extension;
-
+                        else
+                        {
+                            if (!file.Name.Contains("."))
+                                currentFile.FileName = file.Name + "." + Extension;
+                            else
+                                currentFile.FileName = file.Name;
+                        }
                         if (currentFile != null)
                         {
                             string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath, currentFile.FileName);
