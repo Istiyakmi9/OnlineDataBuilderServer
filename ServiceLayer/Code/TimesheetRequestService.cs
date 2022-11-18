@@ -116,6 +116,7 @@ namespace ServiceLayer.Code
                     FromDate = sortedTimesheetByDate.Last().PresentDate,
                     ToDate = sortedTimesheetByDate.First().PresentDate,
                     LeaveType = null,
+                    Title = template.EmailTitle,
                     ManagerName = _currentSession.CurrentUserDetail.FullName,
                     Message = string.IsNullOrEmpty(firstItem.UserComments)
                             ? "NA"

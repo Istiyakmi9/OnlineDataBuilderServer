@@ -130,6 +130,7 @@ namespace ServiceLayer.Code
                     ToAddress = new List<string> { leaveRequestDetail.Email },
                     ActionType = status.ToString(),
                     FromDate = leaveDeatil.LeaveFromDay,
+                    Title = template.EmailTitle,
                     ToDate = leaveDeatil.LeaveToDay,
                     LeaveType = leaveDeatil.LeaveToDay.ToString(),
                     ManagerName = _currentSession.CurrentUserDetail.FullName,

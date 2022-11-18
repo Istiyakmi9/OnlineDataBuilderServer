@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Code;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Net;
 
@@ -59,10 +60,27 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("InsertUpdateEmailTemplate")]
-        public IResponse<ApiResponse> InsertUpdateEmailTemplate(EmailTemplate emailTemplate)
+        public IResponse<ApiResponse> InsertUpdateEmailTemplate()
         {
-            var result = _emailService.InsertUpdateEmailTemplateService(emailTemplate)  ;
-            return BuildResponse(result);
+            try
+            {
+                _httpContext.Request.Form.TryGetValue("emailtemplate", out StringValues templateDetail);
+                if (templateDetail.Count > 0)
+                {
+                    EmailTemplate emailTemplate = JsonConvert.DeserializeObject<EmailTemplate>(templateDetail);
+                    IFormFileCollection file = _httpContext.Request.Form.Files;
+                    var result = _emailService.InsertUpdateEmailTemplateService(emailTemplate, file)  ;
+                    return BuildResponse(result);
+                } else
+                {
+                    return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw ex; ;
+            }
         }
 
         [HttpPost("GetEmailTemplate")]

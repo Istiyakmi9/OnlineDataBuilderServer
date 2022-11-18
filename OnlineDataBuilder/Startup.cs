@@ -167,7 +167,7 @@ namespace OnlineDataBuilder
             services.AddScoped<ILeaveRequestService, LeaveRequestService>();
             services.AddScoped<ITimesheetRequestService, TimesheetRequestService>();
             services.AddSingleton<ApplicationConfiguration>();
-
+            services.AddScoped<ITaxRegimeService, TaxRegimeService>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

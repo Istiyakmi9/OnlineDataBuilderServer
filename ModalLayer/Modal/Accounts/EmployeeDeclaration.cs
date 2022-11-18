@@ -10,6 +10,7 @@ namespace ModalLayer.Modal.Accounts
         public string DeclarationDetail { set; get; }
         public string ComponentId { set; get; }
         public decimal DeclaredValue { set; get; }
+        public int TaxRegimeDescId { get; set; }
         public string Email { set; get; }
         public decimal TotalAmount { set; get; }
         public decimal TaxNeedToPay { set; get; }
@@ -23,7 +24,7 @@ namespace ModalLayer.Modal.Accounts
         public Dictionary<string, List<string>> Sections { set; get; }
         public List<DeclarationReport> Declarations { set; get; } = new List<DeclarationReport>();
         public string HousingProperty { get; set; }
-        public Dictionary<string, decimal> IncomeTaxSlab { get; set; }
+        public Dictionary<int, TaxSlabDetail> IncomeTaxSlab { get; set; }
         public decimal SurChargesAndCess { get; set; }
         public dynamic HRADeatils { get; set; }
     }

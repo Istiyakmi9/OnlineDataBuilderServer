@@ -152,6 +152,7 @@ namespace ServiceLayer.Code
                         CompanyName = template.SignatureDetail,
                         BodyContent = template.BodyContent,
                         Subject = template.SubjectLine,
+                        Title = template.EmailTitle,
                         ToAddress = new List<string> { currentAttendance.Email },
                         ActionType = status.ToString(),
                         FromDate = currentAttendance.AttendanceDay,
