@@ -9,6 +9,13 @@ namespace ModalLayer.Modal
         public string OrganizationName { set; get; }
         public string CompanyName { set; get; }
         public string FirstName { set; get; }
+        public string FirstAddress { set; get; }
+        public string SecondAddress { set; get; }
+        public string ThirdAddress { set; get; }
+        public string ForthAddress { set; get; }
+        public string Country { set; get; }
+        public string State { set; get; }
+        public string City { set; get; }
         public string LastName { set; get; }
         public int DesignationId { set; get; }
         public int UserTypeId { set; get; }

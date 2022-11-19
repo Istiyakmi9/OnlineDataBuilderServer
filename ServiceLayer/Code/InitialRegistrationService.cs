@@ -26,6 +26,13 @@ namespace ServiceLayer.Code
                 companyDetail.OrganizationName,
                 companyDetail.CompanyName,
                 companyDetail.FirstName,
+                companyDetail.FirstAddress,
+                companyDetail.SecondAddress,
+                companyDetail.ThirdAddress,
+                companyDetail.ForthAddress,
+                companyDetail.State,
+                companyDetail.City,
+                companyDetail.Country,
                 companyDetail.LastName,
                 companyDetail.EmailName,
                 companyDetail.EmailId,
@@ -104,6 +111,12 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Branch name is null or empty");
 
             if (string.IsNullOrEmpty(companyDetail.IFSC))
+                throw new HiringBellException("IFSC code is null or empty");
+
+            if (string.IsNullOrEmpty(companyDetail.FirstAddress))
+                throw new HiringBellException("IFSC code is null or empty");
+
+            if (string.IsNullOrEmpty(companyDetail.SecondAddress))
                 throw new HiringBellException("IFSC code is null or empty");
 
             var mail = new MailAddress(companyDetail.EmailId);
