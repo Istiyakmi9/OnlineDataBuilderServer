@@ -1,4 +1,6 @@
-﻿namespace ModalLayer.Modal
+﻿using ModalLayer.Modal.Accounts;
+
+namespace ModalLayer.Modal
 {
     public class RegistrationForm
     {
@@ -13,5 +15,20 @@
         public int AccessLevelId { set; get; }
         public string Password { set; get; }
         public string AuthenticationCode { set; get; }
+        public string BankName { set; get; }
+        public string BranchCode { set; get; }
+        public string Branch { set; get; }
+        public string IFSC { set; get; }
+        public string AccountNo { set; get; }
+        public string GSTNo { get; set; }
+        public bool IsPrimaryAccount { set; get; }
+        public string EmailName { set; get; }
+        public string EmailHost { set; get; }
+        public int PortNo { set; get; }
+        public bool EnableSsl { set; get; }
+        public string DeliveryMethod { set; get; }
+        public bool UserDefaultCredentials { set; get; }
+        public string Credentials { set; get; }
+        public bool IsPrimary { set; get; }
     }
 }

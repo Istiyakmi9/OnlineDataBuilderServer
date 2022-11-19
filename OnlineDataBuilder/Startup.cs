@@ -122,6 +122,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<ExcelWriter>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IInitialRegistrationService, InitialRegistrationService>();
             services.AddSingleton<FileLocationDetail>(service =>
             {
                 var fileLocationDetail = Configuration.GetSection("BillingFolders").Get<FileLocationDetail>();
