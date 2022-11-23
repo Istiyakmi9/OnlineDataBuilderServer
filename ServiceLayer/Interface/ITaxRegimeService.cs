@@ -12,5 +12,6 @@ namespace ServiceLayer.Interface
         dynamic GetAllRegimeService();
         TaxAgeGroup AddUpdateAgeGroupService(TaxAgeGroup taxAgeGroup);
         Task<dynamic> AddUpdateTaxRegimeService(List<TaxRegime> taxRegimes);
+        dynamic DeleteTaxRegimeService(TaxRegime taxRegime);
     }
 }

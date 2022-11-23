@@ -135,6 +135,17 @@ namespace ServiceLayer.Code
             _db.Commit();
             return this.GetAllRegimeService();
         }
+        public dynamic DeleteTaxRegimeService(TaxRegime taxRegime)
+        {
+            if (taxRegime.TaxRegimeId <= 0)
+                throw new HiringBellException("Invalid tax regime selected");
+
+            var status = _db.Execute<long>("sp_tax_regime_delete_byid", new {TaxRegimeId = taxRegime.TaxRegimeId}, false);
+            if (string.IsNullOrEmpty(status))
+                throw new HiringBellException("Fail to delete tax regime");
+
+            return this.GetAllRegimeService();
+        }
         private void ValidateTaxRegime(List<TaxRegime> taxRegimes) 
         {
             taxRegimes = taxRegimes.OrderBy(x => x.RegimeIndex).ToList();

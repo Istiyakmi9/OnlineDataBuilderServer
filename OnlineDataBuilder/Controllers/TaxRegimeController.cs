@@ -46,5 +46,11 @@ namespace OnlineDataBuilder.Controllers
             var result = _taxRegimeService.AddUpdateAgeGroupService(taxAgeGroup);
             return BuildResponse(result);
         }
+        [HttpPost("DeleteTaxRegime")]
+        public IResponse<ApiResponse> DeleteTaxRegime(TaxRegime taxRegime)
+        {
+            var result = _taxRegimeService.DeleteTaxRegimeService(taxRegime);
+            return BuildResponse(result);
+        }
     }
 }
