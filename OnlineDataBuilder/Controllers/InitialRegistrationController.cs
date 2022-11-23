@@ -15,12 +15,10 @@ namespace OnlineDataBuilder.Controllers
     public class InitialRegistrationController : BaseController
     {
         private readonly IInitialRegistrationService _initialRegistrationService;
-        private readonly HttpContext _httpContext;
 
-        public InitialRegistrationController(IInitialRegistrationService initialRegistrationService, IHttpContextAccessor httpContext)
+        public InitialRegistrationController(IInitialRegistrationService initialRegistrationService)
         {
             _initialRegistrationService = initialRegistrationService;
-            _httpContext = httpContext.HttpContext;
         }
         [AllowAnonymous]
         [HttpPost("InitialOrgRegistration")]
