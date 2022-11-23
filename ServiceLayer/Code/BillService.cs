@@ -90,13 +90,13 @@ namespace ServiceLayer.Code
                 if (!Directory.Exists(fileDetail.DiskFilePath)) Directory.CreateDirectory(fileDetail.DiskFilePath);
                 fileDetail.FileName = billModal.PdfModal.FileName;
                 string destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Docx}");
-                
+
                 html = this.GetHtmlString(billModal.BillTemplatePath, billModal);
                 this.iHTMLConverter.ToDocx(html, destinationFilePath, billModal.HeaderLogoPath);
 
                 _fileMaker._fileDetail = fileDetail;
                 destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
-                
+
                 html = this.GetHtmlString(billModal.PdfTemplatePath, billModal, true);
                 _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
             }
@@ -642,6 +642,21 @@ namespace ServiceLayer.Code
             }
         }
 
+        public async Task<dynamic> GetBillDetailWithTemplateService(string billNo)
+        {
+            var Result = db.GetMulti<FileDetail, EmailTemplate>("sp_billdetail_and_template_by_billno",
+                new
+                {
+                    BillNo = billNo,
+                    TemplateId = ApplicationConstants.BillingTemplate
+                });
+
+            if (Result.Item1 == null || Result.Item2 == null)
+                throw new HiringBellException("Fail to get bill and template detail.");
+
+            return await Task.FromResult(new { FileDetail = Result.Item1, EmailTemplate = Result.Item2 });
+        }
+
         public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
             TimesheetDetail timesheetDetail, string Comment)
         {
@@ -791,7 +806,7 @@ namespace ServiceLayer.Code
 
                         GetFileDetail(pdfModal, fileDetail, ApplicationConstants.Docx);
                         fileDetail.LogoPath = headerLogo;
-                        
+
                         // Converting html context for docx conversion.
                         // string html = this.GetHtmlString(templatePath, pdfModal, sender, receiver);
                         string html = this.GetHtmlString(templatePath, null);
