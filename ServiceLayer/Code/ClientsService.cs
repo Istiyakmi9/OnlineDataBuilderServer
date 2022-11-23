@@ -107,6 +107,12 @@ namespace ServiceLayer.Code
 
                 var status = string.Empty;
                 var resultSet = _db.GetDataset("SP_Client_IntUpd", param, true, ref status);
+                if (resultSet != null && resultSet.Tables.Count > 0)
+                    organization = Converter.ToType<Organization>(resultSet.Tables[0]);
+
+                if (organization.ClientId <= 0)
+                    throw new Exception("fail to get client id");
+
                 if (fileCollection.Count > 0)
                 {
                     var files = fileCollection.Select(x => new Files
@@ -116,13 +122,13 @@ namespace ServiceLayer.Code
                         Email = client.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (client.ClientId).ToString());
+                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (organization.ClientId).ToString());
 
                     var fileInfo = (from n in files
                                     select new
                                     {
                                         FileId = n.FileUid,
-                                        FileOwnerId = client.ClientId,
+                                        FileOwnerId = organization.ClientId,
                                         FileName = n.FileName,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
@@ -134,11 +140,6 @@ namespace ServiceLayer.Code
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
                     var taskResult = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
                     _db.Commit();
-                }
-
-                if (resultSet != null && resultSet.Tables.Count > 0)
-                {
-                    organization = Converter.ToType<Organization>(resultSet.Tables[0]);
                 }
 
                 return organization;
