@@ -109,5 +109,13 @@ namespace OnlineDataBuilder.Controllers
             var result = _iDOCXToHTMLConverter.ToHtml(fileDetail);
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
+
+        [HttpGet]
+        [Route("GetBillDetailWithTemplate/{BillNo}")]
+        public async Task<ApiResponse> GetBillDetailWithTemplate(string BillNo)
+        {
+            var fileDetail = await _billService.GetBillDetailWithTemplateService(BillNo);
+            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+        }
     }
 }

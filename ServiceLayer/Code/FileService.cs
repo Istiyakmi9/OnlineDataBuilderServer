@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -252,7 +253,7 @@ namespace CoreServiceLayer.Implementation
                 return new Tuple<string, bool>("Incorrect userId provided.", false);
             }
 
-            var fileInfo = (from n in fileDetail.AsEnumerable()
+            var fileInfo = JsonConvert.SerializeObject((from n in fileDetail.AsEnumerable()
                             select new
                             {
                                 FileId = n.FileUid,
@@ -264,10 +265,10 @@ namespace CoreServiceLayer.Implementation
                                 StatusId = 0,
                                 UserTypeId = (int)n.UserTypeId,
                                 AdminId = 1
-                            });
+                            }));
 
-            DataTable table = Converter.ToDataTable(fileInfo);
-            var result = _db.BatchInsert(procedure, table, true);
+            // DataTable table = Converter.ToDataTable(fileInfo);
+            var result = _db.ExecuteAsync(procedure, new { InsertFileJsonData = fileInfo }, false);
             return new Tuple<string, bool>("Total " + result + " inserted/updated.", true);
         }
 
