@@ -477,7 +477,7 @@ namespace ServiceLayer.Code
                 new EmailRequestModal
                 {
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
-                    ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
+                    ManagerName = "NA",
                     RequestType = ApplicationConstants.DailyAttendance,
                     FromDate = fromDate,
                     ToDate = toDate,

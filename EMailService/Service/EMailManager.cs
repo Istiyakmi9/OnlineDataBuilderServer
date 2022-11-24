@@ -43,7 +43,6 @@ namespace EMailService.Service
             if (string.IsNullOrEmpty(emailRequestModal.DeveloperName))
                 throw new HiringBellException("Developer name is missing.");
 
-
             EmailTemplate emailTemplate = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = emailRequestModal.TemplateId });
 
             if (emailTemplate == null)
