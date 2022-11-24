@@ -69,7 +69,9 @@ namespace EMailService.Service
                 .Replace("[[MANAGER-NAME]]", emailRequestModal.ManagerName)
                 .Replace("[[USER-MESSAGE]]", emailRequestModal.Message)
                 .Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType);
-
+            emailTemplate.EmailTitle = emailTemplate.EmailTitle.Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType)
+                                    .Replace("[[DEVELOPER-NAME]]", emailRequestModal.DeveloperName)
+                                    .Replace("[[ACTION-TYPE]]", emailRequestModal.ActionType);
             return emailTemplate;
         }
 
