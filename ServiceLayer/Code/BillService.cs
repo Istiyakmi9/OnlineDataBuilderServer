@@ -642,19 +642,32 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<dynamic> GetBillDetailWithTemplateService(string billNo)
+        public async Task<dynamic> GetBillDetailWithTemplateService(string billNo, long employeeId)
         {
-            var Result = db.GetMulti<FileDetail, EmailTemplate>("sp_billdetail_and_template_by_billno",
+            var Result = db.FetchDataSet("sp_billdetail_and_template_by_billno",
                 new
                 {
                     BillNo = billNo,
-                    TemplateId = ApplicationConstants.BillingTemplate
+                    TemplateId = ApplicationConstants.BillingTemplate,
+                    EmployeeId = employeeId
                 });
 
-            if (Result.Item1 == null || Result.Item2 == null)
+            if (Result == null || Result.Tables.Count != 4)
                 throw new HiringBellException("Fail to get bill and template detail.");
 
-            return await Task.FromResult(new { FileDetail = Result.Item1, EmailTemplate = Result.Item2 });
+            if (Result.Tables[0].Rows.Count != 1)
+                throw new HiringBellException("Invalid bill no. No record found.");
+
+            if (Result.Tables[1].Rows.Count != 1)
+                throw new HiringBellException("Invalid request. No email template found for this operation.");
+
+            return await Task.FromResult(new
+            {
+                FileDetail = Result.Tables[0],
+                EmailTemplate = Result.Tables[1],
+                Receiver = Result.Tables[2],
+                Sender = Result.Tables[3]
+            });
         }
 
         public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
