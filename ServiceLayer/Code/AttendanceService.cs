@@ -460,6 +460,16 @@ namespace ServiceLayer.Code
         {
             var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceFromDay, _currentSession.TimeZone);
             var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceToDay, _currentSession.TimeZone);
+            FilterModel filterModel = new FilterModel
+            {
+                SearchString = $"1=1 and EmployeeUid = {_currentSession.CurrentUserDetail.ReportingManagerId}",
+                SortBy = "",
+                PageIndex = 1,
+                PageSize = 10
+            };
+            var managerDetail = _db.Get<Employee>("SP_Employees_Get", filterModel);
+            if (managerDetail == null)
+                throw new Exception("No manager record found. Please add manager first.");
 
             var numOfDays = fromDate.Date.Subtract(toDate.Date).TotalDays + 1;
 
@@ -467,7 +477,7 @@ namespace ServiceLayer.Code
                 new EmailRequestModal
                 {
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
-                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                    ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
                     RequestType = ApplicationConstants.DailyAttendance,
                     FromDate = fromDate,
                     ToDate = toDate,
@@ -480,7 +490,7 @@ namespace ServiceLayer.Code
             var body = JsonConvert.DeserializeObject<string>(template.BodyContent);
             EmailSenderModal emailSenderModal = new EmailSenderModal
             {
-                To = new List<string> { _currentSession.CurrentUserDetail.Email },
+                To = new List<string> { managerDetail.Email },
                 Body = body + template.Footer,
                 Title = String.IsNullOrEmpty(template.EmailTitle) ? "Attendance Request" : template.EmailTitle,
                 Subject = $"{_currentSession.CurrentUserDetail.FullName} | {ApplicationConstants.WorkFromHome} request | {nameof(ItemStatus.Submitted)}"
