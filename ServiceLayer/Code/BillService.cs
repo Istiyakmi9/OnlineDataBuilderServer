@@ -663,7 +663,7 @@ namespace ServiceLayer.Code
 
             return await Task.FromResult(new
             {
-                FileDetail = Result.Tables[0],
+                EmployeeDetail = Result.Tables[0],
                 EmailTemplate = Result.Tables[1],
                 Receiver = Result.Tables[2],
                 Sender = Result.Tables[3]

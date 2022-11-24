@@ -199,7 +199,7 @@ namespace ServiceLayer.Code
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 this.BuildSectionWiseComponents(employeeDeclaration);
-                this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
+                this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeDeclaration.SalaryDetail.CTC);
             }
 
             employeeDeclaration.FileDetails = files;
@@ -314,7 +314,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
             SalaryGroup salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[0]);
-            if (salaryGroup == null)
+            if (salaryGroup == null || salaryGroup.SalaryGroupId == 0)
                 throw new HiringBellException("No group found for the current employee salary package. Please create one.");
 
             if (!string.IsNullOrEmpty(salaryGroup.SalaryComponents))
