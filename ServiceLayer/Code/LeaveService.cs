@@ -482,24 +482,5 @@ namespace ServiceLayer.Code
             };
         }
 
-        public async Task<List<LeavePlanType>> ApplyLeaveService_Testing(ApplyLeave applyLeave)
-        {
-            if (applyLeave.EmployeeId < 0)
-                throw new HiringBellException("Invalid employee id.");
-
-            List<LeavePlanType> leavePlanTypes = null;
-            //leavePlanTypes = await _leaveCalculation.GetBalancedLeave(applyLeave.EmployeeId, Convert.ToDateTime("2022-10-10"), Convert.ToDateTime("2022-10-15"));
-            LeaveRequestModal leaveDetail = new LeaveRequestModal
-            {
-                EmployeeId = 4,
-                LeaveTypeId = 1,
-                LeaveFromDay = Convert.ToDateTime("2022-10-22"),
-                LeaveToDay = Convert.ToDateTime("2022-10-22")
-            };
-
-            await _leaveCalculation.CheckAndApplyForLeave(leaveDetail);
-
-            return leavePlanTypes;
-        }
     }
 }

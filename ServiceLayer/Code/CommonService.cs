@@ -102,7 +102,7 @@ namespace ServiceLayer.Code
 
             emailSenderModal.Title = templateReplaceModal.Title.Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
                                     .Replace("[[DEVELOPER-NAME]]", templateReplaceModal.DeveloperName)
-                                    .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType); ;
+                                    .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType);
 
             return await Task.FromResult(emailSenderModal);
         }
