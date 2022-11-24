@@ -111,10 +111,10 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet]
-        [Route("GetBillDetailWithTemplate/{BillNo}")]
-        public async Task<ApiResponse> GetBillDetailWithTemplate(string BillNo)
+        [Route("GetBillDetailWithTemplate/{BillNo}/{EmployeeId}")]
+        public async Task<ApiResponse> GetBillDetailWithTemplate(string BillNo, long EmployeeId)
         {
-            var fileDetail = await _billService.GetBillDetailWithTemplateService(BillNo);
+            var fileDetail = await _billService.GetBillDetailWithTemplateService(BillNo, EmployeeId);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
     }

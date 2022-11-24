@@ -16,6 +16,6 @@ namespace ServiceLayer.Interface
         Task<dynamic> GenerateBillService(BillGenerationModal billModal);
         FileDetail CreateFiles(BillGenerationModal billModal);
         string SendBillToClientService(GenerateBillFileDetail generateBillFileDetail);
-        Task<dynamic> GetBillDetailWithTemplateService(string billNo);
+        Task<dynamic> GetBillDetailWithTemplateService(string billNo, long employeeId);
     }
 }
