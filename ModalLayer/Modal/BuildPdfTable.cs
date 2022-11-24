@@ -20,5 +20,6 @@ namespace ModalLayer.Modal
         public string resumeTemplate { set; get; }
         public List<string> resumePath { set; get; }
         public string LogoPath { set; get; }
+        public string CompanyFiles { set; get; } = "CompanyFiles";
     }
 }

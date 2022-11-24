@@ -19,5 +19,7 @@ namespace ServiceLayer.Interface
         Task<CompanySetting> UpdateSettingService(int companyId, CompanySetting companySetting);
         Task<CompanySetting> GetCompanySettingService(int companyId);
         Task<OrganizationDetail> InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
+        Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection);
+        Task<List<Files>> GetCompanyFiles(int CompanyId);
     }
 }
