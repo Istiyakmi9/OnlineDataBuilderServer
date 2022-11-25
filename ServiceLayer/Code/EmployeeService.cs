@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -32,6 +33,7 @@ namespace ServiceLayer.Code
         private readonly ILoginService _loginService;
         private readonly IDeclarationService _declarationService;
         private readonly ITimezoneConverter _timezoneConverter;
+        private ILogger<EmployeeService> _logger;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
@@ -44,6 +46,7 @@ namespace ServiceLayer.Code
             IDeclarationService declarationService,
             IAuthenticationService authenticationService,
             ITimezoneConverter timezoneConverter,
+            ILogger<EmployeeService> logger,
             FileLocationDetail fileLocationDetail)
         {
             _db = db;
@@ -58,6 +61,7 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _declarationService = declarationService;
             _timezoneConverter = timezoneConverter;
+            _logger = logger;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -603,7 +607,15 @@ namespace ServiceLayer.Code
 
                 if (employee.EmployeeUid > 0 || employee.CTC > 0)
                 {
-                    employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
+                    try
+                    {
+                        employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
+                    }
+                    catch
+                    {
+                        _logger.LogInformation("Salary group not fount. Creating user without salary group and break up detail.");
+                    }
+
                     if (employeeSalaryDetail == null)
                     {
                         employeeSalaryDetail = new EmployeeSalaryDetail
@@ -718,10 +730,10 @@ namespace ServiceLayer.Code
                 var ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
                 return ResultSet;
             }
-            catch (Exception ex)
+            catch
             {
                 _db.RollBack();
-                throw new HiringBellException("Fail to insert or update student data.", ex);
+                throw;
             }
         }
 

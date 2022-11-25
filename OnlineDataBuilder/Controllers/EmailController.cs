@@ -9,6 +9,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -90,10 +91,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetEmailTemplateById/{EmailTemplateId}")]
-        public IResponse<ApiResponse> GetEmailTemplateByIdService(long EmailTemplateId)
+        [HttpGet("GetEmailTemplateById/{EmailTemplateId}/{CompanyId}")]
+        public async Task<ApiResponse> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId)
         {
-            var result = _emailService.GetEmailTemplateByIdService(EmailTemplateId);
+            var result = await _emailService.GetEmailTemplateByIdService(EmailTemplateId, CompanyId);
             return BuildResponse(result);
         }
     }
