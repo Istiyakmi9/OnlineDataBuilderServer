@@ -460,9 +460,14 @@ namespace ServiceLayer.Code
         {
             var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceFromDay, _currentSession.TimeZone);
             var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceToDay, _currentSession.TimeZone);
+            long reportManagerId = 0;
+            if (_currentSession.CurrentUserDetail.ReportingManagerId == 0)
+                reportManagerId = 1;
+            else
+                reportManagerId = _currentSession.CurrentUserDetail.ReportingManagerId;
             FilterModel filterModel = new FilterModel
             {
-                SearchString = $"1=1 and EmployeeUid = {_currentSession.CurrentUserDetail.ReportingManagerId}",
+                SearchString = $"1=1 and EmployeeUid = {reportManagerId}",
                 SortBy = "",
                 PageIndex = 1,
                 PageSize = 10

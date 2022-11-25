@@ -451,5 +451,26 @@ namespace ServiceLayer.Code
             var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId });
             return await Task.FromResult(fileList);
         }
+
+        public async Task<List<Files>> DeleteCompanyFilesService(Files companyFile)
+        {
+            if (companyFile == null)
+                throw new HiringBellException("Invalid file selected");
+
+            var result = await _db.ExecuteAsync("sp_company_files_delete_by_id", new { CompanyFileId = companyFile.FileId });
+            if (result.rowsEffected == 0)
+                throw new HiringBellException("Fail to delete the file.");
+
+            if (Directory.Exists(Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles)))
+            {
+                string ActualPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, companyFile.FileName);
+                if (File.Exists(ActualPath))
+                    File.Delete(ActualPath);
+            }
+            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = companyFile.CompanyId});
+            return fileList;
+
+        }
+
     }
 }
