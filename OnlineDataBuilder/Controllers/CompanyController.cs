@@ -153,5 +153,11 @@ namespace OnlineDataBuilder.Controllers
             var resetSet = await _companyService.GetCompanyFiles(CompanyId);
             return BuildResponse(resetSet);
         }
+        [HttpPost("DeleteCompanyFile")]
+        public async Task<ApiResponse> DeleteCompanyFiles(Files companyFile)
+        {
+            var result = await _companyService.DeleteCompanyFilesService(companyFile);
+            return BuildResponse(result);
+        }
     }
 }
