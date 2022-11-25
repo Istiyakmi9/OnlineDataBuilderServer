@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -26,11 +27,13 @@ namespace ServiceLayer.Code
         private EmailSettingDetail _emailSettingDetail;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
+        private readonly ICompanyService _companyService;
 
         public EmailService(IDb db,
             ILogger<EmailService> logger,
             IEMailManager eMailManager,
             CurrentSession currentSession,
+            ICompanyService companyService,
             FileLocationDetail fileLocationDetail, IFileService fileService)
         {
             _db = db;
@@ -39,6 +42,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
+            _companyService = companyService;
         }
 
         public List<string> GetMyMailService()
@@ -166,12 +170,13 @@ namespace ServiceLayer.Code
                 emailSetting.UserDefaultCredentials = emailSettingDetail.UserDefaultCredentials;
                 emailSetting.Credentials = emailSettingDetail.Credentials;
                 emailSetting.EmailName = emailSettingDetail.EmailName;
-                emailSetting.POP3EmailHost  = emailSettingDetail.POP3EmailHost;
+                emailSetting.POP3EmailHost = emailSettingDetail.POP3EmailHost;
                 emailSetting.POP3PortNo = emailSettingDetail.POP3PortNo;
                 emailSetting.POP3EnableSsl = emailSettingDetail.POP3EnableSsl;
                 emailSetting.IsPrimary = emailSettingDetail.IsPrimary;
                 emailSetting.UpdatedBy = _currentSession.CurrentUserDetail.UserId;
-            } else
+            }
+            else
             {
                 emailSetting = emailSettingDetail;
                 emailSetting.UpdatedBy = _currentSession.CurrentUserDetail.UserId;
@@ -247,7 +252,7 @@ namespace ServiceLayer.Code
                 existingTemplate.BodyContent = JsonConvert.SerializeObject(emailTemplate.BodyContent);
                 existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
-            existingTemplate.FilePath = filepath;
+            existingTemplate.FileId = emailTemplate.FileId;
             var tempId = _db.Execute<EmailTemplate>("sp_email_template_insupd", existingTemplate, true);
             if (string.IsNullOrEmpty(tempId))
                 throw new HiringBellException("Fail to insert or updfate");
@@ -291,13 +296,14 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public EmailTemplate GetEmailTemplateByIdService(long EmailTemplateId)
+        public async Task<dynamic> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId)
         {
             if (EmailTemplateId == 0)
                 throw new HiringBellException("Invalid Email template selected");
 
-            var result = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
-            return result;
+            List<Files> companyFiles = await _companyService.GetCompanyFiles(CompanyId);
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
+            return new { EmailTemplate = template, Files = companyFiles };
         }
     }
 }
