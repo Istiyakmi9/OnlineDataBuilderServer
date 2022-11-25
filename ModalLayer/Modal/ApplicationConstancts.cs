@@ -123,6 +123,11 @@ public class ComponentNames
     public static string Basic = "BS";
 }
 
+public class FileRoleType
+{
+    public static string PrimaryLogo = "Company Primary Logo";
+}
+
 public enum FileSystemType
 {
     User = 1,

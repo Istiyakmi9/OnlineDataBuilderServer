@@ -8,9 +8,11 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using static Google.Protobuf.Reflection.MessageDescriptor;
 
 namespace ServiceLayer.Code
 {
@@ -405,6 +407,51 @@ namespace ServiceLayer.Code
 
             var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
             return await Task.FromResult(companySettingDetail);
+        }
+
+        public async Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection)
+        {
+            string _folderPath = String.Empty;
+
+            string FolderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles);
+
+            if (string.IsNullOrEmpty(FolderPath))
+                throw new HiringBellException("Invalid file path has been given. Please contact to admin.");
+
+            var files = fileCollection.Select(x => new Files
+            {
+                FileUid = uploadedFileDetail.FileId,
+                FileName = x.Name,
+                Email = uploadedFileDetail.Email,
+                FileExtension = string.Empty
+            }).ToList<Files>();
+
+            _fileService.SaveFileToLocation(FolderPath, files, fileCollection);
+
+            Files fileDetail = files.First();
+            var result = await _db.ExecuteAsync("sp_company_files_insupd", new
+            {
+                CompanyFileId = uploadedFileDetail.FileId,
+                CompanyId = uploadedFileDetail.CompanyId,
+                FileName = fileDetail.FileName,
+                FileDescription = uploadedFileDetail.FileDescription,
+                FileExtension = fileDetail.FileExtension,
+                FilePath = fileDetail.FilePath,
+                FileRole = uploadedFileDetail.FileRole,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            });
+
+            if (result.rowsEffected == 0)
+                throw new HiringBellException("Fail to insert or udpate file data.");
+
+            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = uploadedFileDetail.CompanyId });
+            return fileList;
+        }
+
+        public async Task<List<Files>> GetCompanyFiles(int CompanyId)
+        {
+            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId });
+            return fileList;
         }
     }
 }

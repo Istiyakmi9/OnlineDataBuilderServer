@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CoreServiceLayer.Implementation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
@@ -6,6 +8,8 @@ using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Net;
+using System;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -114,6 +118,40 @@ namespace OnlineDataBuilder.Controllers
         {
             var settingDetail = await _companyService.GetCompanySettingService(companyId);
             return BuildResponse(settingDetail);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("addcompanyfiles")]
+        public async Task<ApiResponse> AddCompanyFiles()
+        {
+            try
+            {
+                StringValues OrganizationData = default(string);
+                _httpContext.Request.Form.TryGetValue("FileDetail", out OrganizationData);
+                if (OrganizationData.Count > 0)
+                {
+                    Files files = JsonConvert.DeserializeObject<Files>(OrganizationData);
+                    IFormFileCollection fileCollection = _httpContext.Request.Form.Files;
+                    var resetSet = await _companyService.UpdateCompanyFiles(files, fileCollection);
+                    return BuildResponse(resetSet);
+                }
+                else
+                {
+                    return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
+        [HttpGet("getcompanyfiles/{CompanyId}")]
+        public async Task<ApiResponse> GetCompanyFiles(int CompanyId)
+        {
+            var resetSet = await _companyService.GetCompanyFiles(CompanyId);
+            return BuildResponse(resetSet);
         }
     }
 }
