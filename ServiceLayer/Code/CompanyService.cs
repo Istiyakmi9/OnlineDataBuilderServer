@@ -8,11 +8,9 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using static Google.Protobuf.Reflection.MessageDescriptor;
 
 namespace ServiceLayer.Code
 {
@@ -451,7 +449,7 @@ namespace ServiceLayer.Code
         public async Task<List<Files>> GetCompanyFiles(int CompanyId)
         {
             var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId });
-            return fileList;
+            return await Task.FromResult(fileList);
         }
     }
 }

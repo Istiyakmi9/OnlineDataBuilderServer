@@ -2,6 +2,7 @@
 using ModalLayer;
 using ModalLayer.Modal;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -13,6 +14,6 @@ namespace ServiceLayer.Interface
         EmailSettingDetail InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail);
         string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection file);
         List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
-        EmailTemplate GetEmailTemplateByIdService(long EmailTemplateId);
+        Task<dynamic> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId);
     }
 }

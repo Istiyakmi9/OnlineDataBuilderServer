@@ -126,6 +126,8 @@ public class ComponentNames
 public class FileRoleType
 {
     public static string PrimaryLogo = "Company Primary Logo";
+    public static string CompanyLogo = "Company Logo";
+    public static string OtherFile = "Other File";
 }
 
 public enum FileSystemType
