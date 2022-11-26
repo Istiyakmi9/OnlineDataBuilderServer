@@ -27,5 +27,6 @@ namespace ServiceLayer.Interface
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
         SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId);
         List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(long EmployeeId, decimal CTCAnnually);
+        string UpdateTaxDetailsService(long EmployeeId, List<TaxDetails> fullTaxDetails, int PresentMonth, int PresentYear);
     }
 }

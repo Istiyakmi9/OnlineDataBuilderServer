@@ -794,6 +794,9 @@ namespace ServiceLayer.Code
             if (employee.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please contact to admin");
 
+            if (employee.DOB == null)
+                throw new HiringBellException { UserMessage = "Date of birth is a mandatory field.", FieldName = nameof(employee.DOB), FieldValue = employee.DOB.ToString() };
+
             var mail = new MailAddress(employee.Email);
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
