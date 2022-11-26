@@ -129,10 +129,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetSalaryGroupComponents/{SalaryGroupId}")]
-        public IResponse<ApiResponse> GetSalaryGroupComponents(int SalaryGroupId)
+        [HttpGet("GetSalaryGroupComponents/{SalaryGroupId}/{CTC}")]
+        public IResponse<ApiResponse> GetSalaryGroupComponents(int SalaryGroupId, decimal CTC)
         {
-            var result = _salaryComponentService.GetSalaryGroupComponents(SalaryGroupId);
+            var result = _salaryComponentService.GetSalaryGroupComponents(SalaryGroupId, CTC);
             return BuildResponse(result);
         }
 

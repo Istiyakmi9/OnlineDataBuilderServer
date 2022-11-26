@@ -525,15 +525,15 @@ namespace ServiceLayer.Code
             var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-            List<SalaryComponents> value = this.GetSalaryGroupComponents(salaryGroup.SalaryGroupId);
+            List<SalaryComponents> value = this.GetSalaryGroupComponents(salaryGroup.SalaryGroupId, Convert.ToDecimal(salaryGroup.CTC));
             return value;
         }
 
-        public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId)
+        public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = salaryGroupId });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc", new { SalaryGroupId = salaryGroupId, CTC });
             if (salaryGroup == null)
-                throw new HiringBellException("Unable to get salary group. Please contact admin");
+                throw new HiringBellException("Fail to calulate salar detail, salary group not defined for the current package.");
 
             salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
             return salaryGroup.GroupComponents;

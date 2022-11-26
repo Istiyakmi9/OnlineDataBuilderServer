@@ -53,6 +53,13 @@ namespace EMailService.Service
             footer.Append($"<div>{emailTemplate.SignatureDetail}</div>");
             footer.Append($"<div>{emailTemplate.ContactNo}</div>");
 
+            var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
+            if (File.Exists(logoPath))
+            {
+                footer.Append($"<div><img src=\"cid:{ApplicationConstants.LogoContentId}\" style=\"width: 10rem;margin-top: 1rem;\"></div>");
+            }
+
+
             emailTemplate.Footer = footer.ToString();
 
             emailTemplate.SubjectLine = emailTemplate.EmailTitle
@@ -68,6 +75,7 @@ namespace EMailService.Service
                 .Replace("[[MANAGER-NAME]]", emailRequestModal.ManagerName)
                 .Replace("[[USER-MESSAGE]]", emailRequestModal.Message)
                 .Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType);
+
             emailTemplate.EmailTitle = emailTemplate.EmailTitle.Replace("[[REQUEST-TYPE]]", emailRequestModal.RequestType)
                                     .Replace("[[DEVELOPER-NAME]]", emailRequestModal.DeveloperName)
                                     .Replace("[[ACTION-TYPE]]", emailRequestModal.ActionType);
@@ -196,12 +204,22 @@ namespace EMailService.Service
             try
             {
                 if (emailSenderModal.FileDetails != null && emailSenderModal.FileDetails.Count > 0)
+                {
                     foreach (var files in emailSenderModal.FileDetails)
                     {
                         message.Attachments.Add(
                             new System.Net.Mail.Attachment(Path.Combine(_fileLocationDetail.RootPath, files.FilePath, files.FileName + ".pdf"))
                         );
                     }
+                }
+
+                var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
+                if (File.Exists(logoPath))
+                {
+                    var attachment = new System.Net.Mail.Attachment(logoPath);
+                    attachment.ContentId = ApplicationConstants.LogoContentId;
+                    message.Attachments.Add(attachment);
+                }
 
                 smtp.Send(message);
             }
@@ -211,6 +229,13 @@ namespace EMailService.Service
                 throw;
             }
             return ApplicationConstants.Successfull;
+        }
+
+        public string GetBase64StringForImage(string imgPath)
+        {
+            byte[] imageBytes = System.IO.File.ReadAllBytes(imgPath);
+            string base64String = Convert.ToBase64String(imageBytes);
+            return base64String;
         }
 
         private AlternateView CreateHtmlMessage(string message, string logoPath)

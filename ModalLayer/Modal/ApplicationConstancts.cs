@@ -18,6 +18,10 @@ public class ApplicationConstants
     public static string EmployeeName = "EmployeeName";
     public static string EmployeeId = "EmployeeId";
     public static string JBot = "JBot";
+    public static string HiringBellTransparentLogo = "hb-logo.png";
+    public static string HiringBellLogoSmall = "hb-logo-low.png";
+    public static string HiringBellLogo = "hb-t-logo.png";
+    public static string LogoContentId = "bottomhalf@me.com";
 
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
