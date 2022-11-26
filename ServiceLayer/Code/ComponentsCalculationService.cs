@@ -72,71 +72,58 @@ namespace ServiceLayer.Code
             return (Cess + Surcharges);
         }
 
-        public void OldTaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs)
+        public void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs)
         {
-            employeeDeclaration.TaxRegimeDescId = 1;
-            if (employeeDeclaration.TaxRegimeDescId > 0)
+            decimal taxableIncome = employeeDeclaration.TotalAmount;
+            if (taxableIncome < 0)
+                throw new HiringBellException("Invalid TaxableIncome");
+
+            decimal tax = 0;
+            decimal value = 0;
+            decimal remainingAmount = taxableIncome;
+            var taxSlab = new Dictionary<int, TaxSlabDetail>();
+            var i = taxRegimeSlabs.Count - 1;
+            while (remainingAmount > 0)
             {
-                taxRegimeSlabs = taxRegimeSlabs.FindAll(x => x.RegimeDescId == employeeDeclaration.TaxRegimeDescId && x.StartAgeGroup == 10 && x.EndAgeGroup == 60);
-                if (taxRegimeSlabs.Count == 0)
-                    throw new HiringBellException("No tax slabs found. Please contact to admin");
-
-                decimal taxableIncome = employeeDeclaration.TotalAmount;
-                if (taxableIncome < 0)
-                    throw new HiringBellException("Invalid TaxableIncome");
-
-                decimal tax = 0;
-                decimal value = 0;
-                decimal remainingAmount = taxableIncome;
-                var taxSlab = new Dictionary<int, TaxSlabDetail>();
-                var i = taxRegimeSlabs.Count-1;
-                while (remainingAmount > 0)
+                decimal minAmount = 0;
+                decimal slabAmount = 0;
+                if (remainingAmount > taxRegimeSlabs[i].MinTaxSlab)
                 {
-                    decimal minAmount = 0;
-                    decimal slabAmount = 0;
-                    if (remainingAmount > taxRegimeSlabs[i].MinTaxSlab )
-                    {
-                        if (i > 0)
-                        {
-                            if (taxRegimeSlabs[i].MinTaxSlab - taxRegimeSlabs[i - 1].MaxTaxSlab == 1)
-                                minAmount = (taxRegimeSlabs[i].MinTaxSlab - 1);
-                        }
-                        else
-                            minAmount = (taxRegimeSlabs[i].MinTaxSlab);
-                        if (minAmount < 0) minAmount = minAmount * -1;
-                        value = (minAmount - remainingAmount);
-                        if (value < 0) value = value * -1;
-                        if (value != 0)
-                            remainingAmount = remainingAmount - value;
-                        else
-                            remainingAmount = value;
-                        tax += (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
-                        slabAmount = (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
-                    }
-                    var maxSlabAmount = taxRegimeSlabs[i].MaxTaxSlab.ToString() == "0" ? "Above" : taxRegimeSlabs[i].MaxTaxSlab.ToString();
-                    var taxSlabDetail = new TaxSlabDetail
-                    {
-                        Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and { maxSlabAmount}",
-                        Value = slabAmount
-                    };
-                    taxSlab.Add(i, taxSlabDetail);
-
                     if (i > 0)
-                        i--;
-
+                    {
+                        if (taxRegimeSlabs[i].MinTaxSlab - taxRegimeSlabs[i - 1].MaxTaxSlab == 1)
+                            minAmount = (taxRegimeSlabs[i].MinTaxSlab - 1);
+                    }
+                    else
+                        minAmount = (taxRegimeSlabs[i].MinTaxSlab);
+                    if (minAmount < 0) minAmount = minAmount * -1;
+                    value = (minAmount - remainingAmount);
+                    if (value < 0) value = value * -1;
+                    if (value != 0)
+                        remainingAmount = remainingAmount - value;
+                    else
+                        remainingAmount = value;
+                    tax += (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
+                    slabAmount = (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
                 }
+                var maxSlabAmount = taxRegimeSlabs[i].MaxTaxSlab.ToString() == "0" ? "Above" : taxRegimeSlabs[i].MaxTaxSlab.ToString();
+                var taxSlabDetail = new TaxSlabDetail
+                {
+                    Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and {maxSlabAmount}",
+                    Value = slabAmount
+                };
+                taxSlab.Add(i, taxSlabDetail);
 
-                employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
-                taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
+                if (i > 0)
+                    i--;
 
-                employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", tax + employeeDeclaration.SurChargesAndCess));
-                employeeDeclaration.IncomeTaxSlab = taxSlab;
             }
 
-        }
+            employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
+            taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
 
-        public void NewTaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome)
-        {
+            employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", tax + employeeDeclaration.SurChargesAndCess));
+            employeeDeclaration.IncomeTaxSlab = taxSlab;
         }
 
         public void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails)
