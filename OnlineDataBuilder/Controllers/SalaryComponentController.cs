@@ -149,19 +149,6 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
-        [Authorize(Roles = Role.Admin)]
-        [HttpPost("UpdateTaxDetail/{EmployeeId}/{PresentMonth}/{PresentYear}")]
-        public IResponse<ApiResponse> UpdateTaxDetail(long EmployeeId, int PresentMonth, int PresentYear)
-        {
-            _httpContext.Request.Form.TryGetValue("completeTaxDetail", out StringValues completeTaxDetail);
-            if (completeTaxDetail.Count > 0)
-            {
-                var fullTaxDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(completeTaxDetail);
-                var result = _salaryComponentService.UpdateTaxDetailsService(EmployeeId, fullTaxDetail, PresentMonth, PresentYear);
-                return BuildResponse(result);
-            }
-            return BuildResponse("No files found", HttpStatusCode.OK);
-        }
 
         [HttpGet("SalaryBreakupCalc/{EmployeeId}/{CTCAnnually}")]
         public IResponse<ApiResponse> SalaryBreakupCalc(long EmployeeId, int CTCAnnually)

@@ -14,5 +14,6 @@ namespace ServiceLayer.Interface
         Task<EmployeeDeclaration> HousingPropertyDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> fileDetail);
         EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId);
         EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0);
+        Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear);
     }
 }

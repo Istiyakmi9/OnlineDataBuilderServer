@@ -21,6 +21,9 @@ namespace ModalLayer.Modal.Accounts
         public int CompanyId { set; get; }
         public int ProbationPeriodInDays { set; get; }
         public int NoticePeriodInDays { set; get; }
+        public int FinancialYear { set; get; }
+        public int DeclarationStartMonth { set; get; }
+        public int DeclarationEndMonth { set; get; }
         public bool IsUseInternationalWeekDays { set; get; } = true;
         public List<DayOfWeek> OfficialWeekOffDays { set; get; }
         public bool IsAccrualLeaveForNoticePeriodOnly { set; get; } // override all rule and allow leave for 2 or 3 months (define as per rule) leaves only.

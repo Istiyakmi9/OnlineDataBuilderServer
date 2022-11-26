@@ -350,6 +350,7 @@ namespace ServiceLayer.Code
 
         public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
         {
+            bool flag = false;
             (EmployeeSalaryDetail salaryBreakup, SalaryGroup salaryGroup) = GetEmployeeSalaryDetail(EmployeeId, employeeDeclaration, CTC);
 
             if (salaryBreakup == null || salaryGroup == null)
@@ -362,13 +363,7 @@ namespace ServiceLayer.Code
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(EmployeeId, CTC);
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
-
-                var result = _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
-                {
-                    EmployeeId,
-                    CompleteSalaryDetail = salaryBreakup.CompleteSalaryDetail,
-                    CTC
-                }, true);
+                flag = true;
             }
 
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
@@ -434,81 +429,118 @@ namespace ServiceLayer.Code
             _componentsCalculationService.TaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs);
 
             //Tac Calculation for every month
-            TaxDetailsCalculation(EmployeeId, salaryBreakup, employeeDeclaration);
+            TaxDetailsCalculation(salaryBreakup, employeeDeclaration);
+
+            if (flag)
+            {
+                var result = _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
+                {
+                    EmployeeId,
+                    CompleteSalaryDetail = salaryBreakup.CompleteSalaryDetail,
+                    TaxDetail = salaryBreakup.TaxDetail,
+                    CTC
+                }, true);
+            }
 
             return salaryBreakup;
         }
 
-        private void TaxDetailsCalculation(long EmployeeId, EmployeeSalaryDetail salaryBreakup, EmployeeDeclaration employeeDeclaration)
+        private void TaxDetailsCalculation(EmployeeSalaryDetail salaryBreakup, EmployeeDeclaration employeeDeclaration)
         {
             List<TaxDetails> taxdetails = null;
+
+            CompanySetting companySetting = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+
             if (salaryBreakup.TaxDetail != null)
             {
                 taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(salaryBreakup.TaxDetail);
                 if (taxdetails.Count > 0)
                 {
-                    decimal previousMonthTax = 0;
-                    int i = taxdetails.FindIndex(x => x.Month == DateTime.Now.Month && x.Year == DateTime.Now.Year);
-                    employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("{0:0.00}", taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k)));
-                    int currentMonthIndex = i;
-                    if (currentMonthIndex > 0)
+                    decimal totalTaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", taxdetails.Select(x => x.TaxPaid).Aggregate((i, k) => i + k)));
+                    if (employeeDeclaration.TaxNeedToPay != totalTaxNeedToPay)
                     {
-                        previousMonthTax = taxdetails[currentMonthIndex - 1].TaxDeducted;
-                    }
-                    if (employeeDeclaration.TaxPaid == 0)
-                        i = 0;
-                    decimal currentMonthTax = Convert.ToDecimal(string.Format("{0:0.00}", ((employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid) / (12 - i))));
-                    while (i < taxdetails.Count)
-                    {
+                        if (totalTaxNeedToPay > 0)
+                        {
+                            taxdetails = GetPerMontTaxInitialData(companySetting, employeeDeclaration);
+                        }
+                        else
+                        {
+                            var presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.Now, _currentSession.TimeZone);
+                            employeeDeclaration.TaxPaid = Convert.ToDecimal(string.Format("{0:0.00}",
+                                taxdetails.Where(x => x.Month <= presentDate.Month).Select(x => x.TaxPaid).Aggregate((i, k) => i + k)));
 
-                        taxdetails[i].TaxDeducted = currentMonthTax;
-                        i++;
-                    }
+                            decimal remaningTaxAmount = employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid;
+                            DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
+                            int remaningMonths = (12 - presentDate.Month - financialYearMonth.Month + 1);
 
-                    salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                    return;
+                            decimal singleMonthTax = Convert.ToDecimal(string.Format("{0:0.00}", (remaningTaxAmount / remaningMonths)));
+                            while (remaningMonths > 0)
+                            {
+
+                                taxdetails[remaningMonths].TaxDeducted = singleMonthTax;
+                                remaningMonths--;
+                            }
+
+                            salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+                            return;
+                        }
+                    }
                 }
             }
 
             if (employeeDeclaration.TaxNeedToPay > 0)
             {
-                var permonthTax = employeeDeclaration.TaxNeedToPay / 12;
-                taxdetails = new List<TaxDetails>();
-                DateTime financialYearMonth = new DateTime(DateTime.Now.Year, 4, 1);
-                int i = 0;
-                while (i <= 11)
-                {
-                    taxdetails.Add(new TaxDetails
-                    {
-                        Month = financialYearMonth.AddMonths(i).Month,
-                        Year = financialYearMonth.AddMonths(i).Year,
-                        EmployeeId = EmployeeId,
-                        TaxDeducted = Convert.ToDecimal(String.Format("{0:0.00}", permonthTax)),
-                        TaxPaid = 0
-                    });
-                    i++;
-                }
+                taxdetails = GetPerMontTaxInitialData(companySetting, employeeDeclaration);
             }
             else
             {
-                taxdetails = new List<TaxDetails>();
-                DateTime financialYearMonth = new DateTime(DateTime.Now.Year, 4, 1);
-                int i = 0;
-                while (i <= 11)
-                {
-                    taxdetails.Add(new TaxDetails
-                    {
-                        Month = financialYearMonth.AddMonths(i).Month,
-                        Year = financialYearMonth.AddMonths(i).Year,
-                        EmployeeId = EmployeeId,
-                        TaxDeducted = 0,
-                        TaxPaid = 0
-                    });
-                    i++;
-                }
+                taxdetails = GetPerMontTaxDetail(companySetting, employeeDeclaration.EmployeeId);
             }
 
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+        }
+
+        private List<TaxDetails> GetPerMontTaxDetail(CompanySetting companySetting, long EmployeeId)
+        {
+            var taxdetails = new List<TaxDetails>();
+            DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
+            int i = 0;
+            while (i <= 11)
+            {
+                taxdetails.Add(new TaxDetails
+                {
+                    Month = financialYearMonth.AddMonths(i).Month,
+                    Year = financialYearMonth.AddMonths(i).Year,
+                    EmployeeId = EmployeeId,
+                    TaxDeducted = 0,
+                    TaxPaid = 0
+                });
+                i++;
+            }
+
+            return taxdetails;
+        }
+
+        private List<TaxDetails> GetPerMontTaxInitialData(CompanySetting companySetting, EmployeeDeclaration employeeDeclaration)
+        {
+            var permonthTax = employeeDeclaration.TaxNeedToPay / 12;
+            List<TaxDetails> taxdetails = new List<TaxDetails>();
+            DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
+            int i = 0;
+            while (i <= 11)
+            {
+                taxdetails.Add(new TaxDetails
+                {
+                    Month = financialYearMonth.AddMonths(i).Month,
+                    Year = financialYearMonth.AddMonths(i).Year,
+                    EmployeeId = employeeDeclaration.EmployeeId,
+                    TaxDeducted = Convert.ToDecimal(String.Format("{0:0.00}", permonthTax)),
+                    TaxPaid = 0
+                });
+                i++;
+            }
+
+            return taxdetails;
         }
 
         private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
@@ -576,6 +608,38 @@ namespace ServiceLayer.Code
                 RejectedAmount = 0,
                 TotalAmountDeclared = 0
             });
+        }
+
+        public async Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear)
+        {
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid employeeId used. Please login again.");
+
+            (EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail employeeSalaryDetail) =
+                _db.GetMulti<EmployeeDeclaration, EmployeeSalaryDetail>("sp_employee_declaration_detail_get_by_empid", new { EmployeeId });
+            if (employeeDeclaration == null || employeeSalaryDetail == null)
+                throw new HiringBellException("Ohh!! fail to get employee declaration or salary detail. Please contact to admin.");
+
+            List<TaxDetails> breakDetail = null;
+            TaxDetails workingDetail = null;
+            if (!string.IsNullOrEmpty(employeeSalaryDetail.TaxDetail))
+            {
+                breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
+                workingDetail = breakDetail.FirstOrDefault(x => x.Month == PresentMonth && x.Year == PresentYear);
+                if (workingDetail == null)
+                    employeeSalaryDetail = this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeSalaryDetail.CTC);
+            }
+            else
+            {
+                employeeSalaryDetail = this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeSalaryDetail.CTC);
+            }
+
+            breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
+            workingDetail = breakDetail.Where(x => x.Month == PresentMonth && x.Year == PresentYear).First();
+            if (workingDetail == null)
+                throw new HiringBellException("Fail to calculate salary detail. Look's there are some internal issue. Please contact to admin.");
+
+            return await Task.FromResult(String.Empty);
         }
     }
 }
