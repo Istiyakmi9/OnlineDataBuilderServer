@@ -79,44 +79,31 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid TaxableIncome");
 
             decimal tax = 0;
-            decimal value = 0;
             decimal remainingAmount = taxableIncome;
+            taxRegimeSlabs = taxRegimeSlabs.OrderByDescending(x => x.MinTaxSlab).ToList<TaxRegime>();
             var taxSlab = new Dictionary<int, TaxSlabDetail>();
-            var i = taxRegimeSlabs.Count - 1;
-            while (remainingAmount > 0)
+            decimal slabAmount = 0;
+            var i = 0;
+            while (taxableIncome > 0)
             {
-                decimal minAmount = 0;
-                decimal slabAmount = 0;
-                if (remainingAmount > taxRegimeSlabs[i].MinTaxSlab)
+                slabAmount = 0;
+                if (taxableIncome >= taxRegimeSlabs[i].MinTaxSlab)
                 {
-                    if (i > 0)
+                    remainingAmount = taxableIncome - (taxRegimeSlabs[i].MinTaxSlab - 1);
+                    slabAmount = (taxRegimeSlabs[i].TaxRatePercentage * remainingAmount) / 100;
+                    tax += slabAmount;
+                    taxableIncome -= remainingAmount;
+
+                    var maxSlabAmount = taxRegimeSlabs[i].MaxTaxSlab.ToString() == "0" ? "Above" : taxRegimeSlabs[i].MaxTaxSlab.ToString();
+                    var taxSlabDetail = new TaxSlabDetail
                     {
-                        if (taxRegimeSlabs[i].MinTaxSlab - taxRegimeSlabs[i - 1].MaxTaxSlab == 1)
-                            minAmount = (taxRegimeSlabs[i].MinTaxSlab - 1);
-                    }
-                    else
-                        minAmount = (taxRegimeSlabs[i].MinTaxSlab);
-                    if (minAmount < 0) minAmount = minAmount * -1;
-                    value = (minAmount - remainingAmount);
-                    if (value < 0) value = value * -1;
-                    if (value != 0)
-                        remainingAmount = remainingAmount - value;
-                    else
-                        remainingAmount = value;
-                    tax += (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
-                    slabAmount = (value * taxRegimeSlabs[i].TaxRatePercentage) / 100;
+                        Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and {maxSlabAmount}",
+                        Value = slabAmount
+                    };
+                    taxSlab.Add(i, taxSlabDetail);
                 }
-                var maxSlabAmount = taxRegimeSlabs[i].MaxTaxSlab.ToString() == "0" ? "Above" : taxRegimeSlabs[i].MaxTaxSlab.ToString();
-                var taxSlabDetail = new TaxSlabDetail
-                {
-                    Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and {maxSlabAmount}",
-                    Value = slabAmount
-                };
-                taxSlab.Add(i, taxSlabDetail);
 
-                if (i > 0)
-                    i--;
-
+                i++;
             }
 
             employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
