@@ -17,7 +17,7 @@ namespace ServiceLayer.Interface
         List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup);
         SalaryGroup RemoveAndUpdateSalaryGroupService(string componentId, int groupId);
         List<SalaryComponents> UpdateSalaryGroupComponentService(SalaryGroup salaryGroup);
-        List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId);
+        List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC);
         Task<List<SalaryComponents>> AddUpdateRecurringComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddAdhocComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
