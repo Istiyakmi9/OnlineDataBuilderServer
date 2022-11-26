@@ -23,7 +23,7 @@ namespace ModalLayer.Modal
         public bool IsActive { set; get; }
         public int Total { set; get; }
         public int RowIndex { set; get; }
-        public DateTime? DOB { get; set; }
+        public DateTime DOB { get; set; }
         public DateTime CreatedOn { get; set; }
         public string ProfessionalDetail_Json { get; set; }
         public string ClientJson { set; get; }
