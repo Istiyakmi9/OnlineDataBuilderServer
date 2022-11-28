@@ -5,7 +5,6 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -45,6 +44,9 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             try
             {
                 this.IsTransactionStarted = true;
+                if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
+                    this.con.Close();
+
                 this.con.Open();
                 transaction = this.con.BeginTransaction(isolationLevel);
             }
@@ -245,10 +247,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
                 throw ex;
             }
             finally
@@ -275,7 +281,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     PrepareArguments(Parameters, properties);
                 }
 
-                con.Open();
+                if (con.State != ConnectionState.Open)
+                    con.Open();
 
                 if (OutParam)
                 {
@@ -287,10 +294,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
                 throw ex;
             }
             finally
@@ -411,10 +422,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
+                    con.Close();
                 throw ex;
             }
 
@@ -449,7 +464,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
-                if (con.State == ConnectionState.Open)
+                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
                     con.Close();
                 throw ex;
             }
@@ -690,7 +705,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 MySqlDataAdapter da = new MySqlDataAdapter();
                 da.InsertCommand = cmd;
                 da.UpdateBatchSize = 4;
-                con.Open();
+                if (con.State != ConnectionState.Open)
+                    con.Open();
                 state = da.Update(table);
             }
             catch (Exception ex)

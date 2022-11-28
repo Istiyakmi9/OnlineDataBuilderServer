@@ -42,12 +42,10 @@ namespace ServiceLayer.Code
             DataSet result = null;
             if (accessLevelId > 0)
             {
-                DbParam[] dbParam = new DbParam[]
+                result = _db.FetchDataSet("sp_RolesAndMenu_GetAll", new
                 {
-                    new DbParam(accessLevelId, typeof(int), "_accesslevelId")
-                };
-
-                result = _db.GetDataset("sp_RolesAndMenu_GetAll", dbParam);
+                    accessLevelId
+                });
             }
             return result;
         }
@@ -58,7 +56,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public DataSet AddRole (AddRole addRole)
+        public DataSet AddRole(AddRole addRole)
         {
             if (string.IsNullOrEmpty(addRole.RoleName))
                 throw new HiringBellException("Role name is null or empty");
@@ -76,7 +74,7 @@ namespace ServiceLayer.Code
 
             string message = string.Empty;
             var result = _db.GetDataset("sp_AccessLevel_InsUpd", dbParams, true, ref message);
-            if(result != null && result.Tables.Count > 0)
+            if (result != null && result.Tables.Count > 0)
             {
                 _cacheManager.LoadApplicationData(true);
             }
