@@ -142,21 +142,18 @@ namespace ServiceLayer.Code
             List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
             DateTime current = DateTime.UtcNow;
 
-            DbParam[] dbParams = new DbParam[]
+            var currentAttendance = _db.Get<Attendance>("sp_attendance_detall_pending", new
             {
-                new DbParam(employeeId, typeof(long), "_EmployeeId"),
-                new DbParam(UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(current.Year, typeof(int), "_ForYear"),
-                new DbParam(current.Month, typeof(int), "_ForMonth")
-            };
+                EmployeeId = employeeId,
+                UserTypeId = UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId,
+                ForYear = current.Year,
+                ForMonth = current.Month
+            });
 
-            var Result = _db.GetDataset("sp_attendance_detall_pending", dbParams);
-            if (Result.Tables.Count == 1 && Result.Tables[0].Rows.Count > 0)
-            {
-                var currentAttendance = Converter.ToType<Attendance>(Result.Tables[0]);
-                attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
-            }
+            if (currentAttendance == null)
+                throw new HiringBellException("Fail to get attendance detail. Please contact to admin.");
 
+            attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
             return attendanceSet;
         }
 
@@ -316,16 +313,15 @@ namespace ServiceLayer.Code
             }
 
 
-            DbParam[] dbParams = new DbParam[]
+            var Result = _db.FetchDataSet("sp_attendance_get", new
             {
-                new DbParam(attendenceDetail.EmployeeUid, typeof(int), "_EmployeeId"),
-                new DbParam(attendenceDetail.ClientId, typeof(int), "_ClientId"),
-                new DbParam(attendenceDetail.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(attendenceDetail.ForYear, typeof(int), "_ForYear"),
-                new DbParam(attendenceDetail.ForMonth, typeof(int), "_ForMonth")
-            };
+                EmployeeId = attendenceDetail.EmployeeUid,
+                ClientId = attendenceDetail.ClientId,
+                UserTypeId = attendenceDetail.UserTypeId,
+                ForYear = attendenceDetail.ForYear,
+                ForMonth = attendenceDetail.ForMonth
+            });
 
-            var Result = _db.GetDataset("sp_attendance_get", dbParams);
             return null;
         }
 
@@ -415,25 +411,25 @@ namespace ServiceLayer.Code
                     currentAttendance.DaysPending++;
             });
 
-            var dbParams = new DbParam[]
+            var Result = _db.Execute<string>(procedure, new
             {
-                new DbParam(currentAttendance.AttendanceId, typeof(long), "_AttendanceId"),
-                new DbParam(currentAttendance.EmployeeId, typeof(long), "_EmployeeId"),
-                new DbParam(currentAttendance.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(AttendaceDetail, typeof(string), "_AttendanceDetail"),
-                new DbParam(currentAttendance.TotalDays, typeof(int), "_TotalDays"),
-                new DbParam(currentAttendance.TotalWeekDays, typeof(int), "_TotalWeekDays"),
-                new DbParam(currentAttendance.DaysPending, typeof(int), "_DaysPending"),
-                new DbParam(MonthsMinutes, typeof(double), "_TotalBurnedMinutes"),
-                new DbParam(currentAttendance.ForYear, typeof(int), "_ForYear"),
-                new DbParam(currentAttendance.ForMonth, typeof(int), "_ForMonth"),
-                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_UserId")
-            };
+                AttendanceId = currentAttendance.AttendanceId,
+                EmployeeId = currentAttendance.EmployeeId,
+                UserTypeId = currentAttendance.UserTypeId,
+                AttendanceDetail = AttendaceDetail,
+                TotalDays = currentAttendance.TotalDays,
+                TotalWeekDays = currentAttendance.TotalWeekDays,
+                DaysPending = currentAttendance.DaysPending,
+                TotalBurnedMinutes = MonthsMinutes,
+                ForYear = currentAttendance.ForYear,
+                ForMonth = currentAttendance.ForMonth,
+                UserId = _currentSession.CurrentUserDetail.UserId
+            }, true);
 
-            var result = _db.ExecuteNonQuery(procedure, dbParams, true);
-            if (string.IsNullOrEmpty(result))
-                return null;
-            return result;
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Fail to insert or update attendance detail. Pleasa contact to admin.");
+
+            return Result;
         }
 
         private void ValidateDateOfAttendanceSubmission(DateTime firstDate, DateTime lastDate)
