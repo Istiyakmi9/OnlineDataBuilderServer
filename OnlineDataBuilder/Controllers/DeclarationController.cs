@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
@@ -63,6 +65,14 @@ namespace OnlineDataBuilder.Controllers
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("UpdateTaxDetail/{EmployeeId}/{PresentMonth}/{PresentYear}")]
+        public async Task<ApiResponse> UpdateTaxDetail(long EmployeeId, int PresentMonth, int PresentYear)
+        {
+            var result = await _declarationService.UpdateTaxDetailsService(EmployeeId, PresentMonth, PresentYear);
+            return BuildResponse(result);
         }
 
         [HttpPost("SwitchEmployeeTaxRegime")]

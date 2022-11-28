@@ -23,7 +23,7 @@ namespace ServiceLayer.Code
         public SalaryComponentService(IDb db, CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
             ITimezoneConverter timezoneConverter
-            )
+        )
         {
             _db = db;
             _currentSession = currentSession;
@@ -622,32 +622,6 @@ namespace ServiceLayer.Code
                 GroupId = employeeSalaryDetail.GroupId,
                 NetSalary = employeeSalaryDetail.NetSalary,
                 TaxDetail = employeeSalaryDetail.TaxDetail
-            };
-            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to insert or update salary breakup");
-            else
-                result = "Inserted/Updated successfully";
-            return result;
-        }
-
-        public string UpdateTaxDetailsService(long EmployeeId, List<TaxDetails> fullTaxDetails, int PresentMonth, int PresentYear)
-        {
-            if (EmployeeId <= 0)
-                throw new HiringBellException("Invalid EmployeeId");
-
-            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
-            // implement code to check the correctness of the modal on value level.
-
-            EmployeeSalaryDetail salaryBreakup = new EmployeeSalaryDetail
-            {
-                CompleteSalaryDetail = employeeSalaryDetail.CompleteSalaryDetail,
-                CTC = employeeSalaryDetail.CTC,
-                EmployeeId = EmployeeId,
-                GrossIncome = employeeSalaryDetail.GrossIncome,
-                GroupId = employeeSalaryDetail.GroupId,
-                NetSalary = employeeSalaryDetail.NetSalary,
-                TaxDetail = JsonConvert.SerializeObject("fullTaxDetails")
             };
             var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
