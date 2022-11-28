@@ -649,5 +649,20 @@ namespace ServiceLayer.Code
 
             return await Task.FromResult(String.Empty);
         }
+
+        public string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration)
+        {
+            if (employeeDeclaration.EmployeeId == 0)
+                throw new HiringBellException("Invalid employee selected. Please select a valid employee");
+
+            if (employeeDeclaration.EmployeeCurrentRegime == 0)
+                throw new HiringBellException("Please select a valid tx regime type");
+
+            var result = _db.Execute<EmployeeDeclaration>("sp_employee_taxregime_update",
+                new { EmployeeId = employeeDeclaration.EmployeeId, EmployeeCurrentRegime = employeeDeclaration.EmployeeCurrentRegime }, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to switch the tax regime");
+            return result;
+        }
     }
 }

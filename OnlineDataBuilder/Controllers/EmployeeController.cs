@@ -3,12 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
