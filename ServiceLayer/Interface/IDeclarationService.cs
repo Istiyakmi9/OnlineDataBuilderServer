@@ -15,5 +15,6 @@ namespace ServiceLayer.Interface
         EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId);
         EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0);
         Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear);
+        string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration);
     }
 }

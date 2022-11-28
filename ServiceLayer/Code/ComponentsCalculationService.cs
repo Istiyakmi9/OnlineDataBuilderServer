@@ -84,6 +84,7 @@ namespace ServiceLayer.Code
             var taxSlab = new Dictionary<int, TaxSlabDetail>();
             decimal slabAmount = 0;
             var i = 0;
+            taxSlab.Add(i, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
             while (taxableIncome > 0)
             {
                 slabAmount = 0;
@@ -100,15 +101,15 @@ namespace ServiceLayer.Code
                         Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and {maxSlabAmount}",
                         Value = slabAmount
                     };
-                    taxSlab.Add(i, taxSlabDetail);
+                    taxSlab.Add(i+1, taxSlabDetail);
                 }
 
                 i++;
             }
 
             employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
-            taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
-
+            //taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
+            taxSlab[0].Value = tax;
             employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", tax + employeeDeclaration.SurChargesAndCess));
             employeeDeclaration.IncomeTaxSlab = taxSlab;
         }

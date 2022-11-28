@@ -74,5 +74,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _declarationService.UpdateTaxDetailsService(EmployeeId, PresentMonth, PresentYear);
             return BuildResponse(result);
         }
+
+        [HttpPost("SwitchEmployeeTaxRegime")]
+        public IResponse<ApiResponse> SwitchEmployeeTaxRegime(EmployeeDeclaration employeeDeclaration)
+        {
+            var result = _declarationService.SwitchEmployeeTaxRegimeService(employeeDeclaration);
+            return BuildResponse(result);
+        }
     }
 }
