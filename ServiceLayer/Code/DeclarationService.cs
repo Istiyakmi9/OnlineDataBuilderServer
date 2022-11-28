@@ -182,8 +182,16 @@ namespace ServiceLayer.Code
 
             if (employeeDeclaration.DeclarationDetail != null)
                 employeeDeclaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+            else
+                throw new Exception("Declaration component are null. Please contact to admin");
 
             List<SalaryComponents> salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
+            if (salaryComponents.Count <= 0)
+                throw new Exception("Salary component are null. Please contact to admin");
+
+            if (salaryComponents.Count != employeeDeclaration.SalaryComponentItems.Count)
+                throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
+
             Parallel.ForEach(salaryComponents, x =>
             {
                 if (employeeDeclaration.SalaryComponentItems != null)
