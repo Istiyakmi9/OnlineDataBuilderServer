@@ -64,5 +64,12 @@ namespace OnlineDataBuilder.Controllers
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
+
+        [HttpPost("SwitchEmployeeTaxRegime")]
+        public IResponse<ApiResponse> SwitchEmployeeTaxRegime(EmployeeDeclaration employeeDeclaration)
+        {
+            var result = _declarationService.SwitchEmployeeTaxRegimeService(employeeDeclaration);
+            return BuildResponse(result);
+        }
     }
 }
