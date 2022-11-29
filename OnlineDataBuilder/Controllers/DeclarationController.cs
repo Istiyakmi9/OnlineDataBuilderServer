@@ -80,5 +80,19 @@ namespace OnlineDataBuilder.Controllers
             var result = _declarationService.SwitchEmployeeTaxRegimeService(employeeDeclaration);
             return BuildResponse(result);
         }
+
+        [HttpDelete("DeleteDeclarationValue/{EmployeeId}/{ComponentId}")]
+        public IResponse<ApiResponse> DeleteDeclarationValue([FromRoute]int EmployeeId, [FromRoute]string ComponentId)
+        {
+            var result = _declarationService.DeleteDeclarationValueService(EmployeeId, ComponentId);
+            return BuildResponse(result);
+        }
+
+        [HttpDelete("DeleteDeclarationFile/{EmployeeId}/{FileId}")]
+        public IResponse<ApiResponse> DeleteDeclarationFile([FromRoute] int EmployeeId, [FromRoute] int FileId)
+        {
+            var result = _declarationService.DeleteDeclarationFileService(EmployeeId, FileId);
+            return BuildResponse(result);
+        }
     }
 }
