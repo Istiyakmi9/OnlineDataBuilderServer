@@ -316,6 +316,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             T data = default(T);
+            if (Parameters == null)
+                Parameters = new { };
             object userType = Parameters;
             var properties = userType.GetType().GetProperties().ToList();
 
