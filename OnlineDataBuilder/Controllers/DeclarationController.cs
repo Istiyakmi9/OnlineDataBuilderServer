@@ -6,7 +6,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
