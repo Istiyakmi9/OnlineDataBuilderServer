@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -59,15 +60,13 @@ namespace ServiceLayer.Code
                 EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
                 EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
                 List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
+                SalaryComponents salaryComponent = null;
                 if (declaration != null && !string.IsNullOrEmpty(declaration.DeclarationDetail))
                 {
                     salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
-                    SalaryComponents salaryComponent = salaryComponents.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
+                    salaryComponent = salaryComponents.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
                     if (salaryComponent == null)
                         throw new HiringBellException("Requested component not found. Please contact to admin.");
-                    salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
-
-                    declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
                 }
                 else
                 {
@@ -81,8 +80,39 @@ namespace ServiceLayer.Code
                     "declarated_documents"
                 );
 
+                long fileIndex = 1;
+                FileDetail fileDetail = _db.Get<FileDetail>("sp_userfiledetail_get_last_id", null);
+                if (fileDetail != null)
+                    fileIndex = fileDetail.FileId;
+
+                files.ForEach(x => x.FileId = fileIndex + 1);
+
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
 
+                DbResult dbResult = null;
+                if (FileCollection.Count > 0)
+                {
+                    _fileService.SaveFileToLocation(declarationDoc, files, FileCollection);
+
+                    var fileInfo = (from n in files
+                                    select new
+                                    {
+                                        FileId = n.FileId,
+                                        FileOwnerId = (employeeDeclaration.EmployeeId),
+                                        FilePath = declarationDoc,
+                                        FileName = n.FileName,
+                                        FileExtension = n.FileExtension,
+                                        UserTypeId = (int)UserType.Compnay,
+                                        AdminId = _currentSession.CurrentUserDetail.UserId
+                                    });
+
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    dbResult = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
+                }
+
+                salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
+                salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(files.Select(x => x.FileId).ToList<long>());
+                declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
                 var result = _db.Execute<EmployeeDeclaration>("sp_employee_declaration_insupd", new
                 {
                     EmployeeDeclarationId = declaration.EmployeeDeclarationId,
@@ -90,46 +120,29 @@ namespace ServiceLayer.Code
                     DocumentPath = declarationDoc,
                     DeclarationDetail = declaration.DeclarationDetail,
                     HousingProperty = declaration.HousingProperty,
-                    TotalDeclaredAmount = 0,
-                    TotalApprovedAmount = 0,
-                    EmployeeCurrentRegime = 0
+                    TotalDeclaredAmount = declaration.TotalDeclaredAmount,
+                    TotalApprovedAmount = declaration.TotalApprovedAmount,
+                    TotalRejectedAmount = declaration.TotalRejectedAmount,
+                    EmployeeCurrentRegime = declaration.EmployeeCurrentRegime
                 }, true);
 
-                if (ApplicationConstants.IsExecuted(result))
+                if (!ApplicationConstants.IsExecuted(result))
                 {
-                    if (FileCollection.Count > 0)
-                    {
-                        _fileService.SaveFileToLocation(declarationDoc, files, FileCollection);
-
-                        var fileInfo = (from n in files
-                                        select new
-                                        {
-                                            FileId = n.FileUid,
-                                            FileOwnerId = (employeeDeclaration.EmployeeId),
-                                            FilePath = declarationDoc,
-                                            FileName = n.FileName,
-                                            FileExtension = n.FileExtension,
-                                            UserTypeId = (int)UserType.Compnay,
-                                            AdminId = _currentSession.CurrentUserDetail.UserId
-                                        });
-
-                        DataTable table = Converter.ToDataTable(fileInfo);
-                        var insertedStatus = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
-                    }
+                    _fileService.DeleteFiles(files);
                 }
 
                 _db.Commit();
 
-                empDeclaration.SalaryComponentItems = salaryComponents;
-                this.BuildSectionWiseComponents(empDeclaration);
-                EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
+                //empDeclaration.SalaryComponentItems = salaryComponents;
+                //this.BuildSectionWiseComponents(empDeclaration);
+                //EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(employeeDeclaration.EmployeeId, empDeclaration);
 
-                result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
-                if (string.IsNullOrEmpty(result))
-                    throw new HiringBellException("Unable to insert or update salary breakup");
+                //result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
+                //if (string.IsNullOrEmpty(result))
+                //    throw new HiringBellException("Unable to insert or update salary breakup");
 
 
-                return this.GetEmployeeDeclarationDetailById(employeeDeclaration.EmployeeId);
+                return this.GetEmployeeDeclarationDetail(employeeDeclaration.EmployeeId, true);
             }
             catch
             {
@@ -158,7 +171,7 @@ namespace ServiceLayer.Code
             return (declarations, salaryComponents);
         }
 
-        public EmployeeDeclaration GetEmployeeDeclarationDetailById(long EmployeeId)
+        public EmployeeDeclaration GetEmployeeDeclarationDetail(long EmployeeId, bool reCalculateFlag = false)
         {
             List<Files> files = default;
             EmployeeDeclaration employeeDeclaration = default;
@@ -208,7 +221,7 @@ namespace ServiceLayer.Code
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 this.BuildSectionWiseComponents(employeeDeclaration);
-                this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeDeclaration.SalaryDetail.CTC);
+                this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeDeclaration.SalaryDetail.CTC, reCalculateFlag);
             }
 
             employeeDeclaration.FileDetails = files;
@@ -306,7 +319,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
 
-            return this.GetEmployeeDeclarationDetailById(DeclarationDetail.EmployeeId);
+            return this.GetEmployeeDeclarationDetail(DeclarationDetail.EmployeeId);
         }
 
         private (EmployeeSalaryDetail, SalaryGroup) GetEmployeeSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
@@ -336,7 +349,7 @@ namespace ServiceLayer.Code
                     if (salaryBreakup == null)
                         throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
                     if (employeeDeclaration.SalaryDetail != null)
-                        salaryBreakup.CTC = employeeDeclaration.SalaryDetail.CTC;
+                        employeeDeclaration.SalaryDetail.CTC = salaryBreakup.CTC;
                 }
                 else
                 {
@@ -356,7 +369,7 @@ namespace ServiceLayer.Code
             return (salaryBreakup, salaryGroup);
         }
 
-        public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
+        public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0, bool reCalculateFlag = false)
         {
             bool flag = false;
             (EmployeeSalaryDetail salaryBreakup, SalaryGroup salaryGroup) = GetEmployeeSalaryDetail(EmployeeId, employeeDeclaration, CTC);
@@ -369,7 +382,7 @@ namespace ServiceLayer.Code
 
             if (completeSalaryBreakups.Count == 0)
             {
-                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(EmployeeId, CTC);
+                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(EmployeeId, salaryBreakup.CTC);
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
                 flag = true;
             }
@@ -437,28 +450,35 @@ namespace ServiceLayer.Code
             _componentsCalculationService.TaxRegimeCalculation(employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs);
 
             //Tac Calculation for every month
-            flag = TaxDetailsCalculation(salaryBreakup, employeeDeclaration);
+            flag = TaxDetailsCalculation(salaryBreakup, employeeDeclaration, reCalculateFlag);
 
             if (flag)
             {
-                var result = _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
+                var result = _db.ExecuteAsync("sp_employee_salary_detail_InsUpd", new
                 {
                     EmployeeId,
-                    CompleteSalaryDetail = salaryBreakup.CompleteSalaryDetail,
-                    TaxDetail = salaryBreakup.TaxDetail,
-                    CTC
+                    salaryBreakup.CTC,
+                    salaryBreakup.GrossIncome,
+                    salaryBreakup.NetSalary,
+                    salaryBreakup.CompleteSalaryDetail,
+                    salaryBreakup.GroupId,
+                    salaryBreakup.TaxDetail,
                 }, true);
             }
 
             return salaryBreakup;
         }
 
-        private bool TaxDetailsCalculation(EmployeeSalaryDetail salaryBreakup, EmployeeDeclaration employeeDeclaration)
+        private bool TaxDetailsCalculation(EmployeeSalaryDetail salaryBreakup, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag)
         {
             bool flag = true;
             List<TaxDetails> taxdetails = null;
 
-            CompanySetting companySetting = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            CompanySetting companySetting = _db.Get<CompanySetting>("sp_company_setting_get_byid", new
+            {
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            });
+
             if (companySetting == null)
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
 
@@ -469,27 +489,42 @@ namespace ServiceLayer.Code
                 {
                     decimal totalTaxNeedToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted)
                         .Aggregate((i, k) => i + k));
-                    if (Convert.ToInt64(employeeDeclaration.TaxNeedToPay) != Convert.ToInt64(totalTaxNeedToPay))
+                    if (reCalculateFlag)
                     {
-                        if (totalTaxNeedToPay > 0)
+                        if (totalTaxNeedToPay == 0)
                         {
                             taxdetails = GetPerMontTaxInitialData(companySetting, employeeDeclaration);
                         }
                         else
                         {
-                            var presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-                            employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails.Where(x => x.Month <= presentDate.Month)
+                            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+                            employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                 .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
                             decimal remaningTaxAmount = employeeDeclaration.TaxNeedToPay - employeeDeclaration.TaxPaid;
                             DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
-                            int remaningMonths = (12 - presentDate.Month - financialYearMonth.Month + 1);
 
+                            // need to check if last day of month is over then next calculation
+                            // would be effected from next month else from current month
+                            int useCurrentMonth = 0;
+                            if (presentDate.Day <= companySetting.EveryMonthLastDayOfDeclaration)
+                                useCurrentMonth = 1;
+
+                            int remaningMonths = (12 - (presentDate.Month - financialYearMonth.Month + 1) + useCurrentMonth);
+                            presentDate = presentDate.AddMonths(useCurrentMonth == 0 ? 1 : 0);
+
+                            TaxDetails taxDetail = default(TaxDetails);
                             decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / remaningMonths));
-                            while (remaningMonths > 0)
+                            while (presentDate.Month != (companySetting.DeclarationEndMonth + 1))
                             {
-                                taxdetails[remaningMonths].TaxDeducted = singleMonthTax;
-                                remaningMonths--;
+                                taxDetail = taxdetails.FirstOrDefault(x => x.Month == presentDate.Month);
+                                if (taxDetail != null)
+                                {
+                                    taxDetail.TaxDeducted = singleMonthTax;
+                                    taxDetail.TaxPaid = 0M;
+                                }
+
+                                presentDate = presentDate.AddMonths(1);
                             }
 
                             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
@@ -655,7 +690,21 @@ namespace ServiceLayer.Code
             }
 
 
-            return await Task.FromResult(String.Empty);
+            foreach (var elem in breakDetail)
+            {
+                if (elem.Month <= PresentMonth && elem.Month > 3)
+                    elem.TaxPaid = elem.TaxDeducted;
+            }
+
+            var Result = await _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
+            {
+                EmployeeId = employeeSalaryDetail.EmployeeId,
+                CompleteSalaryDetail = employeeSalaryDetail.CompleteSalaryDetail,
+                TaxDetail = JsonConvert.SerializeObject(breakDetail),
+                CTC = employeeSalaryDetail.CTC,
+            }, true);
+
+            return Result.statusMessage;
         }
 
         public string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration)

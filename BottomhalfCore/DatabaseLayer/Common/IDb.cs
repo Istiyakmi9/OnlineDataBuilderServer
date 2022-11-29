@@ -29,7 +29,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
 
         string Execute<T>(string ProcedureName, dynamic instance, bool OutParam);
         Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false);
-        T Get<T>(string ProcedureName, dynamic Parameters, bool OutParam = false) where T : new();
+        T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
         (T, Q) GetMulti<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
             where T : new()
             where Q : new();

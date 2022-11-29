@@ -24,6 +24,9 @@ namespace ModalLayer.Modal.Accounts
         public int FinancialYear { set; get; }
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
+
+        // This value will come from database and filled by admin using page.
+        public int EveryMonthLastDayOfDeclaration { set; get; } = 20;
         public bool IsUseInternationalWeekDays { set; get; } = true;
         public List<DayOfWeek> OfficialWeekOffDays { set; get; }
         public bool IsAccrualLeaveForNoticePeriodOnly { set; get; } // override all rule and allow leave for 2 or 3 months (define as per rule) leaves only.
