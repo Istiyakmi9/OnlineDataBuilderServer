@@ -721,5 +721,24 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to switch the tax regime");
             return result;
         }
+
+        public string DeleteDeclarationValueService(int EmployeeId, string ComponentId)
+        {
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid employee selected");
+
+            if (string.IsNullOrEmpty(ComponentId))
+                throw new HiringBellException("Invalid component selected. Please select a vlid component.");
+            return null;
+        }
+        public string DeleteDeclarationFileService(int EmployeeId, int FileId)
+        {
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid employee selected");
+
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid file selected. Please select a valid file");
+            return null;
+        }
     }
 }
