@@ -1,9 +1,11 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace ServiceLayer.Code
@@ -12,11 +14,14 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-
-        public ProjectService(IDb db, CurrentSession currentSession)
+        private readonly FileLocationDetail _fileLocationDetail;
+        private readonly IHostingEnvironment _hostingEnvironment;
+        public ProjectService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment)
         {
             _db = db;
             _currentSession = currentSession;
+            _fileLocationDetail = fileLocationDetail;
+            _hostingEnvironment = hostingEnvironment;
         }
         public string AddWikiService(WikiDetail project)
         {
@@ -28,9 +33,21 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid project selected");
             else
             {
+                var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, "project_document");
+                if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                    Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+                string filename = projectDetail.ProjectName.Replace(" ", "") + ".txt";
+                var filepath = Path.Combine(folderPath, filename);
+                if (File.Exists(filepath))
+                    File.Delete(filepath);
+
+                var txt = new StreamWriter(filepath);
+                txt.Write(project.SectionDescription);
+                txt.Close();
+
                 projectDetail.PageIndexDetail = "[]";
                 projectDetail.KeywordDetail = "[]";
-                projectDetail.DocumentationDetail = JsonConvert.SerializeObject(project);
+                projectDetail.HomePageUrl = filepath;
                 projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             var result = _db.Execute<Project>("sp_wiki_detail_upd", projectDetail, true);
@@ -78,6 +95,11 @@ namespace ServiceLayer.Code
         public Project GetAllWikiService(long ProjectId)
         {
             var result = _db.Get<Project>("sp_project_detail_getby_id", new { ProjectId });
+            if (File.Exists(result.HomePageUrl))
+            {
+                var txt = File.ReadAllText(result.HomePageUrl);
+                result.DocumentationDetail = txt;
+            }
             return result;
         }
 
