@@ -33,7 +33,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UpdateDeclarationDetail/{EmployeeDeclarationId}")]
-        public async Task<ApiResponse> UpdateDeclarationDetail([FromRoute]long EmployeeDeclarationId)
+        public async Task<ApiResponse> UpdateDeclarationDetail([FromRoute] long EmployeeDeclarationId)
         {
             StringValues declaration = default(string);
             _httpContext.Request.Form.TryGetValue("declaration", out declaration);
@@ -81,17 +81,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpDelete("DeleteDeclarationValue/{EmployeeId}/{ComponentId}")]
-        public IResponse<ApiResponse> DeleteDeclarationValue([FromRoute]int EmployeeId, [FromRoute]string ComponentId)
+        [HttpDelete("DeleteDeclarationValue/{DeclarationId}/{ComponentId}")]
+        public IResponse<ApiResponse> DeleteDeclarationValue([FromRoute] long DeclarationId, [FromRoute] string ComponentId)
         {
-            var result = _declarationService.DeleteDeclarationValueService(EmployeeId, ComponentId);
+            var result = _declarationService.DeleteDeclarationValueService(DeclarationId, ComponentId);
             return BuildResponse(result);
         }
 
-        [HttpDelete("DeleteDeclarationFile/{EmployeeId}/{FileId}")]
-        public IResponse<ApiResponse> DeleteDeclarationFile([FromRoute] int EmployeeId, [FromRoute] int FileId)
+        [HttpDelete("DeleteDeclarationFile/{DeclarationId}/{FileId}/{ComponentId}")]
+        public async Task<ApiResponse> DeleteDeclarationFile([FromRoute] long DeclarationId, [FromRoute] int FileId, [FromRoute] string ComponentId)
         {
-            var result = _declarationService.DeleteDeclarationFileService(EmployeeId, FileId);
+            var result = await _declarationService.DeleteDeclarationFileService(DeclarationId, FileId, ComponentId);
             return BuildResponse(result);
         }
     }
