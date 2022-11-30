@@ -82,9 +82,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpDelete("DeleteDeclarationValue/{DeclarationId}/{ComponentId}")]
-        public IResponse<ApiResponse> DeleteDeclarationValue([FromRoute] long DeclarationId, [FromRoute] string ComponentId)
+        public async Task<ApiResponse> DeleteDeclarationValue([FromRoute] long DeclarationId, [FromRoute] string ComponentId)
         {
-            var result = _declarationService.DeleteDeclarationValueService(DeclarationId, ComponentId);
+            var result = await _declarationService.DeleteDeclarationValueService(DeclarationId, ComponentId);
             return BuildResponse(result);
         }
 
