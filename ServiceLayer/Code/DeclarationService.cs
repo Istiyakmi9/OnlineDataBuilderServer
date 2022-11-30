@@ -180,6 +180,9 @@ namespace ServiceLayer.Code
         {
             List<Files> files = default;
             EmployeeDeclaration employeeDeclaration = default;
+            if (EmployeeId <= 0)
+                throw new HiringBellException("Invalid employee selected. Please select a vlid employee");
+
             DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
             {
                 EmployeeId = EmployeeId,
@@ -805,7 +808,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<string> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
+        public async Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
         {
             try
             {
@@ -855,7 +858,7 @@ namespace ServiceLayer.Code
                         _fileService.DeleteFiles(new List<Files> { file });
                 }
                 _db.Commit();
-                return Result.statusMessage;
+                return this.GetEmployeeDeclarationDetail(declaration.EmployeeId);
             }
             catch
             {
