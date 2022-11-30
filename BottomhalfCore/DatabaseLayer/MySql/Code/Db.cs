@@ -208,7 +208,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
                 }
 
-                con.Open();
+                if (con.State != ConnectionState.Open)
+                    con.Open();
                 var result = await cmd.ExecuteNonQueryAsync();
                 if (OutParam)
                     status = cmd.Parameters["_ProcessingResult"].Value.ToString();
