@@ -374,6 +374,29 @@ namespace ServiceLayer.Code
             return (salaryBreakup, salaryGroup);
         }
 
+        private List<CalculatedSalaryBreakupDetail> GetGrossIncome(EmployeeDeclaration employeeDeclaration, List<AnnualSalaryBreakup> completeSalaryBreakups)
+        {
+            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
+
+            var currentMonthDateTime = DateTime.UtcNow;
+            TimeZoneInfo timeZoneInfo = _currentSession.TimeZone;
+            if (timeZoneInfo != null)
+                currentMonthDateTime = _timezoneConverter.ToIstTime(currentMonthDateTime);
+            var currentMonthSalaryBreakup = completeSalaryBreakups.Find(i => i.MonthNumber == currentMonthDateTime.Month);
+            if (currentMonthSalaryBreakup == null)
+                throw new HiringBellException("Unable to find salary detail. Please contact to admin.");
+            else
+                calculatedSalaryBreakupDetails = currentMonthSalaryBreakup.SalaryBreakupDetails;
+
+            var grossComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Gross);
+            if (grossComponent == null)
+                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
+
+            employeeDeclaration.TotalAmount = grossComponent.FinalAmount * 12;
+
+            return calculatedSalaryBreakupDetails;
+        }
+
         public EmployeeSalaryDetail CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0, bool reCalculateFlag = false)
         {
             bool flag = false;
@@ -388,35 +411,16 @@ namespace ServiceLayer.Code
             if (completeSalaryBreakups.Count == 0)
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(EmployeeId, salaryBreakup.CTC);
+                if (completeSalaryBreakups == null || completeSalaryBreakups.Count == 0)
+                    throw new HiringBellException("Unable to build salary detail. Please contact to admin.");
+
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
                 flag = true;
             }
 
-            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
-            var annualSalaryBreakups = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, salaryBreakup.CTC);
-            if (annualSalaryBreakups == null || annualSalaryBreakups.Count == 0)
-                throw new HiringBellException("Unable to build salary detail. Please contact to admin.");
-            else
-            {
-                var currentMonthDateTime = DateTime.UtcNow;
-                TimeZoneInfo timeZoneInfo = _currentSession.TimeZone;
-                if (timeZoneInfo != null)
-                    currentMonthDateTime = _timezoneConverter.ToIstTime(currentMonthDateTime);
-                var currentMonthSalaryBreakup = annualSalaryBreakups.Find(i => i.MonthNumber == currentMonthDateTime.Month);
-                if (currentMonthSalaryBreakup == null)
-                    throw new HiringBellException("Unable to find salary detail. Please contact to admin.");
-                else
-                    calculatedSalaryBreakupDetails = currentMonthSalaryBreakup.SalaryBreakupDetails;
-            }
-
-            var grossComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Gross);
-            if (grossComponent == null)
-                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
-
-            employeeDeclaration.TotalAmount = grossComponent.FinalAmount * 12;
-
+            // calculate and get gross income value and salary breakup detail
+            var calculatedSalaryBreakupDetails = GetGrossIncome(employeeDeclaration, completeSalaryBreakups);
             decimal StandardDeduction = _componentsCalculationService.StandardDeductionComponent(employeeDeclaration);
-
 
             // check and apply professional tax
             _componentsCalculationService.ProfessionalTaxComponent(employeeDeclaration, salaryGroup);
@@ -424,13 +428,11 @@ namespace ServiceLayer.Code
             // check and apply employer providentfund
             _componentsCalculationService.EmployerProvidentFund(employeeDeclaration, salaryGroup);
 
-
             // check and apply 1.5 lakhs components
             decimal totalDeduction = _componentsCalculationService.OneAndHalfLakhsComponent(employeeDeclaration);
 
             decimal hraAmount = 0;
-            salaryBreakup.GrossIncome = grossComponent.FinalAmount * 12;
-            salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups);
+            salaryBreakup.GrossIncome = employeeDeclaration.TotalAmount;
             employeeDeclaration.SalaryDetail = salaryBreakup;
 
             // Calculate hra and apply on deduction
@@ -538,6 +540,8 @@ namespace ServiceLayer.Code
                     }
                     else
                     {
+                        employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
+                                .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
                         return false;
                     }
                 }
@@ -580,6 +584,7 @@ namespace ServiceLayer.Code
         private List<TaxDetails> GetPerMontTaxInitialData(CompanySetting companySetting, EmployeeDeclaration employeeDeclaration)
         {
             var permonthTax = employeeDeclaration.TaxNeedToPay / 12;
+            employeeDeclaration.TaxPaid = 0;
             List<TaxDetails> taxdetails = new List<TaxDetails>();
             DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
             int i = 0;
