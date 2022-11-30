@@ -102,13 +102,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         #region GetDataSet
 
-        private List<PropertyInfo> GetProperties<T>()
-        {
-            Type type = typeof(T);
-            return type.GetProperties()
-                .ToList();
-        }
-
         private void PrepareArguments<T>(object instance)
         {
             List<PropertyInfo> properties = instance.GetType().GetProperties().ToList();
@@ -188,9 +181,20 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
-                    con.Close();
+                CloseConnection();
             }
+        }
+
+        private async Task CloseConnectionAsync()
+        {
+            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
+                await con.CloseAsync();
+        }
+
+        private void CloseConnection()
+        {
+            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
+                con.Close();
         }
 
         public async Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false)
@@ -218,12 +222,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
+                await CloseConnectionAsync();
                 throw ex;
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
+                await CloseConnectionAsync();
             }
         }
 
@@ -248,20 +252,15 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw ex;
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
+                CloseConnection();
             }
 
             return result;
@@ -295,20 +294,15 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw ex;
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
+                CloseConnection();
             }
 
             return result;
@@ -425,17 +419,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw MySqlException;
             }
             catch (Exception ex)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw ex;
             }
-
 
             return items;
         }
@@ -565,14 +554,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
                 throw ex;
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
+                CloseConnection();
             }
             return OutPut;
         }
@@ -607,8 +593,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
+                CloseConnection();
             }
         }
 
@@ -718,8 +703,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (!IsTransactionStarted && (con.State == ConnectionState.Broken || con.State == ConnectionState.Open))
-                    con.Close();
+                CloseConnection();
             }
 
             return state;
@@ -737,8 +721,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (!this.IsTransactionStarted && (con.State == ConnectionState.Broken || con.State == ConnectionState.Open))
-                    con.Close();
+                await CloseConnectionAsync();
             }
         }
 
@@ -806,67 +789,13 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
+                CloseConnection();
             }
         }
 
         #endregion
 
         #region Common
-
-        public string GenerateSchema()
-        {
-            return "";
-        }
-
-        public SqlDbType GetParameterType(DataColumn column, out int Length)
-        {
-            SqlDbType type = SqlDbType.Text;
-            Length = 0;
-            if (column.ColumnName.GetType() == typeof(System.String))
-            {
-                type = SqlDbType.VarChar;
-                Length = 0;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.Int32))
-            {
-                type = SqlDbType.Int;
-                Length = 4;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.Double))
-            {
-                type = SqlDbType.Float;
-                Length = 8;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.Boolean))
-            {
-                type = SqlDbType.Bit;
-                Length = 1;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.DateTime))
-            {
-                type = SqlDbType.DateTime;
-                Length = 10;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.Int64))
-            {
-                type = SqlDbType.Int;
-                Length = 8;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.Char))
-            {
-                type = SqlDbType.VarChar;
-                Length = 1;
-            }
-            else if (column.ColumnName.GetType() == typeof(System.Decimal))
-            {
-                type = SqlDbType.Decimal;
-                Length = 8;
-            }
-
-            return type;
-        }
 
         public MySqlCommand AddCommandParameter(MySqlCommand cmd, DbParam[] param)
         {
@@ -879,14 +808,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     {
                         if (p.Value != null)
                         {
-                            //if (p.Type == typeof(System.Guid))
-                            //{
-                            //    Guid guid = Guid.Empty;
-                            //    if (!string.IsNullOrEmpty(p.Value.ToString()))
-                            //        guid = Guid.Parse(p.Value.ToString());
-                            //    cmd.Parameters.Add(p.ParamName, MySqlDbType.UniqueIdentifier).Value = guid;
-                            //}
-                            //else 
                             if (p.Type == typeof(System.String))
                                 cmd.Parameters.Add(p.ParamName, MySqlDbType.VarChar, p.Size).Value = Convert.ToString(p.Value);
                             else if (p.Type == typeof(System.Int16))
@@ -953,8 +874,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
+                CloseConnection();
             }
         }
 
@@ -962,23 +882,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             where T : new()
             where Q : new()
         {
-            T firstInstance = default(T);
-            Q secondInstance = default(Q);
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            int tableCount = 0;
-            var result = FetchFromReader<T, Q>(ProcedureName, properties, out tableCount, Parameters, OutParam);
-            if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
+            try
             {
-                if (result.Item1.Count > 0)
-                    firstInstance = (result.Item1 as List<T>).SingleOrDefault();
+                T firstInstance = default(T);
+                Q secondInstance = default(Q);
+                object userType = Parameters;
+                var properties = userType.GetType().GetProperties().ToList();
 
-                if (result.Item2.Count > 0)
-                    secondInstance = (result.Item2 as List<Q>).SingleOrDefault();
+                int tableCount = 0;
+                var result = FetchFromReader<T, Q>(ProcedureName, properties, out tableCount, Parameters, OutParam);
+                if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
+                {
+                    if (result.Item1.Count > 0)
+                        firstInstance = (result.Item1 as List<T>).SingleOrDefault();
+
+                    if (result.Item2.Count > 0)
+                        secondInstance = (result.Item2 as List<Q>).SingleOrDefault();
+                }
+
+                return (firstInstance, secondInstance);
             }
-
-            return (firstInstance, secondInstance);
+            catch
+            {
+                CloseConnection();
+                throw;
+            }
         }
 
         public (T, Q, R) GetMulti<T, Q, R>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
@@ -993,20 +921,28 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             where T : new()
             where R : new()
         {
-            List<T> firstInstance = default(List<T>);
-            List<R> secondInstance = default(List<R>);
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            int tableCount = 0;
-            var result = FetchFromReader<T, R>(ProcedureName, properties, out tableCount, Parameters, OutParam);
-            if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
+            try
             {
-                firstInstance = result.Item1;
-                secondInstance = result.Item2;
-            }
+                List<T> firstInstance = default(List<T>);
+                List<R> secondInstance = default(List<R>);
+                object userType = Parameters;
+                var properties = userType.GetType().GetProperties().ToList();
 
-            return (firstInstance, secondInstance);
+                int tableCount = 0;
+                var result = FetchFromReader<T, R>(ProcedureName, properties, out tableCount, Parameters, OutParam);
+                if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
+                {
+                    firstInstance = result.Item1;
+                    secondInstance = result.Item2;
+                }
+
+                return (firstInstance, secondInstance);
+            }
+            catch
+            {
+                CloseConnection();
+                throw;
+            }
         }
 
         public (List<T>, List<R>, List<Q>) GetList<T, R, Q>(string ProcedureName, dynamic Parameters, bool OutParam = false)
@@ -1067,8 +1003,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             finally
             {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
+                CloseConnection();
             }
 
             return Tuple.Create(firstResult, secondResult);
@@ -1109,22 +1044,15 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
-                if (con.State == ConnectionState.Open)
-                    con.Close();
-
                 throw MySqlException;
             }
             catch (Exception ex)
             {
-                if (con.State == ConnectionState.Open)
-                    con.Close();
-
                 throw ex;
             }
             finally
             {
-                if (!this.IsTransactionStarted)
-                    con.Close();
+                CloseConnection();
             }
 
             return ds;
