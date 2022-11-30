@@ -240,94 +240,117 @@ namespace ServiceLayer.Code
 
         public async Task<EmployeeDeclaration> HousingPropertyDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> files)
         {
-            EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
-            (List<EmployeeDeclaration> declarations, List<SalaryComponents> dbSalaryComponents) = this.GetDeclarationWithComponents(EmployeeDeclarationId);
-            if (declarations.Count != 1)
-                throw new HiringBellException("Fail to get current employee declaration detail");
-
-            EmployeeDeclaration declaration = declarations.FirstOrDefault();
-
-
-            List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
-            if (declaration != null)
+            try
             {
-                salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
 
-                Parallel.ForEach(dbSalaryComponents, x =>
+                EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
+                (List<EmployeeDeclaration> declarations, List<SalaryComponents> dbSalaryComponents) = this.GetDeclarationWithComponents(EmployeeDeclarationId);
+                if (declarations.Count != 1)
+                    throw new HiringBellException("Fail to get current employee declaration detail");
+
+                EmployeeDeclaration declaration = declarations.FirstOrDefault();
+
+
+                List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
+                if (declaration != null)
                 {
-                    if (salaryComponents.Find(i => i.ComponentId == x.ComponentId) == null)
-                        salaryComponents.Add(x);
-                });
+                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
 
-                SalaryComponents salaryComponent = salaryComponents.Find(x => x.ComponentId == DeclarationDetail.ComponentId);
-                if (salaryComponent == null)
+                    Parallel.ForEach(dbSalaryComponents, x =>
+                    {
+                        if (salaryComponents.Find(i => i.ComponentId == x.ComponentId) == null)
+                            salaryComponents.Add(x);
+                    });
+
+                    SalaryComponents salaryComponent = salaryComponents.Find(x => x.ComponentId == DeclarationDetail.ComponentId);
+                    if (salaryComponent == null)
+                        throw new HiringBellException("Requested component not found. Please contact to admin.");
+
+                    long fileIndex = 1;
+                    FileDetail fileDetail = _db.Get<FileDetail>("sp_userfiledetail_get_last_id", null);
+                    if (fileDetail != null)
+                        fileIndex = fileDetail.FileId;
+
+                    var i = 0;
+                    while (i < files.Count)
+                    {
+                        files[i].FileId = fileIndex + (i + 1);
+                        i++;
+                    }
+                    salaryComponent.DeclaredValue = DeclarationDetail.HousePropertyDetail.TotalRent;
+                    salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(files.Select(x => x.FileId).ToList<long>());
+                    declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
+                }
+                else
+                {
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
-                salaryComponent.DeclaredValue = DeclarationDetail.HousePropertyDetail.TotalRent;
+                }
 
-                declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
+                string declarationDoc = String.Empty;
+                if (FileCollection.Count > 0)
+                {
+                    var email = DeclarationDetail.Email.Replace("@", "_").Replace(".", "_");
+                    declarationDoc = Path.Combine(
+                        _fileLocationDetail.UserFolder,
+                        email,
+                        "declarated_documents"
+                    );
+
+                    _fileService.SaveFileToLocation(declarationDoc, files, FileCollection);
+
+                    var fileInfo = (from n in files
+                                    select new
+                                    {
+                                        FileId = n.FileUid,
+                                        FileOwnerId = (DeclarationDetail.EmployeeId),
+                                        FilePath = declarationDoc,
+                                        FileName = n.FileName,
+                                        FileExtension = n.FileExtension,
+                                        UserTypeId = (int)UserType.Compnay,
+                                        AdminId = _currentSession.CurrentUserDetail.UserId
+                                    });
+
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                    var insertedCount = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
+                    _db.Commit();
+                }
+                var housingTax = JsonConvert.SerializeObject(DeclarationDetail.HousePropertyDetail);
+                var result = _db.Execute<EmployeeDeclaration>("sp_employee_declaration_insupd", new
+                {
+                    EmployeeDeclarationId = declaration.EmployeeDeclarationId,
+                    EmployeeId = declaration.EmployeeId,
+                    DocumentPath = declarationDoc,
+                    DeclarationDetail = declaration.DeclarationDetail,
+                    HousingProperty = housingTax,
+                    TotalDeclaredAmount = 0,
+                    TotalApprovedAmount = 0,
+                    TotalRejectedAmount = declaration.TotalRejectedAmount,
+                    EmployeeCurrentRegime = declaration.EmployeeCurrentRegime
+                }, true);
+
+                if (!ApplicationConstants.IsExecuted(result))
+                {
+                    File.Delete(declarationDoc);
+                }
+
+                empDeclaration.SalaryComponentItems = salaryComponents;
+                empDeclaration.HousingProperty = housingTax;
+                this.BuildSectionWiseComponents(empDeclaration);
+
+                EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(DeclarationDetail.EmployeeId, empDeclaration);
+
+                result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Unable to insert or update salary breakup");
+
+                return this.GetEmployeeDeclarationDetail(DeclarationDetail.EmployeeId);
             }
-            else
+            catch (Exception)
             {
-                throw new HiringBellException("Requested component not found. Please contact to admin.");
+                _db.RollBack();
+                throw;
             }
-
-            string declarationDoc = String.Empty;
-            if (FileCollection.Count > 0)
-            {
-                var email = DeclarationDetail.Email.Replace("@", "_").Replace(".", "_");
-                declarationDoc = Path.Combine(
-                    _fileLocationDetail.UserFolder,
-                    email,
-                    "declarated_documents"
-                );
-
-                _fileService.SaveFileToLocation(declarationDoc, files, FileCollection);
-
-                var fileInfo = (from n in files
-                                select new
-                                {
-                                    FileId = n.FileUid,
-                                    FileOwnerId = (DeclarationDetail.EmployeeId),
-                                    FilePath = declarationDoc,
-                                    FileName = n.FileName,
-                                    FileExtension = n.FileExtension,
-                                    UserTypeId = (int)UserType.Compnay,
-                                    AdminId = _currentSession.CurrentUserDetail.UserId
-                                });
-
-                DataTable table = Converter.ToDataTable(fileInfo);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var insertedCount = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
-                _db.Commit();
-            }
-            var housingTax = JsonConvert.SerializeObject(DeclarationDetail.HousePropertyDetail);
-            var result = _db.Execute<EmployeeDeclaration>("sp_employee_declaration_insupd", new
-            {
-                EmployeeDeclarationId = declaration.EmployeeDeclarationId,
-                EmployeeId = declaration.EmployeeId,
-                DocumentPath = declarationDoc,
-                DeclarationDetail = declaration.DeclarationDetail,
-                HousingProperty = housingTax,
-                TotalDeclaredAmount = 0,
-                TotalApprovedAmount = 0
-            }, true);
-
-            if (!ApplicationConstants.IsExecuted(result))
-            {
-                File.Delete(declarationDoc);
-            }
-
-            empDeclaration.SalaryComponentItems = salaryComponents;
-            empDeclaration.HousingProperty = housingTax;
-            this.BuildSectionWiseComponents(empDeclaration);
-
-            EmployeeSalaryDetail employeeSalaryDetail = this.CalculateSalaryDetail(DeclarationDetail.EmployeeId, empDeclaration);
-
-            result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", employeeSalaryDetail, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to insert or update salary breakup");
-
-            return this.GetEmployeeDeclarationDetail(DeclarationDetail.EmployeeId);
         }
 
         private (EmployeeSalaryDetail, SalaryGroup) GetEmployeeSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0)
@@ -760,7 +783,7 @@ namespace ServiceLayer.Code
                 string searchString = component.UploadedFileIds.Replace("[", "").Replace("]", "");
                 List<Files> files = _db.GetList<Files>("sp_userfiledetail_get_files", new { searchString });
 
-                component.DeclaredValue = 0M;
+                component.DeclaredValue = 0;
                 component.UploadedFileIds = "[]";
 
                 declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
