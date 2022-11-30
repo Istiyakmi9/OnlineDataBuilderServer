@@ -87,9 +87,9 @@ namespace ServiceLayer.Code
 
                 //files.ForEach(x => x.FileId = fileIndex + 1);
                 var i = 0;
-                while(i < files.Count)
+                while (i < files.Count)
                 {
-                    files[i].FileId = fileIndex + (i+1);
+                    files[i].FileId = fileIndex + (i + 1);
                     i++;
                 }
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
@@ -740,7 +740,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(ComponentId))
                 throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
 
-            var resultset= _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            var resultset = _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
             EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
             List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
             if (declaration == null || salaryComponent == null)
@@ -749,8 +749,8 @@ namespace ServiceLayer.Code
             List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
             var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
             var allFileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
-            string searchString = $"FileId in ({component.UploadedFileIds})".Replace("[", "").Replace("]", "");
-            List<Files> files = _db.GetList<Files>("SP_get_multiple_file_by_filter", new { searchString });
+            string searchString = component.UploadedFileIds.Replace("[", "").Replace("]", "");
+            List<Files> files = _db.GetList<Files>("sp_userfiledetail_get_files", new { searchString });
             if (component != null)
             {
                 var newComponent = salaryComponent.FirstOrDefault(x => x.ComponentId == ComponentId);
@@ -788,57 +788,66 @@ namespace ServiceLayer.Code
                 _fileService.DeleteFiles(files);
             }
             _db.Commit();
-             return this.GetEmployeeDeclarationDetail(declaration.EmployeeId);
+            return this.GetEmployeeDeclarationDetail(declaration.EmployeeId);
         }
 
         public async Task<string> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
         {
-            if (DeclarationId <= 0)
-                throw new HiringBellException("Invalid declaration id passed. Please try again.");
-
-            if (FileId <= 0)
-                throw new HiringBellException("Invalid file selected. Please select a valid file");
-
-            if (string.IsNullOrEmpty(ComponentId))
-                throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
-
-            (EmployeeDeclaration declaration, Files file) = _db.GetMulti<EmployeeDeclaration, Files>("sp_employee_declaration_and_file_get", new { DeclarationId, FileId });
-            if (declaration == null || file == null)
-                throw new HiringBellException("Declaration detail not found. Please contact to admin.");
-
-            List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
-            var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
-            if (component != null)
+            try
             {
-                var fileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
-                var existingFileId = fileIds.FirstOrDefault(i => i == FileId);
-                fileIds.Remove(existingFileId);
-                component.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
-                declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
-            }
+                if (DeclarationId <= 0)
+                    throw new HiringBellException("Invalid declaration id passed. Please try again.");
 
-            _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                if (FileId <= 0)
+                    throw new HiringBellException("Invalid file selected. Please select a valid file");
 
-            var Result = await _db.ExecuteAsync("sp_UserDetail_del_by_file_id", new { FileId }, true);
-            if (Result.rowsEffected > 0)
-            {
-                await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                if (string.IsNullOrEmpty(ComponentId))
+                    throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
+
+                (EmployeeDeclaration declaration, Files file) = _db.GetMulti<EmployeeDeclaration, Files>("sp_employee_declaration_and_file_get", new { DeclarationId, FileId });
+                if (declaration == null)
+                    throw new HiringBellException("Declaration detail not found. Please contact to admin.");
+
+                List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+                var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
+                if (component != null)
                 {
-                    declaration.EmployeeDeclarationId,
-                    declaration.EmployeeId,
-                    declaration.DocumentPath,
-                    declaration.DeclarationDetail,
-                    declaration.HousingProperty,
-                    declaration.TotalDeclaredAmount,
-                    declaration.TotalApprovedAmount,
-                    declaration.TotalRejectedAmount,
-                    declaration.EmployeeCurrentRegime
-                }, true);
+                    var fileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
+                    var existingFileId = fileIds.FirstOrDefault(i => i == FileId);
+                    fileIds.Remove(existingFileId);
+                    component.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
+                    declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
+                }
 
-                _fileService.DeleteFiles(new List<Files> { file });
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+
+                var Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId }, true);
+                if (ApplicationConstants.IsExecuted(Result.statusMessage))
+                {
+                    await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                    {
+                        declaration.EmployeeDeclarationId,
+                        declaration.EmployeeId,
+                        declaration.DocumentPath,
+                        declaration.DeclarationDetail,
+                        declaration.HousingProperty,
+                        declaration.TotalDeclaredAmount,
+                        declaration.TotalApprovedAmount,
+                        declaration.TotalRejectedAmount,
+                        declaration.EmployeeCurrentRegime
+                    }, true);
+
+                    if (file != null)
+                        _fileService.DeleteFiles(new List<Files> { file });
+                }
+                _db.Commit();
+                return Result.statusMessage;
             }
-            _db.Commit();
-            return Result.statusMessage;
+            catch
+            {
+                _db.RollBack();
+                throw;
+            }
         }
     }
 }

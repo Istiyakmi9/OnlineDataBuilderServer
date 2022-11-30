@@ -36,6 +36,7 @@ public class ApplicationConstants
     public const string Excel = "xlsx";
 
     public const string Inserted = "inserted";
+    public const string Deleted = "deleted";
     public const string Updated = "updated";
     public const string EmptyJsonObject = "{}";
     public const string EmptyJsonArray = "[]";
@@ -66,7 +67,7 @@ public class ApplicationConstants
 
     public static bool IsExecuted(string Result)
     {
-        if (Result != null && (Result.ToLower() == Inserted || Result.ToLower() == Updated))
+        if (Result != null && (Result.ToLower() == Inserted || Result.ToLower() == Updated || Result.ToLower() == Deleted))
             return true;
         return false;
     }
