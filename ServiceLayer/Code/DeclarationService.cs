@@ -744,6 +744,8 @@ namespace ServiceLayer.Code
             List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
             var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
             var allFileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
+            string searchString = $"FileId in ({component.UploadedFileIds})".Replace("[", "").Replace("]", "");
+            List<Files> files = _db.GetList<Files>("SP_get_multiple_file_by_filter", new { searchString });
             if (component != null)
             {
                 var newComponent = salaryComponent.FirstOrDefault(x => x.ComponentId == ComponentId);
@@ -778,8 +780,9 @@ namespace ServiceLayer.Code
                     declaration.EmployeeCurrentRegime
                 }, true);
 
-                //_fileService.DeleteFiles(new List<Files> { file });
+                _fileService.DeleteFiles(files);
             }
+            _db.Commit();
              return this.GetEmployeeDeclarationDetail(declaration.EmployeeId);
         }
 
@@ -829,6 +832,7 @@ namespace ServiceLayer.Code
 
                 _fileService.DeleteFiles(new List<Files> { file });
             }
+            _db.Commit();
             return Result.statusMessage;
         }
     }
