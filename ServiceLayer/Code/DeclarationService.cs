@@ -750,50 +750,52 @@ namespace ServiceLayer.Code
 
                 List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
                 var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
+                if (component == null)
+                    throw new HiringBellException("Got internal error while cleaning up, please contact to admin.");
+
                 var allFileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
                 string searchString = component.UploadedFileIds.Replace("[", "").Replace("]", "");
                 List<Files> files = _db.GetList<Files>("sp_userfiledetail_get_files", new { searchString });
-                if (component != null)
-                {
-                    var newComponent = salaryComponent.FirstOrDefault(x => x.ComponentId == ComponentId);
-                    if (newComponent != null)
-                    {
-                        component.DeclaredValue = newComponent.DeclaredValue;
-                        component.UploadedFileIds = newComponent.UploadedFileIds;
-                    }
 
-                    declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
-                }
+                component.DeclaredValue = 0M;
+                component.UploadedFileIds = "[]";
 
-                var fileInfo = (from n in allFileIds
-                                select new
-                                {
-                                    FileId = n
-                                });
-
-                DataTable table = Converter.ToDataTable(fileInfo);
+                declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
 
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
 
-                var Result = await _db.BatchInsertUpdateAsync("sp_userdetail_del_by_file_id", table, true);
-                if (ApplicationConstants.IsExecuted(Result.statusMessage))
+                DbResult Result = null;
+                if (allFileIds != null && allFileIds.Count > 0)
                 {
-                    await _db.ExecuteAsync("sp_employee_declaration_insupd", new
-                    {
-                        declaration.EmployeeDeclarationId,
-                        declaration.EmployeeId,
-                        declaration.DocumentPath,
-                        declaration.DeclarationDetail,
-                        declaration.HousingProperty,
-                        declaration.TotalDeclaredAmount,
-                        declaration.TotalApprovedAmount,
-                        declaration.TotalRejectedAmount,
-                        declaration.EmployeeCurrentRegime
-                    }, true);
+                    var fileInfo = (from n in allFileIds
+                                    select new
+                                    {
+                                        FileId = n
+                                    });
 
-                    if (files != null)
-                        _fileService.DeleteFiles(files);
+                    DataTable table = Converter.ToDataTable(fileInfo);
+                    Result = await _db.BatchInsertUpdateAsync("sp_userdetail_del_by_file_id", table, true);
+
+                    if (Result.rowsEffected == 0)
+                        throw new HiringBellException("Fail to delete file record, Please contact to admin.");
                 }
+
+                await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                {
+                    declaration.EmployeeDeclarationId,
+                    declaration.EmployeeId,
+                    declaration.DocumentPath,
+                    declaration.DeclarationDetail,
+                    declaration.HousingProperty,
+                    declaration.TotalDeclaredAmount,
+                    declaration.TotalApprovedAmount,
+                    declaration.TotalRejectedAmount,
+                    declaration.EmployeeCurrentRegime
+                }, true);
+
+                if (files != null)
+                    _fileService.DeleteFiles(files);
+
                 _db.Commit();
 
                 return this.GetEmployeeDeclarationDetail(declaration.EmployeeId);
