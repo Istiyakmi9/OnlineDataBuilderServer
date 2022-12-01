@@ -193,7 +193,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         private void CloseConnection()
         {
-            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
+            if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
                 con.Close();
         }
 

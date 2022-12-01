@@ -609,7 +609,7 @@ namespace ServiceLayer.Code
                 {
                     try
                     {
-                        employeeSalaryDetail = _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
+                        employeeSalaryDetail = await _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
                     }
                     catch
                     {

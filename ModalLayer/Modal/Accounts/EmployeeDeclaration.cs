@@ -27,9 +27,9 @@ namespace ModalLayer.Modal.Accounts
         public Dictionary<int, TaxSlabDetail> IncomeTaxSlab { get; set; }
         public decimal SurChargesAndCess { get; set; }
         public dynamic HRADeatils { get; set; }
-        public decimal TotalDeclaredAmount {set;get;}
-        public decimal TotalApprovedAmount {set;get;}
-        public decimal TotalRejectedAmount {set;get;}
+        public decimal TotalDeclaredAmount { set; get; }
+        public decimal TotalApprovedAmount { set; get; }
+        public decimal TotalRejectedAmount { set; get; }
         public int EmployeeCurrentRegime { set; get; }
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
@@ -45,5 +45,6 @@ namespace ModalLayer.Modal.Accounts
         public int NumberOfProofSubmitted { set; get; }
         public decimal RejectedAmount { set; get; }
         public decimal AcceptedAmount { set; get; }
+        public decimal MaxAmount { set; get; } = 0;
     }
 }

@@ -20,7 +20,10 @@ namespace ServiceLayer.Code
             SalaryComponents component = null;
             component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "PTAX");
             if (component != null)
+            {
+                component.DeclaredValue = 2400;
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
+            }
         }
         public void EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup)
         {
@@ -28,29 +31,6 @@ namespace ServiceLayer.Code
             component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "EPF");
             if (component != null)
                 employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
-        }
-
-        public decimal OneAndHalfLakhsComponent(EmployeeDeclaration employeeDeclaration)
-        {
-            decimal totalDeduction = 0;
-            foreach (var item in employeeDeclaration.Declarations)
-            {
-                decimal value = item.TotalAmountDeclared;
-                if (item.DeclarationName == "1.5 Lac Exemptions")
-                {
-                    if (item.TotalAmountDeclared >= 150000)
-                        value = 150000;
-                    else
-                        value = item.TotalAmountDeclared;
-                }
-
-                if (item.DeclarationName == "House Property")
-                    continue;
-
-                totalDeduction += value;
-            }
-
-            return totalDeduction;
         }
 
         private decimal SurchargeAndCess(decimal GrossIncomeTax, decimal GrossIncome)
@@ -101,7 +81,7 @@ namespace ServiceLayer.Code
                         Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and {maxSlabAmount}",
                         Value = slabAmount
                     };
-                    taxSlab.Add(i+1, taxSlabDetail);
+                    taxSlab.Add(i + 1, taxSlabDetail);
                 }
 
                 i++;
@@ -137,11 +117,11 @@ namespace ServiceLayer.Code
             else
                 HRAAmount = HRA2;
 
-            var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
+            var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == ApplicationConstants.HouseProperty);
             if (houseProperty != null && houseProperty.TotalAmountDeclared > 0)
             {
                 decimal declaredValue = houseProperty.TotalAmountDeclared;
-                HRA3 = (declaredValue - (basicComponent.FinalAmount / 10)) / 12;
+                HRA3 = (declaredValue / 12) - (basicComponent.FinalAmount * .1M);
 
                 if (HRA3 > 0 && HRA3 < HRAAmount)
                     HRAAmount = HRA3;
@@ -152,9 +132,8 @@ namespace ServiceLayer.Code
             if (employeeDeclaration.SalaryComponentItems != null)
             {
                 var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
-                var hraAmount = employeeDeclaration.Declarations.Find(x => x.DeclarationName == "House Property");
-                if (hraAmount != null)
-                    hraComponent.DeclaredValue = hraAmount.TotalAmountDeclared;
+                if (houseProperty != null)
+                    hraComponent.DeclaredValue = houseProperty.TotalAmountDeclared;
             }
         }
 
@@ -212,6 +191,60 @@ namespace ServiceLayer.Code
                 employeeDeclaration.TaxPaid = 0;
             }
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+        }
+
+        public decimal OneAndHalfLakhsComponent(EmployeeDeclaration employeeDeclaration)
+        {
+            decimal totalDeduction = 0;
+            var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.OneAndHalfLakhsExemptions);
+            items.ForEach(i =>
+            {
+                decimal value = i.TotalAmountDeclared;
+                if (i.TotalAmountDeclared >= i.MaxAmount)
+                    value = i.MaxAmount;
+                else
+                    value = i.TotalAmountDeclared;
+
+                totalDeduction += value;
+            });
+
+            return totalDeduction;
+        }
+
+        public decimal OtherDeclarationComponent(EmployeeDeclaration employeeDeclaration)
+        {
+            decimal totalDeduction = 0;
+            var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.OtherDeclarationName);
+            items.ForEach(i =>
+            {
+                totalDeduction = i.TotalAmountDeclared;
+            });
+
+            return totalDeduction;
+        }
+
+        public decimal TaxSavingComponent(EmployeeDeclaration employeeDeclaration)
+        {
+            decimal totalDeduction = 0;
+            var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.TaxSavingAlloanceName);
+            items.ForEach(i =>
+            {
+                totalDeduction = i.TotalAmountDeclared;
+            });
+
+            return totalDeduction;
+        }
+
+        public decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration)
+        {
+            decimal totalDeduction = 0;
+            var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.HouseProperty);
+            items.ForEach(i =>
+            {
+                totalDeduction = i.TotalAmountDeclared;
+            });
+
+            return totalDeduction;
         }
     }
 }
