@@ -11,9 +11,12 @@ namespace ServiceLayer.Interface
         decimal StandardDeductionComponent(EmployeeDeclaration employeeDeclaration);
         void ProfessionalTaxComponent(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup);
         void EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup);
-        decimal OneAndHalfLakhsComponent(EmployeeDeclaration employeeDeclaration);
         void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs);
         void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails);
         void BuildTaxDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail salaryBreakup);
+        decimal OneAndHalfLakhsComponent(EmployeeDeclaration employeeDeclaration);
+        decimal OtherDeclarationComponent(EmployeeDeclaration employeeDeclaration);
+        decimal TaxSavingComponent(EmployeeDeclaration employeeDeclaration);
+        decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration);
     }
 }

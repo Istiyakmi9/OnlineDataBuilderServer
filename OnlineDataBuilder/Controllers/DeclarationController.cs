@@ -26,9 +26,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("GetEmployeeDeclarationDetailById/{EmployeeId}")]
-        public IResponse<ApiResponse> GetEmployeeDeclarationDetailById(long EmployeeId)
+        public async Task<ApiResponse> GetEmployeeDeclarationDetailById(long EmployeeId)
         {
-            var result = _declarationService.GetEmployeeDeclarationDetail(EmployeeId);
+            var result = await _declarationService.GetEmployeeDeclarationDetail(EmployeeId);
             return BuildResponse(result);
         }
 

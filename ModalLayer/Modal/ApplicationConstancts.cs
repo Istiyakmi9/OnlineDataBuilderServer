@@ -1,6 +1,5 @@
+using ModalLayer;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 
 public class ApplicationConstants
 {
@@ -22,6 +21,7 @@ public class ApplicationConstants
     public static string HiringBellLogoSmall = "hb-logo-low.png";
     public static string HiringBellLogo = "hb-t-logo.png";
     public static string LogoContentId = "bottomhalf@me.com";
+    public static string DeclarationDocumentPath = "declarated_documents";
 
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
@@ -53,6 +53,16 @@ public class ApplicationConstants
     public const string Successfull = "Successfull";
     public const string Fail = "Fail";
     public const string Submitted = "Submitted";
+
+
+    public const string ExemptionDeclaration = "ExemptionDeclaration";
+    public const string OneAndHalfLakhsExemptions = "1.5 Lac Exemptions";
+    public const string OtherDeclaration = "OtherDeclaration";
+    public const string OtherDeclarationName = "Other Exemptions";
+    public const string TaxSavingAlloance = "TaxSavingAlloance";
+    public const string TaxSavingAlloanceName = "Tax Saving Allowance";
+    public const string HouseProperty = "House Property";
+    public const string IncomeFromOtherSources = "Income From Other Sources";
 
 
     public const int BillingTemplate = 1;
@@ -184,4 +194,27 @@ public enum RequestType
 {
     Leave = 1,
     Attandance = 2
+}
+
+public static class Bot
+{
+    public static bool IsSuccess(string Result)
+    {
+        if (Result != null && (Result.ToLower() == ApplicationConstants.Inserted
+            || Result.ToLower() == ApplicationConstants.Updated
+            || Result.ToLower() == ApplicationConstants.Deleted))
+            return true;
+        return false;
+    }
+
+    public static bool IsSuccess(DbResult Result)
+    {
+        if (Result != null && (Result.rowsEffected > 0 || (
+                Result.statusMessage == ApplicationConstants.Inserted ||
+                Result.statusMessage == ApplicationConstants.Updated ||
+                Result.statusMessage == ApplicationConstants.Deleted
+            )))
+            return true;
+        return false;
+    }
 }
