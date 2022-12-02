@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
-    public class TaxRegimeService: ITaxRegimeService
+    public class TaxRegimeService : ITaxRegimeService
     {
         private readonly IDb _db;
 
@@ -32,7 +32,8 @@ namespace ServiceLayer.Code
             {
                 oldTaxRegimeDesc.Description = taxRegimeDesc.Description;
                 oldTaxRegimeDesc.RegimeName = taxRegimeDesc.RegimeName;
-            } else
+            }
+            else
             {
                 oldTaxRegimeDesc = taxRegimeDesc;
             }
@@ -61,7 +62,7 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[2].Rows.Count > 0)
                 ageGroup = resultSet.Tables[2];
 
-            return new {taxRegimeDesc, taxRegime, ageGroup };
+            return new { taxRegimeDesc, taxRegime, ageGroup };
         }
 
         public TaxAgeGroup AddUpdateAgeGroupService(TaxAgeGroup taxAgeGroup)
@@ -93,60 +94,68 @@ namespace ServiceLayer.Code
         }
         public async Task<dynamic> AddUpdateTaxRegimeService(List<TaxRegime> taxRegimes)
         {
-            ValidateTaxRegime(taxRegimes);
-            List<TaxRegime> oldTaxRegimes = _db.GetList<TaxRegime>("sp_tax_regime_getall");
-            foreach (var taxRegime in taxRegimes)
+            try
             {
-                if (taxRegime.TaxRegimeId > 0)
+                ValidateTaxRegime(taxRegimes);
+                List<TaxRegime> oldTaxRegimes = _db.GetList<TaxRegime>("sp_tax_regime_getall");
+                foreach (var taxRegime in taxRegimes)
                 {
-                    var oldRegime = oldTaxRegimes.Find(x => x.TaxRegimeId == taxRegime.TaxRegimeId);
-                    if (oldRegime != null)
+                    if (taxRegime.TaxRegimeId > 0)
                     {
-                        oldRegime.RegimeDescId = taxRegime.RegimeDescId;
-                        oldRegime.StartAgeGroup = taxRegime.StartAgeGroup;
-                        oldRegime.EndAgeGroup = taxRegime.EndAgeGroup;
-                        oldRegime.MinTaxSlab = taxRegime.MinTaxSlab;
-                        oldRegime.MaxTaxSlab = taxRegime.MaxTaxSlab;
-                        oldRegime.TaxRatePercentage = taxRegime.TaxRatePercentage;
-                        oldRegime.TaxAmount = taxRegime.TaxAmount;
-                    } 
+                        var oldRegime = oldTaxRegimes.Find(x => x.TaxRegimeId == taxRegime.TaxRegimeId);
+                        if (oldRegime != null)
+                        {
+                            oldRegime.RegimeDescId = taxRegime.RegimeDescId;
+                            oldRegime.StartAgeGroup = taxRegime.StartAgeGroup;
+                            oldRegime.EndAgeGroup = taxRegime.EndAgeGroup;
+                            oldRegime.MinTaxSlab = taxRegime.MinTaxSlab;
+                            oldRegime.MaxTaxSlab = taxRegime.MaxTaxSlab;
+                            oldRegime.TaxRatePercentage = taxRegime.TaxRatePercentage;
+                            oldRegime.TaxAmount = taxRegime.TaxAmount;
+                        }
 
+                    }
+                    else
+                    {
+                        oldTaxRegimes.Add(taxRegime);
+                    }
                 }
-                else
-                {
-                    oldTaxRegimes.Add(taxRegime);
-                }
+                var regime = (from n in oldTaxRegimes
+                              select new
+                              {
+                                  n.TaxRegimeId,
+                                  n.RegimeDescId,
+                                  n.StartAgeGroup,
+                                  n.EndAgeGroup,
+                                  n.MinTaxSlab,
+                                  n.MaxTaxSlab,
+                                  n.TaxRatePercentage,
+                                  n.TaxAmount
+                              });
+                var table = Converter.ToDataTable(regime);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                var status = await _db.BatchInsertUpdateAsync("sp_tax_regime_insupd", table, true);
+                _db.Commit();
+                return this.GetAllRegimeService();
             }
-            var regime = (from n in oldTaxRegimes
-                          select new
-                          {
-                              n.TaxRegimeId,
-                              n.RegimeDescId,
-                              n.StartAgeGroup,
-                              n.EndAgeGroup,
-                              n.MinTaxSlab,
-                              n.MaxTaxSlab,
-                              n.TaxRatePercentage,
-                              n.TaxAmount
-                          });
-            var table = Converter.ToDataTable(regime);
-            _db.StartTransaction(IsolationLevel.ReadUncommitted);
-            var status = await _db.BatchInsertUpdateAsync("sp_tax_regime_insupd", table, true);
-            _db.Commit();
-            return this.GetAllRegimeService();
+            catch (Exception)
+            {
+                _db.RollBack();
+                throw;
+            }
         }
-        public dynamic DeleteTaxRegimeService(TaxRegime taxRegime)
+        public string DeleteTaxRegimeService(int TaxRegimeId)
         {
-            if (taxRegime.TaxRegimeId <= 0)
+            if (TaxRegimeId <= 0)
                 throw new HiringBellException("Invalid tax regime selected");
 
-            var status = _db.Execute<long>("sp_tax_regime_delete_byid", new {TaxRegimeId = taxRegime.TaxRegimeId}, false);
+            var status = _db.Execute<long>("sp_tax_regime_delete_byid", new { TaxRegimeId }, true);
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to delete tax regime");
 
-            return this.GetAllRegimeService();
+            return status;
         }
-        private void ValidateTaxRegime(List<TaxRegime> taxRegimes) 
+        private void ValidateTaxRegime(List<TaxRegime> taxRegimes)
         {
             taxRegimes = taxRegimes.OrderBy(x => x.RegimeIndex).ToList();
             decimal taxAmount = 0;
@@ -162,13 +171,13 @@ namespace ServiceLayer.Code
 
                 if (taxRegimes[i].MinTaxSlab > taxRegimes[i].MinTaxSlab)
                     throw new HiringBellException("Invalid taxslab enter");
-                
+
                 if (i > 0)
                 {
                     if (taxRegimes[i].MinTaxSlab - taxRegimes[i - 1].MaxTaxSlab != 1)
                         throw new HiringBellException("Please enter a valid taxslab range");
 
-                    
+
                 }
                 if (taxRegimes[i].MinTaxSlab > 0)
                     minTaxSlab = taxRegimes[i].MinTaxSlab - 1;
@@ -180,6 +189,88 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Tax amount calculation is mismatch");
                 i++;
             }
+        }
+
+        public async Task<List<PTaxSlab>> AddUpdatePTaxSlabService(List<PTaxSlab> pTaxSlabs)
+        {
+            try
+            {
+                ValidatePTaxSlab(pTaxSlabs);
+                int companyId = pTaxSlabs.FirstOrDefault().CompanyId;
+                List<PTaxSlab> oldPtaxSlab = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new { CompanyId = companyId });
+                foreach (var slab in pTaxSlabs)
+                {
+                    if (slab.PtaxSlabId > 0)
+                    {
+                        var ptax = oldPtaxSlab.Find(x => x.PtaxSlabId == slab.PtaxSlabId);
+                        if (ptax != null)
+                        {
+                            ptax.StateName = slab.StateName;
+                            ptax.MinIncome = slab.MinIncome;
+                            ptax.MaxIncome = slab.MaxIncome;
+                            ptax.TaxAmount = slab.TaxAmount;
+                            ptax.Gender = slab.Gender;
+                            ptax.CompanyId = slab.CompanyId;
+                        }
+                    }
+                    else
+                    {
+                        oldPtaxSlab.Add(slab);
+                    }
+                }
+                var allSlabs = (from n in oldPtaxSlab
+                                select new
+                                {
+                                    n.PtaxSlabId,
+                                    n.StateName,
+                                    n.MinIncome,
+                                    n.MaxIncome,
+                                    n.TaxAmount,
+                                    n.Gender,
+                                    n.CompanyId
+                                });
+                var table = Converter.ToDataTable(allSlabs);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                var status = await _db.BatchInsertUpdateAsync("sp_ptax_slab_insupd", table, true);
+                _db.Commit();
+                return this.GetPTaxSlabByCompIdService(companyId);
+            }
+            catch (Exception)
+            {
+                _db.RollBack();
+                throw;
+            }
+        }
+        public string DeletePTaxSlabService(int PtaxSlabId)
+        {
+            if (PtaxSlabId <= 0)
+                throw new HiringBellException("Invalid ptax slab selected");
+
+            var status = _db.Execute<long>("sp_ptax_slab_delete_byid", new { PtaxSlabId }, true);
+            if (string.IsNullOrEmpty(status))
+                throw new HiringBellException("Fail to delete ptax slab");
+
+            return status;
+        }
+        public List<PTaxSlab> GetPTaxSlabByCompIdService(int CompanyId)
+        {
+            if (CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected. Please select a valid compny");
+
+            var result = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new { CompanyId });
+            return result;
+        }
+        private void ValidatePTaxSlab(List<PTaxSlab> pTaxSlabs)
+        {
+            pTaxSlabs.ForEach(i =>
+            {
+                if (string.IsNullOrEmpty(i.StateName))
+                    throw new HiringBellException("State name is null or empty");
+
+                if (i.CompanyId <= 0)
+                    throw new HiringBellException("Invalid company. Please select a valid company.");
+
+            });
         }
     }
 }
