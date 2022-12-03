@@ -151,9 +151,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("SalaryBreakupCalc/{EmployeeId}/{CTCAnnually}")]
-        public IResponse<ApiResponse> SalaryBreakupCalc(long EmployeeId, int CTCAnnually)
+        public async Task<ApiResponse> SalaryBreakupCalc(long EmployeeId, int CTCAnnually)
         {
-            var result = _salaryComponentService.SalaryBreakupCalcService(EmployeeId, CTCAnnually);
+            var result = await _salaryComponentService.SalaryBreakupCalcService(EmployeeId, CTCAnnually);
             return BuildResponse(result);
         }
 

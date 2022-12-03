@@ -459,10 +459,10 @@ namespace ServiceLayer.Code
                 DateOfLeaving = employeeCompleteDetailModal.MappedClient.DateOfLeaving,
                 DOB = employeeCompleteDetailModal.EmployeeDetail.DOB,
                 OrganizationId = employeeCompleteDetailModal.EmployeeLoginDetail.OrganizationId,
-                AvailableLeaves = employeeCompleteDetailModal.LeaveRequestDetail.AvailableLeaves ,
-                TotalLeaveApplied = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveApplied ,
-                TotalApprovedLeave = employeeCompleteDetailModal.LeaveRequestDetail.TotalApprovedLeave ,
-                TotalLeaveQuota = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveQuota ,
+                AvailableLeaves = employeeCompleteDetailModal.LeaveRequestDetail.AvailableLeaves,
+                TotalLeaveApplied = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveApplied,
+                TotalApprovedLeave = employeeCompleteDetailModal.LeaveRequestDetail.TotalApprovedLeave,
+                TotalLeaveQuota = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveQuota,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
@@ -502,63 +502,164 @@ namespace ServiceLayer.Code
             if (employee.EmployeeUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
 
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employee);
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            employeeCalculation.employee = employee;
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
 
             if (employeeEmailMobileCheck.EmployeeCount == 0)
                 throw new HiringBellException("Employee record not found. Please contact to admin.");
 
-            return await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
+            return await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
         }
 
         public async Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
         {
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employee);
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            employeeCalculation.employee = employee;
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
 
             if (employeeEmailMobileCheck.EmployeeCount > 0)
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
-            return await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
+            return await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
         }
 
-        private EmployeeEmailMobileCheck GetEmployeeDetail(Employee employee)
+        private EmployeeDeclaration GetDeclarationInstance(DataTable declarationTable, Employee employee)
         {
-            (Employee employeeDetail, EmployeeEmailMobileCheck employeeEmailMobileCheck) =
-                _db.GetMulti<Employee, EmployeeEmailMobileCheck>("sp_employee_getbyid_to_reg_or_upd", new
-                {
-                    EmployeeId = employee.EmployeeUid,
-                    employee.Mobile,
-                    employee.Email
-                });
-
-            if (employeeDetail != null)
+            EmployeeDeclaration employeeDeclaration = null;
+            if (declarationTable.Rows.Count == 1)
             {
-                employee.OrganizationId = employee.OrganizationId;
-                employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
+                employeeDeclaration = Converter.ToType<EmployeeDeclaration>(declarationTable);
+                if (employeeDeclaration.SalaryDetail == null)
+                {
+                    employeeDeclaration.SalaryDetail = new EmployeeSalaryDetail();
+                }
+
+                employeeDeclaration.SalaryDetail.CTC = employee.CTC;
             }
             else
             {
-                employee.OrganizationId = employee.OrganizationId;
-                employee.EmpProfDetailUid = -1;
+                employeeDeclaration = new EmployeeDeclaration
+                {
+                    SalaryDetail = new EmployeeSalaryDetail
+                    {
+                        CTC = employee.CTC
+                    }
+                };
             }
 
-            if(employeeEmailMobileCheck == null)
+            return employeeDeclaration;
+        }
+
+        private EmployeeSalaryDetail GetEmployeeSalaryDetailInstance(DataTable salaryDetailTable, Employee employee)
+        {
+            EmployeeSalaryDetail employeeSalaryDetail = null;
+            if (salaryDetailTable.Rows.Count == 1)
             {
-                employeeEmailMobileCheck = new EmployeeEmailMobileCheck();
+                employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(salaryDetailTable);
+            }
+            else
+            {
+                employeeSalaryDetail = new EmployeeSalaryDetail
+                {
+                    GrossIncome = 0,
+                    NetSalary = 0,
+                    CompleteSalaryDetail = "[]",
+                    TaxDetail = "[]"
+                };
+            }
+
+            employeeSalaryDetail.CTC = employee.CTC;
+            return employeeSalaryDetail;
+        }
+
+        private long CheckUpdateDeclarationComponents(EmployeeCalculation employeeCalculation)
+        {
+            long declarationId = 0;
+
+            if (!string.IsNullOrEmpty(employeeCalculation.employeeDeclaration.DeclarationDetail))
+            {
+                try
+                {
+                    List<SalaryComponents> components = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeCalculation.employeeDeclaration.DeclarationDetail);
+                    if (components == null || components.Count == 0)
+                        declarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId;
+                }
+                catch
+                {
+                    declarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId;
+                    _logger.LogInformation("Salary component not found. Taking from master data.");
+                }
+            }
+
+            return declarationId;
+        }
+
+        private EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation)
+        {
+            employeeCalculation.CTC = employeeCalculation.employee.CTC;
+            employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
+            DataSet resultSet = _db.FetchDataSet("sp_employee_getbyid_to_reg_or_upd", new
+            {
+                EmployeeId = employeeCalculation.employee.EmployeeUid,
+                employeeCalculation.employee.Mobile,
+                employeeCalculation.employee.Email,
+                employeeCalculation.employee.CompanyId,
+                employeeCalculation.employee.CTC
+            });
+
+            if (resultSet == null || resultSet.Tables.Count != 7)
+                throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
+
+            if (resultSet.Tables[4].Rows.Count != 1)
+                throw new HiringBellException("Company setting not found. Please contact to admin.");
+
+            Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
+
+            // check and get Declaration object
+            employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);
+
+            // check and get employee salary detail object
+            employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2], employeeCalculation.employee);
+
+            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
+
+            // build and bind compnay setting
+            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
+
+            // got duplication email, mobile or employee id if any
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[5]);
+
+            // got duplication email, mobile or employee id if any
+            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[6]);
+
+            if (employeeDetail != null)
+            {
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+                employeeCalculation.employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
+            }
+            else
+            {
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+                employeeCalculation.employee.EmpProfDetailUid = -1;
             }
 
             if (employeeEmailMobileCheck.EmailCount > 0)
-                throw new HiringBellException($"Email id: {employee.Email} already exists.");
+                throw new HiringBellException($"Email id: {employeeCalculation.employee.Email} already exists.");
 
             if (employeeEmailMobileCheck.MobileCount > 0)
-                throw new HiringBellException($"Mobile no: {employee.Mobile} already exists.");
+                throw new HiringBellException($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
 
             return employeeEmailMobileCheck;
         }
 
-        private async Task<DataSet> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection)
+        private async Task<DataSet> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection)
         {
             try
             {
+                Employee employee = eCal.employee;
+                eCal.EmployeeId = eCal.employee.EmployeeUid;
+
                 this.ValidateEmployee(employee);
                 this.ValidateEmployeeDetails(employee);
                 int empId = Convert.ToInt32(employee.EmployeeUid);
@@ -588,45 +689,13 @@ namespace ServiceLayer.Code
 
                 employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
-                EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+                try
                 {
-                    SalaryDetail = new EmployeeSalaryDetail
-                    {
-                        CTC = employee.CTC
-                    }
-                };
-
-                EmployeeSalaryDetail employeeSalaryDetail = new EmployeeSalaryDetail
+                    await _declarationService.CalculateSalaryNDeclaration(eCal, true);
+                }
+                catch
                 {
-                    CTC = 0,
-                    GrossIncome = 0,
-                    NetSalary = 0,
-                    CompleteSalaryDetail = "[]",
-                    TaxDetail = "[]",
-                };
-
-                if (employee.EmployeeUid > 0 || employee.CTC > 0)
-                {
-                    try
-                    {
-                        employeeSalaryDetail = await _declarationService.CalculateSalaryDetail(0, employeeDeclaration, employee.CTC);
-                    }
-                    catch
-                    {
-                        _logger.LogInformation("Salary group not fount. Creating user without salary group and break up detail.");
-                    }
-
-                    if (employeeSalaryDetail == null)
-                    {
-                        employeeSalaryDetail = new EmployeeSalaryDetail
-                        {
-                            CTC = 0,
-                            GrossIncome = 0,
-                            NetSalary = 0,
-                            CompleteSalaryDetail = "[]",
-                            TaxDetail = "[]",
-                        };
-                    }
+                    _logger.LogInformation("Salary group not fount. Creating user without salary group and break up detail.");
                 }
 
                 string EncreptedPassword = _authenticationService.Encrypt(
@@ -634,9 +703,7 @@ namespace ServiceLayer.Code
                     _configuration.GetSection("EncryptSecret").Value
                 );
 
-                employee.CompleteSalaryDetail = "{}";
-                employee.TaxDetail = "[]";
-
+                long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
                 {
                     employee.EmployeeUid,
@@ -680,12 +747,14 @@ namespace ServiceLayer.Code
                     employee.AccessLevelId,
                     employee.UserTypeId,
                     employee.CTC,
-                    employeeSalaryDetail.GrossIncome,
-                    employeeSalaryDetail.NetSalary,
-                    employeeSalaryDetail.CompleteSalaryDetail,
-                    employeeSalaryDetail.TaxDetail,
+                    eCal.employeeSalaryDetail.GrossIncome,
+                    eCal.employeeSalaryDetail.NetSalary,
+                    eCal.employeeSalaryDetail.CompleteSalaryDetail,
+                    eCal.employeeSalaryDetail.TaxDetail,
                     employee.DOB,
                     RegistrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(DateTime.Now, _currentSession.TimeZone),
+                    EmployeeDeclarationId = declarationId,
+                    DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true
@@ -723,7 +792,7 @@ namespace ServiceLayer.Code
 
                     DataTable table = Converter.ToDataTable(fileInfo);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    var result = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
+                    var result = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, true);
                     _db.Commit();
                 }
 
@@ -769,7 +838,7 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(employee.Mobile) || employee.Mobile.Contains("."))
                 throw new HiringBellException { UserMessage = "Mobile number is a mandatory field.", FieldName = nameof(employee.Mobile), FieldValue = employee.Mobile.ToString() };
-            
+
             if (employee.Mobile.Length < 10 || employee.Mobile.Length > 10)
                 throw new HiringBellException { UserMessage = "Mobile number must be only 10 digit.", FieldName = nameof(employee.Mobile), FieldValue = employee.Mobile.ToString() };
 
