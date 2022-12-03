@@ -46,10 +46,32 @@ namespace OnlineDataBuilder.Controllers
             var result = _taxRegimeService.AddUpdateAgeGroupService(taxAgeGroup);
             return BuildResponse(result);
         }
-        [HttpPost("DeleteTaxRegime")]
-        public IResponse<ApiResponse> DeleteTaxRegime(TaxRegime taxRegime)
+
+        [HttpDelete("DeleteTaxRegime/{TaxregimeId}")]
+        public IResponse<ApiResponse> DeleteTaxRegime(int TaxregimeId)
         {
-            var result = _taxRegimeService.DeleteTaxRegimeService(taxRegime);
+            var result = _taxRegimeService.DeleteTaxRegimeService(TaxregimeId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AddUpdatePTaxSlab")]
+        public async Task<ApiResponse> AddUpdatePTaxSlab(List<PTaxSlab> pTaxSlabs)
+        {
+            var result = await _taxRegimeService.AddUpdatePTaxSlabService(pTaxSlabs);
+            return BuildResponse(result);
+        }
+
+        [HttpDelete("DeletePTaxSlab/{PtaxSlabId}")]
+        public IResponse<ApiResponse> DeletePTaxSlab([FromRoute] int PtaxSlabId)
+        {
+            var result = _taxRegimeService.DeletePTaxSlabService(PtaxSlabId);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetPTaxSlabByCompId/{CompanyId}")]
+        public IResponse<ApiResponse> GetPTaxSlabByCompId([FromRoute] int CompanyId)
+        {
+            var result = _taxRegimeService.GetPTaxSlabByCompIdService(CompanyId);
             return BuildResponse(result);
         }
     }

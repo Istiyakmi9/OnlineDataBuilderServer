@@ -1,7 +1,5 @@
 ﻿using ModalLayer.Modal;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
@@ -12,6 +10,9 @@ namespace ServiceLayer.Interface
         dynamic GetAllRegimeService();
         TaxAgeGroup AddUpdateAgeGroupService(TaxAgeGroup taxAgeGroup);
         Task<dynamic> AddUpdateTaxRegimeService(List<TaxRegime> taxRegimes);
-        dynamic DeleteTaxRegimeService(TaxRegime taxRegime);
+        string DeleteTaxRegimeService(int TaxRegimeId);
+        Task<List<PTaxSlab>> AddUpdatePTaxSlabService(List<PTaxSlab> pTaxSlabs);
+        string DeletePTaxSlabService(int PtaxSlabId);
+        List<PTaxSlab> GetPTaxSlabByCompIdService(int CompanyId);
     }
 }
