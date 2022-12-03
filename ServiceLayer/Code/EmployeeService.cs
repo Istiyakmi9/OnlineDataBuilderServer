@@ -573,21 +573,26 @@ namespace ServiceLayer.Code
             return employeeSalaryDetail;
         }
 
-        private void UpdateDeclarationDetail(EmployeeCalculation employeeCalculation)
+        private long CheckUpdateDeclarationComponents(EmployeeCalculation employeeCalculation)
         {
-            List<SalaryComponents> employeeComponents = new List<SalaryComponents>();
+            long declarationId = 0;
+
             if (!string.IsNullOrEmpty(employeeCalculation.employeeDeclaration.DeclarationDetail))
-                employeeComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeCalculation.employeeDeclaration.DeclarationDetail);
-
-            SalaryComponents component = null;
-            employeeCalculation.salaryComponents.ForEach(x =>
             {
-                component = employeeComponents.FirstOrDefault(i => i.ComponentId == x.ComponentId);
-                if (component == null)
-                    employeeComponents.Add(x);
-            });
+                try
+                {
+                    List<SalaryComponents> components = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeCalculation.employeeDeclaration.DeclarationDetail);
+                    if (components == null || components.Count == 0)
+                        declarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId;
+                }
+                catch
+                {
+                    declarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId;
+                    _logger.LogInformation("Salary component not found. Taking from master data.");
+                }
+            }
 
-            employeeCalculation.employeeDeclaration.DeclarationDetail = JsonConvert.SerializeObject(employeeComponents);
+            return declarationId;
         }
 
         private EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation)
@@ -645,9 +650,6 @@ namespace ServiceLayer.Code
             if (employeeEmailMobileCheck.MobileCount > 0)
                 throw new HiringBellException($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
 
-            // update salary component if any new added
-            UpdateDeclarationDetail(employeeCalculation);
-
             return employeeEmailMobileCheck;
         }
 
@@ -701,6 +703,7 @@ namespace ServiceLayer.Code
                     _configuration.GetSection("EncryptSecret").Value
                 );
 
+                long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
                 {
                     employee.EmployeeUid,
@@ -750,6 +753,8 @@ namespace ServiceLayer.Code
                     eCal.employeeSalaryDetail.TaxDetail,
                     employee.DOB,
                     RegistrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(DateTime.Now, _currentSession.TimeZone),
+                    EmployeeDeclarationId = declarationId,
+                    DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true
@@ -787,7 +792,7 @@ namespace ServiceLayer.Code
 
                     DataTable table = Converter.ToDataTable(fileInfo);
                     _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    var result = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, false);
+                    var result = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, true);
                     _db.Commit();
                 }
 

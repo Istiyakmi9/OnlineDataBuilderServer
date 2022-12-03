@@ -90,7 +90,7 @@ namespace ServiceLayer.Code
             employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome); //(tax * 4) / 100;
             //taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
             taxSlab[0].Value = tax;
-            employeeDeclaration.TaxNeedToPay = Convert.ToDecimal(string.Format("{0:0.00}", tax + employeeDeclaration.SurChargesAndCess));
+            employeeDeclaration.TaxNeedToPay = tax + employeeDeclaration.SurChargesAndCess;
             employeeDeclaration.IncomeTaxSlab = taxSlab;
         }
 
