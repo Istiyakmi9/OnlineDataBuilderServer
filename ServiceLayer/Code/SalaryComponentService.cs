@@ -698,48 +698,83 @@ namespace ServiceLayer.Code
             return finalAmount;
         }
 
-        public List<AnnualSalaryBreakup> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
+        private async Task<EmployeeCalculation> GetEmployeeSalaryDetail(long EmployeeId, decimal CTCAnnually)
+        {
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+
+            employeeCalculation.EmployeeId = EmployeeId;
+            employeeCalculation.CTC = CTCAnnually;
+
+            var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
+                new { employeeCalculation.EmployeeId });
+            if (ResultSet == null || ResultSet.Tables.Count != 3)
+                throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
+
+            if (ResultSet.Tables[0].Rows.Count == 0)
+                throw new HiringBellException($"Salary group not found for salary: [{CTCAnnually}]");
+
+            if (ResultSet.Tables[1].Rows.Count == 0)
+                throw new HiringBellException($"Salary detail not found for employee Id: [{EmployeeId}]");
+
+            if (ResultSet.Tables[2].Rows.Count == 0)
+                throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
+
+            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
+
+            employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
+
+            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
+
+            if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
+                throw new HiringBellException($"Salary components not found for salary: [{CTCAnnually}]");
+
+            return await Task.FromResult(employeeCalculation);
+        }
+
+        public async Task<List<AnnualSalaryBreakup>> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
         {
             if (EmployeeId < 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
+            EmployeeCalculation employeeCalculation = await GetEmployeeSalaryDetail(EmployeeId, CTCAnnually);
+
             if (CTCAnnually <= 0)
                 return this.CreateSalaryBreakUpWithZeroCTC(EmployeeId, CTCAnnually);
             else
-                return this.CreateSalaryBreakupWithValue(EmployeeId, CTCAnnually);
+                return this.CreateSalaryBreakupWithValue(employeeCalculation);
         }
 
-        public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(long EmployeeId, decimal CTCAnnually)
+        public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation eCal)
         {
             List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
-            DateTime startDate = new DateTime(DateTime.Now.Year, 4, 1);
-            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(EmployeeId, CTCAnnually);
+            DateTime startDate = new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1);
 
-            if (salaryComponents.Count == 0)
-                throw new HiringBellException($"Salary group not defined for CTC bracked: [{CTCAnnually}]");
+            if (eCal.salaryGroup == null || string.IsNullOrEmpty(eCal.salaryGroup.SalaryComponents) || eCal.salaryGroup.SalaryComponents == "[]")
+                throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
 
-            string stringifySalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-            decimal perquisiteAmount = GetPerquisiteAmount(salaryComponents);
-            decimal EmployeeContributionAmount = (GetEmployeeContributionAmount(salaryComponents, CTCAnnually)) + perquisiteAmount;
-            decimal grossAmount = Convert.ToDecimal(CTCAnnually - EmployeeContributionAmount);
-            decimal basicAmountValue = GetBaiscAmountValue(salaryComponents, grossAmount, CTCAnnually);
+            eCal.salaryGroup.GroupComponents = JsonConvert
+                .DeserializeObject<List<SalaryComponents>>(eCal.salaryGroup.SalaryComponents);
+
+            decimal perquisiteAmount = GetPerquisiteAmount(eCal.salaryGroup.GroupComponents);
+            decimal EmployeeContributionAmount = (GetEmployeeContributionAmount(eCal.salaryGroup.GroupComponents, eCal.CTC)) + perquisiteAmount;
+            decimal grossAmount = Convert.ToDecimal(eCal.CTC - EmployeeContributionAmount);
+            decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, grossAmount, eCal.CTC);
 
             int index = 0;
             while (index < 12)
             {
-                salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(stringifySalaryComponents);
                 List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
                 int i = 0;
-                while (i < salaryComponents.Count)
+                while (i < eCal.salaryGroup.GroupComponents.Count)
                 {
-                    var item = salaryComponents.ElementAt(i);
+                    var item = eCal.salaryGroup.GroupComponents.ElementAt(i);
                     if (!string.IsNullOrEmpty(item.Formula))
                     {
                         if (item.Formula.Contains("[BASIC]"))
                             item.Formula = item.Formula.Replace("[BASIC]", basicAmountValue.ToString());
                         else if (item.Formula.Contains("[CTC]"))
-                            item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(CTCAnnually)).ToString());
+                            item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(eCal.CTC)).ToString());
                         else if (item.Formula.Contains("[GROSS]"))
                             item.Formula = item.Formula.Replace("[GROSS]", grossAmount.ToString());
                     }
@@ -749,7 +784,7 @@ namespace ServiceLayer.Code
 
                 decimal amount = 0;
                 CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
-                foreach (var item in salaryComponents)
+                foreach (var item in eCal.salaryGroup.GroupComponents)
                 {
                     if (!string.IsNullOrEmpty(item.ComponentId))
                     {
@@ -785,7 +820,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
-                    FinalAmount = (CTCAnnually - EmployeeContributionAmount) / 12,
+                    FinalAmount = (eCal.CTC - EmployeeContributionAmount) / 12,
                     ComponentTypeId = 100
                 };
 
@@ -796,7 +831,7 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.CTC),
                     Formula = null,
                     ComponentName = ComponentNames.CTC,
-                    FinalAmount = CTCAnnually / 12,
+                    FinalAmount = eCal.CTC / 12,
                     ComponentTypeId = 101
                 };
 

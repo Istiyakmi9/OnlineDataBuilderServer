@@ -10,7 +10,7 @@ namespace ServiceLayer.Code
 {
     public class ComponentsCalculationService : IComponentsCalculationService
     {
-        public decimal StandardDeductionComponent(EmployeeDeclaration employeeDeclaration)
+        public decimal StandardDeductionComponent(EmployeeCalculation empCal)
         {
             return 50000;
         }

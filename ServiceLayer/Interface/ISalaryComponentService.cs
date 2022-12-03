@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal.Accounts;
+﻿using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -23,9 +24,9 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
         string SalaryDetailService(long EmployeeId, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, int PresentMonth, int PresentYear);
-        List<AnnualSalaryBreakup> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
+        Task<List<AnnualSalaryBreakup>> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
         SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId);
-        List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(long EmployeeId, decimal CTCAnnually);
+        List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation empCal);
     }
 }

@@ -8,7 +8,7 @@ namespace ServiceLayer.Interface
 {
     public interface IComponentsCalculationService
     {
-        decimal StandardDeductionComponent(EmployeeDeclaration employeeDeclaration);
+        decimal StandardDeductionComponent(EmployeeCalculation empCal);
         void ProfessionalTaxComponent(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup);
         void EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup);
         void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs);
