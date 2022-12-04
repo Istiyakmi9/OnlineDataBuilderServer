@@ -26,7 +26,7 @@ namespace ModalLayer.Modal.Accounts
         public string HousingProperty { get; set; }
         public Dictionary<int, TaxSlabDetail> IncomeTaxSlab { get; set; }
         public decimal SurChargesAndCess { get; set; }
-        public dynamic HRADeatils { get; set; }
+        public EmployeeHRA HRADeatils { get; set; }
         public decimal TotalDeclaredAmount { set; get; }
         public decimal TotalApprovedAmount { set; get; }
         public decimal TotalRejectedAmount { set; get; }
@@ -35,6 +35,14 @@ namespace ModalLayer.Modal.Accounts
         public int DeclarationEndMonth { set; get; }
         public int DeclarationFromYear { set; get; }
         public int DeclarationToYear { set; get; }
+    }
+
+    public class EmployeeHRA
+    {
+        public decimal HRA1 { set; get; }
+        public decimal HRA2 { set; get; }
+        public decimal HRA3 { set; get; }
+        public decimal HRAAmount { set; get; }
     }
 
     public class DeclarationReport

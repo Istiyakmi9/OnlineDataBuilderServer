@@ -395,17 +395,18 @@ namespace ServiceLayer.Code
                     .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
             }
 
+            decimal totalDeduction = 0;
+
             // calculate and get gross income value and salary breakup detail
             var calculatedSalaryBreakupDetails = GetGrossIncome(empCal.employeeDeclaration, completeSalaryBreakups);
-            decimal StandardDeduction = _componentsCalculationService.StandardDeductionComponent(empCal);
+            totalDeduction += _componentsCalculationService.StandardDeductionComponent(empCal);
 
             // check and apply professional tax
-            _componentsCalculationService.ProfessionalTaxComponent(empCal.employeeDeclaration, empCal.salaryGroup);
+            totalDeduction += _componentsCalculationService.ProfessionalTaxComponent(empCal);
 
             // check and apply employer providentfund
-            _componentsCalculationService.EmployerProvidentFund(empCal.employeeDeclaration, empCal.salaryGroup);
+            totalDeduction += _componentsCalculationService.EmployerProvidentFund(empCal.employeeDeclaration, empCal.salaryGroup);
 
-            decimal totalDeduction = 0;
             // check and apply 1.5 lakhs components
             totalDeduction += _componentsCalculationService.OneAndHalfLakhsComponent(empCal.employeeDeclaration);
 
@@ -428,8 +429,8 @@ namespace ServiceLayer.Code
             if (empCal.employeeDeclaration.HRADeatils != null)
                 hraAmount = (empCal.employeeDeclaration.HRADeatils.HRAAmount * 12);
 
-            empCal.employeeDeclaration.TotalAmount = Convert.ToDecimal(string.Format("{0:0.00}",
-                (empCal.employeeDeclaration.TotalAmount - (StandardDeduction + totalDeduction + hraAmount))));
+            // final total taxable amount.
+            empCal.employeeDeclaration.TotalAmount = empCal.employeeDeclaration.TotalAmount - (totalDeduction + hraAmount);
 
             //Tax regime calculation 
             var ageGroup = DateTime.UtcNow.Year - Convert.ToDateTime(_currentSession.CurrentUserDetail.Dob).Year;
@@ -469,6 +470,7 @@ namespace ServiceLayer.Code
 
         private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag)
         {
+            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             List<TaxDetails> taxdetails = null;
             if (empCal.companySetting == null)
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
@@ -483,7 +485,6 @@ namespace ServiceLayer.Code
                 {
                     if (reCalculateFlag)
                     {
-                        DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                         empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                             .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
