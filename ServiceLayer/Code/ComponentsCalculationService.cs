@@ -15,22 +15,28 @@ namespace ServiceLayer.Code
             return 50000;
         }
 
-        public void ProfessionalTaxComponent(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup)
+        public decimal ProfessionalTaxComponent(EmployeeCalculation empCal)
         {
+            decimal amount = 0;
             SalaryComponents component = null;
-            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "PTAX");
+            component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "PTAX");
             if (component != null)
             {
                 component.DeclaredValue = 2400;
-                employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
+                amount = component.DeclaredValue;
             }
+
+            return amount;
         }
-        public void EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup)
+        public decimal EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup)
         {
+            decimal value = 0;
             SalaryComponents component = null;
             component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "EPF");
             if (component != null)
-                employeeDeclaration.TotalAmount = employeeDeclaration.TotalAmount - component.DeclaredValue;
+                value = component.DeclaredValue;
+
+            return value;
         }
 
         private decimal SurchargeAndCess(decimal GrossIncomeTax, decimal GrossIncome)
@@ -127,14 +133,11 @@ namespace ServiceLayer.Code
                     HRAAmount = HRA3;
             }
 
-            employeeDeclaration.HRADeatils = new { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
+            employeeDeclaration.HRADeatils = new EmployeeHRA { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
 
-            if (employeeDeclaration.SalaryComponentItems != null)
-            {
-                var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
-                if (houseProperty != null)
-                    hraComponent.DeclaredValue = houseProperty.TotalAmountDeclared;
-            }
+            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
+            if (houseProperty != null)
+                hraComponent.DeclaredValue = houseProperty.TotalAmountDeclared;
         }
 
         public void BuildTaxDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail salaryBreakup)
