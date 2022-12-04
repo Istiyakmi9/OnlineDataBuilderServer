@@ -8,6 +8,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.IsisMtt.X509;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -57,14 +58,18 @@ namespace ServiceLayer.Code
         {
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
-            List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
             SalaryComponents salaryComponent = null;
             if (declaration != null && !string.IsNullOrEmpty(declaration.DeclarationDetail))
             {
-                salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
-                salaryComponent = salaryComponents.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
+                declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+                salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
                 if (salaryComponent == null)
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
+
+                if (employeeDeclaration.DeclaredValue == 0)
+                    throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
+
+                salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
             }
             else
             {
@@ -229,7 +234,6 @@ namespace ServiceLayer.Code
                     salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
                     declaration.DeclarationDetail = JsonConvert.SerializeObject(declaration.SalaryComponentItems);
 
-
                     Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
                     {
                         EmployeeDeclarationId = declaration.EmployeeDeclarationId,
@@ -267,16 +271,10 @@ namespace ServiceLayer.Code
 
                 EmployeeDeclaration declaration = declarations.FirstOrDefault();
 
-                if (declaration == null)
+                if (declaration == null || string.IsNullOrEmpty(declaration.DeclarationDetail))
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
 
                 declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
-
-                Parallel.ForEach(dbSalaryComponents, x =>
-                {
-                    if (declaration.SalaryComponentItems.Find(i => i.ComponentId == x.ComponentId) == null)
-                        declaration.SalaryComponentItems.Add(x);
-                });
 
                 if (FileCollection.Count > 0)
                 {
