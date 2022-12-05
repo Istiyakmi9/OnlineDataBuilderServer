@@ -180,7 +180,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Requested component not found. Please contact to admin.");
 
             salaryComponent.DeclaredValue = housingDeclartion.HousePropertyDetail.TotalRent;
-            declaration.HousingProperty = JsonConvert.SerializeObject(housingDeclartion.HousePropertyDetail);
+            declaration.HouseRentDetail = JsonConvert.SerializeObject(housingDeclartion.HousePropertyDetail);
             await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
         }
 
@@ -215,26 +215,26 @@ namespace ServiceLayer.Code
 
                         fileIds.Add(Convert.ToInt32(Result.statusMessage));
                     }
-
-                    salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
-                    declaration.DeclarationDetail = JsonConvert.SerializeObject(declaration.SalaryComponentItems);
-
-                    Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
-                    {
-                        EmployeeDeclarationId = declaration.EmployeeDeclarationId,
-                        EmployeeId = declaration.EmployeeId,
-                        DocumentPath = declaration.DocumentPath,
-                        DeclarationDetail = declaration.DeclarationDetail,
-                        HousingProperty = declaration.HousingProperty,
-                        TotalDeclaredAmount = declaration.TotalDeclaredAmount,
-                        TotalApprovedAmount = declaration.TotalApprovedAmount,
-                        TotalRejectedAmount = declaration.TotalRejectedAmount,
-                        EmployeeCurrentRegime = declaration.EmployeeCurrentRegime
-                    }, true);
-
-                    if (!Bot.IsSuccess(Result))
-                        throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
                 }
+
+                salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
+                declaration.DeclarationDetail = JsonConvert.SerializeObject(declaration.SalaryComponentItems);
+
+                Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                {
+                    EmployeeDeclarationId = declaration.EmployeeDeclarationId,
+                    EmployeeId = declaration.EmployeeId,
+                    DocumentPath = declaration.DocumentPath,
+                    DeclarationDetail = declaration.DeclarationDetail,
+                    HouseRentDetail = declaration.HouseRentDetail,
+                    TotalDeclaredAmount = declaration.TotalDeclaredAmount,
+                    TotalApprovedAmount = declaration.TotalApprovedAmount,
+                    TotalRejectedAmount = declaration.TotalRejectedAmount,
+                    EmployeeCurrentRegime = declaration.EmployeeCurrentRegime
+                }, true);
+
+                if (!Bot.IsSuccess(Result))
+                    throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
 
                 _db.Commit();
             }
@@ -273,6 +273,8 @@ namespace ServiceLayer.Code
                         );
                     }
                 }
+
+                DeclarationDetail.ComponentId = ComponentNames.HRA;
 
                 // update declaration detail with housing detail in database
                 await UpdateDeclarationDetail(files, declaration, FileCollection, DeclarationDetail);
@@ -770,7 +772,7 @@ namespace ServiceLayer.Code
                     declaration.EmployeeId,
                     declaration.DocumentPath,
                     declaration.DeclarationDetail,
-                    declaration.HousingProperty,
+                    declaration.HouseRentDetail,
                     declaration.TotalDeclaredAmount,
                     declaration.TotalApprovedAmount,
                     declaration.TotalRejectedAmount,
@@ -830,7 +832,7 @@ namespace ServiceLayer.Code
                         declaration.EmployeeId,
                         declaration.DocumentPath,
                         declaration.DeclarationDetail,
-                        declaration.HousingProperty,
+                        declaration.HouseRentDetail,
                         declaration.TotalDeclaredAmount,
                         declaration.TotalApprovedAmount,
                         declaration.TotalRejectedAmount,

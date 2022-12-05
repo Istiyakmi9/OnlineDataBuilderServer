@@ -409,7 +409,7 @@ namespace ServiceLayer.Code
                 EmployeeDeclarationId = employeeCompleteDetailModal.EmployeeDeclarations.EmployeeDeclarationId,
                 DocumentPath = employeeCompleteDetailModal.EmployeeDeclarations.DocumentPath,
                 DeclarationDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeDeclarations.DeclarationDetail) ? "[]" : employeeCompleteDetailModal.EmployeeDeclarations.DeclarationDetail,
-                HousingProperty = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeDeclarations.HousingProperty) ? "[]" : employeeCompleteDetailModal.EmployeeDeclarations.HousingProperty,
+                HouseRentDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeDeclarations.HouseRentDetail) ? "[]" : employeeCompleteDetailModal.EmployeeDeclarations.HouseRentDetail,
                 TotalDeclaredAmount = employeeCompleteDetailModal.EmployeeDeclarations.TotalAmount,
                 TotalApprovedAmount = 0,
                 LeaveRequestId = employeeCompleteDetailModal.LeaveRequestDetail.LeaveRequestId,
