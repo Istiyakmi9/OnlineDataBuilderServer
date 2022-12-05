@@ -94,5 +94,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _declarationService.DeleteDeclarationFileService(DeclarationId, FileId, ComponentId);
             return BuildResponse(result);
         }
+
+        [HttpDelete("DeleteDeclaredHRA/{DeclarationId}")]
+        public async Task<ApiResponse> DeleteDeclaredHRA([FromRoute] long DeclarationId)
+        {
+            var result = await _declarationService.DeleteDeclaredHRAService(DeclarationId);
+            return BuildResponse(result);
+        }
     }
 }

@@ -640,10 +640,10 @@ namespace ServiceLayer.Code
                 }
             };
 
-            var houseProperty = employeeDeclaration.SalaryComponentItems.FindAll(x => x.ComponentId.ToLower() == "HP".ToLower());
+            var houseProperty = employeeDeclaration.SalaryComponentItems.FindAll(x => x.ComponentId.ToLower() == ComponentNames.HRA.ToLower());
             employeeDeclaration.Declarations.Add(new DeclarationReport
             {
-                DeclarationName = ApplicationConstants.HouseProperty,
+                DeclarationName = ComponentNames.HRA,
                 NumberOfProofSubmitted = 0,
                 Declarations = employeeDeclaration.TaxSavingAlloance.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
                 AcceptedAmount = houseProperty.Sum(a => a.AcceptedAmount),
@@ -725,25 +725,52 @@ namespace ServiceLayer.Code
 
         public async Task<EmployeeDeclaration> DeleteDeclarationValueService(long DeclarationId, string ComponentId)
         {
+            if (DeclarationId <= 0)
+                throw new HiringBellException("Invalid declaration id passed.");
+
+            if (string.IsNullOrEmpty(ComponentId))
+                throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
+
+            var resultset = _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
+            List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
+            if (declaration == null || salaryComponent == null)
+                throw new HiringBellException("Declaration detail not found. Please contact to admin.");
+
+            List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+            var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
+            if (component == null)
+                throw new HiringBellException("Got internal error while cleaning up, please contact to admin.");
+            return await ResetComponent(declaration, salaryComponents, component);
+        }
+
+        public async Task<EmployeeDeclaration> DeleteDeclaredHRAService(long DeclarationId)
+        {
+            if (DeclarationId <= 0)
+                throw new HiringBellException("Invalid declaration id passed.");
+
+            string ComponentId = ComponentNames.HRA;
+
+            var resultset = _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
+            List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
+            if (declaration == null || salaryComponent == null)
+                throw new HiringBellException("Declaration detail not found. Please contact to admin.");
+
+            declaration.HouseRentDetail = ApplicationConstants.EmptyJsonObject;
+
+            List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+            var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
+            if (component == null)
+                throw new HiringBellException("Got internal error while cleaning up, please contact to admin.");
+
+            return await ResetComponent(declaration, salaryComponents, component);
+        }
+
+        private async Task<EmployeeDeclaration> ResetComponent(EmployeeDeclaration declaration, List<SalaryComponents> salaryComponents, SalaryComponents component)
+        {
             try
             {
-                if (DeclarationId <= 0)
-                    throw new HiringBellException("Invalid declaration id passed.");
-
-                if (string.IsNullOrEmpty(ComponentId))
-                    throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
-
-                var resultset = _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
-                EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
-                List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
-                if (declaration == null || salaryComponent == null)
-                    throw new HiringBellException("Declaration detail not found. Please contact to admin.");
-
-                List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
-                var component = salaryComponents.FirstOrDefault(x => x.ComponentId == ComponentId);
-                if (component == null)
-                    throw new HiringBellException("Got internal error while cleaning up, please contact to admin.");
-
                 var allFileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
                 string searchString = component.UploadedFileIds.Replace("[", "").Replace("]", "");
                 List<Files> files = _db.GetList<Files>("sp_userfiledetail_get_files", new { searchString });
