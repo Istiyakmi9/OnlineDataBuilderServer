@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModalLayer.Modal.Accounts
-{   
+﻿namespace ModalLayer.Modal.Accounts
+{
     public class HousingDeclartion
     {
         public long EmployeeId { set; get; }

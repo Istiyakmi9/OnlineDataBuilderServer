@@ -23,7 +23,7 @@ namespace ModalLayer.Modal.Accounts
         public EmployeeSalaryDetail SalaryDetail { set; get; }
         public Dictionary<string, List<string>> Sections { set; get; }
         public List<DeclarationReport> Declarations { set; get; } = new List<DeclarationReport>();
-        public string HousingProperty { get; set; }
+        public string HouseRentDetail { get; set; }
         public Dictionary<int, TaxSlabDetail> IncomeTaxSlab { get; set; }
         public decimal SurChargesAndCess { get; set; }
         public EmployeeHRA HRADeatils { get; set; }

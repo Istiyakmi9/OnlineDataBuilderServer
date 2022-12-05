@@ -123,21 +123,17 @@ namespace ServiceLayer.Code
             else
                 HRAAmount = HRA2;
 
-            var houseProperty = employeeDeclaration.Declarations.Find(x => x.DeclarationName == ApplicationConstants.HouseProperty);
-            if (houseProperty != null && houseProperty.TotalAmountDeclared > 0)
+            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
+            if (hraComponent != null && hraComponent.DeclaredValue > 0)
             {
-                decimal declaredValue = houseProperty.TotalAmountDeclared;
-                HRA3 = (declaredValue / 12) - (basicComponent.FinalAmount * .1M);
+                decimal declaredValue = hraComponent.DeclaredValue;
+                HRA3 = declaredValue - (basicComponent.FinalAmount * .1M);
 
                 if (HRA3 > 0 && HRA3 < HRAAmount)
                     HRAAmount = HRA3;
             }
 
             employeeDeclaration.HRADeatils = new EmployeeHRA { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
-
-            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
-            if (houseProperty != null)
-                hraComponent.DeclaredValue = houseProperty.TotalAmountDeclared;
         }
 
         public void BuildTaxDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail salaryBreakup)
