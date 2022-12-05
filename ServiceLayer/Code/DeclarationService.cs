@@ -156,7 +156,7 @@ namespace ServiceLayer.Code
                 UserTypeId = (int)UserType.Compnay
             });
 
-            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
+            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get the detail");
 
             employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
@@ -166,18 +166,6 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[1].Rows.Count > 0)
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
-            List<SalaryComponents> salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[2]);
-            if (salaryComponents.Count <= 0)
-                throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
-
-            bool flag = await GetEmployeeDeclaration(employeeDeclaration, salaryComponents);
-            if (!reCalculateFlag)
-                reCalculateFlag = flag;
-
-            if (salaryComponents.Count != employeeDeclaration.SalaryComponentItems.Count)
-                throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
-
-            this.BuildSectionWiseComponents(employeeDeclaration);
             employeeDeclaration.SalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag);
 
             employeeDeclaration.FileDetails = files;
@@ -300,7 +288,7 @@ namespace ServiceLayer.Code
         {
             var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
                 new { employeeCalculation.EmployeeId });
-            if (ResultSet == null || ResultSet.Tables.Count != 3)
+            if (ResultSet == null || ResultSet.Tables.Count != 4)
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
             if (ResultSet.Tables[0].Rows.Count == 0)
@@ -311,6 +299,11 @@ namespace ServiceLayer.Code
 
             if (ResultSet.Tables[2].Rows.Count == 0)
                 throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
+
+            if (ResultSet.Tables[3].Rows.Count == 0)
+                throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
+
+            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
 
             employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
 
@@ -363,6 +356,16 @@ namespace ServiceLayer.Code
             };
 
             await GetEmployeeSalaryDetail(employeeCalculation);
+
+            bool flag = await GetEmployeeDeclaration(employeeCalculation.employeeDeclaration, employeeCalculation.salaryComponents);
+            if (!reCalculateFlag)
+                reCalculateFlag = flag;
+
+            if (employeeCalculation.salaryComponents.Count != employeeCalculation.employeeDeclaration.SalaryComponentItems.Count)
+                throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
+
+            this.BuildSectionWiseComponents(employeeCalculation);
+            
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
         }
 
@@ -588,8 +591,9 @@ namespace ServiceLayer.Code
             return taxdetails;
         }
 
-        private void BuildSectionWiseComponents(EmployeeDeclaration employeeDeclaration)
+        private void BuildSectionWiseComponents(EmployeeCalculation employeeCalculation)
         {
+            EmployeeDeclaration employeeDeclaration = employeeCalculation.employeeDeclaration;
             foreach (var x in _sections)
             {
                 switch (x.Key)
