@@ -156,7 +156,7 @@ namespace ServiceLayer.Code
                 UserTypeId = (int)UserType.Compnay
             });
 
-            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 4)
+            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 3)
                 throw new HiringBellException("Unable to get the detail");
 
             employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
@@ -166,22 +166,19 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[1].Rows.Count > 0)
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
-            if (resultSet.Tables[2].Rows.Count == 1)
-                employeeDeclaration.SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(resultSet.Tables[2]);
-            else
-                throw new HiringBellException("Employee salary detail not defined. Please check CTC and other detail.");
-
-            List<SalaryComponents> salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
+            List<SalaryComponents> salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[2]);
             if (salaryComponents.Count <= 0)
                 throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
 
-            reCalculateFlag = await GetEmployeeDeclaration(employeeDeclaration, salaryComponents);
+            bool flag = await GetEmployeeDeclaration(employeeDeclaration, salaryComponents);
+            if (!reCalculateFlag)
+                reCalculateFlag = flag;
 
             if (salaryComponents.Count != employeeDeclaration.SalaryComponentItems.Count)
                 throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
 
             this.BuildSectionWiseComponents(employeeDeclaration);
-            await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeDeclaration.SalaryDetail.CTC, reCalculateFlag);
+            employeeDeclaration.SalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag);
 
             employeeDeclaration.FileDetails = files;
             employeeDeclaration.Sections = _sections;
@@ -318,6 +315,7 @@ namespace ServiceLayer.Code
             employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
 
             employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
+            employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
 
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
 
@@ -356,11 +354,10 @@ namespace ServiceLayer.Code
             return calculatedSalaryBreakupDetails;
         }
 
-        public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, decimal CTC = 0, bool reCalculateFlag = false)
+        public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false)
         {
             EmployeeCalculation employeeCalculation = new EmployeeCalculation
             {
-                CTC = CTC,
                 EmployeeId = EmployeeId,
                 employeeDeclaration = employeeDeclaration
             };
@@ -433,7 +430,6 @@ namespace ServiceLayer.Code
             empCal.employeeDeclaration.TotalAmount = empCal.employeeDeclaration.TotalAmount - (totalDeduction + hraAmount);
 
             //Tax regime calculation 
-            var ageGroup = DateTime.UtcNow.Year - Convert.ToDateTime(_currentSession.CurrentUserDetail.Dob).Year;
             if (empCal.employeeDeclaration.TotalAmount < 0)
                 empCal.employeeDeclaration.TotalAmount = 0;
 
@@ -477,11 +473,12 @@ namespace ServiceLayer.Code
 
             if (empCal.employeeSalaryDetail.TaxDetail != null)
             {
+                decimal totalTaxNeedToPay = 0;
                 taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
-                decimal totalTaxNeedToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted)
-                            .Aggregate((i, k) => i + k));
+                if (taxdetails != null && taxdetails.Count > 0)
+                    totalTaxNeedToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
 
-                if (taxdetails.Count != 0 && totalTaxNeedToPay != 0)
+                if (totalTaxNeedToPay > 0)
                 {
                     if (reCalculateFlag)
                     {
@@ -676,11 +673,11 @@ namespace ServiceLayer.Code
                 breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
                 workingDetail = breakDetail.FirstOrDefault(x => x.Month == PresentMonth && x.Year == PresentYear);
                 if (workingDetail == null)
-                    employeeSalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeSalaryDetail.CTC);
+                    employeeSalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
             }
             else
             {
-                employeeSalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, employeeSalaryDetail.CTC);
+                employeeSalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
                 breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
                 workingDetail = breakDetail.FirstOrDefault(x => x.Month == PresentMonth && x.Year == PresentYear);
                 if (workingDetail == null)
