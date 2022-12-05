@@ -365,7 +365,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
 
             this.BuildSectionWiseComponents(employeeCalculation);
-            
+
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
         }
 
@@ -754,19 +754,14 @@ namespace ServiceLayer.Code
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
 
                 DbResult Result = null;
-                if (allFileIds != null && allFileIds.Count > 0)
+                if (files != null && files.Count > 0)
                 {
-                    var fileInfo = (from n in allFileIds
-                                    select new
-                                    {
-                                        FileId = n
-                                    });
-
-                    DataTable table = Converter.ToDataTable(fileInfo);
-                    Result = await _db.BatchInsertUpdateAsync("sp_userdetail_del_by_file_id", table, true);
-
-                    if (Result.rowsEffected == 0)
-                        throw new HiringBellException("Fail to delete file record, Please contact to admin.");
+                    foreach (var file in allFileIds)
+                    {
+                        Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file });
+                        if (!Bot.IsSuccess(Result))
+                            throw new HiringBellException("Fail to delete file record, Please contact to admin.");
+                    }
                 }
 
                 await _db.ExecuteAsync("sp_employee_declaration_insupd", new
