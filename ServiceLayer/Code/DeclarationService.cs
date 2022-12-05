@@ -792,7 +792,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<string> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
+        public async Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
         {
             try
             {
@@ -842,7 +842,8 @@ namespace ServiceLayer.Code
                         _fileService.DeleteFiles(new List<Files> { file });
                 }
                 _db.Commit();
-                return await Task.FromResult(ApplicationConstants.Successfull);
+                return await this.GetEmployeeDeclarationDetail(declaration.EmployeeId, false);
+                //return await Task.FromResult(ApplicationConstants.Successfull);
             }
             catch
             {
