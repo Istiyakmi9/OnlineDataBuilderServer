@@ -24,6 +24,7 @@ namespace ModalLayer.Modal.Accounts
         public int FinancialYear { set; get; }
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
+        public bool IsPrimary { set; get; }
 
         // This value will come from database and filled by admin using page.
         public int EveryMonthLastDayOfDeclaration { set; get; } = 20;
