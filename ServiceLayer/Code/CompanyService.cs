@@ -378,8 +378,15 @@ namespace ServiceLayer.Code
             var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
             if (companySettingDetail == null)
                 companySettingDetail = companySetting;
-
-            companySettingDetail.CompanyId = companyId;
+            else
+            {
+                companySettingDetail.ProbationPeriodInDays = companySetting.ProbationPeriodInDays;
+                companySettingDetail.NoticePeriodInDays = companySetting.NoticePeriodInDays;
+                companySettingDetail.DeclarationStartMonth = companySetting.DeclarationStartMonth;
+                companySettingDetail.DeclarationEndMonth = companySetting.DeclarationEndMonth;
+                companySettingDetail.IsPrimary = companySetting.IsPrimary;
+                companySettingDetail.FinancialYear = companySetting.FinancialYear;
+            }
 
             var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
             {
@@ -387,7 +394,11 @@ namespace ServiceLayer.Code
                 companySettingDetail.SettingId,
                 companySettingDetail.ProbationPeriodInDays,
                 companySettingDetail.NoticePeriodInDays,
-                AdminId = _currentSession.CurrentUserDetail.UserId
+                companySettingDetail.DeclarationStartMonth,
+                companySettingDetail.DeclarationEndMonth,
+                companySettingDetail.IsPrimary,
+                companySettingDetail.FinancialYear,
+                AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
             if (!ApplicationConstants.IsExecuted(status.statusMessage))

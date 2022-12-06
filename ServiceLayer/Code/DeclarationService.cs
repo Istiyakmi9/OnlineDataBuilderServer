@@ -787,7 +787,7 @@ namespace ServiceLayer.Code
                 {
                     foreach (var file in allFileIds)
                     {
-                        Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file });
+                        Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file }, true);
                         if (!Bot.IsSuccess(Result))
                             throw new HiringBellException("Fail to delete file record, Please contact to admin.");
                     }
@@ -820,7 +820,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<string> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
+        public async Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId)
         {
             try
             {
@@ -870,7 +870,8 @@ namespace ServiceLayer.Code
                         _fileService.DeleteFiles(new List<Files> { file });
                 }
                 _db.Commit();
-                return await Task.FromResult(ApplicationConstants.Successfull);
+                return await this.GetEmployeeDeclarationDetail(declaration.EmployeeId, false);
+                //return await Task.FromResult(ApplicationConstants.Successfull);
             }
             catch
             {

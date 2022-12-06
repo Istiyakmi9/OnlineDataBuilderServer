@@ -18,7 +18,7 @@ namespace ServiceLayer.Interface
         string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration);
         Task<EmployeeDeclaration> DeleteDeclarationValueService(long DeclarationId, string ComponentId);
         Task<EmployeeDeclaration> DeleteDeclaredHRAService(long DeclarationId);
-        Task<string> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId);
+        Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId);
         Task<EmployeeSalaryDetail> CalculateSalaryNDeclaration(EmployeeCalculation empCal, bool reCalculateFlag);
     }
 }
