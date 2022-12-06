@@ -787,7 +787,7 @@ namespace ServiceLayer.Code
                 {
                     foreach (var file in allFileIds)
                     {
-                        Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file });
+                        Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file }, true);
                         if (!Bot.IsSuccess(Result))
                             throw new HiringBellException("Fail to delete file record, Please contact to admin.");
                     }
