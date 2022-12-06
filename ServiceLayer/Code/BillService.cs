@@ -206,7 +206,7 @@ namespace ServiceLayer.Code
 
         public async Task<dynamic> UpdateGeneratedBillService(BillGenerationModal billModal)
         {
-            if (billModal.TimesheetDetail == null || billModal.TimesheetDetail.TimesheetId == 0)
+            if (billModal.TimesheetDetail == null)
                 throw new HiringBellException("Invalid timesheet submitted. Please check you detail.");
 
             return await GenerateBillService(billModal);
