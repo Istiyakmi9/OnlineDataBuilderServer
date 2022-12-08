@@ -515,8 +515,7 @@ margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
 text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
 l7 level1 lfo14"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
-&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span>I.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>I.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">First we can
 find DOB(Which is manditory) of current user and subtract it from current year
@@ -527,8 +526,7 @@ margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
 text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
 l7 level1 lfo14"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
-&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span>II.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>II.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Fetch data
 from data base for fetch the tax slab.<o:p></o:p></span></p>
@@ -538,8 +536,7 @@ margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
 text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
 l7 level1 lfo14"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
-&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span>III.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>III.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Call
 TaxRegimeCalculation()<o:p></o:p></span></p>
@@ -569,8 +566,7 @@ margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
 text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
 l9 level1 lfo15"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
-&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span>I.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>I.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Check if
 CompanySetting of EmployeeCalculation is null then throw the error.<o:p></o:p></span></p>
@@ -580,8 +576,7 @@ margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
 text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
 l9 level1 lfo15"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
-&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span>II.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>II.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If TaxDetail
 of EmployeeSalaryDetail is not null.<o:p></o:p></span></p>
@@ -698,22 +693,15 @@ margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
 text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
 mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">ü<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
 color:black">And Call UpdateEmployeeSalaryDetailChanges() method which update
-the employee salary detail table<o:p></o:p></span></p>
-
-<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
-margin-left:0cm;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
-color:black">&nbsp;</span></p>
-
-<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
-margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-align:justify;
-line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
-font-family:&quot;Times New Roman&quot;,serif;color:black">&nbsp;</span></p>
+the employee salary detail table</span></p><p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><br></span></p>
 
 <p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
 margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-indent:-144.0pt;
 mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:l9 level1 lfo15"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
-mso-fareast-font-family:&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span>III.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>III.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
 line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Check Taxneedtopay
 of </span><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:
