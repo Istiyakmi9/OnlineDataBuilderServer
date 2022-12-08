@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
@@ -374,8 +375,14 @@ namespace ServiceLayer.Code
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
+            var result = _db.FetchDataSet("sp_company_setting_get_byid", new { CompanyId = companyId });
+            if (result == null || result.Tables.Count != 2)
+                throw new HiringBellException("Fail to get company setting details. Please contact to admin");
 
-            var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
+            CompanySetting companySettingDetail = null;
+            if (result.Tables[0].Rows.Count > 0)
+                companySettingDetail = Converter.ToType<CompanySetting>(result.Tables[0]);
+
             if (companySettingDetail == null)
                 companySettingDetail = companySetting;
             else
@@ -387,6 +394,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.IsPrimary = companySetting.IsPrimary;
                 companySettingDetail.FinancialYear = companySetting.FinancialYear;
             }
+            companySettingDetail.DefaultManagers = JsonConvert.SerializeObject(companySetting.ManagerLevelId);
 
             var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
             {
@@ -398,6 +406,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.DeclarationEndMonth,
                 companySettingDetail.IsPrimary,
                 companySettingDetail.FinancialYear,
+                companySettingDetail.DefaultManagers,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
@@ -409,13 +418,23 @@ namespace ServiceLayer.Code
             return companySettingDetail;
         }
 
-        public async Task<CompanySetting> GetCompanySettingService(int companyId)
+        public async Task<dynamic> GetCompanySettingService(int companyId)
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
+            var result = _db.FetchDataSet("sp_company_setting_get_byid", new { CompanyId = companyId });
+            if (result == null || result.Tables.Count != 2)
+                throw new HiringBellException("Fail to get company setting details. Please contact to admin");
 
-            var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
-            return await Task.FromResult(companySettingDetail);
+            CompanySetting companySettingDetail = null;
+            List<EmployeeRole> roles = null;
+            if (result.Tables[0].Rows.Count > 0)
+                companySettingDetail = Converter.ToType<CompanySetting>(result.Tables[0]);
+
+            if (result.Tables[1].Rows.Count > 0)
+                roles = Converter.ToList<EmployeeRole>(result.Tables[1]);
+
+            return await Task.FromResult(new { companySettingDetail, roles });
         }
 
         public async Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection)
