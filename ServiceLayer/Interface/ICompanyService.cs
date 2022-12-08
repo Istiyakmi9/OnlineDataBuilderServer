@@ -17,7 +17,7 @@ namespace ServiceLayer.Interface
         List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail);
         List<BankDetail> GetCompanyBankDetail(FilterModel filterModel);
         Task<CompanySetting> UpdateSettingService(int companyId, CompanySetting companySetting);
-        Task<CompanySetting> GetCompanySettingService(int companyId);
+        Task<dynamic> GetCompanySettingService(int companyId);
         Task<OrganizationDetail> InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
         Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection);
         Task<List<Files>> GetCompanyFiles(int CompanyId);
