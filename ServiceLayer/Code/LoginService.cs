@@ -97,7 +97,7 @@ namespace ServiceLayer.Code
         }
 
 
-        public string FetchUserLoginDetail(UserDetail authUser, UserType userType)
+        public string GetUserLoginDetail(UserDetail authUser)
         {
             string encryptedPassword = string.Empty;
 
@@ -108,8 +108,7 @@ namespace ServiceLayer.Code
             {
                 authUser.UserId,
                 MobileNo = authUser.Mobile,
-                authUser.EmailId,
-                UserTypeId = (int)userType
+                authUser.EmailId
             });
 
             if (loginDetail != null)
@@ -117,6 +116,7 @@ namespace ServiceLayer.Code
                 encryptedPassword = loginDetail.Password;
                 authUser.OrganizationId = loginDetail.OrganizationId;
                 authUser.CompanyId = loginDetail.CompanyId;
+                authUser.UserTypeId = loginDetail.UserTypeId;
             }
             else
             {
@@ -174,30 +174,12 @@ namespace ServiceLayer.Code
             });
         }
 
-        public async Task<LoginResponse> FetchAuthenticatedAdminDetail(UserDetail authUser)
+        public async Task<LoginResponse> AuthenticateUser(UserDetail authUser)
         {
             LoginResponse loginResponse = default;
             if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
             {
-                var encryptedPassword = this.FetchUserLoginDetail(authUser, UserType.Admin);
-                encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
-                if (encryptedPassword.CompareTo(authUser.Password) != 0)
-                {
-                    throw new HiringBellException("Invalid userId or password.");
-                }
-
-                loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
-            }
-
-            return await Task.FromResult(loginResponse);
-        }
-
-        public async Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser)
-        {
-            LoginResponse loginResponse = default;
-            if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
-            {
-                var encryptedPassword = this.FetchUserLoginDetail(authUser, UserType.Employee);
+                var encryptedPassword = this.GetUserLoginDetail(authUser);
                 encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
                 if (encryptedPassword.CompareTo(authUser.Password) != 0)
                 {
@@ -257,6 +239,7 @@ namespace ServiceLayer.Code
 
                         loginResponse.Menu = ds.Tables[1];
                         loginResponse.UserDetail = userDetail;
+                        loginResponse.UserTypeId = authUser.UserTypeId;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
                         if (authUser.UserTypeId == (int)UserType.Admin)
                         {

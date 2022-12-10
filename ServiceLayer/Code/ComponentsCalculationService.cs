@@ -19,11 +19,15 @@ namespace ServiceLayer.Code
         {
             decimal amount = 0;
             SalaryComponents component = null;
-            component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "PTAX");
-            if (component != null)
+
+            if (empCal.employeeDeclaration.SalaryComponentItems != null)
             {
-                component.DeclaredValue = 2400;
-                amount = component.DeclaredValue;
+                component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "PTAX");
+                if (component != null)
+                {
+                    component.DeclaredValue = 2400;
+                    amount = component.DeclaredValue;
+                }
             }
 
             return amount;

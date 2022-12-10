@@ -707,7 +707,7 @@ namespace ServiceLayer.Code
 
             var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
                 new { employeeCalculation.EmployeeId });
-            if (ResultSet == null || ResultSet.Tables.Count != 3)
+            if (ResultSet == null || ResultSet.Tables.Count != 4)
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
             if (ResultSet.Tables[0].Rows.Count == 0)
