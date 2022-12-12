@@ -70,10 +70,13 @@ namespace ServiceLayer.Code
         public AnnexureOfferLetter GetOfferLetterService(int CompanyId, int LetterType)
         {
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
-            if (File.Exists(result.FilePath))
+            if (result != null)
             {
-                var txt = File.ReadAllText(result.FilePath);
-                result.BodyContent = txt;
+                if (File.Exists(result.FilePath))
+                {
+                    var txt = File.ReadAllText(result.FilePath);
+                    result.BodyContent = txt;
+                }
             }
             return result;
         }

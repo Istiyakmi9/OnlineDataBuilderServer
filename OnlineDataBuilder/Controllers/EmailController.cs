@@ -4,10 +4,8 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -95,6 +93,20 @@ namespace OnlineDataBuilder.Controllers
         public async Task<ApiResponse> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId)
         {
             var result = await _emailService.GetEmailTemplateByIdService(EmailTemplateId, CompanyId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("EmailTempMappingInsertUpdate")]
+        public IResponse<ApiResponse> EmailTempMappingInsertUpdate([FromBody] EmailMappedTemplate emailMappedTemplate)
+        {
+            var result = _emailService.EmailTempMappingInsertUpdateService(emailMappedTemplate);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetEmailTempMapping/{CompanyId}")]
+        public async Task<ApiResponse> GetEmailTempMapping([FromRoute] int CompanyId)
+        {
+            var result = _emailService.GetEmailTempMappingService(CompanyId);
             return BuildResponse(result);
         }
     }

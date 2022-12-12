@@ -902,15 +902,9 @@ namespace ServiceLayer.Code
             if (employeeOfferLetter.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected");
 
-            var company = _db.Get<Organization>("sp_company_getById", new { CompanyId = employeeOfferLetter.CompanyId });
-            var html = this.GetHtmlString(company, employeeOfferLetter);
-            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employee_Offer_Letter");
-            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
-                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
-            
-            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, folderPath,
-               "Marghub" + $".{ApplicationConstants.Pdf}");
-            _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+            var company = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = employeeOfferLetter.CompanyId });
+            var html = GetHtmlString(company, employeeOfferLetter);
+            var folderPath = GeneratedPdfOfferLetter(html);
             var file = new FileDetail {
                 FileName = "Marghub",
                 FilePath = folderPath
@@ -928,6 +922,18 @@ namespace ServiceLayer.Code
 
             _eMailManager.SendMailAsync(emailSenderModal);
             return "Generated successfuly";
+        }
+
+        private string GeneratedPdfOfferLetter(string html)
+        {
+            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employee_Offer_Letter");
+            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+
+            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, folderPath,
+               "Marghub" + $".{ApplicationConstants.Pdf}");
+            _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+            return folderPath;
         }
 
         private string GetHtmlString(OrganizationDetail organization, EmployeeOfferLetter employee)
