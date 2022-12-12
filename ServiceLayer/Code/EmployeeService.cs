@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocMaker.PdfService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
@@ -34,6 +36,8 @@ namespace ServiceLayer.Code
         private readonly IDeclarationService _declarationService;
         private readonly ITimezoneConverter _timezoneConverter;
         private ILogger<EmployeeService> _logger;
+        private readonly HtmlToPdfConverter _htmlToPdfConverter;
+
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
@@ -47,7 +51,7 @@ namespace ServiceLayer.Code
             IAuthenticationService authenticationService,
             ITimezoneConverter timezoneConverter,
             ILogger<EmployeeService> logger,
-            FileLocationDetail fileLocationDetail)
+            FileLocationDetail fileLocationDetail, HtmlToPdfConverter htmlToPdfConverter)
         {
             _db = db;
             _cacheManager = cacheManager;
@@ -62,6 +66,7 @@ namespace ServiceLayer.Code
             _declarationService = declarationService;
             _timezoneConverter = timezoneConverter;
             _logger = logger;
+            _htmlToPdfConverter = htmlToPdfConverter;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -870,6 +875,33 @@ namespace ServiceLayer.Code
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
                 throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
+        }
+
+        public string GenerateOfferLetterService(long CompanyId)
+        {
+            if (CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected");
+
+            var company = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId });
+            var html = this.GetHtmlString(company);
+            //var destinationFilePath = Path.Combine(billModal.FileDetail.DiskFilePath,
+            //   billModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
+            //_htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+            return null;
+        }
+
+        private string GetHtmlString(OrganizationDetail organization)
+        {
+            string html = string.Empty;
+            var LetterType = 1;
+            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId=1, LetterType });
+            if (File.Exists(result.FilePath))
+                html = File.ReadAllText(result.FilePath);
+
+            html = html.Replace("[[Company-Name]]", organization.CompanyName).
+            Replace("[[Generate-Date]]", new DateTime().ToString("dd MMM, yyyy")).
+            Replace("[[Company-Address]]", organization.City);
+            return html;
         }
     }
 }

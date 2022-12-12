@@ -149,5 +149,13 @@ namespace OnlineDataBuilder.Controllers
                 throw ex;
             }
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("GenerateOfferLetter")]
+        public async Task<ApiResponse> GenerateOfferLetter(int CompanyId)
+        {
+            var result = _employeeService.GenerateOfferLetterService(CompanyId);
+            return BuildResponse(result);
+        }
     }
 }
