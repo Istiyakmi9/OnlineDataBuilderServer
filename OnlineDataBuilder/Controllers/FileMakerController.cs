@@ -45,7 +45,7 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Route("GenerateBill")]
-        public IResponse<ApiResponse> GenerateBill()
+        public async Task<ApiResponse> GenerateBill()
         {
             _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
             _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
@@ -59,7 +59,7 @@ namespace OnlineDataBuilder.Controllers
             billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
 
             // var fileDetail = _billService.GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
-            var fileDetail = _billService.GenerateBillService(billModal);
+            var fileDetail = await _billService.GenerateBillService(billModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 

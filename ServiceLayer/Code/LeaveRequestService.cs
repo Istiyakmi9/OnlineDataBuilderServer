@@ -1,7 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
-using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -18,22 +17,22 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
-        private readonly IEMailManager _eMailManager;
         private readonly ICommonService _commonService;
+        private readonly IEmailService _emailService;
 
         public LeaveRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
+            IEmailService emailService,
             IAttendanceRequestService attendanceRequestService,
-            ICommonService commonService,
-            IEMailManager eMailManager)
+            ICommonService commonService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
-            _eMailManager = eMailManager;
             _commonService = commonService;
+            _emailService = emailService;
         }
 
         public async Task<RequestModel> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
@@ -114,33 +113,22 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update leave status. Please contact to admin");
             }
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.ApplyLeaveRequestTemplate });
-
-            if (template == null)
-                throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
-
-            var emailSenderModal = await _commonService.ReplaceActualData(
-                new TemplateReplaceModal
-                {
-                    DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
-                    RequestType = ApplicationConstants.Leave,
-                    CompanyName = template.SignatureDetail,
-                    BodyContent = template.BodyContent,
-                    Subject = template.SubjectLine,
-                    ToAddress = new List<string> { leaveRequestDetail.Email },
-                    ActionType = status.ToString(),
-                    FromDate = leaveDeatil.LeaveFromDay,
-                    Title = template.EmailTitle,
-                    ToDate = leaveDeatil.LeaveToDay,
-                    LeaveType = leaveDeatil.LeaveToDay.ToString(),
-                    ManagerName = _currentSession.CurrentUserDetail.FullName,
-                    Message = string.IsNullOrEmpty(leaveDeatil.Reason)
+            var templateReplaceModal = new TemplateReplaceModal
+            {
+                DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
+                RequestType = ApplicationConstants.Leave,
+                ToAddress = new List<string> { leaveRequestDetail.Email },
+                ActionType = status.ToString(),
+                FromDate = leaveDeatil.LeaveFromDay,
+                ToDate = leaveDeatil.LeaveToDay,
+                LeaveType = leaveDeatil.LeaveToDay.ToString(),
+                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                Message = string.IsNullOrEmpty(leaveDeatil.Reason)
                                     ? "NA"
                                     : leaveDeatil.Reason
-                }, 
-               template);
+            };
 
-            await _eMailManager.SendMailAsync(emailSenderModal);
+            await _emailService.SendEmailWithTemplate(ApplicationConstants.ApplyLeaveRequestTemplate, templateReplaceModal);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)

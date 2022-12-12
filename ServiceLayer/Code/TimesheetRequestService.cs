@@ -19,11 +19,13 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
         private readonly IEMailManager _eMailManager;
+        private readonly IEmailService _emailService;
         private readonly ICommonService _commonService;
 
         public TimesheetRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
+            IEmailService emailService,
             IAttendanceRequestService attendanceRequestService,
             ICommonService commonService,
             IEMailManager eMailManager)
@@ -34,6 +36,7 @@ namespace ServiceLayer.Code
             _attendanceRequestService = attendanceRequestService;
             _eMailManager = eMailManager;
             _commonService = commonService;
+            _emailService = emailService;
         }
 
         public async Task<RequestModel> RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
@@ -97,34 +100,23 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.ApplyTimesheetRequestTemplate });
-
-            if (template == null)
-                throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
-
             var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);            
-            var emailSenderModal = await _commonService.ReplaceActualData(
-                new TemplateReplaceModal
-                {
-                    DeveloperName = firstItem.EmployeeName,
-                    RequestType = ApplicationConstants.Timesheet,
-                    CompanyName = template.SignatureDetail,
-                    BodyContent = template.BodyContent,
-                    Subject = template.SubjectLine,
-                    ToAddress = new List<string> { firstItem.Email },
-                    ActionType = itemStatus.ToString(),
-                    FromDate = sortedTimesheetByDate.First().PresentDate,
-                    ToDate = sortedTimesheetByDate.Last().PresentDate,
-                    LeaveType = null,
-                    Title = template.EmailTitle,
-                    ManagerName = _currentSession.CurrentUserDetail.FullName,
-                    Message = string.IsNullOrEmpty(firstItem.UserComments)
+            var templateReplaceModal = new TemplateReplaceModal
+            {
+                DeveloperName = firstItem.EmployeeName,
+                RequestType = ApplicationConstants.Timesheet,
+                ToAddress = new List<string> { firstItem.Email },
+                ActionType = itemStatus.ToString(),
+                FromDate = sortedTimesheetByDate.First().PresentDate,
+                ToDate = sortedTimesheetByDate.Last().PresentDate,
+                LeaveType = null,
+                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                Message = string.IsNullOrEmpty(firstItem.UserComments)
                             ? "NA"
                             : firstItem.UserComments,
-                },
-            template);
+            };
 
-            await _eMailManager.SendMailAsync(emailSenderModal);
+            var template = _emailService.SendEmailWithTemplate(ApplicationConstants.ApplyTimesheetRequestTemplate, templateReplaceModal);
             return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
         }
 

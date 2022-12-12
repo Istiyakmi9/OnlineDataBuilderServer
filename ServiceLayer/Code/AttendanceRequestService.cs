@@ -2,14 +2,12 @@
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
 using Microsoft.Extensions.Logging;
-using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -22,11 +20,13 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly ILogger<AttendanceRequestService> _logger;
         private readonly ICommonService _commonService;
+        private readonly IEmailService _emailService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ICommonService commonService,
+            IEmailService emailService,
             ILogger<AttendanceRequestService> logger,
             IEMailManager eMailManager)
         {
@@ -36,6 +36,7 @@ namespace ServiceLayer.Code
             _eMailManager = eMailManager;
             _logger = logger;
             _commonService = commonService;
+            _emailService = emailService;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure)
@@ -138,33 +139,23 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(Result))
                     throw new HiringBellException("Unable to update attendance status");
 
-                var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.AttendanceRequestTemplate });
-
-                if (template == null)
-                    throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
 
 
-                var emailSenderModal = await _commonService.ReplaceActualData(
-                    new TemplateReplaceModal //EmployeeNotificationModel
-                    {
-                        DeveloperName = currentAttendance.EmployeeName,
-                        RequestType = "Work From Home",
-                        CompanyName = template.SignatureDetail,
-                        BodyContent = template.BodyContent,
-                        Subject = template.SubjectLine,
-                        Title = template.EmailTitle,
-                        ToAddress = new List<string> { currentAttendance.Email },
-                        ActionType = status.ToString(),
-                        FromDate = currentAttendance.AttendanceDay,
-                        ToDate = currentAttendance.AttendanceDay,
-                        ManagerName = _currentSession.CurrentUserDetail.FullName,
-                        Message = string.IsNullOrEmpty(currentAttendance.UserComments)
+                var templateReplaceModal = new TemplateReplaceModal //EmployeeNotificationModel
+                {
+                    DeveloperName = currentAttendance.EmployeeName,
+                    RequestType = "Work From Home",
+                    ToAddress = new List<string> { currentAttendance.Email },
+                    ActionType = status.ToString(),
+                    FromDate = currentAttendance.AttendanceDay,
+                    ToDate = currentAttendance.AttendanceDay,
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    Message = string.IsNullOrEmpty(currentAttendance.UserComments)
                                     ? "NA"
                                     : currentAttendance.UserComments,
-                    }, template);
+                };
 
-
-                await _eMailManager.SendMailAsync(emailSenderModal);
+                await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceRequestTemplate, templateReplaceModal);
             }
             catch (Exception)
             {

@@ -153,14 +153,14 @@ namespace EMailService.Service
                 sequence);
         }
 
-        public Task SendMailAsync(EmailSenderModal emailSenderModal)
+        public async Task SendMailAsync(EmailSenderModal emailSenderModal)
         {
             _instance.GetDefaultEmailDetail();
             if (_emailSettingDetail == null)
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");
 
-            Task.Run(() => Send(emailSenderModal));
-            return Task.CompletedTask;
+            await Task.Run(() => Send(emailSenderModal));
+            await Task.CompletedTask;
         }
 
         private string Send(EmailSenderModal emailSenderModal)
