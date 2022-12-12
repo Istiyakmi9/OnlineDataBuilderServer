@@ -352,7 +352,8 @@ namespace ServiceLayer.Code
             EmployeeCalculation employeeCalculation = new EmployeeCalculation
             {
                 EmployeeId = EmployeeId,
-                employeeDeclaration = employeeDeclaration
+                employeeDeclaration = employeeDeclaration,
+                employee = new Employee { EmployeeUid = EmployeeId }
             };
 
             await GetEmployeeSalaryDetail(employeeCalculation);

@@ -20,13 +20,13 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly ICacheManager _cacheManager;
         private readonly ILeaveCalculation _leaveCalculation;
-        private readonly IEMailManager _emailManager;
+        private readonly IEmailService _emailService;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             ICacheManager cacheManager,
-            IEMailManager eMailManager,
+            IEmailService emailService,
             ILeaveCalculation leaveCalculation)
         {
             _db = db;
@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _cacheManager = cacheManager;
             _leaveCalculation = leaveCalculation;
-            _emailManager = eMailManager;
+            _emailService = emailService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -220,7 +220,7 @@ namespace ServiceLayer.Code
             LeavePlan leavePlan = _db.Get<LeavePlan>("sp_leave_plans_getbyId", new { LeavePlanId = leavePlanId });
             if (leavePlan == null)
                 throw new HiringBellException("Invalid leave plan selected.");
-            foreach(LeavePlanType leavePlanType in leavePlanTypes)
+            foreach (LeavePlanType leavePlanType in leavePlanTypes)
             {
                 leavePlanType.PlanConfigurationDetail = "";
                 leavePlanType.LeavePlanId = leavePlanId;
@@ -382,32 +382,22 @@ namespace ServiceLayer.Code
 
         private async Task GetTemplateSendNotification(LeaveCalculationModal leaveCalculationModal, string reason)
         {
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = ApplicationConstants.ApplyLeaveRequestTemplate });
-
-            if (template == null)
-                throw new HiringBellException("Email template not found", System.Net.HttpStatusCode.NotFound);
-
-            var emailSenderModal = await _commonService.ReplaceActualData(
-                new TemplateReplaceModal
-                {
-                    DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                    RequestType = ApplicationConstants.LeaveRequest,
-                    CompanyName = template.SignatureDetail,
-                    BodyContent = template.BodyContent,
-                    Subject = template.SubjectLine,
-                    ToAddress = new List<string> { leaveCalculationModal.employee.Email },
-                    ActionType = ItemStatus.Pending.ToString(),
-                    FromDate = leaveCalculationModal.fromDate,
-                    ToDate = leaveCalculationModal.toDate,
-                    LeaveType = null,
-                    ManagerName = _currentSession.CurrentUserDetail.FullName,
-                    Message = string.IsNullOrEmpty(reason)
+            var templateReplaceModal = new TemplateReplaceModal
+            {
+                DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
+                RequestType = ApplicationConstants.LeaveRequest,
+                ToAddress = new List<string> { leaveCalculationModal.employee.Email },
+                ActionType = ItemStatus.Pending.ToString(),
+                FromDate = leaveCalculationModal.fromDate,
+                ToDate = leaveCalculationModal.toDate,
+                LeaveType = null,
+                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                Message = string.IsNullOrEmpty(reason)
                             ? "NA"
                             : reason,
-                },
-            template);
+            };
 
-            await _emailManager.SendMailAsync(emailSenderModal);
+            await _emailService.SendEmailWithTemplate(ApplicationConstants.ApplyLeaveRequestTemplate, templateReplaceModal);
         }
 
         private async Task<LeaveCalculationModal> GetCalculatedLeaveDetail(LeaveCalculationModal leaveCalculationModal)

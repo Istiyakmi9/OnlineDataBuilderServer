@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using ModalLayer;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,5 +14,6 @@ namespace ServiceLayer.Interface
         string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection file);
         List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
         Task<dynamic> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId);
+        Task<EmailSenderModal> SendEmailWithTemplate(int TemplateId, TemplateReplaceModal templateReplaceModal);
     }
 }

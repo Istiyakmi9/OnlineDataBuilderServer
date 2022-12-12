@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -28,13 +29,17 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly ICompanyService _companyService;
+        private readonly IEMailManager _emailManager;
+        private readonly ITimezoneConverter _timezoneConverter;
 
         public EmailService(IDb db,
             ILogger<EmailService> logger,
             IEMailManager eMailManager,
             CurrentSession currentSession,
             ICompanyService companyService,
-            FileLocationDetail fileLocationDetail, IFileService fileService)
+            FileLocationDetail fileLocationDetail, 
+            IFileService fileService,
+            ITimezoneConverter timezoneConverter)
         {
             _db = db;
             _logger = logger;
@@ -43,6 +48,7 @@ namespace ServiceLayer.Code
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _companyService = companyService;
+            _timezoneConverter = timezoneConverter;
         }
 
         public List<string> GetMyMailService()
@@ -51,6 +57,74 @@ namespace ServiceLayer.Code
             _eMailManager.ReadMails(_emailSettingDetail);
             return null;
         }
+
+        public async Task<EmailSenderModal> SendEmailWithTemplate(int TemplateId, TemplateReplaceModal templateReplaceModal)
+        {
+            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = TemplateId });
+            if (template == null)
+                throw new HiringBellException("Fail to get Leave Request template. Please contact to admin.");
+
+            templateReplaceModal.CompanyName = template.SignatureDetail;
+            templateReplaceModal.BodyContent = template.BodyContent;
+            templateReplaceModal.Subject = template.SubjectLine;
+            templateReplaceModal.Title = template.EmailTitle;
+            var emailSenderModal = await ReplaceActualData(templateReplaceModal, template);
+
+            await _emailManager.SendMailAsync(emailSenderModal);
+            return await Task.FromResult(emailSenderModal);
+        }
+
+        public async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, EmailTemplate template)
+        {
+            EmailSenderModal emailSenderModal = null;
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime(templateReplaceModal.FromDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime(templateReplaceModal.ToDate, _currentSession.TimeZone);
+            if (templateReplaceModal != null)
+            {
+                var totalDays = templateReplaceModal.ToDate.Date.Subtract(templateReplaceModal.FromDate.Date).TotalDays + 1;
+                string subject = templateReplaceModal.Subject
+                                 .Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
+                                 .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType);
+
+                string body = JsonConvert.DeserializeObject<string>(templateReplaceModal.BodyContent)
+                                .Replace("[[DEVELOPER-NAME]]", templateReplaceModal.DeveloperName)
+                                .Replace("[[DAYS-COUNT]]", $"{totalDays}")
+                                .Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
+                                .Replace("[[TO-DATE]]", fromDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[FROM-DATE]]", toDate.ToString("dd MMM, yyyy"))
+                                .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType)
+                                .Replace("[[MANAGER-NAME]]", templateReplaceModal.ManagerName)
+                                .Replace("[[USER-MESSAGE]]", templateReplaceModal.Message);
+
+                StringBuilder builder = new StringBuilder();
+                builder.Append("<div style=\"border-bottom:1px solid black; margin-top: 14px; margin-bottom:5px\">" + "" + "</div>");
+                builder.AppendLine();
+                builder.AppendLine();
+                builder.Append("<div>" + template.EmailClosingStatement + "</div>");
+                builder.Append("<div>" + template.SignatureDetail + "</div>");
+                builder.Append("<div>" + template.ContactNo + "</div>");
+
+                var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
+                if (File.Exists(logoPath))
+                {
+                    builder.Append($"<div><img src=\"cid:{ApplicationConstants.LogoContentId}\" style=\"width: 10rem;margin-top: 1rem;\"></div>");
+                }
+
+                emailSenderModal = new EmailSenderModal
+                {
+                    To = templateReplaceModal.ToAddress,
+                    Subject = subject,
+                    Body = string.Concat(body, builder.ToString()),
+                };
+            }
+
+            emailSenderModal.Title = templateReplaceModal.Title.Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
+                                    .Replace("[[DEVELOPER-NAME]]", templateReplaceModal.DeveloperName)
+                                    .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType);
+
+            return await Task.FromResult(emailSenderModal);
+        }
+
 
         public string SendEmailRequestService(EmailSenderModal mailRequest, IFormFileCollection files)
         {
