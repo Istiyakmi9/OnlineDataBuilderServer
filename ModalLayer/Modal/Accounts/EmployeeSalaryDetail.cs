@@ -11,6 +11,6 @@ namespace ModalLayer.Modal.Accounts
         public string CompleteSalaryDetail { set; get; }
         public int GroupId { set; get; }
         public string TaxDetail { get; set; }
-
+        public bool IsCTCChanged { set; get; } = false;
     }
 }

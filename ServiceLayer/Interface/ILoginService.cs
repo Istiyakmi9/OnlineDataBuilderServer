@@ -6,8 +6,7 @@ namespace ServiceLayer.Interface
 {
     public interface ILoginService
     {
-        Task<LoginResponse> FetchAuthenticatedUserDetail(UserDetail authUser);
-        Task<LoginResponse> FetchAuthenticatedAdminDetail(UserDetail authUser);
+        Task<LoginResponse> AuthenticateUser(UserDetail authUser);
         Task<LoginResponse> FetchAuthenticatedProviderDetail(UserDetail authUser);
         Task<bool> RegisterNewCompany(RegistrationForm registrationForm);
         Boolean RemoveUserDetailService(string Token);

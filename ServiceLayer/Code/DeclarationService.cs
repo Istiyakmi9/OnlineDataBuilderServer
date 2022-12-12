@@ -356,7 +356,11 @@ namespace ServiceLayer.Code
             };
 
             await GetEmployeeSalaryDetail(employeeCalculation);
+            return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
+        }
 
+        private async Task<bool> CalculateAndBuildDeclarationDetail(EmployeeCalculation employeeCalculation, bool reCalculateFlag)
+        {
             bool flag = await GetEmployeeDeclaration(employeeCalculation.employeeDeclaration, employeeCalculation.salaryComponents);
             if (!reCalculateFlag)
                 reCalculateFlag = flag;
@@ -366,7 +370,7 @@ namespace ServiceLayer.Code
 
             this.BuildSectionWiseComponents(employeeCalculation);
 
-            return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
+            return await Task.FromResult(flag);
         }
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryNDeclaration(EmployeeCalculation empCal, bool reCalculateFlag)
@@ -376,7 +380,8 @@ namespace ServiceLayer.Code
             List<AnnualSalaryBreakup> completeSalaryBreakups =
                 JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
 
-            if (completeSalaryBreakups.Count == 0)
+            await CalculateAndBuildDeclarationDetail(empCal, reCalculateFlag);
+            if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
                 if (completeSalaryBreakups == null || completeSalaryBreakups.Count == 0)

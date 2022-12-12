@@ -574,6 +574,9 @@ namespace ServiceLayer.Code
                 };
             }
 
+            if (employeeSalaryDetail.CTC != employee.CTC)
+                employee.IsCTCChanged = true;
+
             employeeSalaryDetail.CTC = employee.CTC;
             return employeeSalaryDetail;
         }
@@ -658,6 +661,16 @@ namespace ServiceLayer.Code
             return employeeEmailMobileCheck;
         }
 
+        private async Task AssignReportingManager(Employee employee)
+        {
+            if (employee.ReportingManagerId == 0)
+            {
+                employee.ReportingManagerId = _currentSession.CurrentUserDetail.UserId;
+            }
+
+            await Task.CompletedTask;
+        }
+
         private async Task<DataSet> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection)
         {
             try
@@ -691,6 +704,8 @@ namespace ServiceLayer.Code
                     SecomdaryMobile = employee.SecondaryMobile,
                     Specification = employee.Specification,
                 };
+
+                await AssignReportingManager(employee);
 
                 employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
