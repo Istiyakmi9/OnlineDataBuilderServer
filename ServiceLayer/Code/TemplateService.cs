@@ -70,6 +70,9 @@ namespace ServiceLayer.Code
         public AnnexureOfferLetter GetOfferLetterService(int CompanyId, int LetterType)
         {
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
+            if (result == null)
+                throw new HiringBellException("Unable to find Offer letter data. Please contact to admin.");
+
             if (File.Exists(result.FilePath))
             {
                 var txt = File.ReadAllText(result.FilePath);
