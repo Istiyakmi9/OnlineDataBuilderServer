@@ -325,6 +325,7 @@ namespace ServiceLayer.Code
                 existingTemplate.ContactNo = emailTemplate.ContactNo;
                 existingTemplate.EmailTitle = emailTemplate.EmailTitle;
                 existingTemplate.BodyContent = JsonConvert.SerializeObject(emailTemplate.BodyContent);
+                existingTemplate.Description = emailTemplate.Description;
                 existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             existingTemplate.FileId = emailTemplate.FileId;
@@ -386,14 +387,11 @@ namespace ServiceLayer.Code
             if (emailMappedTemplate.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please select a valid company");
 
-            if (emailMappedTemplate.EmailTemplateId <= 0)
+            if (emailMappedTemplate.TemplateId <= 0)
                 throw new HiringBellException("Invalid email template selected. Please select a valid template");
 
-            if (emailMappedTemplate.RequestType <= 0)
-                throw new HiringBellException("Invalid request selected. Please select a valid request type");
-
-            if (string.IsNullOrEmpty(emailMappedTemplate.Description))
-                throw new HiringBellException("Mapping description is null or empty");
+            if (string.IsNullOrEmpty(emailMappedTemplate.EmailTemplateName))
+                throw new HiringBellException("Email template name is null or empty. Please select a valid template name");
 
             var mappedTemplate = _db.Get<EmailMappedTemplate>("sp_email_mapped_template_getById", new { EmailTempMappingId = emailMappedTemplate.EmailTempMappingId });
             if (mappedTemplate == null)
@@ -401,10 +399,10 @@ namespace ServiceLayer.Code
             else
             {
                 mappedTemplate.CompanyId = emailMappedTemplate.CompanyId;
-                mappedTemplate.Description = emailMappedTemplate.Description;
-                mappedTemplate.RequestType = emailMappedTemplate.RequestType;
-                mappedTemplate.EmailTemplateId = emailMappedTemplate.EmailTemplateId;
+                mappedTemplate.TemplateId = emailMappedTemplate.TemplateId;
+                mappedTemplate.EmailTemplateName = emailMappedTemplate.EmailTemplateName;
             }
+            mappedTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
             var result = _db.Execute<EmailMappedTemplate>("sp_email_mapped_template_insupd", mappedTemplate, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update Email mapped template");
