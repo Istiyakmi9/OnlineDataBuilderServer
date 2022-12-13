@@ -380,5 +380,45 @@ namespace ServiceLayer.Code
             var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
             return new { EmailTemplate = template, Files = companyFiles };
         }
+
+        public dynamic EmailTempMappingInsertUpdateService(EmailMappedTemplate emailMappedTemplate)
+        {
+            if (emailMappedTemplate.CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected. Please select a valid company");
+
+            if (emailMappedTemplate.EmailTemplateId <= 0)
+                throw new HiringBellException("Invalid email template selected. Please select a valid template");
+
+            if (emailMappedTemplate.RequestType <= 0)
+                throw new HiringBellException("Invalid request selected. Please select a valid request type");
+
+            if (string.IsNullOrEmpty(emailMappedTemplate.Description))
+                throw new HiringBellException("Mapping description is null or empty");
+
+            var mappedTemplate = _db.Get<EmailMappedTemplate>("sp_email_mapped_template_getById", new { EmailTempMappingId = emailMappedTemplate.EmailTempMappingId });
+            if (mappedTemplate == null)
+                mappedTemplate = emailMappedTemplate;
+            else
+            {
+                mappedTemplate.CompanyId = emailMappedTemplate.CompanyId;
+                mappedTemplate.Description = emailMappedTemplate.Description;
+                mappedTemplate.RequestType = emailMappedTemplate.RequestType;
+                mappedTemplate.EmailTemplateId = emailMappedTemplate.EmailTemplateId;
+            }
+            var result = _db.Execute<EmailMappedTemplate>("sp_email_mapped_template_insupd", mappedTemplate, true);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to insert or update Email mapped template");
+
+            return this.GetEmailTempMappingService(mappedTemplate.CompanyId);
+        }
+
+        public dynamic GetEmailTempMappingService(int CompanyId)
+        {
+            if (CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected.");
+
+            (List<EmailMappedTemplate> emailMappedTemplate, List<EmailTemplate> emailTemplate) = _db.GetList<EmailMappedTemplate, EmailTemplate>("sp_email_mapped_template_by_comid", new { CompanyId });
+            return new { emailMappedTemplate , emailTemplate };
+        }
     }
 }

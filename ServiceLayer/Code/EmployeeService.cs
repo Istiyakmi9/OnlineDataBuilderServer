@@ -2,6 +2,8 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.PdfService;
+using EMailService.Service;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -37,7 +39,8 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private ILogger<EmployeeService> _logger;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
-
+        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IEMailManager _eMailManager;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
@@ -51,7 +54,7 @@ namespace ServiceLayer.Code
             IAuthenticationService authenticationService,
             ITimezoneConverter timezoneConverter,
             ILogger<EmployeeService> logger,
-            FileLocationDetail fileLocationDetail, HtmlToPdfConverter htmlToPdfConverter)
+            FileLocationDetail fileLocationDetail, HtmlToPdfConverter htmlToPdfConverter, IHostingEnvironment hostingEnvironment, IEMailManager eMailManager)
         {
             _db = db;
             _cacheManager = cacheManager;
@@ -67,6 +70,8 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _logger = logger;
             _htmlToPdfConverter = htmlToPdfConverter;
+            _hostingEnvironment = hostingEnvironment;
+            _eMailManager = eMailManager;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -892,20 +897,46 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
         }
 
-        public string GenerateOfferLetterService(long CompanyId)
+        public string GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter)
         {
-            if (CompanyId <= 0)
-                throw new HiringBellException("Invalid company selected");
+            ValidateEmpOfferLetter(employeeOfferLetter);
 
-            var company = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId });
-            var html = this.GetHtmlString(company);
-            //var destinationFilePath = Path.Combine(billModal.FileDetail.DiskFilePath,
-            //   billModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
-            //_htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
-            return null;
+            var company = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = employeeOfferLetter.CompanyId });
+            string employeeName = employeeOfferLetter.FirstName + "_" + employeeOfferLetter.LastName;
+            var html = GetHtmlString(company, employeeOfferLetter);
+            var folderPath = GeneratedPdfOfferLetter(html, employeeName);
+            var file = new FileDetail {
+                FileName = employeeName,
+                FilePath = folderPath
+            };
+            EmailSenderModal emailSenderModal = new EmailSenderModal
+            {
+                To = new List<string> { employeeOfferLetter.Email }, //receiver.Email,
+                CC = new List<string>(),
+                BCC = new List<string>(),
+                FileDetails = new List<FileDetail> { file },
+                Subject = "Offer Letter",
+                Body = "Email Body",
+                Title = "Title"
+            };
+
+            _eMailManager.SendMailAsync(emailSenderModal);
+            return "Generated successfuly";
         }
 
-        private string GetHtmlString(OrganizationDetail organization)
+        private string GeneratedPdfOfferLetter(string html, string employeeName)
+        {
+            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employee_Offer_Letter");
+            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+
+            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, folderPath,
+               employeeName + $".{ApplicationConstants.Pdf}");
+            _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+            return folderPath;
+        }
+
+        private string GetHtmlString(OrganizationDetail organization, EmployeeOfferLetter employee)
         {
             string html = string.Empty;
             var LetterType = 1;
@@ -914,9 +945,43 @@ namespace ServiceLayer.Code
                 html = File.ReadAllText(result.FilePath);
 
             html = html.Replace("[[Company-Name]]", organization.CompanyName).
-            Replace("[[Generate-Date]]", new DateTime().ToString("dd MMM, yyyy")).
-            Replace("[[Company-Address]]", organization.City);
+            Replace("[[Generate-Date]]", DateTime.Now.ToString("dd MMM, yyyy")).
+            Replace("[[Company-Address]]", organization.City).
+            Replace("[[Employee-Name]]", employee.FirstName + " " + employee.LastName).
+            Replace("[[CTC]]", employee.CTC.ToString()).
+            Replace("[[Designation]]", employee.Designation).
+            Replace("[[Joining-Date]]", employee.JoiningDate.ToString("dd MMM, yyyy"));
+
             return html;
+        }
+
+        private void ValidateEmpOfferLetter(EmployeeOfferLetter employeeOfferLetter)
+        {
+            if (employeeOfferLetter.CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected");
+
+            if (employeeOfferLetter.CTC <= 0)
+                throw new HiringBellException("CTC is invalid. Please enter a valid CTC");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.FirstName))
+                throw new HiringBellException("First name is null or empty. Please enter a valid first name");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.LastName))
+                throw new HiringBellException("Last name is null or empty. Please enter a valid last name");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.Email))
+                throw new HiringBellException("Email is null or empty. Please enter a valid email");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.Designation))
+                throw new HiringBellException("Designation is null or empty. Please enter a valid designation");
+
+            if (employeeOfferLetter.JoiningDate == null)
+                throw new HiringBellException("Date of joining is null. Please enter a valid date of joining");
+
+            var mail = new MailAddress(employeeOfferLetter.Email);
+            bool isValidEmail = mail.Host.Contains(".");
+            if (!isValidEmail)
+                throw new HiringBellException("Email is invalid. Please enter a valid email");
         }
     }
 }
