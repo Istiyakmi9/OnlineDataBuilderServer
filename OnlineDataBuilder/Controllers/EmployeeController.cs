@@ -152,9 +152,9 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("GenerateOfferLetter")]
-        public async Task<ApiResponse> GenerateOfferLetter(int CompanyId)
+        public async Task<ApiResponse> GenerateOfferLetter(EmployeeOfferLetter employeeOfferLetter)
         {
-            var result = _employeeService.GenerateOfferLetterService(CompanyId);
+            var result = _employeeService.GenerateOfferLetterService(employeeOfferLetter);
             return BuildResponse(result);
         }
     }

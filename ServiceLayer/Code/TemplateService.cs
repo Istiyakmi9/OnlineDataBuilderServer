@@ -73,10 +73,13 @@ namespace ServiceLayer.Code
             if (result == null)
                 throw new HiringBellException("Unable to find Offer letter data. Please contact to admin.");
 
-            if (File.Exists(result.FilePath))
+            if (result != null)
             {
-                var txt = File.ReadAllText(result.FilePath);
-                result.BodyContent = txt;
+                if (File.Exists(result.FilePath))
+                {
+                    var txt = File.ReadAllText(result.FilePath);
+                    result.BodyContent = txt;
+                }
             }
             return result;
         }
