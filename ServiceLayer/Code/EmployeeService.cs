@@ -899,14 +899,14 @@ namespace ServiceLayer.Code
 
         public string GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter)
         {
-            if (employeeOfferLetter.CompanyId <= 0)
-                throw new HiringBellException("Invalid company selected");
+            ValidateEmpOfferLetter(employeeOfferLetter);
 
             var company = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = employeeOfferLetter.CompanyId });
+            string employeeName = employeeOfferLetter.FirstName + "_" + employeeOfferLetter.LastName;
             var html = GetHtmlString(company, employeeOfferLetter);
-            var folderPath = GeneratedPdfOfferLetter(html);
+            var folderPath = GeneratedPdfOfferLetter(html, employeeName);
             var file = new FileDetail {
-                FileName = "Marghub",
+                FileName = employeeName,
                 FilePath = folderPath
             };
             EmailSenderModal emailSenderModal = new EmailSenderModal
@@ -924,14 +924,14 @@ namespace ServiceLayer.Code
             return "Generated successfuly";
         }
 
-        private string GeneratedPdfOfferLetter(string html)
+        private string GeneratedPdfOfferLetter(string html, string employeeName)
         {
             var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employee_Offer_Letter");
             if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
                 Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
 
             var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, folderPath,
-               "Marghub" + $".{ApplicationConstants.Pdf}");
+               employeeName + $".{ApplicationConstants.Pdf}");
             _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
             return folderPath;
         }
@@ -953,6 +953,35 @@ namespace ServiceLayer.Code
             Replace("[[Joining-Date]]", employee.JoiningDate.ToString("dd MMM, yyyy"));
 
             return html;
+        }
+
+        private void ValidateEmpOfferLetter(EmployeeOfferLetter employeeOfferLetter)
+        {
+            if (employeeOfferLetter.CompanyId <= 0)
+                throw new HiringBellException("Invalid company selected");
+
+            if (employeeOfferLetter.CTC <= 0)
+                throw new HiringBellException("CTC is invalid. Please enter a valid CTC");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.FirstName))
+                throw new HiringBellException("First name is null or empty. Please enter a valid first name");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.LastName))
+                throw new HiringBellException("Last name is null or empty. Please enter a valid last name");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.Email))
+                throw new HiringBellException("Email is null or empty. Please enter a valid email");
+
+            if (string.IsNullOrEmpty(employeeOfferLetter.Designation))
+                throw new HiringBellException("Designation is null or empty. Please enter a valid designation");
+
+            if (employeeOfferLetter.JoiningDate == null)
+                throw new HiringBellException("Date of joining is null. Please enter a valid date of joining");
+
+            var mail = new MailAddress(employeeOfferLetter.Email);
+            bool isValidEmail = mail.Host.Contains(".");
+            if (!isValidEmail)
+                throw new HiringBellException("Email is invalid. Please enter a valid email");
         }
     }
 }
