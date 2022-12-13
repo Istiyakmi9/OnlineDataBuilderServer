@@ -9,7 +9,7 @@ using System.IO;
 
 namespace ServiceLayer.Code
 {
-    public class TemplateService: ITemplateService
+    public class TemplateService : ITemplateService
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
@@ -73,13 +73,10 @@ namespace ServiceLayer.Code
             if (result == null)
                 throw new HiringBellException("Unable to find Offer letter data. Please contact to admin.");
 
-            if (result != null)
+            if (File.Exists(result.FilePath))
             {
-                if (File.Exists(result.FilePath))
-                {
-                    var txt = File.ReadAllText(result.FilePath);
-                    result.BodyContent = txt;
-                }
+                var txt = File.ReadAllText(result.FilePath);
+                result.BodyContent = txt;
             }
             return result;
         }
