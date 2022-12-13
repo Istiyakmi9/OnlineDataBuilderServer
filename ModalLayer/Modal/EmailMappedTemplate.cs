@@ -3,9 +3,9 @@
     public class EmailMappedTemplate
     {
         public int EmailTempMappingId {set; get;}
-        public int RequestType {set; get;}
-        public int EmailTemplateId {set; get;}
+        public string EmailTemplateName { set; get;}
+        public int TemplateId { set; get;}
         public int CompanyId { get; set; }
-        public string Description { set; get; }
+        public long AdminId { get; set; }
     }
 }
