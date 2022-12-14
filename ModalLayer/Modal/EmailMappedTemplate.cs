@@ -7,5 +7,6 @@
         public int TemplateId { set; get;}
         public int CompanyId { get; set; }
         public long AdminId { get; set; }
+        public int Total { get; set; }
     }
 }

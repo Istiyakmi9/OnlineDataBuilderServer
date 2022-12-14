@@ -406,15 +406,18 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update Email mapped template");
 
-            return this.GetEmailTempMappingService(mappedTemplate.CompanyId);
+            return null;
         }
 
-        public dynamic GetEmailTempMappingService(int CompanyId)
+        public dynamic GetEmailTempMappingService(FilterModel filterModel)
         {
-            if (CompanyId <= 0)
-                throw new HiringBellException("Invalid company selected.");
-
-            (List<EmailMappedTemplate> emailMappedTemplate, List<EmailTemplate> emailTemplate) = _db.GetList<EmailMappedTemplate, EmailTemplate>("sp_email_mapped_template_by_comid", new { CompanyId });
+            (List<EmailMappedTemplate> emailMappedTemplate, List<EmailTemplate> emailTemplate) = _db.GetList<EmailMappedTemplate, EmailTemplate>("sp_email_mapped_template_by_comid", new
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
+            });
             return new { emailMappedTemplate , emailTemplate };
         }
     }
