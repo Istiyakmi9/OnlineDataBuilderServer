@@ -103,10 +103,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetEmailTempMapping/{CompanyId}")]
-        public async Task<ApiResponse> GetEmailTempMapping([FromRoute] int CompanyId)
+        [HttpPost("GetEmailTempMapping")]
+        public async Task<ApiResponse> GetEmailTempMapping([FromBody] FilterModel filterModel)
         {
-            var result = _emailService.GetEmailTempMappingService(CompanyId);
+            var result = _emailService.GetEmailTempMappingService(filterModel);
             return BuildResponse(result);
         }
     }
