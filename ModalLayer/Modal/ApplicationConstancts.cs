@@ -65,12 +65,17 @@ public class ApplicationConstants
     public const string IncomeFromOtherSources = "Income From Other Sources";
 
 
-    public const int BillingTemplate = 1;
-    public const int AttendanceRequestTemplate = 2;
-    public const int ApplyLeaveRequestTemplate = 5;
-    public const int ApplyTimesheetRequestTemplate = 5;
-    public const int ForgetPasswordTemplate = 3;
-    public const int NewRegistrationTemplate = 4;
+    public const int BillingEmailTemplate = 1;
+    public const int AttendanceSubmittedEmailTemplate = 2;
+    public const int TimesheetSubmittedEmailTemplate = 3;
+    public const int NewRegistrationEmailTemplate = 4;
+    public const int OfferLetterEmailTemplate = 5;
+    public const int LeaveApplyEmailTemplate = 6;
+    public const int LeaveApprovalStatusEmailTemplate = 7;
+    public const int AttendanceApprovalStatusEmailTemplate = 8;
+    public const int TimesheetApprovalStatusEmailTemplate = 9;
+    public const int ForgotPasswordEmailTemplate = 10;
+    public const int NewProjectAssignEmailTemplate = 11;
 
 
     public const string ApplicationJson = @"application/json";

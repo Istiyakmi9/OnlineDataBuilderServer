@@ -982,6 +982,7 @@ namespace ServiceLayer.Code
             var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new
             {
                 EmployeeId,
+                _currentSession.CurrentUserDetail.ReportingManagerId,
                 IsActive = 1,
                 Year = now.Year
             }, false);

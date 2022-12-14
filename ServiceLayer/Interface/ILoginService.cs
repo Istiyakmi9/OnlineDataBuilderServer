@@ -13,6 +13,6 @@ namespace ServiceLayer.Interface
         UserDetail GetUserDetail(AuthUser authUser);
         Task<LoginResponse> SignUpUser(UserDetail userDetail);
         string ResetEmployeePassword (UserDetail authUser);
-        string ForgotPasswordService(string email);
+        Task<string> ForgotPasswordService(string email);
     }
 }

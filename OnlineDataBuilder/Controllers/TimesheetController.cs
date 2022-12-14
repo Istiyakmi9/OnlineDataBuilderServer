@@ -10,6 +10,7 @@ using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -34,9 +35,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("InsertUpdateTimesheet")]
-        public IResponse<ApiResponse> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public async Task<ApiResponse> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
-            var result = _timesheetService.InsertUpdateTimesheet(dailyTimesheetDetails);
+            var result = await _timesheetService.InsertUpdateTimesheet(dailyTimesheetDetails);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

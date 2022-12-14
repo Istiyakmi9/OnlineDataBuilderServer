@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using SocialMediaServices;
 using SocialMediaServices.Modal;
@@ -30,6 +31,7 @@ namespace ServiceLayer.Code
         private readonly IConfiguration _configuration;
         private readonly IEMailManager _emailManager;
         private readonly ICommonService _commonService;
+        private readonly ForgotPasswordEmailService _forgotPasswordEmailService;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             IMediaService mediaService,
@@ -329,7 +331,7 @@ namespace ServiceLayer.Code
             });
         }
 
-        public string ForgotPasswordService(string email)
+        public async Task<string> ForgotPasswordService(string email)
         {
             try
             {
@@ -347,17 +349,7 @@ namespace ServiceLayer.Code
 
                 var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
 
-                EmailSenderModal emailSenderModal = new EmailSenderModal();
-                EmailTemplate template = _commonService.GetTemplate(ApplicationConstants.ForgetPasswordTemplate);
-                BuildEmailBody(template, password);
-
-                emailSenderModal.Body = template.BodyContent;
-                emailSenderModal.To = new List<string> { email };
-                emailSenderModal.Subject = template.SubjectLine;
-                emailSenderModal.UserName = "BottomHalf";
-                emailSenderModal.Title = "[BottomHalf] Temporary password request.";
-
-                _emailManager.SendMailAsync(emailSenderModal);
+                await _forgotPasswordEmailService.SendForgotPasswordEmail(password, email);
                 Status = ApplicationConstants.Successfull;
                 return Status;
             }

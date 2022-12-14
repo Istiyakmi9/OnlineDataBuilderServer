@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -20,12 +21,20 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly ICacheManager _cacheManager;
-        public TimesheetService(IDb db, ITimezoneConverter timezoneConverter, CurrentSession currentSession, ICacheManager cacheManager)
+        private readonly TimesheetEmailService _timesheetEmailService;
+
+        public TimesheetService(
+            IDb db, 
+            ITimezoneConverter timezoneConverter, 
+            CurrentSession currentSession, 
+            ICacheManager cacheManager,
+            TimesheetEmailService timesheetEmailService)
         {
             _db = db;
             _cacheManager = cacheManager;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
+            _timesheetEmailService = timesheetEmailService;
         }
 
 
@@ -249,7 +258,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public List<DailyTimesheetDetail> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public async Task<List<DailyTimesheetDetail>> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
             string result = string.Empty;
             var firstItem = dailyTimesheetDetails.FirstOrDefault();
@@ -407,9 +416,9 @@ namespace ServiceLayer.Code
 
             result = this.UpdateOrInsertTimesheetDetail(finalTimesheetSet, currentTimesheetDetail);
             if (string.IsNullOrEmpty(result))
-            {
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
-            }
+
+            await _timesheetEmailService.SendSubmitTimesheetEmail(currentTimesheetDetail);
 
             return finalTimesheetSet;
         }

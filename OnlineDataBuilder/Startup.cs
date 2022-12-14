@@ -22,6 +22,7 @@ using OnlineDataBuilder.Model;
 using SchoolInMindServer.MiddlewareServices;
 using ServiceLayer.Caching;
 using ServiceLayer.Code;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using SocialMediaServices;
 using System;
@@ -169,6 +170,15 @@ namespace OnlineDataBuilder
             services.AddScoped<ITimesheetRequestService, TimesheetRequestService>();
             services.AddSingleton<ApplicationConfiguration>();
             services.AddScoped<ITaxRegimeService, TaxRegimeService>();
+            services.AddScoped<AttendanceEmailService>();
+            services.AddScoped<ApprovalEmailService>();
+            services.AddScoped<BillingToClientEmailService>();
+            services.AddScoped<ForgotPasswordEmailService>();
+            services.AddScoped<LeaveEmailService>();
+            services.AddScoped<NewProjectAssignEmailService>();
+            services.AddScoped<OfferLetterEmailService>();
+            services.AddScoped<RegistrationEmailService>();
+            services.AddScoped<TimesheetEmailService>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

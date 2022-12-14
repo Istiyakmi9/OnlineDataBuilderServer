@@ -16,6 +16,7 @@ namespace ModalLayer.Modal
         public int TotalWeekDays { get; set; }
         public int TotalWorkingDays { get; set; }
         public int TotalHolidays { get; set; }
+        public string UserComments { get; set; }
         public int MonthTimesheetApprovalState { get; set; }
         public int ForYear { get; set; }
         public int ForMonth { get; set; }

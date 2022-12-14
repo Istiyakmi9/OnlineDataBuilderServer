@@ -648,7 +648,7 @@ namespace ServiceLayer.Code
                 new
                 {
                     BillNo = billNo,
-                    TemplateId = ApplicationConstants.BillingTemplate,
+                    TemplateId = ApplicationConstants.BillingEmailTemplate,
                     EmployeeId = employeeId
                 });
 
