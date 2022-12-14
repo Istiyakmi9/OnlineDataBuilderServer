@@ -4,6 +4,7 @@ using EMailService.Service;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -17,25 +18,22 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        private readonly IEMailManager _eMailManager;
         private readonly ILogger<AttendanceRequestService> _logger;
-        private readonly ICommonService _commonService;
         private readonly IEmailService _emailService;
+        private readonly ApprovalEmailService _approvalEmailService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            ICommonService commonService,
+            ApprovalEmailService approvalEmailService,
             IEmailService emailService,
-            ILogger<AttendanceRequestService> logger,
-            IEMailManager eMailManager)
+            ILogger<AttendanceRequestService> logger)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
-            _eMailManager = eMailManager;
+            _approvalEmailService = approvalEmailService;
             _logger = logger;
-            _commonService = commonService;
             _emailService = emailService;
         }
 
@@ -136,26 +134,11 @@ namespace ServiceLayer.Code
                     AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
                     UserId = _currentSession.CurrentUserDetail.UserId
                 }, true);
+
                 if (string.IsNullOrEmpty(Result))
                     throw new HiringBellException("Unable to update attendance status");
 
-
-
-                var templateReplaceModal = new TemplateReplaceModal //EmployeeNotificationModel
-                {
-                    DeveloperName = currentAttendance.EmployeeName,
-                    RequestType = "Work From Home",
-                    ToAddress = new List<string> { currentAttendance.Email },
-                    ActionType = status.ToString(),
-                    FromDate = currentAttendance.AttendanceDay,
-                    ToDate = currentAttendance.AttendanceDay,
-                    ManagerName = _currentSession.CurrentUserDetail.FullName,
-                    Message = string.IsNullOrEmpty(currentAttendance.UserComments)
-                                    ? "NA"
-                                    : currentAttendance.UserComments,
-                };
-
-                await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceRequestTemplate, templateReplaceModal);
+                await _approvalEmailService.AttendaceApprovalStatusSendEmail(currentAttendance, status);
             }
             catch (Exception)
             {

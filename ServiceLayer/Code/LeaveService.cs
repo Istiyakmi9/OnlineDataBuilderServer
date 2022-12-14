@@ -1,10 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using EMailService.Service;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Caching;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -20,13 +20,13 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly ICacheManager _cacheManager;
         private readonly ILeaveCalculation _leaveCalculation;
-        private readonly IEmailService _emailService;
+        private readonly LeaveEmailService _leaveEmailService;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
+            LeaveEmailService leaveEmailService,
             ICacheManager cacheManager,
-            IEmailService emailService,
             ILeaveCalculation leaveCalculation)
         {
             _db = db;
@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _cacheManager = cacheManager;
             _leaveCalculation = leaveCalculation;
-            _emailService = emailService;
+            _leaveEmailService = leaveEmailService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -371,33 +371,13 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
                 this.UpdateLeavePlanDetail(leaveCalculationModal);
 
-            await this.GetTemplateSendNotification(leaveCalculationModal, leaveRequestModal.Reason);
+            await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason);
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee
             };
-        }
-
-        private async Task GetTemplateSendNotification(LeaveCalculationModal leaveCalculationModal, string reason)
-        {
-            var templateReplaceModal = new TemplateReplaceModal
-            {
-                DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                RequestType = ApplicationConstants.LeaveRequest,
-                ToAddress = new List<string> { leaveCalculationModal.employee.Email },
-                ActionType = ItemStatus.Pending.ToString(),
-                FromDate = leaveCalculationModal.fromDate,
-                ToDate = leaveCalculationModal.toDate,
-                LeaveType = null,
-                ManagerName = _currentSession.CurrentUserDetail.FullName,
-                Message = string.IsNullOrEmpty(reason)
-                            ? "NA"
-                            : reason,
-            };
-
-            await _emailService.SendEmailWithTemplate(ApplicationConstants.ApplyLeaveRequestTemplate, templateReplaceModal);
         }
 
         private async Task<LeaveCalculationModal> GetCalculatedLeaveDetail(LeaveCalculationModal leaveCalculationModal)

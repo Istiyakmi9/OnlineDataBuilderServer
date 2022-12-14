@@ -1,13 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
-using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -21,9 +20,11 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly IEmailService _emailService;
         private readonly ICommonService _commonService;
+        private readonly ApprovalEmailService _approvalEmailService;
 
         public TimesheetRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
+            ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
             IEmailService emailService,
             IAttendanceRequestService attendanceRequestService,
@@ -37,6 +38,7 @@ namespace ServiceLayer.Code
             _eMailManager = eMailManager;
             _commonService = commonService;
             _emailService = emailService;
+            _approvalEmailService = approvalEmailService;
         }
 
         public async Task<RequestModel> RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
@@ -97,26 +99,11 @@ namespace ServiceLayer.Code
                 timesheet.ForMonth,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
+
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);            
-            var templateReplaceModal = new TemplateReplaceModal
-            {
-                DeveloperName = firstItem.EmployeeName,
-                RequestType = ApplicationConstants.Timesheet,
-                ToAddress = new List<string> { firstItem.Email },
-                ActionType = itemStatus.ToString(),
-                FromDate = sortedTimesheetByDate.First().PresentDate,
-                ToDate = sortedTimesheetByDate.Last().PresentDate,
-                LeaveType = null,
-                ManagerName = _currentSession.CurrentUserDetail.FullName,
-                Message = string.IsNullOrEmpty(firstItem.UserComments)
-                            ? "NA"
-                            : firstItem.UserComments,
-            };
-
-            var template = _emailService.SendEmailWithTemplate(ApplicationConstants.ApplyTimesheetRequestTemplate, templateReplaceModal);
+            await _approvalEmailService.TimesheetApprovalStatusSendEmail(firstItem, dailyTimesheetDetails, itemStatus);
             return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
         }
 

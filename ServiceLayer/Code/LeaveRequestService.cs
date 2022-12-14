@@ -1,9 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
-using EMailService.Service;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -19,9 +19,11 @@ namespace ServiceLayer.Code
         private readonly IAttendanceRequestService _attendanceRequestService;
         private readonly ICommonService _commonService;
         private readonly IEmailService _emailService;
+        private readonly ApprovalEmailService _approvalEmailService;
 
         public LeaveRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
+            ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
             IEmailService emailService,
             IAttendanceRequestService attendanceRequestService,
@@ -33,6 +35,7 @@ namespace ServiceLayer.Code
             _attendanceRequestService = attendanceRequestService;
             _commonService = commonService;
             _emailService = emailService;
+            _approvalEmailService = approvalEmailService;
         }
 
         public async Task<RequestModel> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
@@ -65,8 +68,8 @@ namespace ServiceLayer.Code
             if (completeLeaveDetail != null)
             {
                 var singleLeaveDetail = completeLeaveDetail.Find(x =>
-                    leaveDeatil.LeaveFromDay.Subtract(x.LeaveFromDay).TotalDays == 0 &&
-                    leaveDeatil.LeaveToDay.Subtract(x.LeaveToDay).TotalDays == 0
+                    leaveDeatil.LeaveFromDay.Date.Subtract(x.LeaveFromDay.Date).TotalDays == 0 &&
+                    leaveDeatil.LeaveToDay.Date.Subtract(x.LeaveToDay.Date).TotalDays == 0
                 );
 
                 if (singleLeaveDetail != null)
@@ -113,22 +116,11 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update leave status. Please contact to admin");
             }
 
-            var templateReplaceModal = new TemplateReplaceModal
-            {
-                DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
-                RequestType = ApplicationConstants.Leave,
-                ToAddress = new List<string> { leaveRequestDetail.Email },
-                ActionType = status.ToString(),
-                FromDate = leaveDeatil.LeaveFromDay,
-                ToDate = leaveDeatil.LeaveToDay,
-                LeaveType = leaveDeatil.LeaveToDay.ToString(),
-                ManagerName = _currentSession.CurrentUserDetail.FullName,
-                Message = string.IsNullOrEmpty(leaveDeatil.Reason)
-                                    ? "NA"
-                                    : leaveDeatil.Reason
-            };
-
-            await _emailService.SendEmailWithTemplate(ApplicationConstants.ApplyLeaveRequestTemplate, templateReplaceModal);
+            leaveRequestDetail.LeaveFromDay = leaveDeatil.LeaveFromDay;
+            leaveRequestDetail.LeaveToDay = leaveDeatil.LeaveToDay;
+            leaveRequestDetail.Reason = leaveDeatil.Reason;
+            leaveRequestDetail.LeaveType = leaveDeatil.LeaveType;
+            await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status);
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)

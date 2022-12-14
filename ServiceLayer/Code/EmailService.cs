@@ -29,7 +29,6 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly ICompanyService _companyService;
-        private readonly IEMailManager _emailManager;
         private readonly ITimezoneConverter _timezoneConverter;
 
         public EmailService(IDb db,
@@ -70,7 +69,7 @@ namespace ServiceLayer.Code
             templateReplaceModal.Title = template.EmailTitle;
             var emailSenderModal = await ReplaceActualData(templateReplaceModal, template);
 
-            await _emailManager.SendMailAsync(emailSenderModal);
+            await _eMailManager.SendMailAsync(emailSenderModal);
             return await Task.FromResult(emailSenderModal);
         }
 

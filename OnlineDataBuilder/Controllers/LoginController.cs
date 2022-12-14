@@ -84,9 +84,9 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost("ForgotPassword")]
         [AllowAnonymous]
-        public IResponse<ApiResponse> ForgotPassword([FromBody] LoginDetail loginDetail)
+        public async Task<ApiResponse> ForgotPassword([FromBody] LoginDetail loginDetail)
         {
-            var result = this.loginService.ForgotPasswordService(loginDetail.Email);
+            var result = await this.loginService.ForgotPasswordService(loginDetail.Email);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

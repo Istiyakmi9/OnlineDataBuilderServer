@@ -9,7 +9,7 @@ using System.IO;
 
 namespace ServiceLayer.Code
 {
-    public class TemplateService: ITemplateService
+    public class TemplateService : ITemplateService
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
@@ -70,6 +70,7 @@ namespace ServiceLayer.Code
         public AnnexureOfferLetter GetOfferLetterService(int CompanyId, int LetterType)
         {
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
+
             if (result != null)
             {
                 if (File.Exists(result.FilePath))
@@ -78,6 +79,7 @@ namespace ServiceLayer.Code
                     result.BodyContent = txt;
                 }
             }
+
             return result;
         }
 

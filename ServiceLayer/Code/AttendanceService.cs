@@ -1,10 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using EMailService.Service;
-using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -19,20 +18,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly IEMailManager _eMailManager;
-        private readonly IAttendanceRequestService _requestService;
+        private readonly AttendanceEmailService _attendanceEmailService;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            IEMailManager eMailManager,
-            IAttendanceRequestService requestService)
+            AttendanceEmailService attendanceEmailService)
         {
             _db = db;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
-            _eMailManager = eMailManager;
-            _requestService = requestService;
+            _attendanceEmailService = attendanceEmailService;
         }
 
         private List<AttendenceDetail> CreateAttendanceTillDate(Attendance attendence, DateTime FromDate, DateTime ToDate)
@@ -297,7 +293,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable submit the attendace");
 
-            await SendAttendanceNotification(attendenceApplied);
+            await _attendanceEmailService.SendSubmitAttendanceEmail(attendenceApplied);
             return Result;
         }
 
@@ -450,54 +446,6 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Past week's are not allowed.");
                 }
             }
-        }
-
-        private async Task SendAttendanceNotification(AttendenceDetail attendenceApplied)
-        {
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceFromDay, _currentSession.TimeZone);
-            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceToDay, _currentSession.TimeZone);
-            long reportManagerId = 0;
-            if (_currentSession.CurrentUserDetail.ReportingManagerId == 0)
-                reportManagerId = 1;
-            else
-                reportManagerId = _currentSession.CurrentUserDetail.ReportingManagerId;
-            FilterModel filterModel = new FilterModel
-            {
-                SearchString = $"1=1 and EmployeeUid = {reportManagerId}",
-                SortBy = "",
-                PageIndex = 1,
-                PageSize = 10
-            };
-            var managerDetail = _db.Get<Employee>("SP_Employees_Get", filterModel);
-            if (managerDetail == null)
-                throw new Exception("No manager record found. Please add manager first.");
-
-            var numOfDays = fromDate.Date.Subtract(toDate.Date).TotalDays + 1;
-
-            EmailTemplate template = _eMailManager.GetTemplate(
-                new EmailRequestModal
-                {
-                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
-                    ManagerName = "NA",
-                    RequestType = ApplicationConstants.DailyAttendance,
-                    FromDate = fromDate,
-                    ToDate = toDate,
-                    ActionType = nameof(ItemStatus.Submitted),
-                    Message = attendenceApplied.UserComments,
-                    TotalNumberOfDays = numOfDays,
-                    TemplateId = ApplicationConstants.AttendanceRequestTemplate
-                });
-
-            var body = JsonConvert.DeserializeObject<string>(template.BodyContent);
-            EmailSenderModal emailSenderModal = new EmailSenderModal
-            {
-                To = new List<string> { managerDetail.Email },
-                Body = body + template.Footer,
-                Title = String.IsNullOrEmpty(template.EmailTitle) ? "Attendance Request" : template.EmailTitle,
-                Subject = $"{_currentSession.CurrentUserDetail.FullName} | {ApplicationConstants.WorkFromHome} request | {nameof(ItemStatus.Submitted)}"
-            };
-
-            await _eMailManager.SendMailAsync(emailSenderModal);
         }
     }
 }
