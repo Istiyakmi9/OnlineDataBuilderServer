@@ -291,9 +291,6 @@ namespace ServiceLayer.Code
             if (ResultSet == null || ResultSet.Tables.Count != 4)
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
-            if (ResultSet.Tables[0].Rows.Count == 0)
-                throw new HiringBellException($"Salary group not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
-
             if (ResultSet.Tables[1].Rows.Count == 0)
                 throw new HiringBellException($"Salary detail not found for employee Id: [{employeeCalculation.EmployeeId}]");
 
@@ -304,11 +301,16 @@ namespace ServiceLayer.Code
                 throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
 
             employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
-
-            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
-
             employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
             employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
+            if (ResultSet.Tables[0].Rows.Count == 0)
+            {
+                employeeCalculation.salaryGroup = GetDefaultSalaryGroup();
+                employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. So default salary group is selected. Please add salary group for all calculation";
+                //throw new HiringBellException($"Salary group not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
+            }
+            else
+                employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
 
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
 
@@ -322,6 +324,15 @@ namespace ServiceLayer.Code
                 employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
 
             await Task.CompletedTask;
+        }
+
+        private SalaryGroup GetDefaultSalaryGroup()
+        {
+            var result = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = 1 });
+            if (result == null)
+                throw new HiringBellException("Default salry group not found");
+
+            return result;
         }
 
         private List<CalculatedSalaryBreakupDetail> GetGrossIncome(EmployeeDeclaration employeeDeclaration, List<AnnualSalaryBreakup> completeSalaryBreakups)
@@ -405,10 +416,16 @@ namespace ServiceLayer.Code
 
             // calculate and get gross income value and salary breakup detail
             var calculatedSalaryBreakupDetails = GetGrossIncome(empCal.employeeDeclaration, completeSalaryBreakups);
+
+            //check and apply standard deduction
             totalDeduction += _componentsCalculationService.StandardDeductionComponent(empCal);
 
             // check and apply professional tax
-            totalDeduction += _componentsCalculationService.ProfessionalTaxComponent(empCal);
+            var ptaxSlab = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new {CompanyId = empCal.companySetting.CompanyId});
+            if (ptaxSlab == null || ptaxSlab.Count == 0)
+                throw new HiringBellException("Professional tax slab is not declared. Please add PTax slab");
+
+            totalDeduction += _componentsCalculationService.ProfessionalTaxComponent(empCal, ptaxSlab);
 
             // check and apply employer providentfund
             totalDeduction += _componentsCalculationService.EmployerProvidentFund(empCal.employeeDeclaration, empCal.salaryGroup);
@@ -447,8 +464,11 @@ namespace ServiceLayer.Code
                 RegimeDescId = empCal.employeeDeclaration.EmployeeCurrentRegime,
                 empCal.EmployeeId
             });
+            var surchargeSlabs = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
+            if (surchargeSlabs == null || surchargeSlabs.Count == 0)
+                throw new Exception("Surcharge slabs are not found. Please add surcharge slsb first");
 
-            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs);
+            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, surchargeSlabs);
 
             //Tac Calculation for every month
             await TaxDetailsCalculation(empCal, reCalculateFlag);
@@ -640,6 +660,9 @@ namespace ServiceLayer.Code
                             RejectedAmount = employeeDeclaration.TaxSavingAlloance.Sum(a => a.RejectedAmount),
                             TotalAmountDeclared = employeeDeclaration.TaxSavingAlloance.Sum(a => a.DeclaredValue)
                         });
+                        break;
+                    case ApplicationConstants.Section16TaxExemption:
+                        employeeDeclaration.Section16TaxExemption = employeeDeclaration.SalaryComponentItems.FindAll(i => i.Section != null && x.Value.Contains(i.Section));
                         break;
                 }
             };

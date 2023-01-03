@@ -1,0 +1,453 @@
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:10.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:10.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.3pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:4.55pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:0cm;margin-bottom:.0001pt;line-height:normal"><b><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><span style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>[[Generate-Date]]</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.05pt;mso-margin-bottom-alt:auto;
+line-height:normal"><b><span lang="EN-US" style="font-size:19.5pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;font-variant:small-caps;color:black;
+letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW"><span style="mso-tab-count:1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>[[Employee-Name]]</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:3.05pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;font-variant:small-caps;color:black;
+letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">[[Company-Address]]</span><b><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">,</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:38.0pt;line-height:11.45pt"><span lang="EN-US" style="font-size:10.0pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">BOT0001024</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-fareast-language:
+EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:18.35pt"><b><span lang="EN-US" style="font-size:14.0pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;mso-line-height-alt:
+12.6pt"><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">On<span style="letter-spacing:-.95pt">&nbsp;</span>behalf<span style="letter-spacing:-.85pt">&nbsp;</span>of<span style="letter-spacing:-.85pt">&nbsp;</span><b><u>[[Company-Name]]</u><span style="letter-spacing:-.85pt">&nbsp;</span></b>we<span style="letter-spacing:
+-1.0pt">&nbsp;</span>are<span style="letter-spacing:-.75pt">&nbsp;</span>extremely<span style="letter-spacing:-.85pt">&nbsp;</span>pleased<span style="letter-spacing:
+-.85pt">&nbsp;</span>to<span style="letter-spacing:-1.0pt">&nbsp;</span>make<span style="letter-spacing:-.75pt">&nbsp;</span>you<span style="letter-spacing:-.9pt">&nbsp;</span>an
+offer of appointment as&nbsp;<b><u>[[Designation]]</u>&nbsp;</b>in our
+function&nbsp;<b>Implementation&nbsp;</b>at&nbsp;<b>[[Company-Address]].</b></span><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:
+14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">Initially, you
+will be on a Probation for a period of&nbsp;<b>6 months</b>, upon successful
+completion of which, you will be confirmed in the services of the&nbsp;<span style="letter-spacing:-.1pt">company.</span></span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.35pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;mso-line-height-alt:
+12.6pt"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">We extend this offer, and the opportunity that it
+represents with great&nbsp;confidence<span style="letter-spacing:2.0pt">&nbsp;</span>in<span style="letter-spacing:2.0pt">&nbsp;</span>your<span style="letter-spacing:2.0pt">&nbsp;</span>abilities.<span style="letter-spacing:-.55pt">&nbsp;</span>You<span style="letter-spacing:-.7pt">&nbsp;</span>have<span style="letter-spacing:-.8pt">&nbsp;</span>made<span style="letter-spacing:-.4pt">&nbsp;</span>a<span style="letter-spacing:-.7pt">&nbsp;</span>positive<span style="letter-spacing:
+-.6pt">&nbsp;</span>impression<span style="letter-spacing:-.6pt">&nbsp;</span>on<span style="letter-spacing:-.45pt">&nbsp;</span>everyone&nbsp;that<span style="letter-spacing:-.4pt">&nbsp;</span>you<span style="letter-spacing:-.35pt">&nbsp;</span>had<span style="letter-spacing:-.35pt">&nbsp;</span>discussions<span style="letter-spacing:
+-.25pt">&nbsp;</span>with<span style="letter-spacing:-.35pt">&nbsp;</span>and
+we are excited by the prospect of you becoming<span style="letter-spacing:-1.0pt">&nbsp;</span>a<span style="letter-spacing:-.95pt">&nbsp;</span>part<span style="letter-spacing:
+-1.0pt">&nbsp;</span>of<span style="letter-spacing:-.9pt">&nbsp;</span>this<span style="letter-spacing:-.85pt">&nbsp;</span>extremely<span style="letter-spacing:
+-.95pt">&nbsp;</span>promising<span style="letter-spacing:-.9pt">&nbsp;</span>organization.<span style="letter-spacing:-.95pt">&nbsp;</span>While<span style="letter-spacing:
+-1.0pt">&nbsp;</span>we<span style="letter-spacing:-.95pt">&nbsp;</span>have<span style="letter-spacing:-1.0pt">&nbsp;</span>had a broad level of discussions
+regarding your role, your immediate manager will<span style="letter-spacing:
+-.55pt">&nbsp;</span>communicate<span style="letter-spacing:-.6pt">&nbsp;</span>the<span style="letter-spacing:-.5pt">&nbsp;</span>details<span style="letter-spacing:
+-.35pt">&nbsp;</span>of<span style="letter-spacing:-.5pt">&nbsp;</span>your<span style="letter-spacing:-.4pt">&nbsp;</span>responsibilities<span style="letter-spacing:-.45pt">&nbsp;</span>within<span style="letter-spacing:
+-.5pt">&nbsp;</span>the<span style="letter-spacing:-.4pt">&nbsp;</span>first<span style="letter-spacing:-.2pt">&nbsp;</span>six weeks of your joining us.</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.15pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.05pt;margin-right:0cm;margin-bottom:0cm;
+margin-left:38.0pt;margin-bottom:.0001pt;line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">This<span style="letter-spacing:-.2pt">&nbsp;</span>offer<span style="letter-spacing:-.2pt">&nbsp;</span>of<span style="letter-spacing:-.25pt">&nbsp;</span>appointment<span style="letter-spacing:-.3pt">&nbsp;</span>is<span style="letter-spacing:-.25pt">&nbsp;</span>subject<span style="letter-spacing:-.35pt">&nbsp;</span>to<span style="letter-spacing:-.35pt">&nbsp;</span>the<span style="letter-spacing:-.2pt">&nbsp;</span><span style="letter-spacing:-.1pt">following,</span></span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.55pt;margin-right:44.15pt;margin-bottom:
+0cm;margin-left:76.3pt;margin-bottom:.0001pt;text-indent:-18.0pt;line-height:
+12.6pt"><span lang="EN-US" style="font-size:12.0pt;font-family:Symbol;mso-fareast-font-family:
+&quot;Times New Roman&quot;;mso-bidi-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">·</span><span lang="EN-US" style="font-size:7.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">Your<span style="letter-spacing:-2.0pt">&nbsp;</span>indicating<span style="letter-spacing:-2.05pt">&nbsp;</span>your<span style="letter-spacing:
+-2.1pt">&nbsp;</span>acceptance<span style="letter-spacing:-2.1pt">&nbsp;</span>of<span style="letter-spacing:-1.95pt">&nbsp;</span>our<span style="letter-spacing:
+-2.1pt">&nbsp;</span>offer<span style="letter-spacing:-2.0pt">&nbsp;</span>&amp;<span style="letter-spacing:-2.0pt">&nbsp;</span>responding<span style="letter-spacing:
+-2.1pt">&nbsp;</span>to<span style="letter-spacing:-2.0pt">&nbsp;</span>us,<span style="letter-spacing:-2.05pt">&nbsp;</span>within<span style="letter-spacing:
+-2.1pt">&nbsp;</span>a week<span style="letter-spacing:-1.45pt">&nbsp;</span>from<span style="letter-spacing:-1.5pt">&nbsp;</span>the date<span style="letter-spacing:
+-1.2pt">&nbsp;</span>of<span style="letter-spacing:-1.0pt">&nbsp;</span>offer.<span style="letter-spacing:-1.15pt">&nbsp;</span>Please<span style="letter-spacing:
+-1.2pt">&nbsp;</span>do<span style="letter-spacing:-1.25pt">&nbsp;</span>indicate,<span style="letter-spacing:-1.0pt">&nbsp;</span>if<span style="letter-spacing:-1.2pt">&nbsp;</span>you<span style="letter-spacing:-1.25pt">&nbsp;</span>require<span style="letter-spacing:
+-1.25pt">&nbsp;</span>any change<span style="letter-spacing:-.25pt">&nbsp;</span>in<span style="letter-spacing:-.25pt">&nbsp;</span>the<span style="letter-spacing:-.2pt">&nbsp;</span><b>date<span style="letter-spacing:-.25pt">&nbsp;</span>of<span style="letter-spacing:-.1pt">&nbsp;</span>joining</b></span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:14.6pt"><span lang="EN-US" style="font-size:12.0pt;font-family:Symbol;
+mso-fareast-font-family:&quot;Times New Roman&quot;;mso-bidi-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW"><span style="mso-tab-count:2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="mso-tab-count:
+1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span>·</span><span lang="EN-US" style="font-size:7.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">On</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;letter-spacing:-1.2pt;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:
+14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">successful</span><span lang="EN-US" style="font-size:14.0pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+letter-spacing:-1.1pt;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">submission</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.9pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">of</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;letter-spacing:-1.05pt;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:
+14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">the</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-1.05pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">documents</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-1.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">specified</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.9pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">in</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;letter-spacing:-1.1pt;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:
+14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">Annexure</span><span lang="EN-US" style="font-size:14.0pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+letter-spacing:-1.0pt;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.5pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">E</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.45pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:12.0pt;font-family:Symbol;
+mso-fareast-font-family:&quot;Times New Roman&quot;;mso-bidi-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW"><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span><span style="mso-spacerun:yes">&nbsp;</span>·</span><span lang="EN-US" style="font-size:7.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">Upon</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-1.05pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">receipt</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.65pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">of</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;letter-spacing:-.8pt;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:
+14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;letter-spacing:-.1pt;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">a</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.8pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">positive</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.85pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">background</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.9pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">check</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.7pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">report</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.55pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;mso-line-height-alt:
+12.6pt"><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Your Complete Annual Compensation package will
+consist of&nbsp;<b>Rs.&nbsp;[[CTC]]&nbsp;(Rupees Two Lakhs and Sixteen thousand
+Only)&nbsp;</b>− payable as per the&nbsp;breakup provided in&nbsp;<b>Annexure–A<span style="letter-spacing:-.3pt">&nbsp;</span></b>−<span style="letter-spacing:
+-.5pt">&nbsp;</span>will<span style="letter-spacing:-.35pt">&nbsp;</span>be<span style="letter-spacing:-.3pt">&nbsp;</span>subject<span style="letter-spacing:
+-.3pt">&nbsp;</span>to<span style="letter-spacing:-.3pt">&nbsp;</span>statutory<span style="letter-spacing:-.35pt">&nbsp;</span>deductions.<span style="letter-spacing:
+2.0pt">&nbsp;</span>You will<span style="letter-spacing:-.5pt">&nbsp;</span>also<span style="letter-spacing:-.65pt">&nbsp;</span>be<span style="letter-spacing:-.45pt">&nbsp;</span>eligible<span style="letter-spacing:-.5pt">&nbsp;</span>to<span style="letter-spacing:-.45pt">&nbsp;</span>benefits<span style="letter-spacing:-.65pt">&nbsp;</span>such as<span style="letter-spacing:
+-.55pt">&nbsp;</span>Gratuity<span style="letter-spacing:-.45pt">&nbsp;</span>&amp;<span style="letter-spacing:-.65pt">&nbsp;</span>Group<span style="letter-spacing:
+-.5pt">&nbsp;</span>Health<span style="letter-spacing:-.35pt">&nbsp;</span>Insurance<span style="letter-spacing:-.45pt">&nbsp;</span>as<span style="letter-spacing:-.65pt">&nbsp;</span>per
+the<span style="letter-spacing:-.15pt">&nbsp;</span>terms specified by&nbsp;<b><u>[[Company-Name]]</u><span style="letter-spacing:-.15pt">&nbsp;</span></b>from<span style="letter-spacing:
+-.15pt">&nbsp;</span>time<span style="letter-spacing:-.1pt">&nbsp;</span>to<span style="letter-spacing:-.2pt">&nbsp;</span>time.</span><span style="font-size:
+13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+normal"><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Arial&quot;,sans-serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW"><br clear="all" style="mso-special-character:line-break">
+</span><span style="font-size:12.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.3pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:9.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:4.6pt;margin-right:34.45pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;mso-line-height-alt:
+12.6pt"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Your<span style="letter-spacing:-.5pt">&nbsp;</span>employment<span style="letter-spacing:-.6pt">&nbsp;</span>with<span style="letter-spacing:-.25pt">&nbsp;</span>us<span style="letter-spacing:-.6pt">&nbsp;</span>will<span style="letter-spacing:-.6pt">&nbsp;</span>be<span style="letter-spacing:-.45pt">&nbsp;</span>governed<span style="letter-spacing:
+-.1pt">&nbsp;</span>by<span style="letter-spacing:-.6pt">&nbsp;</span>the terms<span style="letter-spacing:-.6pt">&nbsp;</span>and<span style="letter-spacing:-.7pt">&nbsp;</span>conditions<span style="letter-spacing:-.35pt">&nbsp;</span>of<span style="letter-spacing:-.8pt">&nbsp;</span>service
+as<span style="letter-spacing:-.8pt">&nbsp;</span>detailed<span style="letter-spacing:-.8pt">&nbsp;</span>in<span style="letter-spacing:1.35pt">&nbsp;</span>Annexure
+B.<span style="letter-spacing:2.0pt">&nbsp;</span>You<span style="letter-spacing:
+-.1pt">&nbsp;</span>will also be governed by any rules,
+regulations,&nbsp;policies<span style="letter-spacing:-.6pt">&nbsp;</span>and<span style="letter-spacing:-.75pt">&nbsp;</span>practices<span style="letter-spacing:
+-.75pt">&nbsp;</span>that may<span style="letter-spacing:-.15pt">&nbsp;</span>change<span style="letter-spacing:-.4pt">&nbsp;</span>from<span style="letter-spacing:-.15pt">&nbsp;</span>time<span style="letter-spacing:-.4pt">&nbsp;</span>to<span style="letter-spacing:-.45pt">&nbsp;</span>time.</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.25pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;mso-line-height-alt:
+12.6pt"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Your compensation details are<span style="letter-spacing:-.2pt">&nbsp;</span>confidential, and<span style="letter-spacing:-.2pt">&nbsp;</span>you<span style="letter-spacing:-.2pt">&nbsp;</span>may
+discuss it<span style="letter-spacing:-.1pt">&nbsp;</span>only<span style="letter-spacing:-.1pt">&nbsp;</span>with the&nbsp;undersigned in case of
+any concern or clarification. It is our hope that your acceptance of our Offer
+of Appointment will<span style="letter-spacing:-.05pt">&nbsp;</span>be<span style="letter-spacing:-.05pt">&nbsp;</span>the<span style="letter-spacing:-.15pt">&nbsp;</span>beginning
+of a<span style="letter-spacing:-.05pt">&nbsp;</span>mutually beneficial<span style="letter-spacing:-.45pt">&nbsp;</span>relationship.</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.5pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.4pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;mso-line-height-alt:
+12.7pt"><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">We mutually agree to your date of joining&nbsp;<b><u>[[Company-Name]]</u>&nbsp;</b>as&nbsp;<b>[[Joining-Date]].<span style="letter-spacing:-.2pt">&nbsp;</span></b>At<span style="letter-spacing:
+-.15pt">&nbsp;</span>the<span style="letter-spacing:-.3pt">&nbsp;</span>time<span style="letter-spacing:-.2pt">&nbsp;</span>of<span style="letter-spacing:-.3pt">&nbsp;</span>joining<span style="letter-spacing:-.2pt">&nbsp;</span>please<span style="letter-spacing:
+-.25pt">&nbsp;</span>provide<span style="letter-spacing:-.2pt">&nbsp;</span>us<span style="letter-spacing:-.1pt">&nbsp;</span>the<span style="letter-spacing:-.2pt">&nbsp;</span>original<span style="letter-spacing:-.2pt">&nbsp;</span>documents<span style="letter-spacing:
+-.15pt">&nbsp;</span>mentioned in<span style="letter-spacing:-.35pt">&nbsp;</span><b>Annexure<span style="letter-spacing:-.6pt">&nbsp;</span>E</b>.</span><span style="font-size:
+13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.35pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:38.0pt;line-height:14.5pt"><span lang="EN-US" style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">We<span style="letter-spacing:-1.05pt">&nbsp;</span>welcome<span style="letter-spacing:
+-1.0pt">&nbsp;</span>you<span style="letter-spacing:-.95pt">&nbsp;</span>to<span style="letter-spacing:-1.0pt">&nbsp;</span></span><b><u><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">[[Company-Name]]</span></u></b><b><span lang="EN-US" style="font-size:
+13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;letter-spacing:-1.0pt;mso-ansi-language:EN-US;mso-fareast-language:
+EN-ZW">&nbsp;</span></b><span lang="EN-US" style="font-size:13.5pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">and<span style="letter-spacing:
+-.95pt">&nbsp;</span>extend<span style="letter-spacing:-1.0pt">&nbsp;</span>our<span style="letter-spacing:-.95pt">&nbsp;</span>best<span style="letter-spacing:
+-.95pt">&nbsp;</span>wishes<span style="letter-spacing:-1.0pt">&nbsp;</span>for<span style="letter-spacing:-.95pt">&nbsp;</span>a rewarding<span style="letter-spacing:
+-.4pt">&nbsp;</span>career.<span style="letter-spacing:-.45pt">&nbsp;</span>We<span style="letter-spacing:-.4pt">&nbsp;</span>look<span style="letter-spacing:-.3pt">&nbsp;</span>forward<span style="letter-spacing:-.3pt">&nbsp;</span>to<span style="letter-spacing:-.7pt">&nbsp;</span>you<span style="letter-spacing:-.2pt">&nbsp;</span>joining<span style="letter-spacing:
+-.4pt">&nbsp;</span>our<span style="letter-spacing:-.4pt">&nbsp;</span>team.</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:10.1pt;margin-right:37.2pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:14.5pt"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Please<span style="letter-spacing:-.6pt">&nbsp;</span>contact<span style="letter-spacing:-.4pt">&nbsp;</span>Mr.<span style="letter-spacing:-.7pt">&nbsp;</span><b>Md
+Zaid Khan<span style="letter-spacing:-.25pt">&nbsp;</span></b>at<span style="letter-spacing:-.55pt">&nbsp;</span><a href="mailto:hr@bottomhalf.in"><span style="color:#0462C1">hr@bottomhalf.in</span></a></span><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:#0462C1;letter-spacing:-.4pt;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span lang="EN-US" style="font-size:
+13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">if<span style="letter-spacing:-.7pt">&nbsp;</span>you<span style="letter-spacing:-.55pt">&nbsp;</span>wish<span style="letter-spacing:-.6pt">&nbsp;</span>to<span style="letter-spacing:-.65pt">&nbsp;</span>discuss&nbsp;any
+detail of the offer.</span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-fareast-language:
+EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:15.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.25pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:38.0pt;line-height:normal"><span lang="EN-US" style="font-size:14.0pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">On<span style="letter-spacing:-.15pt">&nbsp;</span>Behalf<span style="letter-spacing:
+-.15pt">&nbsp;</span>of<span style="letter-spacing:-.25pt">&nbsp;</span></span><b><u><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW">[[Company-Name]]</span></u></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><b><span lang="EN-US" style="font-size:10.0pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.3pt;mso-margin-bottom-alt:auto;
+line-height:normal"><b><span lang="EN-US" style="font-size:13.5pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:4.6pt;margin-right:0cm;margin-bottom:0cm;
+margin-left:38.0pt;margin-bottom:.0001pt;line-height:normal"><b><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Md<span style="letter-spacing:-.15pt">&nbsp;</span>Zaid<span style="letter-spacing:-.2pt">&nbsp;Khan</span></span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.85pt;margin-right:0cm;margin-bottom:0cm;
+margin-left:38.0pt;margin-bottom:.0001pt;line-height:normal"><b><span lang="EN-US" style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Director<span style="letter-spacing:-.25pt">&nbsp;</span>–<span style="letter-spacing:-.4pt">&nbsp;</span>Operations<span style="letter-spacing:
+-.45pt">&nbsp;</span>Human<span style="letter-spacing:-.3pt">&nbsp;</span><span style="letter-spacing:-.1pt">Capital</span></span></b><span style="font-size:
+13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><b><span lang="EN-US" style="font-size:14.5pt;font-family:
+&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;
+mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">&nbsp;</span></b><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:83.6pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;mso-line-height-alt:12.7pt"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">I<span style="letter-spacing:-1.0pt">&nbsp;</span>hereby<span style="letter-spacing:-.95pt">&nbsp;</span>accept<span style="letter-spacing:
+-.75pt">&nbsp;</span>the<span style="letter-spacing:-.9pt">&nbsp;</span>offer<span style="letter-spacing:-.85pt">&nbsp;</span>of<span style="letter-spacing:-.9pt">&nbsp;</span>appointment,<span style="letter-spacing:-.85pt">&nbsp;</span>on<span style="letter-spacing:-1.0pt">&nbsp;</span>the<span style="letter-spacing:-.95pt">&nbsp;</span>terms<span style="letter-spacing:
+-.85pt">&nbsp;</span>and<span style="letter-spacing:-1.0pt">&nbsp;</span>conditions
+mentioned. I will join&nbsp;</span><b><u><span lang="EN-US" style="font-size:
+14.0pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">[[Company-Name]]</span></u></b><b><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span></b><span lang="EN-US" style="font-size:
+13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-ansi-language:EN-US;mso-fareast-language:EN-ZW">on<span style="letter-spacing:-.8pt">&nbsp;</span>or<span style="letter-spacing:-.5pt">&nbsp;</span>before<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u><span style="letter-spacing:-.5pt">.</span></span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:10.0pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.2pt;mso-margin-bottom-alt:auto;
+line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">&nbsp;</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:4.6pt;margin-right:295.35pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Name<span style="letter-spacing:-.3pt">&nbsp;</span>of<span style="letter-spacing:-.35pt">&nbsp;</span><span style="letter-spacing:-.1pt">candidate:</span></span><span style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.95pt;margin-right:111.1pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:normal"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Signature<span style="letter-spacing:-.2pt">&nbsp;</span><span style="letter-spacing:-.5pt">:</span></span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:.95pt;margin-right:0cm;margin-bottom:0cm;
+margin-left:38.0pt;margin-bottom:.0001pt;line-height:16.05pt"><span lang="EN-US" style="font-size:13.5pt;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black;letter-spacing:-.1pt;mso-ansi-language:EN-US;
+mso-fareast-language:EN-ZW">Date:</span><span style="font-size:13.5pt;
+font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;Times New Roman&quot;;
+color:black;mso-fareast-language:EN-ZW"><o:p></o:p></span></p>
+
+<p class="MsoNormal"><o:p>&nbsp;</o:p></p>
