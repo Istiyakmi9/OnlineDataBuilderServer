@@ -381,7 +381,7 @@ namespace ServiceLayer.Code
             return new { EmailTemplate = template, Files = companyFiles };
         }
 
-        public dynamic EmailTempMappingInsertUpdateService(EmailMappedTemplate emailMappedTemplate)
+        public async Task<dynamic> EmailTempMappingInsertUpdateService(EmailMappedTemplate emailMappedTemplate)
         {
             if (emailMappedTemplate.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please select a valid company");
@@ -406,10 +406,15 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update Email mapped template");
 
-            return null;
+            FilterModel filterModel = new FilterModel
+            {
+                SearchString = "1=1 and CompanyId = " + _currentSession.CurrentUserDetail.CompanyId
+            };
+
+            return await GetEmailTempMappingService(filterModel);
         }
 
-        public dynamic GetEmailTempMappingService(FilterModel filterModel)
+        public async Task<dynamic> GetEmailTempMappingService(FilterModel filterModel)
         {
             (List<EmailMappedTemplate> emailMappedTemplate, List<EmailTemplate> emailTemplate) = _db.GetList<EmailMappedTemplate, EmailTemplate>("sp_email_mapped_template_by_comid", new
             {
@@ -418,7 +423,8 @@ namespace ServiceLayer.Code
                 filterModel.PageIndex,
                 filterModel.PageSize
             });
-            return new { emailMappedTemplate , emailTemplate };
+
+            return await Task.FromResult(new { emailMappedTemplate, emailTemplate });
         }
     }
 }

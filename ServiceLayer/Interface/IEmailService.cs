@@ -15,7 +15,7 @@ namespace ServiceLayer.Interface
         List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
         Task<dynamic> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId);
         Task<EmailSenderModal> SendEmailWithTemplate(int TemplateId, TemplateReplaceModal templateReplaceModal);
-        dynamic EmailTempMappingInsertUpdateService(EmailMappedTemplate emailMappedTemplate);
-        dynamic GetEmailTempMappingService(FilterModel filterModel);
+        Task<dynamic> EmailTempMappingInsertUpdateService(EmailMappedTemplate emailMappedTemplate);
+        Task<dynamic> GetEmailTempMappingService(FilterModel filterModel);
     }
 }
