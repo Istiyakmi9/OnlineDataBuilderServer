@@ -97,16 +97,16 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("EmailTempMappingInsertUpdate")]
-        public IResponse<ApiResponse> EmailTempMappingInsertUpdate([FromBody] EmailMappedTemplate emailMappedTemplate)
+        public async Task<ApiResponse> EmailTempMappingInsertUpdate([FromBody] EmailMappedTemplate emailMappedTemplate)
         {
-            var result = _emailService.EmailTempMappingInsertUpdateService(emailMappedTemplate);
+            var result = await _emailService.EmailTempMappingInsertUpdateService(emailMappedTemplate);
             return BuildResponse(result);
         }
 
         [HttpPost("GetEmailTempMapping")]
         public async Task<ApiResponse> GetEmailTempMapping([FromBody] FilterModel filterModel)
         {
-            var result = _emailService.GetEmailTempMappingService(filterModel);
+            var result = await _emailService.GetEmailTempMappingService(filterModel);
             return BuildResponse(result);
         }
     }
