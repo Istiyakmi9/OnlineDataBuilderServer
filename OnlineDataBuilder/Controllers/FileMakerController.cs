@@ -1,20 +1,14 @@
 ﻿using DocMaker.HtmlToDocx;
-using DocMaker.PdfService;
-using iText.Html2pdf.Attach.Impl.Layout.Form.Element;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers

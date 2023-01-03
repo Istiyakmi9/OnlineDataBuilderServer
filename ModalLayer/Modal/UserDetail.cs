@@ -7,7 +7,6 @@ namespace ModalLayer.Modal
 {
     public class UserDetail : LoginDetail
     {
-        public DateTime? Dob { set; get; }
         public string State { set; get; }
         public string City { set; get; }
         public string Designation { set; get; }
@@ -40,6 +39,9 @@ namespace ModalLayer.Modal
         public int UserTypeId { set; get; }
         public string Password { set; get; }
         public long ReportingManagerId { set; get; }
+        public DateTime UpdatedOn { get; set; }
+        public int EmployeeCurrentRegime { get; set; }
+        public DateTime? DOB { set; get; }
     }
 
     public class LoginResponse

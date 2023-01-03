@@ -14,5 +14,8 @@ namespace ServiceLayer.Interface
         Task<List<PTaxSlab>> AddUpdatePTaxSlabService(List<PTaxSlab> pTaxSlabs);
         string DeletePTaxSlabService(int PtaxSlabId);
         List<PTaxSlab> GetPTaxSlabByCompIdService(int CompanyId);
+        Task<List<SurChargeSlab>> AddUpdateSurchargeService(List<SurChargeSlab> surChargeSlabs);
+        List<SurChargeSlab> GetAllSurchargeService();
+        string DeleteSurchargeSlabService(long SurchargeSlabId);
     }
 }

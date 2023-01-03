@@ -272,5 +272,83 @@ namespace ServiceLayer.Code
 
             });
         }
+
+        public async Task<List<SurChargeSlab>> AddUpdateSurchargeService(List<SurChargeSlab> surChargeSlabs)
+        {
+            try
+            {
+                ValidateSurchargeSlab(surChargeSlabs);
+                List<SurChargeSlab> oldsurcharge = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
+                foreach (var surchargeslab in surChargeSlabs)
+                {
+                    if (surchargeslab.SurchargeSlabId > 0)
+                    {
+                        var slab = oldsurcharge.Find(x => x.SurchargeSlabId == surchargeslab.SurchargeSlabId);
+                        if (slab != null)
+                        {
+                            slab.MinSurcahrgeSlab = surchargeslab.MinSurcahrgeSlab;
+                            slab.MaxSurchargeSlab = surchargeslab.MaxSurchargeSlab;
+                            slab.SurchargeRatePercentage = surchargeslab.SurchargeRatePercentage;
+                        }
+                    }
+                    else
+                    {
+                        oldsurcharge.Add(surchargeslab);
+                    }
+                }
+                var slabs = (from n in oldsurcharge
+                             select new
+                              {
+                                  n.SurchargeSlabId,
+                                  n.MinSurcahrgeSlab,
+                                  n.MaxSurchargeSlab,
+                                  n.SurchargeRatePercentage
+                              });
+                var table = Converter.ToDataTable(slabs);
+                _db.StartTransaction(IsolationLevel.ReadUncommitted);
+                var status = await _db.BatchInsertUpdateAsync("sp_surcharge_slab_insupd", table, true);
+                _db.Commit();
+                return this.GetAllSurchargeService();
+            }
+            catch (Exception)
+            {
+                _db.RollBack();
+                throw;
+            }
+        } 
+        public List<SurChargeSlab> GetAllSurchargeService()
+        {
+            var result = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
+            return result;
+        }
+
+        public string DeleteSurchargeSlabService(long SurchargeSlabId)
+        {
+            if (SurchargeSlabId <= 0)
+                throw new HiringBellException("Invalid surcharge slab selected");
+
+            var status = _db.Execute<long>("sp_surcharge_slab_delete_byid", new { SurchargeSlabId }, true);
+            if (string.IsNullOrEmpty(status))
+                throw new HiringBellException("Fail to delete surcharge slab");
+
+            return status;
+        }
+
+        private void ValidateSurchargeSlab(List<SurChargeSlab> surChargeSlabs)
+        {
+            int i = 0;
+            while (i < surChargeSlabs.Count)
+            {
+                if (surChargeSlabs[i].MinSurcahrgeSlab > surChargeSlabs[i].MaxSurchargeSlab && (i+1 != surChargeSlabs.Count))
+                    throw new HiringBellException("Invalid surcharge slab enter");
+
+                if (i > 0)
+                {
+                    if (surChargeSlabs[i].MinSurcahrgeSlab - surChargeSlabs[i - 1].MaxSurchargeSlab != 1)
+                        throw new HiringBellException("Please enter a valid surcharge range");
+                }
+                i++;
+            }
+        }
     }
 }

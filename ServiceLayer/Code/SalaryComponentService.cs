@@ -533,10 +533,22 @@ namespace ServiceLayer.Code
         {
             SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc", new { SalaryGroupId = salaryGroupId, CTC });
             if (salaryGroup == null)
-                throw new HiringBellException("Fail to calulate salar detail, salary group not defined for the current package.");
+            {
+                salaryGroup = GetDefaultSalaryGroup();
+                //throw new HiringBellException("Fail to calulate salar detail, salary group not defined for the current package.");
+            }
 
             salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
             return salaryGroup.GroupComponents;
+        }
+
+        private SalaryGroup GetDefaultSalaryGroup()
+        {
+            var result = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = 1 });
+            if (result == null)
+                throw new HiringBellException("Default salry group not found");
+
+            return result;
         }
 
         public List<SalaryComponents> GetSalaryGroupComponentsByCTC(long EmployeeId, decimal CTC)
