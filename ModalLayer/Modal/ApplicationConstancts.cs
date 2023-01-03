@@ -63,7 +63,7 @@ public class ApplicationConstants
     public const string TaxSavingAlloanceName = "Tax Saving Allowance";
     public const string HouseProperty = "House Property";
     public const string IncomeFromOtherSources = "Income From Other Sources";
-
+    public const string Section16TaxExemption = "Section16TaxExemption";
 
     public const int BillingEmailTemplate = 1;
     public const int AttendanceSubmittedEmailTemplate = 2;

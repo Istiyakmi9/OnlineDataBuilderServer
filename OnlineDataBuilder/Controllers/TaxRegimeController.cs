@@ -74,5 +74,24 @@ namespace OnlineDataBuilder.Controllers
             var result = _taxRegimeService.GetPTaxSlabByCompIdService(CompanyId);
             return BuildResponse(result);
         }
+        [HttpGet("GetAllSurchargeSlab")]
+        public IResponse<ApiResponse> GetAllSurchargeSlab()
+        {
+            var result = _taxRegimeService.GetAllSurchargeService();
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AddUpdateSurchargeSlab")]
+        public async Task<ApiResponse> AddUpdateSurchargeSlab(List<SurChargeSlab> surChargeSlabs)
+        {
+            var result = await _taxRegimeService.AddUpdateSurchargeService(surChargeSlabs);
+            return BuildResponse(result);
+        }
+        [HttpDelete("DeleteSurchargeSlab/{SurchargeSlabId}")]
+        public IResponse<ApiResponse> DeleteSurchargeSlab([FromRoute] long SurchargeSlabId)
+        {
+            var result = _taxRegimeService.DeleteSurchargeSlabService(SurchargeSlabId);
+            return BuildResponse(result);
+        }
     }
 }

@@ -19,6 +19,7 @@ namespace ModalLayer.Modal.Accounts
         public List<SalaryComponents> ExemptionDeclaration { set; get; }
         public List<SalaryComponents> OtherDeclaration { set; get; }
         public List<SalaryComponents> TaxSavingAlloance { set; get; }
+        public List<SalaryComponents> Section16TaxExemption { get; set; }
         public List<Files> FileDetails { set; get; }
         public EmployeeSalaryDetail SalaryDetail { set; get; }
         public Dictionary<string, List<string>> Sections { set; get; }
@@ -35,6 +36,7 @@ namespace ModalLayer.Modal.Accounts
         public int DeclarationEndMonth { set; get; }
         public int DeclarationFromYear { set; get; }
         public int DeclarationToYear { set; get; }
+        public string DefaultSlaryGroupMessage { get; set; }
     }
 
     public class EmployeeHRA

@@ -228,7 +228,10 @@ namespace ServiceLayer.Code
                             OrganizationId = loginDetail.OrganizationId,
                             CompanyId = loginDetail.CompanyId,
                             ManagerName = loginDetail.ManagerName,
-                            ReportingManagerId = loginDetail.ReportingManagerId
+                            ReportingManagerId = loginDetail.ReportingManagerId,
+                            UpdatedOn = loginDetail.UpdatedOn,
+                            EmployeeCurrentRegime = loginDetail.EmployeeCurrentRegime,
+                            DOB = loginDetail.DOB
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);
