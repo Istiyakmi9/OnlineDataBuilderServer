@@ -1,5 +1,6 @@
 ﻿using ModalLayer;
 using ModalLayer.Modal;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace EMailService.Service
@@ -7,7 +8,7 @@ namespace EMailService.Service
     public interface IEMailManager
     {
         Task SendMailAsync(EmailSenderModal emailSenderModal);
-        void ReadMails(EmailSettingDetail emailSettingDetail);
+        List<InboxMailDetail> ReadMails(EmailSettingDetail emailSettingDetail);
         EmailTemplate GetTemplate(EmailRequestModal emailRequestModal);
     }
 }

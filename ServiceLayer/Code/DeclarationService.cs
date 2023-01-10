@@ -303,14 +303,10 @@ namespace ServiceLayer.Code
             employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
             employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
             employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
-            if (ResultSet.Tables[0].Rows.Count == 0)
-            {
-                employeeCalculation.salaryGroup = GetDefaultSalaryGroup();
-                employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. So default salary group is selected. Please add salary group for all calculation";
-                //throw new HiringBellException($"Salary group not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
-            }
-            else
-                employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
+            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
+            
+            if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
+                employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
 
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
 
@@ -324,15 +320,6 @@ namespace ServiceLayer.Code
                 employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
 
             await Task.CompletedTask;
-        }
-
-        private SalaryGroup GetDefaultSalaryGroup()
-        {
-            var result = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = 1 });
-            if (result == null)
-                throw new HiringBellException("Default salry group not found");
-
-            return result;
         }
 
         private List<CalculatedSalaryBreakupDetail> GetGrossIncome(EmployeeDeclaration employeeDeclaration, List<AnnualSalaryBreakup> completeSalaryBreakups)

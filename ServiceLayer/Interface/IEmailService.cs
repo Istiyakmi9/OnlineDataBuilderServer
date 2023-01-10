@@ -8,7 +8,7 @@ namespace ServiceLayer.Interface
     public interface IEmailService
     {
         string SendEmailRequestService(EmailSenderModal mailRequest, IFormFileCollection files);
-        List<string> GetMyMailService();
+        List<InboxMailDetail> GetMyMailService();
         EmailSettingDetail GetEmailSettingByCompIdService(int CompanyId);
         EmailSettingDetail InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail);
         string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection file);
