@@ -135,6 +135,7 @@ namespace OnlineDataBuilder
                     HtmlTemplaePath = fileLocationDetail.HtmlTemplaePath,
                     StaffingBillPdfTemplate = fileLocationDetail.StaffingBillPdfTemplate,
                     StaffingBillTemplate = fileLocationDetail.StaffingBillTemplate,
+                    PaysliplTemplate = fileLocationDetail.PaysliplTemplate,
                     DocumentFolder = fileLocationDetail.Location,
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
                     BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath),

@@ -231,7 +231,8 @@ namespace ServiceLayer.Code
                             ReportingManagerId = loginDetail.ReportingManagerId,
                             UpdatedOn = loginDetail.UpdatedOn,
                             EmployeeCurrentRegime = loginDetail.EmployeeCurrentRegime,
-                            DOB = loginDetail.DOB
+                            DOB = loginDetail.DOB,
+                            CreatedOn = loginDetail.CreatedOn
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);
