@@ -1,11 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.VariantTypes;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
-using MySqlX.XDevAPI;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -221,10 +219,12 @@ namespace ServiceLayer.Code
                     }
                     break;
                 case "2":
-                    availableLeaveLimit = this.CalculateWhenAccralQuaterly();
+                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 4.0m;
+                    availableLeaveLimit = this.CalculateWhenAccralQuaterly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
                 case "3":
-                    availableLeaveLimit = this.CalculateWhenAccralYearly();
+                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 2.0m;
+                    availableLeaveLimit = this.CalculateWhenAccralYearly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
             }
 
@@ -237,7 +237,6 @@ namespace ServiceLayer.Code
 
             return await Task.FromResult(availableLeaveLimit);
         }
-
         public async Task<LeaveCalculationModal> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
             var leaveCalculationModal = GetCalculationModal(EmployeeId, FromDate, ToDate);
@@ -577,15 +576,15 @@ namespace ServiceLayer.Code
             else if (DoesPresentMonthProrateEnabled())
                 presentMonthLeaves = perMonthLeaves;
 
-            int mounthCount = GetNumOfMonthExceptFirstAndLast(leaveCalculationModal);
+            int monthCount = GetNumOfMonthExceptFirstAndLast(leaveCalculationModal);
             if (leaveCalculationModal.employee.CreatedOn.Year == now.Year)
             {
                 decimal firstMonthCalculation = CalculateFirstMonthProrateCount(perMonthLeaves, leaveCalculationModal.employee);
-                availableLeaves = (mounthCount * perMonthLeaves) + firstMonthCalculation + presentMonthLeaves;
+                availableLeaves = (monthCount * perMonthLeaves) + firstMonthCalculation + presentMonthLeaves;
             }
             else
             {
-                availableLeaves = (mounthCount + 1) * perMonthLeaves + presentMonthLeaves;
+                availableLeaves = (monthCount + 1) * perMonthLeaves + presentMonthLeaves;
             }
 
             return availableLeaves;
@@ -617,19 +616,80 @@ namespace ServiceLayer.Code
             return availableLeaves;
         }
 
-        private decimal CalculateWhenAccralQuaterly()
+        private decimal CalculateWhenAccralQuaterly(LeaveCalculationModal leaveCalculationModal, decimal PerQuarterLeave)
         {
             decimal availableLeaves = 0;
+            var currentQuarter = GetQuarterInYear(DateTime.Now);
+            var currentQuraterStartMonth = 1;
+            switch (currentQuarter)
+            {
+                case 2:
+                    currentQuraterStartMonth = 4;
+                    break;
+                case 3:
+                    currentQuraterStartMonth = 7;
+                    break;
+                case 4:
+                    currentQuraterStartMonth = 10;
+                    break;
+            }
+            if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom > DateTime.UtcNow.Day && DateTime.UtcNow.Month == currentQuraterStartMonth)
+                currentQuarter = currentQuarter - 1;
+
+            if (leaveCalculationModal.employee.CreatedOn.Year != DateTime.Now.Year)
+                availableLeaves = PerQuarterLeave * currentQuarter;
+            else
+            {
+                var qurater = currentQuarter - GetQuarterInYear(leaveCalculationModal.employee.CreatedOn) + 1;
+                availableLeaves = qurater * PerQuarterLeave;
+            }
+
+            return availableLeaves;
+        }
+        private int GetQuarterInYear(DateTime dateTime)
+        {
+            if (dateTime.Month <= 3)
+                return 1;
+
+            if (dateTime.Month <= 6)
+                return 2;
+
+            if (dateTime.Month <= 9)
+                return 3;
+
+            return 4;
+        }
+
+        private decimal CalculateWhenAccralYearly(LeaveCalculationModal leaveCalculationModal, decimal PerHalflyLeave)
+        {
+            decimal availableLeaves = 0;
+            var currentHalfly = GetHalflyInYear(DateTime.Now);
+            var currentHalflyStartMonth = 1;
+            if (currentHalfly > 1)
+                currentHalflyStartMonth = 6;
+            
+            if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom > DateTime.UtcNow.Day && DateTime.UtcNow.Month == currentHalflyStartMonth)
+                currentHalfly = currentHalfly - 1;
+
+            if (leaveCalculationModal.employee.CreatedOn.Year != DateTime.Now.Year)
+                availableLeaves = PerHalflyLeave * currentHalfly;
+            else
+            {
+                var halfly = currentHalfly - GetHalflyInYear(leaveCalculationModal.employee.CreatedOn) + 1;
+                availableLeaves = halfly * PerHalflyLeave;
+            }
 
             return availableLeaves;
         }
 
-        private decimal CalculateWhenAccralYearly()
+        private int GetHalflyInYear(DateTime dateTime)
         {
-            decimal availableLeaves = 0;
+            if (dateTime.Month <= 6)
+                return 1;
 
-            return availableLeaves;
+            return 2;
         }
+
 
         private decimal LeaveAccrualInProbationForExperienced(decimal perMonthLeaves)
         {
@@ -932,10 +992,12 @@ namespace ServiceLayer.Code
                     availableLeaveLimit = this.CalculateWhenAccralMonthly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
                 case "2":
-                    availableLeaveLimit = this.CalculateWhenAccralQuaterly();
+                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 4.0m;
+                    availableLeaveLimit = this.CalculateWhenAccralQuaterly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
                 case "3":
-                    availableLeaveLimit = this.CalculateWhenAccralYearly();
+                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 2.0m;
+                    availableLeaveLimit = this.CalculateWhenAccralYearly(leaveCalculationModal, leaveFrequencyForDefinedPeriod);
                     break;
             }
 

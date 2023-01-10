@@ -50,11 +50,10 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
         }
 
-        public List<string> GetMyMailService()
+        public List<InboxMailDetail> GetMyMailService()
         {
             this.GetSettingDetail();
-            _eMailManager.ReadMails(_emailSettingDetail);
-            return null;
+            return _eMailManager.ReadMails(_emailSettingDetail);
         }
 
         public async Task<EmailSenderModal> SendEmailWithTemplate(int TemplateId, TemplateReplaceModal templateReplaceModal)

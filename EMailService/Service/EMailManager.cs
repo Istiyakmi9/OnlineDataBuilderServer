@@ -1,8 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using EAGetMail;
+using MailKit.Net.Pop3;
 using ModalLayer;
 using ModalLayer.Modal;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -94,54 +96,57 @@ namespace EMailService.Service
             return _instance;
         }
 
-        public void ReadMails(EmailSettingDetail emailSettingDetail)
+        private List<InboxMailDetail> ReadPOP3Email(EmailSettingDetail emailSettingDetail)
         {
-            _instance.GetDefaultEmailDetail();
-            string localInbox = string.Format("{0}\\inbox", Directory.GetCurrentDirectory());
-            MailServer oServer = new MailServer("pop.secureserver.net",
-                emailSettingDetail.EmailAddress, // "info@bottomhalf.in",
-                emailSettingDetail.Credentials, // "bottomhalf@mi9",
-                ServerProtocol.Pop3);
+            List<InboxMailDetail> inboxMailDetails = new List<InboxMailDetail>();
 
-            // Enable SSL/TLS connection, most modern email server require SSL/TLS by default
-            oServer.SSLConnection = true;
-            oServer.Port = 995;
-
-            // if your server doesn't support SSL/TLS, please use the following codes
-            // oServer.SSLConnection = false;
-            // oServer.Port = 110;
-
-            MailClient oClient = new MailClient("TryIt");
-            oClient.Connect(oServer);
-
-            MailInfo[] infos = oClient.GetMailInfos();
-            Console.WriteLine("Total {0} email(s)\r\n", infos.Length);
-            for (int i = 0; i < infos.Length; i++)
+            // Create a new POP3 client
+            using (Pop3Client client = new Pop3Client())
             {
-                MailInfo info = infos[i];
-                Console.WriteLine("Index: {0}; Size: {1}; UIDL: {2}",
-                    info.Index, info.Size, info.UIDL);
+                // Connect to the server
+                client.Connect("pop.secureserver.net", 995, true);
 
-                // Receive email from POP3 server
-                Mail oMail = oClient.GetMail(info);
+                // Authenticate with the server
+                client.Authenticate(emailSettingDetail.EmailAddress, emailSettingDetail.Credentials);
 
-                Console.WriteLine("From: {0}", oMail.From.ToString());
-                Console.WriteLine("Subject: {0}\r\n", oMail.Subject);
+                // Get the list of messages
+                int messageCount = client.GetMessageCount();
 
-                // Generate an unqiue email file name based on date time.
-                string fileName = _generateFileName(i + 1);
-                string fullPath = string.Format("{0}\\{1}", localInbox, fileName);
+                int i = messageCount - 1;
+                int mailCounter = 0;
+                // Loop through the messages
+                while (i > 0 && mailCounter != 15)
+                {
+                    // Get the message
+                    var message = client.GetMessage(i);
 
-                // Save email to local disk
-                oMail.SaveAs(fullPath, true);
+                    inboxMailDetails.Add(new InboxMailDetail
+                    {
+                        Subject = message.Subject,
+                        From = message.From.ToString(),
+                        Body = message.HtmlBody,
+                        EMailIndex = i,
+                        Text = message.GetTextBody(MimeKit.Text.TextFormat.Plain),
+                        Importance = message.Priority.ToString()
+                    });
 
-                // Mark email as deleted from POP3 server.
-                oClient.Delete(info);
+                    mailCounter++;
+                    i--;
+                }
             }
 
-            // Quit and expunge emails marked as deleted from POP3 server.
-            oClient.Quit();
-            Console.WriteLine("Completed!");
+            return inboxMailDetails;
+        }
+
+        public List<InboxMailDetail> ReadMails(EmailSettingDetail emailSettingDetail)
+        {
+            if (emailSettingDetail == null)
+            {
+                _instance.GetDefaultEmailDetail();
+                emailSettingDetail = _instance._emailSettingDetail;
+            }
+
+            return ReadPOP3Email(emailSettingDetail);
         }
 
         private string _generateFileName(int sequence)
