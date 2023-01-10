@@ -6,6 +6,7 @@
     "LogoPath": "logos",
     "BillsPath": "Bills",
     "StaffingBillTemplate": "staffingBill.html",
-    "StaffingBillPdfTemplate": "staffingBillPdfFormat.html"
+    "StaffingBillPdfTemplate": "staffingBillPdfFormat.html",
+    "PaysliplTemplate": "payslipTemplate.html"
   }
 }
