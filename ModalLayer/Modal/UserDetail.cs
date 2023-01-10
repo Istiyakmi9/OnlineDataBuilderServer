@@ -40,6 +40,7 @@ namespace ModalLayer.Modal
         public string Password { set; get; }
         public long ReportingManagerId { set; get; }
         public DateTime UpdatedOn { get; set; }
+        public DateTime CreatedOn { get; set; }
         public int EmployeeCurrentRegime { get; set; }
         public DateTime? DOB { set; get; }
     }

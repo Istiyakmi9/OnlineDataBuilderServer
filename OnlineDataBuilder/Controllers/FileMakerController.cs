@@ -115,5 +115,14 @@ namespace OnlineDataBuilder.Controllers
             var fileDetail = await _billService.GetBillDetailWithTemplateService(BillNo, EmployeeId);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
+
+
+        [HttpPost]
+        [Route("GeneratePayslip")]
+        public async Task<ApiResponse> GeneratePayslip(PayslipGenerationModal payslipGenerationModal)
+        {
+            var fileDetail = await _billService.GeneratePayslipService(payslipGenerationModal);
+            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+        }
     }
 }

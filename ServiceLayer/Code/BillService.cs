@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -1072,6 +1073,262 @@ namespace ServiceLayer.Code
                     .Replace("[[DEVELOPER-NAME]]", employee.FirstName + " " + employee.LastName)
                     .Replace("[[YEAR]]", year.ToString())
                     .Replace("[[MONTH]]", month));
+            }
+        }
+        public async Task<dynamic> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal)
+        {
+            try
+            {
+                if (payslipGenerationModal.EmployeeId <= 0)
+                    throw new HiringBellException("Invalid employee selected. Please select a valid employee");
+                // fetch and all the nessary data from database required to bill generation.
+                var resultSet = await PrepareRequestForPayslipGeneration(payslipGenerationModal);
+
+                FileDetail fileDetail = new FileDetail();
+                fileDetail.FileExtension = string.Empty;
+                payslipGenerationModal.FileDetail = fileDetail;
+
+                // store template logo and file locations
+                await CapturePayslipFileFolderLocations(payslipGenerationModal);
+                this.CleanOldFiles(fileDetail);
+
+                // generate pdf files
+                await GeneratePayslipPdfFile(payslipGenerationModal);
+
+                // save file in filesystem
+                //await SaveExecuteBill(billModal);
+
+                // return result data
+                return await Task.FromResult(new { FileDetail = fileDetail });
+            }
+            catch (HiringBellException e)
+            {
+                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
+                throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw new HiringBellException(ex.Message, ex);
+            }
+        }
+        private async Task CapturePayslipFileFolderLocations(PayslipGenerationModal payslipModal)
+        {
+            payslipModal.PayslipTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+                        _fileLocationDetail.Location,
+                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        _fileLocationDetail.PaysliplTemplate
+                    );
+
+            if (!File.Exists(payslipModal.PayslipTemplatePath))
+                throw new HiringBellException("Payslip template not found. Please contact to admin.");
+
+
+            payslipModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+                _fileLocationDetail.Location,
+                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                _fileLocationDetail.PaysliplTemplate
+            );
+
+            if (!File.Exists(payslipModal.PdfTemplatePath))
+                throw new HiringBellException("PDF template not found. Please contact to admin.");
+
+            payslipModal.HeaderLogoPath = Path.Combine(_fileLocationDetail.RootPath,
+                _fileLocationDetail.LogoPath, "logo.png");
+
+            if (!File.Exists(payslipModal.HeaderLogoPath))
+                throw new HiringBellException("Logo image not found. Please contact to admin.");
+
+            await Task.CompletedTask;
+        }
+
+        private async Task GeneratePayslipPdfFile(PayslipGenerationModal payslipModal)
+        {
+            GetPayslipFileDetail(payslipModal, payslipModal.FileDetail, ApplicationConstants.Pdf);
+            _fileMaker._fileDetail = payslipModal.FileDetail;
+
+            // Converting html context for pdf conversion.
+            var html = this.GetPayslipHtmlString(payslipModal.PdfTemplatePath, payslipModal, true);
+
+            var destinationFilePath = Path.Combine(payslipModal.FileDetail.DiskFilePath,
+                payslipModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
+            _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+
+            await Task.CompletedTask;
+        }
+
+        private string GetPayslipHtmlString(string templatePath, PayslipGenerationModal payslipModal, bool isHeaderLogoRequired = false)
+        {
+            string html = string.Empty;
+            var salaryDetailsHTML = string.Empty;
+            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => x.ComponentId != "ECI" && x.ComponentId != "EPER-PF" && x.ComponentId != "GRA" && x.ComponentId != "Gross" && x.ComponentId != "CTC");
+            foreach (var item in salaryDetail)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + item.ComponentName + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "</tr>";
+            }
+            var pfAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF").FinalAmount;
+            var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
+            var netSalary = totalEarning - (pfAmount + payslipModal.TaxDetail.TaxDeducted);
+            var totalDeduction = pfAmount + payslipModal.TaxDetail.TaxDeducted;
+            using (FileStream stream = File.Open(templatePath, FileMode.Open))
+            {
+                StreamReader reader = new StreamReader(stream);
+                html = reader.ReadToEnd();
+
+                html = html.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
+                Replace("[[CompanySecondAddress]]", payslipModal.Company.SecondAddress).
+                Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
+                Replace("[[CompanyFourthAddress]]", payslipModal.Company.ForthAddress).
+                Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
+                Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName  ).
+                Replace("[[EmployeeNo]]", payslipModal.Employee.EmployeeUid.ToString()).
+                Replace("[[JoiningDate]]", payslipModal.Employee.CreatedOn.ToString("dd MMM, yyyy")).
+                Replace("[[Department]]", payslipModal.Employee.DesignationId.ToString()).
+                Replace("[[SubDepartment]]", "NA").
+                Replace("[[Designation]]", payslipModal.Employee.DesignationId.ToString()).
+                Replace("[[Payment Mode]]", "Bank Transfer").
+                Replace("[[Bank]]", payslipModal.Employee.BankName).
+                Replace("[[BankIFSC]]", payslipModal.Employee.IFSCCode).
+                Replace("[[Bank Account]]", payslipModal.Employee.AccountNumber).
+                Replace("[[PAN]]", payslipModal.Employee.PANNo).
+                Replace("[[UAN]]", payslipModal.Employee.AadharNo).
+                Replace("[[PFNumber]]", payslipModal.Employee.EmployeeUid.ToString()).
+                Replace("[[ActualPayableDays]]", payslipModal.Company.SecondAddress).
+                Replace("[[TotalWorkingDays]]", payslipModal.Company.SecondAddress).
+                Replace("[[LossOfPayDays]]", payslipModal.Company.SecondAddress).
+                Replace("[[DaysPayable]]", payslipModal.Company.SecondAddress).
+                Replace("[[Month]]", payslipModal.SalaryDetail.MonthName.ToUpper()).
+                Replace("[[Year]]", payslipModal.Year.ToString()).
+                Replace("[[CompleteSalaryDetails]]", salaryDetailsHTML).
+                Replace("[[PFAmount]]", pfAmount.ToString("0.00")).
+                Replace("[[TotalEarnings]]", totalEarning.ToString("0.00")).
+                Replace("[[TotalIncomeTax]]", payslipModal.TaxDetail.TaxDeducted.ToString("0.00")).
+                Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
+                Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00"));
+            }
+
+            if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
+            {
+                string extension = string.Empty;
+                int lastPosition = payslipModal.HeaderLogoPath.LastIndexOf(".");
+                extension = payslipModal.HeaderLogoPath.Substring(lastPosition + 1);
+                ImageFormat imageFormat = null;
+                if (extension == "png")
+                    imageFormat = ImageFormat.Png;
+                else if (extension == "gif")
+                    imageFormat = ImageFormat.Gif;
+                else if (extension == "bmp")
+                    imageFormat = ImageFormat.Bmp;
+                else if (extension == "jpeg")
+                    imageFormat = ImageFormat.Jpeg;
+                else if (extension == "tiff")
+                {
+                    // Convert tiff to gif.
+                    extension = "gif";
+                    imageFormat = ImageFormat.Gif;
+                }
+                else if (extension == "x-wmf")
+                {
+                    extension = "wmf";
+                    imageFormat = ImageFormat.Wmf;
+                }
+
+                string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
+                var fs = new FileStream(payslipModal.HeaderLogoPath, FileMode.Open);
+                using (BinaryReader br = new BinaryReader(fs))
+                {
+                    Byte[] bytes = br.ReadBytes((Int32)fs.Length);
+                    string base64String = Convert.ToBase64String(bytes, 0, bytes.Length);
+                    html = html.Replace("[[COMPANYLOGO_PATH]]", $"{encodeStart}, {base64String}");
+                }
+            }
+            return html;
+        }
+        private async Task<DataSet> PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
+        {
+            DataSet ds = this.db.FetchDataSet("sp_payslip_detail", new
+            {
+                EmployeeId = payslipGenerationModal.EmployeeId,
+                ForMonth = payslipGenerationModal.Month,
+                ForYear = payslipGenerationModal.Year
+            });
+
+            if (ds == null || ds.Tables.Count != 4)
+                throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
+
+            payslipGenerationModal.ResultSet = ds;
+            if (ds.Tables[0].Rows.Count != 1)
+                throw new HiringBellException("Fail to get company detail. Please contact to admin.");
+
+            payslipGenerationModal.Company = Converter.ToType<Organization>(ds.Tables[0]);
+            
+            if (ds.Tables[1].Rows.Count != 1)
+                throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
+
+            payslipGenerationModal.Employee = Converter.ToType<Employee>(ds.Tables[1]);
+
+            if (ds.Tables[2].Rows.Count != 1)
+                throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
+
+            var SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ds.Tables[2]);
+            if (SalaryDetail.CompleteSalaryDetail == null)
+                throw new HiringBellException("Salary breakup not found. Please contact to admin");
+
+            var allSalaryDetails = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(SalaryDetail.CompleteSalaryDetail);
+            payslipGenerationModal.SalaryDetail = allSalaryDetails.Find(x => x.MonthNumber == payslipGenerationModal.Month);
+            if (payslipGenerationModal.SalaryDetail == null)
+                throw new HiringBellException("Salary breakup of your selected month is not found");
+
+            if (SalaryDetail.TaxDetail == null)
+                throw new HiringBellException("Tax details not found. Please contact to admin");
+
+            var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(SalaryDetail.TaxDetail);
+            payslipGenerationModal.TaxDetail = taxDetails.Find(x => x.Year == payslipGenerationModal.Year && x.Month == payslipGenerationModal.Month);
+            if (payslipGenerationModal.TaxDetail == null)
+                throw new HiringBellException("Tax details of your selected month is not found");
+
+            //if (ds.Tables[3].Rows.Count != 1)
+            //    throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
+
+            //payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
+            return ds;
+        }
+        private void GetPayslipFileDetail(PayslipGenerationModal payslipModal, FileDetail fileDetail, string fileExtension)
+        {
+            fileDetail.Status = 0;
+            try
+            {
+                var Email = payslipModal.Employee.Email.Replace("@", "_").Replace(".", "_");
+                string FolderLocation = Path.Combine(_fileLocationDetail.UserFolder, Email);
+                string FileName = payslipModal.Employee.FirstName + "_" + payslipModal.Employee.LastName + "_" +
+                              "Payslip" +"_" + payslipModal.SalaryDetail.MonthName + "_" + payslipModal.Year;
+
+                string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+
+                fileDetail.FilePath = FolderLocation;
+                fileDetail.DiskFilePath = folderPath;
+                fileDetail.FileName = FileName;
+                if (string.IsNullOrEmpty(fileDetail.FileExtension))
+                    fileDetail.FileExtension = fileExtension;
+                else
+                    fileDetail.FileExtension += $",{fileExtension}";
+                if (payslipModal.FileDetail.FileId > 0)
+                    fileDetail.FileId = payslipModal.FileDetail.FileId;
+                else
+                    fileDetail.FileId = -1;
+                fileDetail.StatusId = 2;
+                fileDetail.PaidOn = null;
+                fileDetail.Status = 1;
+            }
+            catch (Exception ex)
+            {
+                fileDetail.Status = -1;
+                throw ex;
             }
         }
     }

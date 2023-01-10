@@ -16,6 +16,7 @@ namespace ModalLayer.Modal
         public string User { set; get; }
         public string BillsPath { set; get; }
         public string StaffingBillTemplate { set; get; }
+        public string PaysliplTemplate { set; get; }
         public string StaffingBillPdfTemplate { set; get; }
         public string resumeTemplate { set; get; }
         public List<string> resumePath { set; get; }
