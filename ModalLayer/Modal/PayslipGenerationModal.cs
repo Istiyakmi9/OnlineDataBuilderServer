@@ -20,5 +20,8 @@ namespace ModalLayer.Modal
         public TaxDetails TaxDetail { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
+        public decimal CTC { get; set; }
+        public List<PTaxSlab> PTaxSlabs { get; set; }
+        public List<EmployeeRole> EmployeeRoles { get; set; }
     }
 }
