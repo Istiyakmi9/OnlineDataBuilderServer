@@ -768,8 +768,10 @@ namespace ServiceLayer.Code
                 .DeserializeObject<List<SalaryComponents>>(eCal.salaryGroup.SalaryComponents);
 
             decimal perquisiteAmount = GetPerquisiteAmount(eCal.salaryGroup.GroupComponents);
-            decimal EmployeeContributionAmount = (GetEmployeeContributionAmount(eCal.salaryGroup.GroupComponents, eCal.CTC)) + perquisiteAmount;
-            decimal grossAmount = Convert.ToDecimal(eCal.CTC - EmployeeContributionAmount);
+            //decimal EmployeeContributionAmount = (GetEmployeeContributionAmount(eCal.salaryGroup.GroupComponents, eCal.CTC)) + perquisiteAmount;
+            //decimal grossAmount = Convert.ToDecimal(eCal.CTC - EmployeeContributionAmount);
+            decimal EmployeeContributionAmount = 0;
+            decimal grossAmount = Convert.ToDecimal(eCal.CTC - perquisiteAmount);
             decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, grossAmount, eCal.CTC);
 
             int index = 0;
