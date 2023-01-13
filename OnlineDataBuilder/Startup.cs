@@ -22,6 +22,7 @@ using OnlineDataBuilder.Model;
 using SchoolInMindServer.MiddlewareServices;
 using ServiceLayer.Caching;
 using ServiceLayer.Code;
+using ServiceLayer.Code.Leaves;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using SocialMediaServices;
@@ -180,6 +181,16 @@ namespace OnlineDataBuilder
             services.AddScoped<OfferLetterEmailService>();
             services.AddScoped<RegistrationEmailService>();
             services.AddScoped<TimesheetEmailService>();
+
+            services.AddScoped<Quota>();
+            services.AddScoped<Apply>();
+            services.AddScoped<Accrual>();
+            services.AddScoped<LeaveFromManagement>();
+            services.AddScoped<Approval>();
+            services.AddScoped<HolidaysAndWeekoffs>();
+            services.AddScoped<Restriction>();
+            services.AddScoped<YearEndCalculation>();
+
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

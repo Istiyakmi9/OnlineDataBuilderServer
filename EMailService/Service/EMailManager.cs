@@ -127,7 +127,8 @@ namespace EMailService.Service
                         Body = message.HtmlBody,
                         EMailIndex = i,
                         Text = message.GetTextBody(MimeKit.Text.TextFormat.Plain),
-                        Importance = message.Priority.ToString()
+                        Priority = message.Priority.ToString(),
+                        Date = message.Date.DateTime
                     });
 
                     mailCounter++;
