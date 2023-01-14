@@ -35,7 +35,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(annexureOfferLetter.BodyContent))
                 throw new HiringBellException("Body content is null or empty");
 
-            AnnexureOfferLetter letter = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId = annexureOfferLetter.CompanyId, LetterType });
+            AnnexureOfferLetter letter = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_id", new { AnnexureOfferLetterId = annexureOfferLetter.AnnexureOfferLetterId});
             if (letter == null)
                 letter = annexureOfferLetter;
             else
@@ -90,6 +90,26 @@ namespace ServiceLayer.Code
                 detail.BodyContent = JsonConvert.DeserializeObject<string>(detail.BodyContent);
 
             return detail;
+        }
+
+        public List<AnnexureOfferLetter> GetAnnextureService(int CompanyId, int LetterType)
+        {
+            var result = _db.GetList<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
+            if (result.Count > 0)
+            {
+                foreach (var item in result)
+                {
+                    if (item != null)
+                    {
+                        if (File.Exists(item.FilePath))
+                        {
+                            var txt = File.ReadAllText(item.FilePath);
+                            item.BodyContent = txt;
+                        }
+                    }
+                }
+            }
+            return result;
         }
     }
 }

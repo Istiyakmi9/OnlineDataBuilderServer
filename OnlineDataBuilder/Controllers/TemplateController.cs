@@ -29,10 +29,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetAnnexureOfferLetter/{CompanyId}/{LetterType}")]
-        public IResponse<ApiResponse> GetAnnexureOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
+        [HttpGet("GetOfferLetter/{CompanyId}/{LetterType}")]
+        public IResponse<ApiResponse> GetOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
         {
             var result = _templateService.GetOfferLetterService(CompanyId, LetterType);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetAnnexture/{CompanyId}/{LetterType}")]
+        public IResponse<ApiResponse> GetAnnexture([FromRoute] int CompanyId, [FromRoute] int LetterType)
+        {
+            var result = _templateService.GetAnnextureService(CompanyId, LetterType);
             return BuildResponse(result);
         }
     }
