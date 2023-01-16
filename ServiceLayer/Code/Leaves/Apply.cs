@@ -23,13 +23,7 @@ namespace ServiceLayer.Code.Leaves
             _leavePlanType = leavePlanType;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
 
-            CheckForHalfDayRestriction();
-
-            AllowToSeeAndApply();
-
             LeaveEligibilityCheck(leaveCalculationModal);
-
-            DoesLeaveRequiredComments();
 
             RequiredDocumentForExtending(leaveCalculationModal);
 
@@ -37,20 +31,22 @@ namespace ServiceLayer.Code.Leaves
         }
 
         // step - 1
-        private void CheckForHalfDayRestriction()
+        public void CheckForHalfDayRestriction()
         {
             if (!_leavePlanConfiguration.leaveApplyDetail.IsAllowForHalfDay)
             {
-                //if (leaveCalculationModal.leaveRequestDetail.Session.Contains("halfday"))
-                //    throw new HiringBellException("Apply halfday is not allowed for this type");
+                throw new HiringBellException("Half day leave not allow under current leave type.");
             }
         }
 
         // step - 2
-        public void AllowToSeeAndApply()
+        public bool IsAllowedToSeeAndApply()
         {
-            if (!_leavePlanConfiguration.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
-                throw new HiringBellException("You don't have enough permission to apply this leave.");
+            bool flag = false;
+            if (_leavePlanConfiguration.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
+                flag = true;
+
+            return flag;
         }
 
         // step - 3, 4
@@ -58,79 +54,48 @@ namespace ServiceLayer.Code.Leaves
         {
             // if future date then > 0 else < 0
             var presentDate = _timezoneConverter.ToUtcTime(DateTime.SpecifyKind(leaveCalculationModal.presentDate.Date, DateTimeKind.Unspecified));
-            double days = leaveCalculationModal.fromDate.Subtract(presentDate).TotalDays;
+            double days = leaveCalculationModal.toDate.Subtract(presentDate).TotalDays;
+            // step - 3
             if (days < 0) // past date
             {
                 days = days * -1;
                 if (_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays != -1 &&
                     days > _leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays)
-                    throw new HiringBellException($"Back dated leave more than {_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} days can't be allowed.");
+                    throw new HiringBellException($"Applying for this leave required minimun of " +
+                        $"{_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} days gap.");
             }
-            else // future date
+            else // step - 4  future date
             {
                 if (_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate != -1 &&
                     days > _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
-                    throw new HiringBellException($"Apply this leave before {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days.");
+                    throw new HiringBellException($"Applying for this leave required minimun of " +
+                        $"{_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days gap.");
             }
         }
 
-        private bool CheckProbationLeaveRestriction(LeavePlanType leavePlanType, LeaveCalculationModal leaveCalculationModal)
-        {
-            bool flag = true;
-            // if employee completed probation period
-            if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation && leaveCalculationModal.employeeType == 0)
-            {
-                var totalDays = Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation) +
-                                leaveCalculationModal.employee.ProbationPeriodDaysLimit;
-
-                if (leaveCalculationModal.fromDate.Subtract(leaveCalculationModal.employee.CreatedOn.AddDays(totalDays)).TotalDays < 0)
-                {
-                    flag = false;
-                    leavePlanType.IsApplicable = false;
-                    leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
-                }
-            }
-            else if (leaveCalculationModal.employeeType == 1) // if employee currently serving probation period
-            {
-                DateTime afterJoiningDate = leaveCalculationModal.employee.CreatedOn.AddDays(Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterJoining));
-                if (afterJoiningDate.Subtract(leaveCalculationModal.employee.CreatedOn.AddDays(leaveCalculationModal.employee.ProbationPeriodDaysLimit)).TotalDays <= 0)
-                {
-                    var totalNumOfDays = leaveCalculationModal.toDate.Subtract(leaveCalculationModal.fromDate).TotalDays;
-                    if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation)
-                    {
-                        if (Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation) - totalNumOfDays > 0)
-                        {
-                            flag = false;
-                            leavePlanType.IsApplicable = false;
-                            leavePlanType.Reason = $"This leave can only be utilized {_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days before leave start date.";
-                        }
-                    }
-                }
-            }
-
-            return flag;
-        }
 
         // step - 5
-        private void DoesLeaveRequiredComments()
+        public void DoesLeaveRequiredComments()
         {
             if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments)
             {
                 //if (string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
                 //    throw new HiringBellException("Comment is required for this type");
             }
-
         }
 
         // step - 6
-        private void RequiredDocumentForExtending(LeaveCalculationModal leaveCalculationModal)
+        public async Task<bool> RequiredDocumentForExtending(LeaveCalculationModal leaveCalculationModal)
         {
+            bool flag = false;
             if (_leavePlanConfiguration.leaveApplyDetail.ProofRequiredIfDaysExceeds)
             {
-                var leaveDay = leaveCalculationModal.toDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays;
+                var leaveDay = leaveCalculationModal.fromDate.Date.Subtract(leaveCalculationModal.toDate.Date).TotalDays;
                 if (leaveDay > _leavePlanConfiguration.leaveApplyDetail.NoOfDaysExceeded)
-                    throw new HiringBellException("Document proof is required");
+                    flag = true;
             }
+
+            return await Task.FromResult(flag);
         }
     }
 }

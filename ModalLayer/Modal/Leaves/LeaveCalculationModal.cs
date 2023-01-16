@@ -18,7 +18,7 @@ namespace ModalLayer.Modal.Leaves
         public CompanySetting companySetting { set; get; }
         public List<LeavePlanType> leavePlanTypes { set; get; }
         public int employeeType { set; get; }
-        public decimal totalNumOfLeaveApplied { set; get; }
+        public decimal numberOfLeaveApplyring { set; get; }
         public CompleteLeaveDetail lastApprovedLeaveDetail { set; get; }
     }
 }

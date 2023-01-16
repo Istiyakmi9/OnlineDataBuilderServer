@@ -10,6 +10,10 @@ public class ApplicationConstants
     public static int NotGenerated = 4;
     public static int Rejected = 5;
 
+    public const int Regular = 0;
+    public const int InNoticePeriod = 1;
+    public const int InProbationPeriod = 2;
+
     public static string OrganizationId = "OrganizationId";
     public static string CompanyId = "CompanyId";
     public static string ManagerName = "ManagerName";
