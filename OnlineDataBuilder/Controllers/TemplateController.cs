@@ -29,10 +29,38 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetAnnexureOfferLetter/{CompanyId}/{LetterType}")]
-        public IResponse<ApiResponse> GetAnnexureOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
+        [HttpGet("GetOfferLetter/{CompanyId}/{LetterType}")]
+        public IResponse<ApiResponse> GetOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
         {
             var result = _templateService.GetOfferLetterService(CompanyId, LetterType);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetAnnexture/{CompanyId}/{LetterType}")]
+        public IResponse<ApiResponse> GetAnnexture([FromRoute] int CompanyId, [FromRoute] int LetterType)
+        {
+            var result = _templateService.GetAnnextureService(CompanyId, LetterType);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("EmailLinkConfigInsUpdate")]
+        public IResponse<ApiResponse> EmailLinkConfigInsUpdate(EmailLinkConfig emailLinkConfig)
+        {
+            var result = _templateService.EmailLinkConfigInsUpdateService(emailLinkConfig);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetEmailLinkConfigByPageName/{PageName}/{CompanyId}")]
+        public IResponse<ApiResponse> EmailLinkConfigGetByPageName([FromRoute] string PageName, [FromRoute] int CompanyId)
+        {
+            var result = _templateService.EmailLinkConfigGetByPageNameService(PageName, CompanyId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("GenerateUpdatedPageMail")]
+        public IResponse<ApiResponse> GenerateUpdatedPageMail(EmailLinkConfig emailLinkConfig)
+        {
+            var result = _templateService.GenerateUpdatedPageMailService(emailLinkConfig);
             return BuildResponse(result);
         }
     }

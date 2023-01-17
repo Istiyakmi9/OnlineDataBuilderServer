@@ -268,16 +268,11 @@ namespace ServiceLayer.Code
                 decimal allocatedLeave = 0;
                 FromandTodateValidation(leaveAccrual.LeaveDistributionRateOnStartOfPeriod);
                 allocatedLeave = leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Sum(x => x.AllocatedLeave);
-                if (leaveAccrual.IsLeaveAccruedPatternAvail)
+                if (leaveAccrual.IsLeaveAccruedPatternAvail && leaveAccrual.LeaveDistributionSequence == "1")
                 {
-                    switch (leaveAccrual.LeaveDistributionSequence)
-                    {
-                        case "1":
-                            decimal monthlyLeave = leaveDetail.LeaveLimit / 12;
-                            if (monthlyLeave != allocatedLeave)
-                                throw new HiringBellException("Monthly leave distribution is not matched with actual monthly leave limit");
-                        break;
-                    }
+                    decimal monthlyLeave = leaveDetail.LeaveLimit / 12;
+                    if (monthlyLeave != allocatedLeave)
+                        throw new HiringBellException("Monthly leave distribution is not matched with actual monthly leave limit");
                 }
             }
 
