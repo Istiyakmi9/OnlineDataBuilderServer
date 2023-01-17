@@ -4,7 +4,6 @@ using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
-using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -14,6 +13,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Drawing.Imaging;
 using System.IO;
@@ -1095,9 +1095,6 @@ namespace ServiceLayer.Code
                 // generate pdf files
                 await GeneratePayslipPdfFile(payslipGenerationModal);
 
-                // save file in filesystem
-                //await SaveExecuteBill(billModal);
-
                 // return result data
                 return await Task.FromResult(new { FileDetail = fileDetail });
             }
@@ -1170,9 +1167,12 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "</tr>";
             }
             var pfAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF").FinalAmount;
+            var pTaxAmount = PTaxCalculation(payslipModal.CTC, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
+            var totalDeduction = pfAmount + payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
             var netSalary = totalEarning - (pfAmount + payslipModal.TaxDetail.TaxDeducted);
-            var totalDeduction = pfAmount + payslipModal.TaxDetail.TaxDeducted;
+            var netSalaryInWord = NumberToWords(netSalary);
+            var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             using (FileStream stream = File.Open(templatePath, FileMode.Open))
             {
                 StreamReader reader = new StreamReader(stream);
@@ -1183,12 +1183,12 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
                 Replace("[[CompanyFourthAddress]]", payslipModal.Company.ForthAddress).
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
-                Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName  ).
+                Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
                 Replace("[[EmployeeNo]]", payslipModal.Employee.EmployeeUid.ToString()).
                 Replace("[[JoiningDate]]", payslipModal.Employee.CreatedOn.ToString("dd MMM, yyyy")).
-                Replace("[[Department]]", payslipModal.Employee.DesignationId.ToString()).
+                Replace("[[Department]]", designation).
                 Replace("[[SubDepartment]]", "NA").
-                Replace("[[Designation]]", payslipModal.Employee.DesignationId.ToString()).
+                Replace("[[Designation]]", designation).
                 Replace("[[Payment Mode]]", "Bank Transfer").
                 Replace("[[Bank]]", payslipModal.Employee.BankName).
                 Replace("[[BankIFSC]]", payslipModal.Employee.IFSCCode).
@@ -1207,6 +1207,8 @@ namespace ServiceLayer.Code
                 Replace("[[TotalEarnings]]", totalEarning.ToString("0.00")).
                 Replace("[[TotalIncomeTax]]", payslipModal.TaxDetail.TaxDeducted.ToString("0.00")).
                 Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
+                Replace("[[NetSalaryInWords]]", netSalaryInWord).
+                Replace("[[PTax]]", pTaxAmount.ToString()).
                 Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00"));
             }
 
@@ -1256,7 +1258,7 @@ namespace ServiceLayer.Code
                 ForYear = payslipGenerationModal.Year
             });
 
-            if (ds == null || ds.Tables.Count != 4)
+            if (ds == null || ds.Tables.Count != 6)
                 throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
 
             payslipGenerationModal.ResultSet = ds;
@@ -1264,12 +1266,10 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to get company detail. Please contact to admin.");
 
             payslipGenerationModal.Company = Converter.ToType<Organization>(ds.Tables[0]);
-            
             if (ds.Tables[1].Rows.Count != 1)
                 throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
 
             payslipGenerationModal.Employee = Converter.ToType<Employee>(ds.Tables[1]);
-
             if (ds.Tables[2].Rows.Count != 1)
                 throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
 
@@ -1277,6 +1277,7 @@ namespace ServiceLayer.Code
             if (SalaryDetail.CompleteSalaryDetail == null)
                 throw new HiringBellException("Salary breakup not found. Please contact to admin");
 
+            payslipGenerationModal.CTC = SalaryDetail.CTC;
             var allSalaryDetails = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(SalaryDetail.CompleteSalaryDetail);
             payslipGenerationModal.SalaryDetail = allSalaryDetails.Find(x => x.MonthNumber == payslipGenerationModal.Month);
             if (payslipGenerationModal.SalaryDetail == null)
@@ -1290,6 +1291,14 @@ namespace ServiceLayer.Code
             if (payslipGenerationModal.TaxDetail == null)
                 throw new HiringBellException("Tax details of your selected month is not found");
 
+            if (ds.Tables[4].Rows.Count == 0)
+                throw new HiringBellException("Fail to get ptax slab detail. Please contact to admin.");
+
+            payslipGenerationModal.PTaxSlabs = Converter.ToList<PTaxSlab>(ds.Tables[4]);
+            if (ds.Tables[5].Rows.Count == 0)
+                throw new HiringBellException("Fail to get employee role. Please contact to admin.");
+
+            payslipGenerationModal.EmployeeRoles = Converter.ToList<EmployeeRole>(ds.Tables[5]);
             //if (ds.Tables[3].Rows.Count != 1)
             //    throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
 
@@ -1304,7 +1313,7 @@ namespace ServiceLayer.Code
                 var Email = payslipModal.Employee.Email.Replace("@", "_").Replace(".", "_");
                 string FolderLocation = Path.Combine(_fileLocationDetail.UserFolder, Email);
                 string FileName = payslipModal.Employee.FirstName + "_" + payslipModal.Employee.LastName + "_" +
-                              "Payslip" +"_" + payslipModal.SalaryDetail.MonthName + "_" + payslipModal.Year;
+                              "Payslip" + "_" + payslipModal.SalaryDetail.MonthName + "_" + payslipModal.Year;
 
                 string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);
                 if (!Directory.Exists(folderPath))
@@ -1317,12 +1326,6 @@ namespace ServiceLayer.Code
                     fileDetail.FileExtension = fileExtension;
                 else
                     fileDetail.FileExtension += $",{fileExtension}";
-                if (payslipModal.FileDetail.FileId > 0)
-                    fileDetail.FileId = payslipModal.FileDetail.FileId;
-                else
-                    fileDetail.FileId = -1;
-                fileDetail.StatusId = 2;
-                fileDetail.PaidOn = null;
                 fileDetail.Status = 1;
             }
             catch (Exception ex)
@@ -1330,6 +1333,61 @@ namespace ServiceLayer.Code
                 fileDetail.Status = -1;
                 throw ex;
             }
+        }
+        private string NumberToWords(decimal amount)
+        {
+            try
+            {
+                Int64 amount_int = (Int64)amount;
+                Int64 amount_dec = (Int64)Math.Round((amount - (decimal)(amount_int)) * 100);
+                if (amount_dec == 0)
+                    return ConvertNumber(amount_int) + " Only.";
+                else
+                    return ConvertNumber(amount_int) + " Point " + ConvertNumber(amount_dec) + " Only.";
+            }
+            catch (Exception e)
+            {
+                throw new HiringBellException(e.Message); 
+            }
+        }
+        private String ConvertNumber(Int64 i)
+        {
+            String[] units = { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen" };
+            String[] tens = { "", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety" };
+            if (i < 20)
+                return units[i];
+
+            if (i < 100)
+                return tens[i / 10] + ((i % 10 > 0) ? " " + ConvertNumber(i % 10) : "");
+
+            if (i < 1000)
+                return units[i / 100] + " Hundred" + ((i % 100 > 0) ? " And " + ConvertNumber(i % 100) : "");
+
+            if (i < 100000)
+                return ConvertNumber(i / 1000) + " Thousand " + ((i % 1000 > 0) ? " " + ConvertNumber(i % 1000) : "");
+
+            if (i < 10000000)
+                return ConvertNumber(i / 100000) + " Lakh " + ((i % 100000 > 0) ? " " + ConvertNumber(i % 100000) : "");
+
+            if (i < 1000000000)
+                return ConvertNumber(i / 10000000) + " Crore "+ ((i % 10000000 > 0) ? " " + ConvertNumber(i % 10000000) : "");
+
+            return ConvertNumber(i / 1000000000) + " Arab "+ ((i % 1000000000 > 0) ? " " + ConvertNumber(i % 1000000000) : "");
+        }
+        private decimal PTaxCalculation(decimal CTC, List<PTaxSlab> pTaxSlabs)
+        {
+            decimal monthlySalarry = CTC / 12;
+            if (pTaxSlabs.Count == 0)
+                throw new HiringBellException("Professional tax slab not found. Please contact to admin");
+
+            PTaxSlab pTaxSlab = pTaxSlabs.Find(x => x.MinIncome <= monthlySalarry && x.MaxIncome >= monthlySalarry);
+            if (monthlySalarry > pTaxSlabs[pTaxSlabs.Count - 1].MaxIncome)
+                pTaxSlab = pTaxSlabs.Last();
+
+            if (pTaxSlab == null)
+                throw new HiringBellException($"Professional tax for {CTC} is not found. Please contact to admin");
+
+            return pTaxSlab.TaxAmount;
         }
     }
 }
