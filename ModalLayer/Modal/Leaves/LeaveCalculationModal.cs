@@ -13,6 +13,7 @@ namespace ModalLayer.Modal.Leaves
         public DateTime noticePeriodEndDate { set; get; }
         public Employee employee { set; get; }
         public LeavePlan leavePlan { set; get; }
+        public List<LeavePlan> leavePlans { set; get; }
         public LeavePlanConfiguration leavePlanConfiguration { set; get; }
         public LeaveRequestDetail leaveRequestDetail { set; get; }
         public CompanySetting companySetting { set; get; }

@@ -1,4 +1,5 @@
 using ModalLayer;
+using System;
 using System.Data;
 
 public class ApplicationConstants
@@ -97,6 +98,37 @@ public class ApplicationConstants
             return false;
 
         return true;
+    }
+
+    public static bool IsValidDataSet(DataSet dataSet, int tableCount)
+    {
+        if (dataSet == null || dataSet.Tables.Count == 0 || dataSet.Tables.Count != tableCount)
+            return false;
+
+        return true;
+    }
+
+    public static bool CheckRowsInDataSets(DataSet dataSet, int tableCount)
+    {
+        bool flag = true;
+        if (dataSet == null || dataSet.Tables.Count == 0 || dataSet.Tables.Count != tableCount)
+            return false;
+
+        DataTable table = null;
+        int i = 0;
+        while(i < dataSet.Tables.Count)
+        {
+            table = dataSet.Tables[i];
+            if (table.Rows.Count == 0)
+            {
+                flag = false;
+                break;
+            }
+
+            i++;
+        }
+
+        return flag;
     }
 
     public static bool ContainSingleRow(DataSet dataSet)

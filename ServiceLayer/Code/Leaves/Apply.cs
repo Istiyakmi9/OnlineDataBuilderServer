@@ -25,7 +25,7 @@ namespace ServiceLayer.Code.Leaves
 
             LeaveEligibilityCheck(leaveCalculationModal);
 
-            RequiredDocumentForExtending(leaveCalculationModal);
+            await RequiredDocumentForExtending(leaveCalculationModal);
 
             await Task.CompletedTask;
         }
@@ -54,7 +54,7 @@ namespace ServiceLayer.Code.Leaves
         {
             // if future date then > 0 else < 0
             var presentDate = _timezoneConverter.ToUtcTime(DateTime.SpecifyKind(leaveCalculationModal.presentDate.Date, DateTimeKind.Unspecified));
-            double days = leaveCalculationModal.toDate.Subtract(presentDate).TotalDays;
+            double days = leaveCalculationModal.fromDate.Date.Subtract(presentDate.Date).TotalDays;
             // step - 3
             if (days < 0) // past date
             {

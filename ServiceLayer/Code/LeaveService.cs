@@ -429,8 +429,7 @@ namespace ServiceLayer.Code
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            LeaveCalculationModal leaveCalculationModal = default(LeaveCalculationModal);
-            leaveCalculationModal = await _leaveCalculation.GetBalancedLeave(employeeId, DateTime.Now, DateTime.Now);
+            LeaveCalculationModal leaveCalculationModal = await _leaveCalculation.GetLeaveDetailService(employeeId);
             if (leaveCalculationModal == null)
                 throw new HiringBellException("Unable to calculate leave balance detail. Please contact to admin.");
 
@@ -442,8 +441,8 @@ namespace ServiceLayer.Code
             this.ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await GetLatestLeaveDetail(leaveRequestModal.EmployeeId);
 
-            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
-                this.UpdateLeavePlanDetail(leaveCalculationModal);
+            //if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
+            //    this.UpdateLeavePlanDetail(leaveCalculationModal);
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
@@ -451,6 +450,5 @@ namespace ServiceLayer.Code
                 Employee = leaveCalculationModal.employee
             };
         }
-
     }
 }

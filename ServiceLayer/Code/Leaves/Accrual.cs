@@ -124,7 +124,7 @@ namespace ServiceLayer.Code.Leaves
         private async Task<bool> CanApplyEntireLeave(LeavePlanType leaveType)
         {
             bool flag = false;
-            if (_leaveCalculationModal.leavePlan.CanApplyEntireLeave)
+            if (_leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave)
             {
                 flag = true;
                 leaveType.AvailableLeave = _leavePlanConfiguration.leaveDetail.LeaveLimit;
@@ -321,7 +321,7 @@ namespace ServiceLayer.Code.Leaves
 
             // use define leavedistribution and calcualte leave accrued
             //_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth
-            if (_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth &&
+            if (!_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth &&
                _leavePlanConfiguration.leaveAccrual.JoiningMonthLeaveDistribution != null)
             {
                 AllocateTimeBreakup allocateTimeBreakup = null;
@@ -436,14 +436,14 @@ namespace ServiceLayer.Code.Leaves
 
         private async Task<bool> DoesLeaveExpired()
         {
-            bool flag = true;
+            bool flag = false;
             if (_leavePlanConfiguration.leaveAccrual.DoesLeaveExpireAfterSomeTime)
             {
                 // restrict on expiry
                 var days = now.Day - _leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom;
 
                 if (days <= _leavePlanConfiguration.leaveAccrual.AfterHowManyDays)
-                    flag = false;
+                    flag = true;
             }
 
             return await Task.FromResult(flag);
