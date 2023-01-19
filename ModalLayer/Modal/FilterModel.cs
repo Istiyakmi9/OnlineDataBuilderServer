@@ -8,5 +8,7 @@
         public int PageSize { get; set; } = 10;
         public string SortBy { get; set; } = string.Empty;
         public int CompanyId { get; set; }
+        public int OffsetIndex { get; set; }
+        public long EmployeeId { get; set; }
     }
 }

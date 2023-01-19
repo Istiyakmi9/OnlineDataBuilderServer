@@ -40,7 +40,7 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public IEnumerable<WeatherForecast> Get()
         {
-            // _eMailManager.ReadMails(null);
+            _eMailManager.ReadMails(null);
             // _leaveCalculation.RunLeaveCalculationCycle();
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

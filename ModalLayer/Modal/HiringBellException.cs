@@ -51,5 +51,10 @@ namespace ModalLayer.Modal
             FieldValue = Value;
             return this;
         }
+
+        public static HiringBellException ThrowBadRequest(string Message, HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest)
+        {
+            return new HiringBellException(Message, httpStatusCode);
+        }
     }
 }
