@@ -81,65 +81,67 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
-        public async Task<LeaveCalculationModal> RunAccrualCycle(long EmployeeId)
+        public async Task RunAccrualCycle()
         {
             LeavePlan leavePlan = default;
             List<LeavePlanType> leavePlanTypes = default;
             var leaveCalculationModal = await LoadLeaveMasterData();
-            List<EmployeeLeavePayrollAndOtherDetail> detail = new List<EmployeeLeavePayrollAndOtherDetail>();
-
-            var offsetindex = 0;
-            while (true)
+            int runDay = leaveCalculationModal.companySetting.PayrollCycleMonthlyRunDay;
+            if (runDay == DateTime.Now.Day)
             {
-                try
+                var offsetindex = 0;
+                List<EmployeeLeavePayrollAndOtherDetail> detail = new List<EmployeeLeavePayrollAndOtherDetail>();
+                while (true)
                 {
-                    var employees = _db.GetList<Employee>("sp_leave_accrual_cycle_data_by_employee", new
+                    try
                     {
-                        EmployeeId = 1,
-                        OffsetIndex = offsetindex,
-                        PageSize = 50
-                    }, false);
-
-                    if (employees == null || employees.Count == 0)
-                        break;
-
-                    foreach (Employee emp in employees)
-                    {
-                        leavePlan = leaveCalculationModal.leavePlans
-                            .FirstOrDefault(x => x.LeavePlanId == emp.LeavePlanId || x.IsDefaultPlan == true);
-
-                        if (leavePlan != null)
+                        var employees = _db.GetList<Employee>("sp_leave_accrual_cycle_data_by_employee", new
                         {
-                            leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
+                            OffsetIndex = offsetindex,
+                            PageSize = 50
+                        }, false);
 
-                            int i = 0;
-                            while (i < leavePlanTypes.Count)
+                        if (employees == null || employees.Count == 0)
+                            break;
+
+                        foreach (Employee emp in employees)
+                        {
+                            leavePlan = leaveCalculationModal.leavePlans
+                                .FirstOrDefault(x => x.LeavePlanId == emp.LeavePlanId || x.IsDefaultPlan == true);
+
+                            if (leavePlan != null)
                             {
-                                var type = leaveCalculationModal.leavePlanTypes
-                                    .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
-                                if (type != null)
-                                    await RunAccrualCycle(leaveCalculationModal, type);
+                                leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
 
-                                await BuildLeavePayrollDetail(type, emp, detail);
+                                int i = 0;
+                                while (i < leavePlanTypes.Count)
+                                {
+                                    var type = leaveCalculationModal.leavePlanTypes
+                                        .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
+                                    if (type != null)
+                                        await RunAccrualCycle(leaveCalculationModal, type);
 
-                                i++;
+                                    await BuildLeavePayrollDetail(type, emp, detail, runDay);
+
+                                    i++;
+                                }
                             }
                         }
-                    }
 
-                    await UpdateEmployeesRecord(detail);
-                    offsetindex += 50;
-                }
-                catch (Exception)
-                {
-                    break;
+                        await UpdateEmployeesRecord(detail);
+                        offsetindex += 50;
+                    }
+                    catch (Exception)
+                    {
+                        break;
+                    }
                 }
             }
 
-            return leaveCalculationModal;
+            await Task.CompletedTask;
         }
 
-        private async Task BuildLeavePayrollDetail(LeavePlanType type, Employee emp, List<EmployeeLeavePayrollAndOtherDetail> detail)
+        private async Task BuildLeavePayrollDetail(LeavePlanType type, Employee emp, List<EmployeeLeavePayrollAndOtherDetail> detail, int runDay)
         {
             var leaveDetail = detail.FirstOrDefault(x => x.EmployeeId == emp.EmployeeUid);
             if (leaveDetail == null)
@@ -156,7 +158,7 @@ namespace ServiceLayer.Code
                                                     TotalLeaveQuota = type.MaxLeaveLimit,
                                                 }
                                             },
-                    AccrualRunDay = 4,
+                    AccrualRunDay = runDay,
                     NextAccrualRunDate = DateTime.Now.AddMonths(1)
                 });
             }
