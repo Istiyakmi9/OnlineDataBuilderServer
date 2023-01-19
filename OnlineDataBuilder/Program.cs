@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OnlineDataBuilder.HostedService;
+using OnlineDataBuilder.MiddlewareServices.Src;
 
 namespace OnlineDataBuilder
 {
@@ -19,7 +20,7 @@ namespace OnlineDataBuilder
                     webBuilder.UseStartup<Startup>();
                 })
                 .ConfigureServices(x => x.AddHostedService<EmailSchedulerJob>())
-                .ConfigureServices(x => x.AddHostedService<LoggingConfiguration>());
-        // .ConfigureServices(x => x.AddHostedService<LeaveAccrualSchedular>());
+                .ConfigureServices(x => x.AddHostedService<LoggingConfiguration>())
+                .ConfigureServices(x => x.AddHostedService<LeaveAccrualSchedular>());
     }
 }

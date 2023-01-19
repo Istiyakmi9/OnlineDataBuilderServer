@@ -46,11 +46,11 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
 
         private void RunAsync()
         {
-            //using (IServiceScope scope = _serviceProvider.CreateScope())
-            //{
-            //    ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
-            //    _leaveCalculation.RunLeaveCalculationCycle();
-            //}
+            using (IServiceScope scope = _serviceProvider.CreateScope())
+            {
+                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
+                _leaveCalculation.RunAccrualCycle();
+            }
         }
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
