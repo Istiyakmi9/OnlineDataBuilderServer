@@ -8,7 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OnlineDataBuilder.MiddlewareServices.Src
+namespace OnlineDataBuilder.HostedService
 {
     public class LeaveAccrualSchedular : IHostedService
     {
@@ -57,7 +57,7 @@ namespace OnlineDataBuilder.MiddlewareServices.Src
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

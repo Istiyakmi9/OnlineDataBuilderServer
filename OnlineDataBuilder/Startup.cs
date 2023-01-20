@@ -20,6 +20,7 @@ using ModalLayer.Modal;
 using Newtonsoft.Json.Serialization;
 using OnlineDataBuilder.Model;
 using SchoolInMindServer.MiddlewareServices;
+using ServiceLayer;
 using ServiceLayer.Caching;
 using ServiceLayer.Code;
 using ServiceLayer.Code.Leaves;
@@ -181,13 +182,13 @@ namespace OnlineDataBuilder
             services.AddScoped<OfferLetterEmailService>();
             services.AddScoped<RegistrationEmailService>();
             services.AddScoped<TimesheetEmailService>();
-
+            services.AddScoped<IHolidaysAndWeekoffs, HolidaysAndWeekoffs>();
+            services.AddScoped<ICompanyCalendar, CompanyCalendar>();
             services.AddScoped<Quota>();
             services.AddScoped<Apply>();
             services.AddScoped<Accrual>();
             services.AddScoped<LeaveFromManagement>();
             services.AddScoped<Approval>();
-            services.AddScoped<HolidaysAndWeekoffs>();
             services.AddScoped<Restriction>();
             services.AddScoped<YearEndCalculation>();
 

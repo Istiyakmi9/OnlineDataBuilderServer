@@ -30,7 +30,7 @@ namespace ServiceLayer.Code
         private readonly Accrual _accrual;
         private readonly Apply _apply;
         private readonly Restriction _restriction;
-        private readonly HolidaysAndWeekoffs _holidaysAndWeekoffs;
+        private readonly IHolidaysAndWeekoffs _holidaysAndWeekoffs;
         private readonly Approval _approval;
         private readonly YearEndCalculation _yearEndCalculation;
 
@@ -41,6 +41,7 @@ namespace ServiceLayer.Code
             LeaveFromManagement leaveFromManagement,
             Accrual accrual,
             Apply apply,
+            IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction)
         {
             _db = db;
@@ -51,6 +52,7 @@ namespace ServiceLayer.Code
             _accrual = accrual;
             _apply = apply;
             _restriction = restriction;
+            _holidaysAndWeekoffs = holidaysAndWeekoffs;
         }
 
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
@@ -243,22 +245,42 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
-        public async Task<LeaveCalculationModal> GetRequestTypeBalancedLeave(LeaveRequestModal leaveRequestModal)
+        private async Task<LeaveCalculationModal> LoadPrepareRequiredData(LeaveRequestModal leaveRequestModal, LeavePlanType leavePlanType)
         {
             var leaveCalculationModal = await GetCalculationModal(
                 leaveRequestModal.EmployeeId,
                 leaveRequestModal.LeaveFromDay,
                 leaveRequestModal.LeaveToDay);
 
-            LeavePlanType leavePlanType = leavePlanType =
-                leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
+            leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
             if (leavePlanType == null)
-                throw new HiringBellException("Request leave type not found. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Leave plan type not found.");
 
-            await ProcessLeaveSections(leaveCalculationModal, leavePlanType);
+            // get current leave plan configuration and check if its valid one.
+            ValidateAndGetLeavePlanConfiguration(leavePlanType);
+            leaveCalculationModal.leavePlanConfiguration = _leavePlanConfiguration;
 
-            SameDayRequestValidationCheck(leaveCalculationModal);
+            return await Task.FromResult(leaveCalculationModal);
+        }
+
+        public async Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal)
+        {
+            LeavePlanType leavePlanType = default;
+            var leaveCalculationModal = await LoadPrepareRequiredData(leaveRequestModal, leavePlanType);
+
+            await SameDayRequestValidationCheck(leaveCalculationModal);
+
+            await _holidaysAndWeekoffs.CheckHolidayWeekOffRules(leaveCalculationModal);
+
+            // call leave quote
+            await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
+
+            // call apply leave
+            await _apply.CheckLeaveApplyRules(leaveCalculationModal, leavePlanType);
+
+            // call leave restriction
+            await _restriction.CheckRestrictionForLeave(leaveCalculationModal, leavePlanType);
 
             return leaveCalculationModal;
         }
@@ -395,7 +417,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private void SameDayRequestValidationCheck(LeaveCalculationModal leaveCalculationModal)
+        private async Task SameDayRequestValidationCheck(LeaveCalculationModal leaveCalculationModal)
         {
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             {
@@ -405,6 +427,8 @@ namespace ServiceLayer.Code
                     CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
                 }
             }
+
+            await Task.CompletedTask;
         }
 
         private void ValidateAndGetLeavePlanConfiguration(LeavePlanType leavePlanType)
@@ -516,7 +540,7 @@ namespace ServiceLayer.Code
         {
             try
             {
-                var leaveCalculationModal = await GetRequestTypeBalancedLeave(leaveRequestModal);
+                var leaveCalculationModal = await PrepareCheckLeaveCriteria(leaveRequestModal);
 
                 LeavePlanType leavePlanType =
                     leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
