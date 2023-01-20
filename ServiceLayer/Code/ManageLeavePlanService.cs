@@ -155,9 +155,7 @@ namespace ServiceLayer.Code
                 leaveAccrual.LeavePlanTypeId,
                 leaveAccrual.CanApplyEntireLeave,
                 leaveAccrual.IsLeaveAccruedPatternAvail,
-                leaveAccrual.IsLeaveAccruedProrateDefined,
                 JoiningMonthLeaveDistribution = JsonConvert.SerializeObject(leaveAccrual.JoiningMonthLeaveDistribution),
-                LeaveDistributionRateOnStartOfPeriod = JsonConvert.SerializeObject(leaveAccrual.LeaveDistributionRateOnStartOfPeriod),
                 ExitMonthLeaveDistribution = JsonConvert.SerializeObject(leaveAccrual.ExitMonthLeaveDistribution),
                 LeaveDistributionSequence = leaveAccrual.LeaveDistributionSequence,
                 leaveAccrual.LeaveDistributionAppliedFrom,
@@ -212,9 +210,6 @@ namespace ServiceLayer.Code
             if (leaveAccrual.IsLeavesProratedForJoinigMonth)
                 leaveAccrual.JoiningMonthLeaveDistribution = new List<AllocateTimeBreakup>();
 
-            if (!leaveAccrual.IsLeaveAccruedProrateDefined)
-                leaveAccrual.LeaveDistributionRateOnStartOfPeriod = new List<AllocateTimeBreakup>();
-
             if (leaveAccrual.IsLeaveAccruedPatternAvail == false)
             {
                 leaveAccrual.LeaveDistributionSequence = "";
@@ -263,18 +258,6 @@ namespace ServiceLayer.Code
 
         private void LeaveAccrualValidationCheck(LeaveAccrual leaveAccrual, LeaveDetail leaveDetail)
         {
-            if (leaveAccrual.IsLeaveAccruedProrateDefined == true && leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Count > 0)
-            {
-                decimal allocatedLeave = 0;
-                FromandTodateValidation(leaveAccrual.LeaveDistributionRateOnStartOfPeriod);
-                allocatedLeave = leaveAccrual.LeaveDistributionRateOnStartOfPeriod.Sum(x => x.AllocatedLeave);
-                if (leaveAccrual.IsLeaveAccruedPatternAvail && leaveAccrual.LeaveDistributionSequence == "1")
-                {
-                    decimal monthlyLeave = leaveDetail.LeaveLimit / 12;
-                    if (monthlyLeave != allocatedLeave)
-                        throw new HiringBellException("Monthly leave distribution is not matched with actual monthly leave limit");
-                }
-            }
 
             if (leaveAccrual.IsLeavesProratedForJoinigMonth == false && leaveAccrual.JoiningMonthLeaveDistribution.Count > 0)
                 this.FromandTodateValidation(leaveAccrual.JoiningMonthLeaveDistribution);
