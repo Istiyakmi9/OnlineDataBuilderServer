@@ -51,10 +51,9 @@ namespace ServiceLayer
             return await Task.FromResult(flag);
         }
 
-        public async Task<List<DateTime>> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
+        public async Task<List<Calendar>> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
         {
-            List<DateTime> holidays = _calendars.Where(x => x.EventDate.Date >= fromDate.Date && x.EventDate.Date <= toDate.Date)
-                            .Select(x => x.EventDate).ToList<DateTime>();
+            var holidays = _calendars.Where(x => x.EventDate.Date >= fromDate.Date && x.EventDate.Date <= toDate.Date).ToList<Calendar>();
             return await Task.FromResult(holidays);
         }
 

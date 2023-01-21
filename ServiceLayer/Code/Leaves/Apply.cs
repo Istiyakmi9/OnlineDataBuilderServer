@@ -23,9 +23,14 @@ namespace ServiceLayer.Code.Leaves
             _leavePlanType = leavePlanType;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
 
+            if (leaveCalculationModal.isApplyingForHalfDay)
+                CheckForHalfDayRestriction();
+
+            // IsAllowedToSeeAndApply();
+
             LeaveEligibilityCheck(leaveCalculationModal);
 
-            await RequiredDocumentForExtending(leaveCalculationModal);
+            // await RequiredDocumentForExtending(leaveCalculationModal);
 
             await Task.CompletedTask;
         }
@@ -35,52 +40,50 @@ namespace ServiceLayer.Code.Leaves
         {
             if (!_leavePlanConfiguration.leaveApplyDetail.IsAllowForHalfDay)
             {
-                throw new HiringBellException("Half day leave not allow under current leave type.");
+                throw HiringBellException.ThrowBadRequest("Half day leave not allow under current leave type.");
             }
         }
 
         // step - 2
-        public bool IsAllowedToSeeAndApply()
+        public void IsAllowedToSeeAndApply()
         {
-            bool flag = false;
-            if (_leavePlanConfiguration.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
-                flag = true;
+            if (!_leavePlanConfiguration.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
+            {
 
-            return flag;
+            }
         }
 
         // step - 3, 4
         private void LeaveEligibilityCheck(LeaveCalculationModal leaveCalculationModal)
         {
             // if future date then > 0 else < 0
-            var presentDate = _timezoneConverter.ToUtcTime(DateTime.SpecifyKind(leaveCalculationModal.presentDate.Date, DateTimeKind.Unspecified));
-            double days = leaveCalculationModal.fromDate.Date.Subtract(presentDate.Date).TotalDays;
-            // step - 3
-            if (days < 0) // past date
+            var calculationDate = leaveCalculationModal.presentDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate);
+
+            // step - 4  future date
+            if (leaveCalculationModal.fromDate.Date.Subtract(calculationDate.Date).TotalDays < 0)
             {
-                days = days * -1;
-                if (_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays != -1 &&
-                    days > _leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays)
-                    throw new HiringBellException($"Applying for this leave required minimun of " +
-                        $"{_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} days gap.");
+                throw new HiringBellException($"Only applycable atleast, before " +
+                    $"{_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} calendar days.");
             }
-            else // step - 4  future date
+
+
+            // step - 3 past date
+            calculationDate = leaveCalculationModal.fromDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
+
+            if (calculationDate.Date.Subtract(leaveCalculationModal.presentDate.Date).TotalDays > 0)
             {
-                if (_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate != -1 &&
-                    days > _leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate)
-                    throw new HiringBellException($"Applying for this leave required minimun of " +
-                        $"{_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} days gap.");
+                throw HiringBellException.ThrowBadRequest($"Can't apply back date leave beyond then " +
+                    $"{_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} calendar days.");
             }
         }
 
 
         // step - 5
-        public void DoesLeaveRequiredComments()
+        public void DoesLeaveRequiredComments(LeaveCalculationModal leaveCalculationModal)
         {
-            if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments)
+            if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments && string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
             {
-                //if (string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
-                //    throw new HiringBellException("Comment is required for this type");
+                throw HiringBellException.ThrowBadRequest("Comment is required for this leave type");
             }
         }
 
