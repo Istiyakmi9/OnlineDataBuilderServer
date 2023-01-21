@@ -26,6 +26,7 @@ namespace ModalLayer.Modal.Accounts
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
         public bool IsPrimary { set; get; }
+        public int WorkingDaysInAWeek { set; get; } = 5;
         public List<int> ManagerLevelId { get; set; }
         public string DefaultManagers { get; set; }
         // This value will come from database and filled by admin using page.

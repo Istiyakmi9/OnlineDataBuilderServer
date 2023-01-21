@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ModalLayer;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -8,7 +9,7 @@ namespace ServiceLayer.Interface
     {
         Task<bool> IsHoliday(DateTime date);
         Task<bool> IsHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate);
-        Task<List<DateTime>> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate);
+        Task<List<Calendar>> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate);
         Task<bool> IsWeekOff(DateTime date);
         Task<bool> IsWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate);
         Task<List<DateTime>> GetWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate);

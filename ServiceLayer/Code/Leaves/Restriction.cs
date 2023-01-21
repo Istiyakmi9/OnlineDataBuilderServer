@@ -43,11 +43,15 @@ namespace ServiceLayer.Code.Leaves
             if (!_leavePlanConfiguration.leavePlanRestriction.IsLeaveInNoticeExtendsNoticePeriod)
             {
                 if (leaveCalculationModal.numberOfLeaveApplyring == _leavePlanType.AvailableLeave)
-                    throw new HiringBellException("You can't apply your entire available leave in one month.");
+                    throw HiringBellException.ThrowBadRequest("You can't apply your entire available leave in a month.");
             }
             else
             {
-
+                if (leaveCalculationModal.employeeType == ApplicationConstants.InNoticePeriod)
+                {
+                    leaveCalculationModal.noticePeriodEndDate = leaveCalculationModal.noticePeriodEndDate
+                        .AddDays((double)_leavePlanConfiguration.leavePlanRestriction.NoOfTimesNoticePeriodExtended);
+                }
             }
 
             await Task.CompletedTask;
@@ -62,7 +66,7 @@ namespace ServiceLayer.Code.Leaves
             {
                 // date after last applied todate.
                 var dayDiff = leaveCalculationModal.fromDate.Subtract(leaveCalculationModal.lastApprovedLeaveDetail.LeaveToDay).TotalDays;
-                if (dayDiff > 0)
+                if (dayDiff > 0) // checking past date
                 {
                     var barrierFromDate = leaveCalculationModal.lastApprovedLeaveDetail.LeaveToDay
                     .AddDays(
@@ -72,12 +76,11 @@ namespace ServiceLayer.Code.Leaves
                     if (leaveCalculationModal.fromDate.Subtract(barrierFromDate).TotalDays <= 0)
                         throw new HiringBellException($"Minimumn {_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
                 }
-                else // date before last applied from date.
+                else // checing for future date.
                 {
+                    dayDiff = dayDiff * -1;
                     var barrierFromDate = leaveCalculationModal.lastApprovedLeaveDetail.LeaveFromDay
-                    .AddDays(
-                                                -1 * Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
-                                            );
+                    .AddDays(-1 * Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates));
 
                     if (leaveCalculationModal.fromDate.Subtract(barrierFromDate).TotalDays >= 0)
                         throw new HiringBellException($"Minimumn {_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");

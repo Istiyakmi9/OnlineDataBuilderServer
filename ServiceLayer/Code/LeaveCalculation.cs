@@ -274,7 +274,7 @@ namespace ServiceLayer.Code
             await _holidaysAndWeekoffs.CheckHolidayWeekOffRules(leaveCalculationModal);
 
             // call leave quote
-            await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
+            // await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
 
             // call apply leave
             await _apply.CheckLeaveApplyRules(leaveCalculationModal, leavePlanType);
