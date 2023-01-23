@@ -68,9 +68,9 @@ namespace ServiceLayer.Code.Leaves
 
 
             // step - 3 past date
-            calculationDate = leaveCalculationModal.fromDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
+            calculationDate = leaveCalculationModal.presentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
 
-            if (calculationDate.Date.Subtract(leaveCalculationModal.presentDate.Date).TotalDays > 0)
+            if (calculationDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
             {
                 throw HiringBellException.ThrowBadRequest($"Can't apply back date leave beyond then " +
                     $"{_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} calendar days.");

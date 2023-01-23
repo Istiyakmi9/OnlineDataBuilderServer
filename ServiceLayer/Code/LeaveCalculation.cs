@@ -20,6 +20,7 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly DateTime now = DateTime.UtcNow;
+        private LeavePlanType _leavePlanType;
 
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
@@ -75,7 +76,8 @@ namespace ServiceLayer.Code
                                   select new LeavePlanType
                                   {
                                       PlanName = n.LeavePlanTypeName,
-                                      AvailableLeave = n.AvailableLeaves
+                                      AvailableLeave = n.AvailableLeaves,
+                                      LeavePlanTypeId = n.LeavePlanTypeId
                                   }).ToList()
 
             };
@@ -245,20 +247,20 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
-        private async Task<LeaveCalculationModal> LoadPrepareRequiredData(LeaveRequestModal leaveRequestModal, LeavePlanType leavePlanType)
+        private async Task<LeaveCalculationModal> LoadPrepareRequiredData(LeaveRequestModal leaveRequestModal)
         {
             var leaveCalculationModal = await GetCalculationModal(
                 leaveRequestModal.EmployeeId,
                 leaveRequestModal.LeaveFromDay,
                 leaveRequestModal.LeaveToDay);
 
-            leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
+            _leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
-            if (leavePlanType == null)
+            if (_leavePlanType == null)
                 throw HiringBellException.ThrowBadRequest("Leave plan type not found.");
 
             // get current leave plan configuration and check if its valid one.
-            ValidateAndGetLeavePlanConfiguration(leavePlanType);
+            ValidateAndGetLeavePlanConfiguration(_leavePlanType);
             leaveCalculationModal.leavePlanConfiguration = _leavePlanConfiguration;
 
             return await Task.FromResult(leaveCalculationModal);
@@ -266,8 +268,8 @@ namespace ServiceLayer.Code
 
         public async Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal)
         {
-            LeavePlanType leavePlanType = default;
-            var leaveCalculationModal = await LoadPrepareRequiredData(leaveRequestModal, leavePlanType);
+            //LeavePlanType leavePlanType = default;
+            var leaveCalculationModal = await LoadPrepareRequiredData(leaveRequestModal);
 
             await SameDayRequestValidationCheck(leaveCalculationModal);
 
@@ -277,10 +279,10 @@ namespace ServiceLayer.Code
             // await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
 
             // call apply leave
-            await _apply.CheckLeaveApplyRules(leaveCalculationModal, leavePlanType);
+            await _apply.CheckLeaveApplyRules(leaveCalculationModal, _leavePlanType);
 
             // call leave restriction
-            await _restriction.CheckRestrictionForLeave(leaveCalculationModal, leavePlanType);
+            await _restriction.CheckRestrictionForLeave(leaveCalculationModal, _leavePlanType);
 
             return leaveCalculationModal;
         }

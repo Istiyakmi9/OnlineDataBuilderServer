@@ -19,6 +19,7 @@ namespace ServiceLayer
         {
             _db = db;
             _session = session;
+            LoadHolidayCalendar();
         }
 
         public async Task LoadHolidayCalendar()
