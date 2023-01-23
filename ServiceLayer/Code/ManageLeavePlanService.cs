@@ -449,7 +449,6 @@ namespace ServiceLayer.Code
                 leaveHolidaysAndWeekoff.IfLeaveLieBetweenTwoHolidays = false;
                 leaveHolidaysAndWeekoff.IfHolidayIsRightBeforLeave = false;
                 leaveHolidaysAndWeekoff.IfHolidayIsRightAfterLeave = false;
-                leaveHolidaysAndWeekoff.IfHolidayIsBetweenLeave = false;
                 leaveHolidaysAndWeekoff.IfHolidayIsRightBeforeAfterOrInBetween = false;
             }
 
@@ -459,7 +458,6 @@ namespace ServiceLayer.Code
                 leaveHolidaysAndWeekoff.IfLeaveLieBetweenWeekOff = false;
                 leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforLeave = false;
                 leaveHolidaysAndWeekoff.IfWeekOffIsRightAfterLeave = false;
-                leaveHolidaysAndWeekoff.IfWeekOffIsBetweenLeave = false;
                 leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforeAfterOrInBetween = false;
             }
 
