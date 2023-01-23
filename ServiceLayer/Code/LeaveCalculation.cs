@@ -81,7 +81,6 @@ namespace ServiceLayer.Code
                                   }).ToList()
 
             };
-
             return await Task.FromResult(leaveCalculationModal);
         }
 
@@ -495,8 +494,14 @@ namespace ServiceLayer.Code
         private async Task<LeaveCalculationModal> GetCalculationModal(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
             var leaveCalculationModal = new LeaveCalculationModal();
-            leaveCalculationModal.fromDate = FromDate;
-            leaveCalculationModal.toDate = ToDate;
+            leaveCalculationModal.fromDate = _timezoneConverter.ToTimeZoneDateTime(
+                    FromDate.ToUniversalTime(),
+                    _currentSession.TimeZone
+                    );
+            leaveCalculationModal.toDate = _timezoneConverter.ToTimeZoneDateTime(
+                    ToDate.ToUniversalTime(),
+                    _currentSession.TimeZone
+                    );
             leaveCalculationModal.presentDate = DateTime.Now;
 
             // get employee detail and store it in class level variable

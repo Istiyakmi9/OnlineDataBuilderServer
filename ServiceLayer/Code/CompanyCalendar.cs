@@ -16,27 +16,28 @@ namespace ServiceLayer
         private readonly CurrentSession _currentSession;
         private readonly IDb _db;
         private readonly CurrentSession _session;
+        private readonly ITimezoneConverter _timezoneConverter;
 
-        public CompanyCalendar(IDb db, CurrentSession session, CurrentSession currentSession)
+        public CompanyCalendar(IDb db, CurrentSession session, CurrentSession currentSession, ITimezoneConverter timezoneConverter)
         {
             _db = db;
             _session = session;
             _currentSession = currentSession;
+            LoadHolidayCalendar();
+            _timezoneConverter = timezoneConverter;
         }
 
-        public async Task LoadHolidayCalendar()
+        public void LoadHolidayCalendar()
         {
             if (_calendars == null)
                 _calendars = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _session.CurrentUserDetail.CompanyId });
-
-            await Task.CompletedTask;
         }
 
         public async Task<bool> IsHoliday(DateTime date)
         {
             bool flag = false;
 
-            var records = _calendars.FirstOrDefault(x => x.EventDate.Date == date.Date);
+            var records = _calendars.FirstOrDefault(x => x.StartDate.Date >= date.Date && x.EndDate.Date <= date.Date);
             if (records != null)
                 flag = true;
 
@@ -47,7 +48,7 @@ namespace ServiceLayer
         {
             bool flag = false;
 
-            var records = _calendars.Where(x => x.EventDate.Date >= fromDate.Date && x.EventDate.Date <= toDate.Date);
+            var records = _calendars.Where(x => x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= toDate.Date);
             if (records.Any())
                 flag = true;
 
@@ -56,7 +57,9 @@ namespace ServiceLayer
 
         public async Task<List<Calendar>> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
         {
-            var holidays = _calendars.Where(x => x.EventDate.Date >= fromDate.Date && x.EventDate.Date <= toDate.Date).ToList<Calendar>();
+            var holidays = _calendars.Where(x => (fromDate.Date >= x.StartDate.Date && fromDate.Date <= x.EndDate.Date)
+                           || (toDate.Date <= x.EndDate.Date && toDate.Date >= x.StartDate.Date)).ToList<Calendar>();
+
             return await Task.FromResult(holidays);
         }
 
@@ -166,6 +169,8 @@ namespace ServiceLayer
 
             if (calendar.EndDate == null)
                 throw HiringBellException.ThrowBadRequest("End date is null or invalid");
+            //calendar.StartDate = _timezoneConverter.ToTimeZoneDateTime(calendar.StartDate.ToUniversalTime(), _currentSession.TimeZone);
+            //calendar.EndDate = _timezoneConverter.ToTimeZoneDateTime(calendar.EndDate.ToUniversalTime(), _currentSession.TimeZone);
         }
 
         public List<Calendar> DeleteHolidayService(long CompanyCalendarId)
