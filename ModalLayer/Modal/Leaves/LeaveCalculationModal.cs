@@ -8,6 +8,9 @@ namespace ModalLayer.Modal.Leaves
     {
         public DateTime fromDate { set; get; }
         public DateTime toDate { set; get; }
+        public DateTime utcFromDate { set; get; }
+        public DateTime utcToDate { set; get; }
+        public DateTime utcPresentDate { set; get; }
         public DateTime presentDate { set; get; }
         public DateTime probationEndDate { set; get; }
         public DateTime noticePeriodEndDate { set; get; }

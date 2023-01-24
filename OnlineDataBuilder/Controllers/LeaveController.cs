@@ -101,5 +101,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _leaveService.GetEmployeeLeaveDetail(leaveRequestModal);
             return BuildResponse(result);
         }
+
+        [HttpPut("UpdateAccrualForEmployee/{EmployeeId}")]
+        public async Task<ApiResponse> RunAccrualByEmployee(long EmployeeId)
+        {
+            await _leaveService.RunAccrualByEmployeeService(EmployeeId);
+            return BuildResponse(ApplicationConstants.Successfull);
+        }
     }
 }

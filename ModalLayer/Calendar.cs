@@ -8,7 +8,6 @@ namespace ModalLayer
         public int CompanyId { set; get; }
         public DateTime StartDate { set; get; }
         public DateTime EndDate { set; get; }
-        public DateTime EventDate { set; get; }
         public string EventName { set; get; }
         public bool IsHoliday { set; get; }
         public bool IsHalfDay { set; get; }
