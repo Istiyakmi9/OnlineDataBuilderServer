@@ -1,6 +1,9 @@
 ﻿using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.Leaves
@@ -65,51 +68,48 @@ namespace ServiceLayer.Code.Leaves
             if (leaveCalculationModal.lastApprovedLeaveDetail != null)
             {
                 // date after last applied todate.
-                var dayDiff = leaveCalculationModal.fromDate.Subtract(leaveCalculationModal.lastApprovedLeaveDetail.LeaveToDay).TotalDays;
-                if (dayDiff > 0) // checking past date
-                {
-                    var barrierFromDate = leaveCalculationModal.lastApprovedLeaveDetail.LeaveToDay
-                    .AddDays(
-                            Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
-                        );
+                var dayDiff = leaveCalculationModal.toDate.Subtract(leaveCalculationModal.lastApprovedLeaveDetail.LeaveFromDay).TotalDays;
 
-                    if (leaveCalculationModal.fromDate.Subtract(barrierFromDate).TotalDays <= 0)
-                        throw new HiringBellException($"Minimumn {_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
+                if (dayDiff < 0) // < 0 means applying before lastLeave applied
+                {
+                    if ((dayDiff * -1) >= (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
+                        throw HiringBellException.ThrowBadRequest($"Minimumn " +
+                            $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
                 }
-                else // checing for future date.
-                {
-                    dayDiff = dayDiff * -1;
-                    var barrierFromDate = leaveCalculationModal.lastApprovedLeaveDetail.LeaveFromDay
-                    .AddDays(-1 * Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates));
 
-                    if (leaveCalculationModal.fromDate.Subtract(barrierFromDate).TotalDays >= 0)
-                        throw new HiringBellException($"Minimumn {_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
+                dayDiff = leaveCalculationModal.fromDate.Subtract(leaveCalculationModal.lastApprovedLeaveDetail.LeaveToDay).TotalDays;
+                if (dayDiff > 0) // > 0 applying after lastLeave applied
+                {
+                    if ((dayDiff * -1) >= (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
+                        throw HiringBellException.ThrowBadRequest($"Minimumn " +
+                            $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
                 }
             }
 
+            List<CompleteLeaveDetail> completeLeaveDetail = new List<CompleteLeaveDetail>();
+            if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
+                completeLeaveDetail = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+
             // check total leave applied and restrict for current year
-            if (_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear > 0 &&
-                leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear)
-                throw new HiringBellException($"Calendar year leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear} days.");
+            if (completeLeaveDetail.Count > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear)
+                throw HiringBellException.ThrowBadRequest($"Calendar year leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear} days.");
 
             // check total leave applied and restrict for current month
-            if (_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth > 0 &&
-                leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth)
-                throw new HiringBellException($"Calendar month leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth} days.");
+            int count = completeLeaveDetail.Count(x => x.LeaveFromDay.Date.Month == leaveCalculationModal.presentDate.Date.Month);
+            if (count > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth)
+                throw HiringBellException.ThrowBadRequest($"Calendar month leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth} days.");
 
             // check total leave applied and restrict for entire tenure
-            if (_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure > 0 &&
-                leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure)
-                throw new HiringBellException($"Entire tenure leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure} days.");
+            //if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure)
+            //    throw HiringBellException.ThrowBadRequest($"Entire tenure leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInEntireTenure} days.");
 
             // check available if any restrict minimun leave to be appllied
             if (availableLeaveLimit >= _leavePlanConfiguration.leavePlanRestriction.AvailableLeaves &&
                 leaveCalculationModal.numberOfLeaveApplyring < _leavePlanConfiguration.leavePlanRestriction.MinLeaveToApplyDependsOnAvailable)
-                throw new HiringBellException($"Minimun {_leavePlanConfiguration.leavePlanRestriction.AvailableLeaves} days of leave only allowed for this type.");
+                throw HiringBellException.ThrowBadRequest($"Minimun {_leavePlanConfiguration.leavePlanRestriction.AvailableLeaves} days of leave only allowed for this type.");
 
             // restrict leave date every month
-            if (_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth > 0 &&
-                leaveCalculationModal.fromDate.Day <= _leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth)
+            if (leaveCalculationModal.fromDate.Day <= _leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth)
                 throw new HiringBellException($"Apply this leave before {_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth} day of any month.");
 
             await Task.CompletedTask;

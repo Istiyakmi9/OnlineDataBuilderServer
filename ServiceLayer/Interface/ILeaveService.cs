@@ -19,5 +19,6 @@ namespace ServiceLayer.Interface
         string LeaveRquestManagerActionService(LeaveRequestNotification approvalRequest, ItemStatus status);
         Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal);
         Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal);
+        Task RunAccrualByEmployeeService(long EmployeeId);
     }
 }

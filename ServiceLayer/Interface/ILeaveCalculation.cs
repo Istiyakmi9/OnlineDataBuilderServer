@@ -10,5 +10,6 @@ namespace ServiceLayer.Interface
         Task RunAccrualCycle();
         Task<LeaveCalculationModal> CheckAndApplyForLeave(LeaveRequestModal leaveRequestModal);
         Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId);
+        Task RunAccrualCycleByEmployee(long EmployeeId);
     }
 }

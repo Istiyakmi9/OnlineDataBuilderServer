@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -380,48 +381,9 @@ namespace ServiceLayer.Code
             };
         }
 
-        private async Task<LeaveCalculationModal> GetCalculatedLeaveDetail(LeaveCalculationModal leaveCalculationModal)
+        public async Task RunAccrualByEmployeeService(long EmployeeId)
         {
-            var requestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_filter", new
-            {
-                EmployeeId = leaveCalculationModal.employee.EmployeeId,
-                SearchString = " 1=1 ",
-                SortBy = string.Empty,
-                PageIndex = 1,
-                PageSize = 1
-            });
-
-            decimal totalLeaveLimit = 0;
-            decimal totalAvailableLeave = 0;
-            leaveCalculationModal.leavePlanTypes.ForEach(x =>
-            {
-                totalAvailableLeave += x.AvailableLeave;
-                totalLeaveLimit += x.MaxLeaveLimit;
-            });
-
-            var leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
-            if (leaveDetails == null)
-                throw new HiringBellException("Unable to get leave detail. Please contact to admin.");
-
-            //leaveDetails.Where(x => x.LeaveTypeId == )
-
-            //var status = _db.Execute<string>("sp_employee_leave_request_InsUpdate", new
-            //{
-            //    LeaveRequestId = 0,
-            //    EmployeeId = leaveCalculationModal.employee.EmployeeId,
-            //    LeaveDetail = JsonConvert.SerializeObject(leaveCalculationModal.leaveRequestDetail.LeaveDetail),
-            //    Year = DateTime.UtcNow.Year,
-            //    AvailableLeaves = totalAvailableLeave,
-            //    TotalLeaveApplied = 0,
-            //    TotalApprovedLeave = 0,
-            //    TotalLeaveQuota = totalLeaveLimit,
-            //    LeaveQuotaDetail = JsonConvert.SerializeObject(leaveCalculationModal),
-            //}, true);
-
-            //if (ApplicationConstants.IsExecuted(status))
-            //    throw new HiringBellException("Unable to update leave detail.");
-
-            return leaveCalculationModal;
+            await _leaveCalculation.RunAccrualCycleByEmployee(EmployeeId);
         }
 
         private async Task<LeaveCalculationModal> GetLatestLeaveDetail(long employeeId)
@@ -443,11 +405,13 @@ namespace ServiceLayer.Code
 
             //if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             //    this.UpdateLeavePlanDetail(leaveCalculationModal);
+            var companyHoliday = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
-                Employee = leaveCalculationModal.employee
+                Employee = leaveCalculationModal.employee,
+                CompanyHoliday = companyHoliday
             };
         }
     }
