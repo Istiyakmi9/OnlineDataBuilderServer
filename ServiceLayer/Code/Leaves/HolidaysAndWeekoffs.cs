@@ -42,14 +42,14 @@ namespace ServiceLayer.Code.Leaves
         private async Task CheckAdjoiningHolidyOnLeave(LeaveCalculationModal leaveCalculationModal)
         {
             List<Calendar> holidays = new List<Calendar>();
-            DateTime newFromDate = leaveCalculationModal.fromDate;
-            DateTime newToDate = leaveCalculationModal.toDate;
+            DateTime newFromDate = leaveCalculationModal.utcFromDate;
+            DateTime newToDate = leaveCalculationModal.utcToDate;
 
             if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.AdJoiningHolidayIsConsiderAsLeave)
             {
                 // Yes
                 bool flag = false;
-                var totalDays = leaveCalculationModal.toDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays + 1;
+                var totalDays = newToDate.Date.Subtract(newFromDate.Date).TotalDays + 1;
                 if (totalDays >= (double)_leavePlanConfiguration.leaveHolidaysAndWeekoff.ConsiderLeaveIfNumOfDays)
                 {
                     // for below condition in case of true consider all days as leave
@@ -57,38 +57,37 @@ namespace ServiceLayer.Code.Leaves
 
                     if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforLeave)
                     {
-                        holidays = await _companyCalendar.GetHolidayBetweenTwoDates(leaveCalculationModal.fromDate, leaveCalculationModal.toDate.AddDays(1));
-                        flag = await _companyCalendar.IsHoliday(leaveCalculationModal.toDate.AddDays(1));
+                        holidays = await _companyCalendar.GetHolidayBetweenTwoDates(newFromDate, newToDate.AddDays(1));
+                        flag = await _companyCalendar.IsHoliday(newToDate.AddDays(1));
                         if (flag)
                         {
-                            newFromDate = leaveCalculationModal.fromDate;
-                            newToDate = leaveCalculationModal.toDate.AddDays(1);
+                            // newFromDate = leaveCalculationModal.fromDate;
+                            newToDate = newToDate.AddDays(1);
                         }
                     }
                     else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightAfterLeave)
                     {
-                        holidays = await _companyCalendar.GetHolidayBetweenTwoDates(leaveCalculationModal.fromDate.AddDays(-1), leaveCalculationModal.fromDate);
-                        flag = await _companyCalendar.IsHoliday(leaveCalculationModal.fromDate.AddDays(-1));
+                        holidays = await _companyCalendar.GetHolidayBetweenTwoDates(newFromDate.AddDays(-1), newFromDate);
+                        flag = await _companyCalendar.IsHoliday(newFromDate.AddDays(-1));
                         if (flag)
                         {
-                            newFromDate = leaveCalculationModal.fromDate.AddDays(-1);
-                            newToDate = leaveCalculationModal.toDate;
+                            newFromDate = newFromDate.AddDays(-1);
+                            // newToDate = leaveCalculationModal.toDate;
                         }
                     }
                     else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforeAfterOrInBetween)
                     {
-                        flag = await _companyCalendar.IsHoliday(leaveCalculationModal.fromDate.AddDays(-1));
+                        flag = await _companyCalendar.IsHoliday(newFromDate.AddDays(-1));
                         if (flag)
                         {
-                            newFromDate = leaveCalculationModal.fromDate.AddDays(-1);
-                            newToDate = leaveCalculationModal.toDate;
+                            newFromDate = newFromDate.AddDays(-1);
+                            // newToDate = leaveCalculationModal.toDate;
                         }
 
-                        flag = await _companyCalendar.IsHoliday(leaveCalculationModal.toDate.AddDays(1));
+                        flag = await _companyCalendar.IsHoliday(newToDate.AddDays(1));
                         if (flag)
                         {
-                            newFromDate = leaveCalculationModal.fromDate;
-                            newToDate = leaveCalculationModal.toDate.AddDays(1);
+                            newToDate = newToDate.AddDays(1);
                         }
                     }
                 }
@@ -96,7 +95,7 @@ namespace ServiceLayer.Code.Leaves
             else
             {
                 // No = take only week days don't consider weekends as leave
-                holidays = await _companyCalendar.GetHolidayBetweenTwoDates(leaveCalculationModal.fromDate, leaveCalculationModal.toDate);
+                holidays = await _companyCalendar.GetHolidayBetweenTwoDates(newFromDate, newToDate);
             }
 
             var appliedDays = newToDate.Date.Subtract(newFromDate.Date).TotalDays;
@@ -112,11 +111,8 @@ namespace ServiceLayer.Code.Leaves
         {
             bool flag = false;
 
-            var localFromDate = _timezoneConverter.ToTimeZoneDateTime(leaveCalculationModal.fromDate, _currentSession.TimeZone);
-            var localToDate = _timezoneConverter.ToTimeZoneDateTime(leaveCalculationModal.toDate, _currentSession.TimeZone);
-
             var leaveDaysInWeek = 7 - leaveCalculationModal.companySetting.WorkingDaysInAWeek;
-            var totalDays = localToDate.Date.Subtract(localFromDate.Date).TotalDays + 1;
+            var totalDays = leaveCalculationModal.toDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays + 1;
             if (totalDays >= (double)_leavePlanConfiguration.leaveHolidaysAndWeekoff.ConsiderLeaveIfIncludeDays)
             {
                 // if this condition is true then calculate all days
@@ -125,7 +121,7 @@ namespace ServiceLayer.Code.Leaves
                 if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforLeave)
                 {
                     await RemoveWeekOffIfApplicable(leaveCalculationModal);
-                    flag = await _companyCalendar.IsWeekOff(localFromDate.AddDays(-1));
+                    flag = await _companyCalendar.IsWeekOff(leaveCalculationModal.toDate.AddDays(1));
                     if (flag)
                     {
                         leaveCalculationModal.numberOfLeaveApplyring += leaveDaysInWeek;
@@ -134,7 +130,7 @@ namespace ServiceLayer.Code.Leaves
                 else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfWeekOffIsRightAfterLeave)
                 {
                     await RemoveWeekOffIfApplicable(leaveCalculationModal);
-                    flag = await _companyCalendar.IsWeekOff(localToDate.AddDays(1));
+                    flag = await _companyCalendar.IsWeekOff(leaveCalculationModal.fromDate.AddDays(-1));
                     if (flag)
                     {
                         leaveCalculationModal.numberOfLeaveApplyring += leaveDaysInWeek;
@@ -142,15 +138,15 @@ namespace ServiceLayer.Code.Leaves
                 }
                 else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforeAfterOrInBetween)
                 {
-                    var leavesCount = localFromDate.Date.Subtract(localToDate.Date).TotalDays + 2;
+                    var leavesCount = leaveCalculationModal.fromDate.Date.Subtract(leaveCalculationModal.toDate.Date).TotalDays + 1;
 
-                    flag = await _companyCalendar.IsWeekOff(localFromDate.AddDays(-1));
+                    flag = await _companyCalendar.IsWeekOff(leaveCalculationModal.fromDate.AddDays(-1));
                     if (flag)
                     {
                         leaveCalculationModal.numberOfLeaveApplyring += leaveDaysInWeek;
                     }
 
-                    flag = await _companyCalendar.IsWeekOff(localToDate.AddDays(1));
+                    flag = await _companyCalendar.IsWeekOff(leaveCalculationModal.toDate.AddDays(1));
                     if (flag)
                     {
                         leaveCalculationModal.numberOfLeaveApplyring += leaveDaysInWeek;

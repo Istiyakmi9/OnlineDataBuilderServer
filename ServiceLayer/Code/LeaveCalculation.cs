@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.Wordprocessing;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -144,6 +145,51 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
+        public async Task RunAccrualCycleByEmployee(long EmployeeId)
+        {
+            LeavePlan leavePlan = default;
+            List<LeavePlanType> leavePlanTypes = default;
+            var leaveCalculationModal = await LoadLeaveMasterData();
+            int runDay = leaveCalculationModal.companySetting.PayrollCycleMonthlyRunDay;
+            List<EmployeeLeavePayrollAndOtherDetail> detail = new List<EmployeeLeavePayrollAndOtherDetail>();
+            try
+            {
+                Employee employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = true });
+
+                if (employee == null)
+                    throw HiringBellException.ThrowBadRequest("Employee detai not found. Please contact to admin.");
+
+                leavePlan = leaveCalculationModal.leavePlans
+                    .FirstOrDefault(x => x.LeavePlanId == employee.LeavePlanId || x.IsDefaultPlan == true);
+
+                if (leavePlan != null)
+                {
+                    leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
+
+                    int i = 0;
+                    while (i < leavePlanTypes.Count)
+                    {
+                        var type = leaveCalculationModal.leavePlanTypes
+                            .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
+                        if (type != null)
+                            await RunAccrualCycle(leaveCalculationModal, type);
+
+                        await BuildLeavePayrollDetail(type, employee, detail, runDay);
+
+                        i++;
+                    }
+                }
+
+                await UpdateEmployeesRecord(detail);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            await Task.CompletedTask;
+        }
+
         private async Task BuildLeavePayrollDetail(LeavePlanType type, Employee emp, List<EmployeeLeavePayrollAndOtherDetail> detail, int runDay)
         {
             var leaveDetail = detail.FirstOrDefault(x => x.EmployeeId == emp.EmployeeUid);
@@ -204,7 +250,7 @@ namespace ServiceLayer.Code
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
         {
             var leaveCalculationModal = new LeaveCalculationModal();
-            leaveCalculationModal.presentDate = DateTime.Now;
+            leaveCalculationModal.presentDate = DateTime.UtcNow;
 
             var ds = _db.FetchDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
@@ -496,13 +542,16 @@ namespace ServiceLayer.Code
             var leaveCalculationModal = new LeaveCalculationModal();
             leaveCalculationModal.fromDate = _timezoneConverter.ToTimeZoneDateTime(
                     FromDate.ToUniversalTime(),
-                    _currentSession.TimeZone
-                    );
+                    _currentSession.TimeZone);
             leaveCalculationModal.toDate = _timezoneConverter.ToTimeZoneDateTime(
                     ToDate.ToUniversalTime(),
-                    _currentSession.TimeZone
-                    );
-            leaveCalculationModal.presentDate = DateTime.Now;
+                    _currentSession.TimeZone);
+
+
+            leaveCalculationModal.utcFromDate = FromDate;
+            leaveCalculationModal.utcToDate = ToDate;
+            leaveCalculationModal.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            leaveCalculationModal.utcPresentDate = DateTime.UtcNow;
 
             // get employee detail and store it in class level variable
             LoadCalculationData(EmployeeId, leaveCalculationModal);
