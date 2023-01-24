@@ -19,5 +19,6 @@ namespace ModalLayer
         public bool IsPublicHoliday { set; get; }
         public bool IsCompanyCustomHoliday { set; get; }
         public int Total { get; set; }
+        public int Index { get; set; }
     }
 }
