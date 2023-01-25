@@ -23,6 +23,9 @@ namespace ModalLayer.Modal.Leaves
         public List<LeavePlanType> leavePlanTypes { set; get; }
         public int employeeType { set; get; }
         public bool isApplyingForHalfDay { set; get; }
+        public long AssigneId { get; set; }
+        public bool IsEmailNotificationPasued { get; set; }
+        public bool IsLeaveAutoApproval { get; set; }
         public decimal numberOfLeaveApplyring { set; get; }
         public CompleteLeaveDetail lastApprovedLeaveDetail { set; get; }
     }

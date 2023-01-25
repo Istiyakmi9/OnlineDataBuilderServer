@@ -22,13 +22,15 @@ namespace ServiceLayer.Code
         private readonly ICacheManager _cacheManager;
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly LeaveEmailService _leaveEmailService;
+        private readonly ILeaveRequestService _leaveRequestService;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             LeaveEmailService leaveEmailService,
             ICacheManager cacheManager,
-            ILeaveCalculation leaveCalculation)
+            ILeaveCalculation leaveCalculation,
+            ILeaveRequestService leaveRequestService)
         {
             _db = db;
             _currentSession = currentSession;
@@ -36,6 +38,7 @@ namespace ServiceLayer.Code
             _cacheManager = cacheManager;
             _leaveCalculation = leaveCalculation;
             _leaveEmailService = leaveEmailService;
+            _leaveRequestService = leaveRequestService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -372,7 +375,23 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
                 this.UpdateLeavePlanDetail(leaveCalculationModal);
 
-            await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason);
+            if (!leaveCalculationModal.IsEmailNotificationPasued)
+                await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason);
+
+            if (leaveCalculationModal.IsLeaveAutoApproval)
+            {
+                LeaveRequestDetail leaveRequestDetail = new LeaveRequestDetail
+                {
+                    LeaveFromDay = leaveRequestModal.LeaveFromDay,
+                    LeaveToDay = leaveRequestModal.LeaveToDay,
+                    EmployeeId = leaveRequestModal.EmployeeId,
+                    Reason = leaveRequestModal.Reason,
+                    LeaveType = leaveRequestModal.LeaveTypeId,
+                    LeaveRequestNotificationId = 0
+                };
+                _leaveRequestService.ApprovalLeaveService(leaveRequestDetail);
+            }
+
             return new
             {
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,

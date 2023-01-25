@@ -82,6 +82,9 @@ public class ApplicationConstants
     public const int ForgotPasswordEmailTemplate = 10;
     public const int NewProjectAssignEmailTemplate = 11;
 
+    public const int ReportingManager = 1;
+    public const int SeniorHRManager = 2;
+
 
     public const string ApplicationJson = @"application/json";
 

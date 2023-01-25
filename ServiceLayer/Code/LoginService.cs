@@ -253,7 +253,8 @@ namespace ServiceLayer.Code
                                                            .Select(x => new AutoCompleteEmployees
                                                            {
                                                                value = x.Field<long>("EmployeeUid"),
-                                                               text = x.Field<string>("Name")
+                                                               text = x.Field<string>("Name"),
+                                                               email = x.Field<string>("Email")
                                                            }).ToList<AutoCompleteEmployees>();
                         }
                     }

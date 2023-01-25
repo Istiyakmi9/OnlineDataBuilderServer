@@ -58,5 +58,6 @@ namespace ModalLayer.Modal
     {
         public long value { set; get; }
         public string text { set; get; }
+        public string email { get; set; }
     }
 }

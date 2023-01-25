@@ -44,7 +44,8 @@ namespace ServiceLayer.Code
             Accrual accrual,
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
-            Restriction restriction)
+            Restriction restriction,
+            Approval approval)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -55,6 +56,7 @@ namespace ServiceLayer.Code
             _apply = apply;
             _restriction = restriction;
             _holidaysAndWeekoffs = holidaysAndWeekoffs;
+            _approval = approval;
         }
 
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
@@ -329,6 +331,8 @@ namespace ServiceLayer.Code
             // call leave restriction
             await _restriction.CheckRestrictionForLeave(leaveCalculationModal, _leavePlanType);
 
+            // call leave approval
+            await _approval.CheckLeaveApproval(leaveCalculationModal);
             return leaveCalculationModal;
         }
 
@@ -632,7 +636,7 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                AssignTo = leaveRequestModal.AssignTo,
+                AssignTo = leaveCalculationModal.AssigneId,
                 Session = leaveRequestModal.Session,
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
                 LeaveTypeId = leaveRequestModal.LeaveTypeId,
@@ -660,7 +664,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 leaveCalculationModal.leaveRequestDetail.LeaveDetail,
                 leaveCalculationModal.leaveRequestDetail.Reason,
-                AssignTo = _currentSession.CurrentUserDetail.ReportingManagerId,
+                AssignTo = leaveCalculationModal.AssigneId,
                 Year = leaveRequestModal.LeaveToDay.Year,
                 leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
                 leaveCalculationModal.leaveRequestDetail.LeaveToDay,
