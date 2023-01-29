@@ -1,7 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using ModalLayer;
 using ModalLayer.Modal;
+using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -31,7 +33,7 @@ namespace ServiceLayer.Code
             _attendanceEmailService = attendanceEmailService;
         }
 
-        private List<AttendenceDetail> CreateAttendanceTillDate(Attendance attendence, DateTime FromDate, DateTime ToDate)
+        private List<AttendenceDetail> CreateAttendanceTillDate(Attendance attendence, DateTime FromDate, DateTime ToDate, List<Calendar> calendars)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             if (!string.IsNullOrEmpty(attendence.AttendanceDetail))
@@ -45,7 +47,11 @@ namespace ServiceLayer.Code
                 var detail = attendenceDetails
                     .Find(x => _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDay, _currentSession.TimeZone).Date
                     .Subtract(firstDate.Date).TotalDays == 0);
-
+                var isHoliday = CheckIsHoliday(firstDate, calendars);
+                var isWeekend = CheckWeekend(firstDate);
+                var totalMinute = 480;
+                if (isHoliday || isWeekend)
+                    totalMinute = 0;
                 if (detail == null)
                 {
                     attendenceDetails.Add(new AttendenceDetail
@@ -55,17 +61,16 @@ namespace ServiceLayer.Code
                         AttendanceDay = firstDate,
                         AttendanceId = 0,
                         AttendenceStatus = (int)DayStatus.WorkFromOffice,
-                        BillingHours = 480,
+                        BillingHours = totalMinute,
                         ClientId = 0,
                         DaysPending = DateTime.DaysInMonth(firstDate.Year, firstDate.Month),
                         EmployeeUid = attendence.EmployeeId,
                         ForMonth = firstDate.Month,
                         ForYear = firstDate.Year,
-                        TotalMinutes = 480,
-                        IsHoliday = (firstDate.DayOfWeek == DayOfWeek.Saturday
-                                        ||
-                                    firstDate.DayOfWeek == DayOfWeek.Sunday) ? true : false,
+                        TotalMinutes = totalMinute,
+                        IsHoliday = isHoliday,
                         IsOnLeave = false,
+                        IsWeekend = isWeekend,
                         LeaveId = 0,
                         UserComments = string.Empty,
                         UserTypeId = (int)UserType.Employee,
@@ -80,12 +85,33 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
+        private bool CheckWeekend(DateTime date)
+        {
+            bool flag = false;
+
+            if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+                flag = true;
+
+            return flag;
+        }
+
+        private bool CheckIsHoliday(DateTime date, List<Calendar> calendars)
+        {
+            bool flag = false;
+
+            var records = calendars.FirstOrDefault(x => x.StartDate.Date >= date.Date && x.EndDate.Date <= date.Date);
+            if (records != null)
+                flag = true;
+
+            return flag;
+        }
+
         public AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             Employee employee = null;
             Attendance attendance = null;
-
+            List<Calendar> calendars = null;
             if (attendenceDetail.ForMonth <= 0)
                 throw new HiringBellException("Invalid month num. passed.", nameof(attendenceDetail.ForMonth), attendenceDetail.ForMonth.ToString());
 
@@ -95,10 +121,11 @@ namespace ServiceLayer.Code
                 ClientId = attendenceDetail.ClientId,
                 UserTypeId = attendenceDetail.UserTypeId,
                 ForYear = attendenceDetail.ForYear,
-                ForMonth = attendenceDetail.ForMonth
+                ForMonth = attendenceDetail.ForMonth,
+                CompanyId = attendenceDetail.CompanyId
             });
 
-            if (Result.Tables.Count == 2)
+            if (Result.Tables.Count == 3)
             {
                 if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
                     throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
@@ -118,6 +145,7 @@ namespace ServiceLayer.Code
                     };
 
                 }
+                calendars = Converter.ToList<Calendar>(Result.Tables[2]);
             }
 
             DateTime presentDate = (DateTime)attendenceDetail.AttendenceToDay;
@@ -125,7 +153,7 @@ namespace ServiceLayer.Code
             if (presentDate.Year == employee.CreatedOn.Year && presentDate.Month == employee.CreatedOn.Month)
                 firstDate = employee.CreatedOn;
 
-            attendenceDetails = CreateAttendanceTillDate(attendance, firstDate, presentDate);
+            attendenceDetails = CreateAttendanceTillDate(attendance, firstDate, presentDate, calendars);
             return new AttendanceWithClientDetail
             {
                 EmployeeDetail = employee,
@@ -319,6 +347,22 @@ namespace ServiceLayer.Code
             });
 
             return null;
+        }
+
+        public dynamic GetEmployeePerformanceService(AttendenceDetail attendanceDetail)
+        {
+            if (attendanceDetail.EmployeeUid <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee. Please login again");
+            var result = _db.GetList<Attendance>("sp_employee_performance_get", new
+            {
+                EmployeeId = attendanceDetail.EmployeeUid,
+                UserTypeId = attendanceDetail.UserTypeId,
+                ForYear = attendanceDetail.ForYear
+            });
+
+            var monthlyAttendance = result.Find(x => x.ForMonth == attendanceDetail.ForMonth);
+
+            return new { MonthlyAttendance = monthlyAttendance, YearlyAttendance = result };
         }
 
         private async Task CheckAndCreateAttendance(AttendenceDetail workingAttendance)

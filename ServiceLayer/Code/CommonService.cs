@@ -2,6 +2,8 @@
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace ServiceLayer.Code
 {
@@ -53,6 +55,29 @@ namespace ServiceLayer.Code
                 return true;
 
             return false;
+        }
+
+        public string GetUniquecode(long id, string name, int size = 10)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw HiringBellException.ThrowBadRequest("Name variable is null or empty");
+
+            var uniqueCode = name.First() + "" + name.Last();
+            var zeroCount = size - (uniqueCode.Length + id.ToString().Length);
+            var i = 0;
+            while (i < zeroCount)
+            {
+                uniqueCode += "0";
+                i++;
+            }
+            uniqueCode += id.ToString();
+            return uniqueCode;
+        }
+        public long DecryptUniqueCoe(string code)
+        {
+            string value = Regex.Replace(code, "[A-Za-z ]", "");
+            long id = long.Parse(value);
+            return id;
         }
     }
 }

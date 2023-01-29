@@ -58,5 +58,13 @@ namespace OnlineDataBuilder.Controllers
             var result = _attendanceService.EnablePermission(attendenceDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpPost("GetEmployeePerformance")]
+        public IResponse<ApiResponse> GetEmployeePerformance(AttendenceDetail attendenceDetail)
+        {
+            var result = _attendanceService.GetEmployeePerformanceService(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
     }
 }
