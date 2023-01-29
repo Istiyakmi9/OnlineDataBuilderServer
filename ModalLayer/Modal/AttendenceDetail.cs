@@ -32,6 +32,8 @@ namespace ModalLayer.Modal
         public int DaysPending { get; set; }
         public bool IsActiveDay { get; set; }
         public bool IsOpen { get; set; }
+        public int CompanyId { get; set; }
+        public bool IsWeekend { get; set; }
     }
 
     public class AttendanceWithClientDetail

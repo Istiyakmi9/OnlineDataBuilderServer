@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 namespace OnlineDataBuilder.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize(Roles = Role.Admin)]
     [ApiController]
     public class FileMakerController : BaseController
     {
@@ -36,7 +35,7 @@ namespace OnlineDataBuilder.Controllers
             _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }
 
-
+        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("GenerateBill")]
         public async Task<ApiResponse> GenerateBill()
@@ -57,6 +56,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("UpdateGeneratedBill")]
         public async Task<ApiResponse> UpdateGeneratedBill()
@@ -76,6 +76,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("ReGenerateBill")]
         public IResponse<ApiResponse> ReGenerateBill([FromBody] GenerateBillFileDetail fileDetail)
@@ -84,6 +85,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, System.Net.HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("CreateFolder")]
         public IResponse<ApiResponse> CreateFolder(Files file)
@@ -92,6 +94,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpDelete]
         [Route("DeleteFile/{userId}/{UserTypeId}")]
         public IResponse<ApiResponse> DeleteFiles(long userId, int userTypeId, List<string> fileIds)
@@ -100,6 +103,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("GetDocxHtml")]
         public IResponse<ApiResponse> GetDocxHtml(FileDetail fileDetail)
@@ -108,6 +112,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet]
         [Route("GetBillDetailWithTemplate/{BillNo}/{EmployeeId}")]
         public async Task<ApiResponse> GetBillDetailWithTemplate(string BillNo, long EmployeeId)
@@ -116,7 +121,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 
-
+        [Authorize(Roles = "Employee, Admin")]
         [HttpPost]
         [Route("GeneratePayslip")]
         public async Task<ApiResponse> GeneratePayslip(PayslipGenerationModal payslipGenerationModal)

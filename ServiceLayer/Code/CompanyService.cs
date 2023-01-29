@@ -467,7 +467,7 @@ namespace ServiceLayer.Code
                 FilePath = fileDetail.FilePath,
                 FileRole = uploadedFileDetail.FileRole,
                 AdminId = _currentSession.CurrentUserDetail.UserId
-            });
+            }, false);
 
             if (result.rowsEffected == 0)
                 throw new HiringBellException("Fail to insert or udpate file data.");

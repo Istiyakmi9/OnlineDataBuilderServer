@@ -11,5 +11,6 @@ namespace ServiceLayer.Interface
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
         Task<string> SubmitAttendanceService(AttendenceDetail commentDetails);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
+        dynamic GetEmployeePerformanceService(AttendenceDetail attendanceDetails);
     }
 }

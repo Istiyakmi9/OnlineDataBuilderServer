@@ -210,13 +210,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid company selected");
 
             List<Files> companyFiles = await _companyService.GetCompanyFiles(CompanyId);
-            var dataSet = _db.FetchDataSet("sp_email_link_config_getBy_pagename", new { CompanyId = CompanyId, PageName = PageName });
-            var emailLinkConfig = new EmailLinkConfig();
-            if (dataSet.Tables[0].Rows.Count > 0)
-                emailLinkConfig = Converter.ToType<EmailLinkConfig>(dataSet.Tables[0]);
-
-            var employees = Converter.ToList<Employee>(dataSet.Tables[1]);
-            return new { EmailLinkConfig = emailLinkConfig, Files = companyFiles, Employees = employees };
+            var emaillinkconfig = _db.Get<EmailLinkConfig>("sp_email_link_config_getBy_pagename", new { CompanyId = CompanyId, PageName = PageName });
+            return new { EmailLinkConfig = emaillinkconfig, Files = companyFiles};
         }
 
         public string GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig)

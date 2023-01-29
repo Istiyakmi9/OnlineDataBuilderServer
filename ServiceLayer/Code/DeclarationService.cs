@@ -7,6 +7,7 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -61,6 +62,9 @@ namespace ServiceLayer.Code
             {
                 declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
                 salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
+                if (salaryComponent.MaxLimit != 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
+                    throw new HiringBellException("Your declared value is greater than maximum limit");
+
                 if (salaryComponent == null)
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
 
@@ -68,6 +72,18 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
 
                 salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
+                var maxLimit = 150000;
+                _sections.TryGetValue(ApplicationConstants.ExemptionDeclaration, out List<string> taxexemptSection);
+                employeeDeclaration.ExemptionDeclaration = declaration.SalaryComponentItems.FindAll(i => i.Section != null && taxexemptSection.Contains(i.Section));
+                var totalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue);
+                var npsComponent = employeeDeclaration.ExemptionDeclaration.Find(x => x.Section == "80CCD(1)");
+                if (salaryComponent.Section == "80CCD(1)")
+                    maxLimit += 50000;
+                else
+                    totalAmountDeclared = totalAmountDeclared - npsComponent.DeclaredValue;
+                if (totalAmountDeclared > maxLimit)
+                    throw HiringBellException.ThrowBadRequest("Your limit for this section is exceed from maximum limit");
+
             }
             else
             {

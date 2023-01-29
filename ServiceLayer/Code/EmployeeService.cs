@@ -373,6 +373,7 @@ namespace ServiceLayer.Code
             if (employeeArchiveDetail == null)
                 throw new HiringBellException("No record found");
 
+            string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
             EmployeeCompleteDetailModal employeeCompleteDetailModal = JsonConvert.DeserializeObject<EmployeeCompleteDetailModal>(employeeArchiveDetail.EmployeeCompleteJsonData);
             var result = _db.Execute<EmployeeCompleteDetailModal>("sp_Employee_Activate", new
             {
@@ -415,7 +416,7 @@ namespace ServiceLayer.Code
                 FinalPackage = employeeCompleteDetailModal.PersonalDetail.FinalPackage,
                 TakeHomeByCandidate = employeeCompleteDetailModal.PersonalDetail.TakeHomeByCandidate,
                 AccessLevelId = employeeCompleteDetailModal.EmployeeLoginDetail.AccessLevelId,
-                Password = "welcome@$Bot_001",
+                Password = newEncryptedPassword,
                 EmployeeDeclarationId = employeeCompleteDetailModal.EmployeeDeclarations.EmployeeDeclarationId,
                 DocumentPath = employeeCompleteDetailModal.EmployeeDeclarations.DocumentPath,
                 DeclarationDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.EmployeeDeclarations.DeclarationDetail) ? "[]" : employeeCompleteDetailModal.EmployeeDeclarations.DeclarationDetail,
@@ -473,6 +474,12 @@ namespace ServiceLayer.Code
                 TotalLeaveApplied = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveApplied,
                 TotalApprovedLeave = employeeCompleteDetailModal.LeaveRequestDetail.TotalApprovedLeave,
                 TotalLeaveQuota = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveQuota,
+                TotalRejectedAmount = employeeCompleteDetailModal.EmployeeDeclarations.TotalRejectedAmount ,
+                EmployeeCurrentRegime = employeeCompleteDetailModal.EmployeeDeclarations.EmployeeCurrentRegime ,
+                DeclarationStartMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationStartMonth ,
+                DeclarationEndMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationEndMonth ,
+                DeclarationFromYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear ,
+                DeclarationToYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationToYear,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
