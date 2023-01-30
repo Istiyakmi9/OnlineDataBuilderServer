@@ -39,7 +39,7 @@ namespace ServiceLayer.Code
             ICacheManager cacheManager,
             IEMailManager emailManager,
             ICommonService commonService,
-            IConfiguration configuration)
+            IConfiguration configuration, ForgotPasswordEmailService forgotPasswordEmailService)
         {
             this.db = db;
             _configuration = configuration;
@@ -49,6 +49,7 @@ namespace ServiceLayer.Code
             _cacheManager = cacheManager;
             _emailManager = emailManager;
             _commonService = commonService;
+            _forgotPasswordEmailService = forgotPasswordEmailService;
         }
 
         public Boolean RemoveUserDetailService(string Token)
