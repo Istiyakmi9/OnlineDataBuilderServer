@@ -118,11 +118,11 @@ namespace ServiceLayer.Code
                     var files = fileCollection.Select(x => new Files
                     {
                         FileUid = client.FileId,
-                        FileName = ApplicationConstants.ProfileImage,
+                        FileName = fileCollection[0].Name,
                         Email = client.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (organization.ClientId).ToString());
+                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (organization.ClientId).ToString(), client.OldFileName);
 
                     var fileInfo = (from n in files
                                     select new

@@ -44,5 +44,6 @@ namespace ModalLayer.Modal
         public int SectorType { get; set; }
         public string FullAddress { get; set; }
         public bool IsPrimaryCompany { get; set; }
+        public string OldFileName { get; set; }
     }
 }

@@ -804,11 +804,11 @@ namespace ServiceLayer.Code
                     var files = fileCollection.Select(x => new Files
                     {
                         FileUid = employee.FileId,
-                        FileName = ApplicationConstants.ProfileImage,
+                        FileName = fileCollection[0].Name,
                         Email = employee.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, employeeId);
+                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, employeeId, employee.OldFileName);
 
                     var fileInfo = (from n in files
                                     select new
