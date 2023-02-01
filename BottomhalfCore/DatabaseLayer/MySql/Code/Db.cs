@@ -39,6 +39,20 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
+        private void HandleSqlException(Exception ex)
+        {
+            if (this.IsTransactionStarted && this.transaction != null)
+            {
+                this.IsTransactionStarted = false;
+                this.transaction.Rollback();
+            }
+
+            if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
+                this.con.Close();
+
+            throw ex;
+        }
+
         public void StartTransaction(IsolationLevel isolationLevel)
         {
             try
@@ -252,11 +266,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException MySqlException)
             {
-                throw MySqlException;
+                HandleSqlException(MySqlException);
             }
             catch (Exception ex)
             {
-                throw ex;
+                HandleSqlException(ex);
             }
             finally
             {
