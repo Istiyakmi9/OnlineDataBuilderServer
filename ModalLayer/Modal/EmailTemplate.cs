@@ -25,5 +25,7 @@ namespace ModalLayer.Modal
         public int FileId { get; set; }
         public string FilePath { get; set; }
         public string Description { get; set; }
+        public string EmailSubject { get; set; } = string.Empty;
+
     }
 }
