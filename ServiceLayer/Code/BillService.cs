@@ -1046,7 +1046,7 @@ namespace ServiceLayer.Code
                 if (emails.Count == 0)
                     throw new HiringBellException("No receiver address added. Please add atleast one email address.");
 
-                UpdateTemplateData(emailTempalte, employee, generateBillFileDetail.MonthName, generateBillFileDetail.ForYear);
+                UpdateTemplateData(emailTempalte, employee, generateBillFileDetail.MonthName, generateBillFileDetail.ForYear, generateBillFileDetail);
 
                 EmailSenderModal emailSenderModal = new EmailSenderModal
                 {
@@ -1065,15 +1065,26 @@ namespace ServiceLayer.Code
             return ApplicationConstants.Successfull;
         }
 
-        private void UpdateTemplateData(EmailTemplate template, Employee employee, string month, int year)
+        private void UpdateTemplateData(EmailTemplate template, Employee employee, string month, int year, GenerateBillFileDetail generateBillFileDetail)
         {
+            if (!string.IsNullOrEmpty(generateBillFileDetail.EmailTemplateDetail.BodyContent))
+                template.BodyContent = generateBillFileDetail.EmailTemplateDetail.BodyContent;
+            else
+                template.BodyContent = JsonConvert.DeserializeObject<string>(template.BodyContent);
+
             if (template != null && !string.IsNullOrEmpty(template.BodyContent))
             {
-                template.BodyContent = JsonConvert.DeserializeObject<string>(template.BodyContent
+                template.BodyContent = (template.BodyContent
                     .Replace("[[DEVELOPER-NAME]]", employee.FirstName + " " + employee.LastName)
                     .Replace("[[YEAR]]", year.ToString())
                     .Replace("[[MONTH]]", month));
             }
+
+            if (!string.IsNullOrEmpty(generateBillFileDetail.EmailTemplateDetail.EmailSubject))
+                template.SubjectLine = generateBillFileDetail.EmailTemplateDetail.EmailSubject;
+
+            if (!string.IsNullOrEmpty(generateBillFileDetail.EmailTemplateDetail.EmailTitle))
+                template.EmailTitle = generateBillFileDetail.EmailTemplateDetail.EmailTitle;
         }
         public async Task<dynamic> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal)
         {

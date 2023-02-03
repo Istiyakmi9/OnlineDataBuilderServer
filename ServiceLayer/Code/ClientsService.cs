@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -118,11 +119,11 @@ namespace ServiceLayer.Code
                     var files = fileCollection.Select(x => new Files
                     {
                         FileUid = client.FileId,
-                        FileName = ApplicationConstants.ProfileImage,
+                        FileName = fileCollection[0].Name,
                         Email = client.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (organization.ClientId).ToString());
+                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (organization.ClientId).ToString(), client.OldFileName);
 
                     var fileInfo = (from n in files
                                     select new
@@ -149,7 +150,7 @@ namespace ServiceLayer.Code
                 _db.RollBack();
                 throw;
             }
-            
+
         }
 
         private void ClientValidation(Organization organization)
@@ -172,17 +173,13 @@ namespace ServiceLayer.Code
         public DataSet DeactivateClient(Employee employee)
         {
             if (employee == null || employee.EmployeeUid <= 0)
-            {
                 throw new HiringBellException("Invalid client detail submitted.");
-            }
 
-            DbParam[] param = new DbParam[]
+            var resultSet = _db.FetchDataSet("sp_deactivateOrganization_delandgetall", new
             {
-                new DbParam(employee.EmployeeMappedClientsUid, typeof(long), "_ClientMappedId"),
-                new DbParam(employee.EmployeeUid, typeof(long), "_UserId")
-            };
-
-            var resultSet = _db.GetDataset("sp_deactivateOrganization_delandgetall", param);
+                ClientMappedId = employee.EmployeeMappedClientsUid,
+                UserId = employee.EmployeeUid
+            });
             return resultSet;
         }
     }

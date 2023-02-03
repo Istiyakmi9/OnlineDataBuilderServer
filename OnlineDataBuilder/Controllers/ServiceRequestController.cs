@@ -25,5 +25,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _serviceRequestService.GetServiceRequestService(filter);
             return BuildResponse(result);
         }
+
+        [HttpPost("AddUpdateServiceRequest")]
+        public async Task<ApiResponse> AddUpdateServiceRequest(ServiceRequest serviceRequest)
+        {
+            var result = await _serviceRequestService.AddUpdateServiceRequestService(serviceRequest);
+            return BuildResponse(result);
+        }
     }
 }

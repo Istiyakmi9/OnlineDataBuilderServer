@@ -159,7 +159,7 @@ namespace ServiceLayer.Code
                 Employee employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = true });
 
                 if (employee == null)
-                    throw HiringBellException.ThrowBadRequest("Employee detai not found. Please contact to admin.");
+                    throw HiringBellException.ThrowBadRequest("Employee detail not found. Please contact to admin.");
 
                 leavePlan = leaveCalculationModal.leavePlans
                     .FirstOrDefault(x => x.LeavePlanId == employee.LeavePlanId || x.IsDefaultPlan == true);

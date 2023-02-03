@@ -3,16 +3,10 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using static Google.Protobuf.Reflection.MessageDescriptor;
-using System.Xml.Linq;
 using System.IO;
-using ModalLayer;
-using CoreServiceLayer.Implementation;
-using System;
-using Google.Protobuf.Reflection;
-using System.Threading.Tasks;
 using System.Linq;
 
 namespace ServiceLayer.Code

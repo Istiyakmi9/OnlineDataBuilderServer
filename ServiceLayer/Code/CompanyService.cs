@@ -467,9 +467,9 @@ namespace ServiceLayer.Code
                 FilePath = fileDetail.FilePath,
                 FileRole = uploadedFileDetail.FileRole,
                 AdminId = _currentSession.CurrentUserDetail.UserId
-            }, false);
+            }, true);
 
-            if (result.rowsEffected == 0)
+            if (string.IsNullOrEmpty(result.statusMessage))
                 throw new HiringBellException("Fail to insert or udpate file data.");
 
             var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = uploadedFileDetail.CompanyId });

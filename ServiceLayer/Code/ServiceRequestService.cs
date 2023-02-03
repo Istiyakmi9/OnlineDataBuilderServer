@@ -11,10 +11,11 @@ namespace ServiceLayer.Code
     public class ServiceRequestService : IServiceRequestService
     {
         private readonly IDb _db;
-
-        public ServiceRequestService(IDb db)
+        private CurrentSession _currentSession;
+        public ServiceRequestService(IDb db, CurrentSession currentSession)
         {
             _db = db;
+            _currentSession = currentSession;
         }
 
         public Task<List<ServiceRequest>> GetServiceRequestService(FilterModel filter)
@@ -28,6 +29,67 @@ namespace ServiceLayer.Code
             });
 
             return Task.FromResult(ServiceRequests);
+        }
+
+        public Task<List<ServiceRequest>> AddUpdateServiceRequestService(ServiceRequest serviceRequest)
+        {
+            validateServiceRequest(serviceRequest);
+            var oldrequest = _db.Get<ServiceRequest>("sp_service_request_sel_by_id", new { ServiceRequestId = serviceRequest.ServiceRequestId });
+            if (oldrequest == null)
+                oldrequest = serviceRequest;
+            else
+            {
+                oldrequest.RequestTitle = serviceRequest.RequestTitle;
+                oldrequest.RequestDescription = serviceRequest.RequestDescription; 
+                oldrequest.ServiceRequestId = serviceRequest.ServiceRequestId;
+                switch (serviceRequest.RequestTypeId)
+                {
+                    case "BOOKING":
+                        oldrequest.Duration = serviceRequest.Duration;
+                        oldrequest.FromDate = serviceRequest.FromDate;
+                        oldrequest.ToDate = serviceRequest.ToDate;
+                        break;
+                }
+            }
+            oldrequest.AdminId = _currentSession.CurrentUserDetail.UserId;
+            var result = _db.Execute<string>("sp_service_request_ins_upd", oldrequest, true);
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to insert/update service request");
+
+            FilterModel filterModel = new FilterModel();
+            return this.GetServiceRequestService(filterModel);
+        }
+
+        private void validateServiceRequest(ServiceRequest serviceRequest)
+        {
+            if (string.IsNullOrEmpty(serviceRequest.RequestTitle))
+                throw HiringBellException.ThrowBadRequest("Request title is null or empty");
+
+            if (string.IsNullOrEmpty(serviceRequest.RequestDescription))
+                throw HiringBellException.ThrowBadRequest("Request description is null or empty");
+
+            if (string.IsNullOrEmpty(serviceRequest.RequestTypeId))
+                throw HiringBellException.ThrowBadRequest("Request type is null or empty");
+
+            if (string.IsNullOrEmpty(serviceRequest.AssignTo))
+                throw HiringBellException.ThrowBadRequest("Please select at least one manager");
+
+            switch (serviceRequest.RequestTypeId)
+            {
+                case "BOOKING":
+                    if (serviceRequest.Duration < 0)
+                        throw HiringBellException.ThrowBadRequest("Invalid duration you entered");
+
+                    if (serviceRequest.ToDate == null)
+                        throw HiringBellException.ThrowBadRequest("To date is invalid");
+
+                    if (serviceRequest.FromDate == null)
+                        throw HiringBellException.ThrowBadRequest("From date is invalid");
+
+                    if (serviceRequest.FromDate.Date.Subtract(serviceRequest.ToDate.Date).TotalDays > 0)
+                        throw HiringBellException.ThrowBadRequest("To date must be greater than from date");
+                    break;
+            }
         }
     }
 }

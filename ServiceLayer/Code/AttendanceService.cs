@@ -183,7 +183,7 @@ namespace ServiceLayer.Code
 
         private DateTime GetOpenDateForAttendance()
         {
-            int i = 4;
+            int i = 30;
             DateTime todayDate = DateTime.UtcNow.Date;
             while (true)
             {
@@ -321,7 +321,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable submit the attendace");
 
-            await _attendanceEmailService.SendSubmitAttendanceEmail(attendenceApplied);
+            Task task = Task.Run(async () => await _attendanceEmailService.SendSubmitAttendanceEmail(attendenceApplied));
             return Result;
         }
 
