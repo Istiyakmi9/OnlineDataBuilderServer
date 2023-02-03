@@ -24,9 +24,9 @@ namespace ServiceLayer.Code
         private readonly TimesheetEmailService _timesheetEmailService;
 
         public TimesheetService(
-            IDb db, 
-            ITimezoneConverter timezoneConverter, 
-            CurrentSession currentSession, 
+            IDb db,
+            ITimezoneConverter timezoneConverter,
+            CurrentSession currentSession,
             ICacheManager cacheManager,
             TimesheetEmailService timesheetEmailService)
         {
@@ -286,16 +286,15 @@ namespace ServiceLayer.Code
                 j++;
             }
 
-            DbParam[] dbParams = new DbParam[]
+            var Result = _db.FetchDataSet("sp_employee_timesheet_get", new
             {
-                new DbParam(firstItem.EmployeeId, typeof(int), "_EmployeeId"),
-                new DbParam(firstItem.ClientId, typeof(int), "_ClientId"),
-                new DbParam(firstItem.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(fromDate.Year, typeof(int), "_ForYear"),
-                new DbParam(fromDate.Month, typeof(int), "_ForMonth")
-            };
+                firstItem.EmployeeId,
+                firstItem.ClientId,
+                firstItem.UserTypeId,
+                ForYear = fromDate.Year,
+                ForMonth = fromDate.Month
+            });
 
-            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
             if (Result.Tables.Count != 2 && Result.Tables[0].Rows.Count == 0)
             {
                 throw new HiringBellException("Timesheet detail is invalid.");
@@ -418,9 +417,9 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
-            await _timesheetEmailService.SendSubmitTimesheetEmail(currentTimesheetDetail);
+            _timesheetEmailService.SendSubmitTimesheetEmail(currentTimesheetDetail);
 
-            return finalTimesheetSet;
+            return await Task.FromResult(finalTimesheetSet);
         }
 
         public List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId)
