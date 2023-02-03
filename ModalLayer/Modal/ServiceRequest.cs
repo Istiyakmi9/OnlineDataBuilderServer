@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
-    public class ServiceRequest
+    public class ServiceRequest: CreationInfo
     {
         public long ServiceRequestId { set; get; }
         public int CompanyId { set; get; }
@@ -20,6 +21,6 @@ namespace ModalLayer.Modal
         public int RequestStatus { set; get; }
         public long RequestedBy { set; get; }
         public DateTime RequestedOn { set; get; }
-        public DateTime UpdatedOn { set; get; }
+        public string AssignTo { get; set; }
     }
 }

@@ -191,6 +191,7 @@ namespace OnlineDataBuilder
             services.AddScoped<Approval>();
             services.AddScoped<Restriction>();
             services.AddScoped<YearEndCalculation>();
+            services.AddScoped<IProductService, ProductService > ();
             services.AddScoped<ICompanyNotificationService, CompanyNotificationService>();
             services.AddScoped<IServiceRequestService, ServiceRequestService>();
             services.AddCors(options =>

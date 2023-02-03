@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -149,7 +150,7 @@ namespace ServiceLayer.Code
                 _db.RollBack();
                 throw;
             }
-            
+
         }
 
         private void ClientValidation(Organization organization)
@@ -172,17 +173,13 @@ namespace ServiceLayer.Code
         public DataSet DeactivateClient(Employee employee)
         {
             if (employee == null || employee.EmployeeUid <= 0)
-            {
                 throw new HiringBellException("Invalid client detail submitted.");
-            }
 
-            DbParam[] param = new DbParam[]
+            var resultSet = _db.FetchDataSet("sp_deactivateOrganization_delandgetall", new
             {
-                new DbParam(employee.EmployeeMappedClientsUid, typeof(long), "_ClientMappedId"),
-                new DbParam(employee.EmployeeUid, typeof(long), "_UserId")
-            };
-
-            var resultSet = _db.GetDataset("sp_deactivateOrganization_delandgetall", param);
+                ClientMappedId = employee.EmployeeMappedClientsUid,
+                UserId = employee.EmployeeUid
+            });
             return resultSet;
         }
     }
