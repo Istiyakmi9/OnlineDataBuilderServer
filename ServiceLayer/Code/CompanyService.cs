@@ -234,7 +234,7 @@ namespace ServiceLayer.Code
                                     UpdatedBy = _currentSession.CurrentUserDetail.UserId,
                                     CreatedOn = DateTime.Now,
                                     UpdatedOn = DateTime.Now
-                                }); ;
+                                });
 
                 DataTable table = Converter.ToDataTable(fileInfo);
                 _db.StartTransaction(IsolationLevel.ReadUncommitted);
