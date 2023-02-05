@@ -48,6 +48,7 @@ namespace ServiceLayer.Code
         public async Task<string> InsertApprovalChainService(ApprovalWorkFlowChain approvalWorkFlowModal)
         {
             int approvalWorkFlowId = approvalWorkFlowModal.ApprovalWorkFlowId;
+            ValidateApprovalWorkFlowDetail(approvalWorkFlowModal);
             DbResult result = new DbResult
             {
                 rowsEffected = 0,
@@ -137,6 +138,39 @@ namespace ServiceLayer.Code
             return result.statusMessage;
         }
 
+        private void ValidateApprovalWorkFlowDetail(ApprovalWorkFlowChain approvalWorkFlowModal)
+        {
+            if (string.IsNullOrEmpty(approvalWorkFlowModal.Title))
+                throw HiringBellException.ThrowBadRequest("Tite is null or empty");
+
+            if (string.IsNullOrEmpty(approvalWorkFlowModal.TitleDescription))
+                throw HiringBellException.ThrowBadRequest("Title description is null or empty");
+
+            if (approvalWorkFlowModal.IsAutoExpiredEnabled)
+            {
+                if (approvalWorkFlowModal.AutoExpireAfterDays <= 0)
+                    throw HiringBellException.ThrowBadRequest("Please add auto expire after days");
+            }
+
+            if (approvalWorkFlowModal.ApprovalChainDetails.Count > 0)
+            {
+                foreach (var item in approvalWorkFlowModal.ApprovalChainDetails)
+                {
+                    if (item.AssignieId <= 0)
+                        throw HiringBellException.ThrowBadRequest("Please add assigne first");
+
+                    if (item.IsForwardEnabled)
+                    {
+                        if (item.ForwardWhen <= 0)
+                            throw HiringBellException.ThrowBadRequest("Invalid reason selected");
+
+                        if (item.ForwardAfterDays <= 0)
+                            throw HiringBellException.ThrowBadRequest("Please add forward after days");
+                    }
+                }
+            }
+        }
+
         public async Task<List<ApprovalWorkFlowModal>> GetPageDateService(FilterModel filterModel)
         {
             if (string.IsNullOrEmpty(filterModel.SearchString))
@@ -200,5 +234,6 @@ namespace ServiceLayer.Code
 
             return await Task.FromResult(approvalWorkFlowChain);
         }
+
     }
 }

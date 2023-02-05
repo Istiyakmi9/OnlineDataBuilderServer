@@ -1,13 +1,9 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
+using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Threading.Tasks;
-using System;
-using Microsoft.AspNetCore.Authorization;
-using OnlineDataBuilder.ContextHandler;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace OnlineDataBuilder.Controllers
 {
