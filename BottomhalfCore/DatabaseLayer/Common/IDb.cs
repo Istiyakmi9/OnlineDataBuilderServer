@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
@@ -11,11 +12,10 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
     public interface IDb
     {
         /*===========================================  GetDataSet =============================================================*/
+        Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false);
         DataSet GetDataset(string ProcedureName, DbParam[] param);
-        DataSet GetDataset(string ProcedureName);
         int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam);
         Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam);
-        DataSet GetDataset(string ProcedureName, DbParam[] param, bool OutParam, ref string ProcessingStatus);
         Object ExecuteSingle(string ProcedureName, DbParam[] param, bool OutParam);
         string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam);
         void UserDefineTypeBulkInsert(DataSet dataset, string ProcedureName, bool OutParam);
@@ -46,6 +46,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
             where T : new()
             where R : new()
             where Q : new();
-        DataSet FetchDataSet(string ProcedureName, dynamic Parameters, bool OutParam = false);
+        DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
+        Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
     }
 }

@@ -106,8 +106,7 @@ namespace ServiceLayer.Code
                 new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
                 };
 
-                var status = string.Empty;
-                var resultSet = _db.GetDataset("SP_Client_IntUpd", param, true, ref status);
+                var resultSet = _db.FetchDataSet("SP_Client_IntUpd", param, true);
                 if (resultSet != null && resultSet.Tables.Count > 0)
                     organization = Converter.ToType<Organization>(resultSet.Tables[0]);
 

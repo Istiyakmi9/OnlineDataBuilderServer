@@ -45,7 +45,7 @@ namespace ServiceLayer.Code
         }
         public dynamic GetAllRegimeService()
         {
-            var resultSet = _db.GetDataset("sp_tax_regime_desc_getall");
+            var resultSet = _db.FetchDataSet("sp_tax_regime_desc_getall");
             if (resultSet != null && resultSet.Tables.Count > 3)
                 throw new HiringBellException("Fail to get tax regime");
 

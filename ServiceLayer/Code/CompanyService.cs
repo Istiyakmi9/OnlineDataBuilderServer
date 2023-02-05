@@ -92,7 +92,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetOrganizationDetailService()
         {
-            var ResultSet = _db.GetDataset("sp_organization_detail_get");
+            var ResultSet = _db.FetchDataSet("sp_organization_detail_get");
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
 
@@ -110,7 +110,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(companyInfo.CompanyName))
                 throw new HiringBellException("Invalid company name.");
 
-            var ResultSet = _db.GetDataset("sp_organization_detail_get");
+            var ResultSet = _db.FetchDataSet("sp_organization_detail_get");
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
 
