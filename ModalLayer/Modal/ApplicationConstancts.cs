@@ -27,6 +27,7 @@ public class ApplicationConstants
     public static string HiringBellLogo = "hb-t-logo.png";
     public static string LogoContentId = "bottomhalf@me.com";
     public static string DeclarationDocumentPath = "declarated_documents";
+    public static string ProcessingResult = "_ProcessingResult";
 
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";
