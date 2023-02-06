@@ -75,39 +75,36 @@ namespace ServiceLayer.Code
 
                 ClientValidation(client);
                 Organization organization = null;
-                DbParam[] param = new DbParam[]
-                {
-                new DbParam(client.ClientId, typeof(long), "_ClientId"),
-                new DbParam(client.ClientName, typeof(string), "_ClientName"),
-                new DbParam(client.PrimaryPhoneNo, typeof(string), "_PrimaryPhoneNo"),
-                new DbParam(client.SecondaryPhoneNo, typeof(string), "_SecondaryPhoneNo"),
-                new DbParam(client.MobileNo, typeof(string), "_MobileNo"),
-                new DbParam(client.Email, typeof(string), "_Email"),
-                new DbParam(client.OtherEmail_1, typeof(string), "_OtherEmail_1"),
-                new DbParam(client.OtherEmail_2, typeof(string), "_OtherEmail_2"),
-                new DbParam(client.OtherEmail_3, typeof(string), "_OtherEmail_3"),
-                new DbParam(client.OtherEmail_4, typeof(string), "_OtherEmail_4"),
-                new DbParam(client.Fax, typeof(string), "_Fax"),
-                new DbParam(client.GSTNO, typeof(string), "_GSTNO"),
-                new DbParam(client.PanNo, typeof(string), "_PanNo"),
-                new DbParam(client.Pincode, typeof(int), "_Pincode"),
-                new DbParam(client.Country, typeof(string), "_Country"),
-                new DbParam(client.State, typeof(string), "_State"),
-                new DbParam(client.City, typeof(string), "_City"),
-                new DbParam(client.FirstAddress, typeof(string), "_FirstAddress"),
-                new DbParam(client.SecondAddress, typeof(string), "_SecondAddress"),
-                new DbParam(client.ThirdAddress, typeof(string), "_ThirdAddress"),
-                new DbParam(client.ForthAddress, typeof(string), "_ForthAddress"),
-                new DbParam(client.IFSC, typeof(string), "_IFSC"),
-                new DbParam(client.AccountNo, typeof(string), "_AccountNo"),
-                new DbParam(client.BankName, typeof(string), "_BankName"),
-                new DbParam(client.BranchName, typeof(string), "_BranchName"),
-                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                };
 
-                var resultSet = _db.FetchDataSet("SP_Client_IntUpd", param, true);
-                if (resultSet != null && resultSet.Tables.Count > 0)
-                    organization = Converter.ToType<Organization>(resultSet.Tables[0]);
+                organization = _db.Get<Organization>("SP_Client_IntUpd", new
+                {
+                    ClientId = client.ClientId,
+                    ClientName = client.ClientName,
+                    PrimaryPhoneNo = client.PrimaryPhoneNo,
+                    SecondaryPhoneNo = client.SecondaryPhoneNo,
+                    MobileNo = client.MobileNo,
+                    Email = client.Email,
+                    OtherEmail_1 = client.OtherEmail_1,
+                    OtherEmail_2 = client.OtherEmail_2,
+                    OtherEmail_3 = client.OtherEmail_3,
+                    OtherEmail_4 = client.OtherEmail_4,
+                    Fax = client.Fax,
+                    GSTNO = client.GSTNO,
+                    PanNo = client.PanNo,
+                    Pincode = client.Pincode,
+                    Country = client.Country,
+                    State = client.State,
+                    City = client.City,
+                    FirstAddress = client.FirstAddress,
+                    SecondAddress = client.SecondAddress,
+                    ThirdAddress = client.ThirdAddress,
+                    ForthAddress = client.ForthAddress,
+                    IFSC = client.IFSC,
+                    AccountNo = client.AccountNo,
+                    BankName = client.BankName,
+                    BranchName = client.BranchName,
+                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                }, true);
 
                 if (organization.ClientId <= 0)
                     throw new Exception("fail to get client id");
