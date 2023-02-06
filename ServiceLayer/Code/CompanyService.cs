@@ -337,15 +337,7 @@ namespace ServiceLayer.Code
         public List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail)
         {
             List<BankDetail> bankDetails = null;
-
-            if (bankDetail.CompanyId <= 0)
-                throw new HiringBellException("Invalid company detail submitted. Please login again.");
-
-            if (string.IsNullOrEmpty(bankDetail.AccountNo))
-                throw new HiringBellException("Invalid account number submitted.");
-
-            if (bankDetail.OrganizationId <= 0)
-                throw new HiringBellException("Organizatin or compnay is not selected.");
+            ValidateBankDetail(bankDetail);
 
             var bank = _db.Get<BankDetail>("sp_bank_accounts_getById", new { bankDetail.BankAccountId });
 
@@ -383,6 +375,27 @@ namespace ServiceLayer.Code
             }
 
             return bankDetails;
+        }
+
+        private void ValidateBankDetail(BankDetail bankDetail)
+        {
+            if (bankDetail.CompanyId <= 0)
+                throw new HiringBellException("Invalid company detail submitted. Please login again.");
+
+            if (string.IsNullOrEmpty(bankDetail.AccountNo))
+                throw new HiringBellException("Invalid account number submitted.");
+
+            if (bankDetail.OrganizationId <= 0)
+                throw new HiringBellException("Organizatin or compnay is not selected.");
+
+            if (string.IsNullOrEmpty(bankDetail.BankName))
+                throw HiringBellException.ThrowBadRequest("Bank name is null or empty");
+
+            if (string.IsNullOrEmpty(bankDetail.IFSC))
+                throw new HiringBellException("Invalid ifsc code submitted.");
+
+            if (string.IsNullOrEmpty(bankDetail.Branch))
+                throw HiringBellException.ThrowBadRequest("Branch name is null or empty");
         }
 
         public List<BankDetail> GetCompanyBankDetail(FilterModel filterModel)
