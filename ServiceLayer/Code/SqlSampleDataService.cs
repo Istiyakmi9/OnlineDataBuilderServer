@@ -101,15 +101,15 @@ namespace ServiceLayer.Code
                     PageSize = 10;
                 DataSet ResultSet = null;
                 DbParam[] param = null;
-                param = new DbParam[]
-                {
-                new DbParam(SearchStr, typeof(System.String), "@SearchStr"),
-                new DbParam(SortBy, typeof(System.String), "@SortBy"),
-                new DbParam(PageIndex, typeof(System.Int32), "@PageIndex"),
-                new DbParam(PageSize, typeof(System.Int32), "@PageSize")
-                };
+                //param = new DbParam[]
+                //{
+                //new DbParam(SearchStr, typeof(System.String), "@SearchStr"),
+                //new DbParam(SortBy, typeof(System.String), "@SortBy"),
+                //new DbParam(PageIndex, typeof(System.Int32), "@PageIndex"),
+                //new DbParam(PageSize, typeof(System.Int32), "@PageSize")
+                //};
 
-                ResultSet = db.GetDataset("sp_Students_FilterRecord", param);
+                ResultSet = db.GetDataSet("sp_Students_FilterRecord");
                 if (ResultSet != null && ResultSet.Tables.Count == 2)
                 {
                     ResultSet.Tables[0].TableName = "Record";
@@ -258,13 +258,7 @@ namespace ServiceLayer.Code
                 DataSet ResultSet = null;
                 if (SelectQuery != null)
                 {
-                    DbParam[] param = null;
-                    param = new DbParam[]
-                    {
-                    new DbParam(SelectQuery, typeof(System.String), "@DynamicSelectQuery")
-                    };
-
-                    ResultSet = db.GetDataset("sp_DynamicSampleDataGenerator", param);
+                    ResultSet = db.GetDataSet("sp_DynamicSampleDataGenerator");
                 }
                 else
                 {
@@ -370,16 +364,7 @@ namespace ServiceLayer.Code
             try
             {
                 DataSet ResultSet = null;
-                DbParam[] param = null;
-                param = new DbParam[]
-                {
-                    new DbParam(SearchStr, typeof(System.String), "@SearchStr"),
-                    new DbParam(SortBy, typeof(System.String), "@SortBy"),
-                    new DbParam(PageIndex, typeof(System.String), "@PageIndex"),
-                    new DbParam(PageSize, typeof(System.String), "@PageSize")
-                };
-
-                ResultSet = db.GetDataset("sp_Students_FilterRecord", param);
+                ResultSet = db.GetDataSet("sp_Students_FilterRecord");
                 if (ResultSet != null && ResultSet.Tables.Count == 2)
                 {
                     ResultSet.Tables[0].TableName = "Record";

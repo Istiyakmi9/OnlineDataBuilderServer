@@ -716,19 +716,17 @@ namespace ServiceLayer.Code
 
                 Organization sender = null;
                 Organization receiver = null;
-                DataSet ds = new DataSet();
-                DbParam[] dbParams = new DbParam[]
+                DataSet ds = this.db.GetDataSet("sp_Billing_detail", new
                 {
-                    new DbParam(pdfModal.receiverCompanyId, typeof(long), "_receiver"),
-                    new DbParam(pdfModal.senderId, typeof(long), "_sender"),
-                    new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
-                    new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
-                    new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
-                    new DbParam(pdfModal.billingMonth.Month, typeof(long), "_forMonth"),
-                    new DbParam(pdfModal.billYear, typeof(long), "_forYear")
-                };
+                    receiver = pdfModal.receiverCompanyId,
+                    sender = pdfModal.senderId,
+                    billNo = pdfModal.billNo,
+                    employeeId = pdfModal.EmployeeId,
+                    userTypeId = UserType.Employee,
+                    forMonth = pdfModal.billingMonth.Month,
+                    forYear = pdfModal.billYear
+                });
 
-                ds = this.db.GetDataset("sp_Billing_detail", dbParams);
                 if (ds.Tables.Count == 4)
                 {
                     sender = Converter.ToType<Organization>(ds.Tables[0]);
@@ -836,40 +834,39 @@ namespace ServiceLayer.Code
                         destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
                         _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
 
-                        dbParams = new DbParam[]
+                        var dbResult = this.db.Execute("sp_filedetail_insupd", new
                         {
-                            new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                            new DbParam(pdfModal.receiverCompanyId, typeof(long), "_ClientId"),
-                            new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
-                            new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
-                            new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                            new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
-                            new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
-                            new DbParam(bill.BillUid, typeof(int), "_BillUid"),
-                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
-                            new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
-                            new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
-                            new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                            new DbParam(pdfModal.billYear, typeof(int), "_BillYear"),
-                            new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
-                            new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
-                            new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
-                            new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
-                            new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
-                            new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                            new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
-                            new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
-                            new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
-                            new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
-                            new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
-                            new DbParam(pdfModal.IsCustomBill, typeof(bool), "_IsCustomBill"),
-                            new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                            new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                        };
+                            FileId = fileDetail.FileId,
+                            ClientId = pdfModal.receiverCompanyId,
+                            FileName = fileDetail.FileName,
+                            FilePath = fileDetail.FilePath,
+                            FileExtension = fileDetail.FileExtension,
+                            StatusId = pdfModal.StatusId,
+                            GeneratedBillNo = bill.NextBillNo,
+                            BillUid = bill.BillUid,
+                            BillDetailId = pdfModal.billId,
+                            BillNo = pdfModal.billNo,
+                            PaidAmount = pdfModal.packageAmount,
+                            BillForMonth = pdfModal.billingMonth.Month,
+                            BillYear = pdfModal.billYear,
+                            NoOfDays = pdfModal.workingDay,
+                            NoOfDaysAbsent = pdfModal.daysAbsent,
+                            IGST = pdfModal.iGST,
+                            SGST = pdfModal.sGST,
+                            CGST = pdfModal.cGST,
+                            TDS = ApplicationConstants.TDS,
+                            BillStatusId = ApplicationConstants.Pending,
+                            PaidOn = pdfModal.PaidOn,
+                            FileDetailId = pdfModal.FileId,
+                            UpdateSeqNo = pdfModal.UpdateSeqNo,
+                            EmployeeUid = pdfModal.EmployeeId,
+                            BillUpdatedOn = pdfModal.dateOfBilling,
+                            IsCustomBill = pdfModal.IsCustomBill,
+                            UserTypeId = UserType.Employee,
+                            AdminId = _currentSession.CurrentUserDetail.UserId
+                        }, true);
 
-                        var fileId = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
-                        if (string.IsNullOrEmpty(fileId))
+                        if (!string.IsNullOrEmpty(dbResult.statusMessage))
                         {
                             List<Files> files = new List<Files>();
                             files.Add(new Files
@@ -878,12 +875,13 @@ namespace ServiceLayer.Code
                                 FileName = fileDetail.FileName
                             });
                             this.fileService.DeleteFiles(files);
+                            throw HiringBellException.ThrowBadRequest("Failt to execute. Please contact admin.");
                         }
-                        else
-                        {
-                            fileDetail.FileId = Convert.ToInt32(fileId);
-                            fileDetail.DiskFilePath = null;
-                        }
+
+                        var fileId = Convert.ToInt32(dbResult.statusMessage);
+                        fileDetail.FileId = Convert.ToInt32(fileId);
+                        fileDetail.DiskFilePath = null;
+
                     }
                     else
                     {
@@ -1358,7 +1356,7 @@ namespace ServiceLayer.Code
             }
             catch (Exception e)
             {
-                throw new HiringBellException(e.Message); 
+                throw new HiringBellException(e.Message);
             }
         }
         private String ConvertNumber(Int64 i)
@@ -1381,9 +1379,9 @@ namespace ServiceLayer.Code
                 return ConvertNumber(i / 100000) + " Lakh " + ((i % 100000 > 0) ? " " + ConvertNumber(i % 100000) : "");
 
             if (i < 1000000000)
-                return ConvertNumber(i / 10000000) + " Crore "+ ((i % 10000000 > 0) ? " " + ConvertNumber(i % 10000000) : "");
+                return ConvertNumber(i / 10000000) + " Crore " + ((i % 10000000 > 0) ? " " + ConvertNumber(i % 10000000) : "");
 
-            return ConvertNumber(i / 1000000000) + " Arab "+ ((i % 1000000000 > 0) ? " " + ConvertNumber(i % 1000000000) : "");
+            return ConvertNumber(i / 1000000000) + " Arab " + ((i % 1000000000 > 0) ? " " + ConvertNumber(i % 1000000000) : "");
         }
         private decimal PTaxCalculation(decimal CTC, List<PTaxSlab> pTaxSlabs)
         {

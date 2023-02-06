@@ -32,6 +32,7 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _emailManager;
         private readonly ICommonService _commonService;
         private readonly ForgotPasswordEmailService _forgotPasswordEmailService;
+        private readonly CurrentSession _currentSession;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             IMediaService mediaService,
@@ -39,7 +40,8 @@ namespace ServiceLayer.Code
             ICacheManager cacheManager,
             IEMailManager emailManager,
             ICommonService commonService,
-            IConfiguration configuration, ForgotPasswordEmailService forgotPasswordEmailService)
+            IConfiguration configuration, 
+            ForgotPasswordEmailService forgotPasswordEmailService, CurrentSession currentSession)
         {
             this.db = db;
             _configuration = configuration;
@@ -50,6 +52,7 @@ namespace ServiceLayer.Code
             _emailManager = emailManager;
             _commonService = commonService;
             _forgotPasswordEmailService = forgotPasswordEmailService;
+            _currentSession = currentSession;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -59,17 +62,12 @@ namespace ServiceLayer.Code
         }
         public UserDetail GetUserDetail(AuthUser authUser)
         {
-            UserDetail userDetail = default;
-            DbParam[] param = new DbParam[]
+            UserDetail userDetail = this.db.Get<UserDetail>("sp_UserDetail_GetByMobileOrEmail", new
             {
-                new DbParam(authUser.Email, typeof(string), "_email"),
-                new DbParam(authUser.MobileNo, typeof(string), "_mobile")
-            };
+                email = authUser.Email,
+                mobile = authUser.MobileNo,
+            });
 
-            var ResultSet = this.db.GetDataset("sp_UserDetail_GetByMobileOrEmail", param);
-            var Data = Converter.ToList<UserDetail>(ResultSet.Tables[0]);
-            if (Data != null & Data.Count > 0)
-                userDetail = Data.FirstOrDefault();
             return userDetail;
         }
 
@@ -80,20 +78,20 @@ namespace ServiceLayer.Code
             if (googleResponseModal != null)
             {
                 userDetail.EmailId = googleResponseModal.email;
-                DbParam[] param = new DbParam[]
+               
+                var ResultSet = this.db.Execute("sp_UserDetail_Ins", new
                 {
-                    new DbParam(userDetail.UserId, typeof(long), "_UserId"),
-                    new DbParam(userDetail.FirstName, typeof(string), "_FirstName"),
-                    new DbParam(userDetail.LastName, typeof(string), "_LastName"),
-                    new DbParam(userDetail.Mobile, typeof(string), "_MobileNo"),
-                    new DbParam(userDetail.EmailId, typeof(string), "_EmailId"),
-                    new DbParam(userDetail.Address, typeof(string), "_Address"),
-                    new DbParam(userDetail.CompanyName, typeof(string), "_CompanyName"),
-                    new DbParam(null, typeof(string), "_AdminId")
-                };
+                    UserId = userDetail.UserId,
+                    FirstName = userDetail.FirstName,
+                    LastName = userDetail.LastName,
+                    MobileNo = userDetail.Mobile,
+                    EmailId = userDetail.EmailId,
+                    Address = userDetail.Address,
+                    CompanyName = userDetail.CompanyName,
+                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                }, true);
 
-                var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_Ins", param, true);
-                if (!string.IsNullOrEmpty(ResultSet))
+                if (!string.IsNullOrEmpty(ResultSet.statusMessage))
                     loginResponse = await FetchUserDetail(userDetail, "sp_Userlogin_Auth");
             }
             return loginResponse;
@@ -196,7 +194,7 @@ namespace ServiceLayer.Code
         private async Task<LoginResponse> FetchUserDetail(UserDetail authUser, string ProcedureName)
         {
             LoginResponse loginResponse = default;
-            DataSet ds = await db.GetDataSet(ProcedureName, new
+            DataSet ds = await db.GetDataSetAsync(ProcedureName, new
             {
                 UserId = authUser.UserId,
                 MobileNo = authUser.Mobile,
@@ -205,7 +203,7 @@ namespace ServiceLayer.Code
                 PageSize = 1000
             });
 
-            if (ds != null && ds.Tables.Count == 3)
+            if (ds != null && ds.Tables.Count == 4)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {

@@ -7,7 +7,7 @@ using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
-    public class DashboardService: IDashboardService
+    public class DashboardService : IDashboardService
     {
         private readonly IDb _db;
 
@@ -18,15 +18,14 @@ namespace ServiceLayer.Code
 
         public DataSet GetSystemDashboardService(AttendenceDetail userDetails)
         {
-            DbParam[] dbParams = new DbParam[]
+            var Result = _db.GetDataSet("sp_dashboard_get", new
             {
-                new DbParam(userDetails.UserId, typeof(int), "_userId"),
-                new DbParam(userDetails.EmployeeUid, typeof(int), "_employeeUid"),
-                new DbParam(userDetails.AttendenceFromDay, typeof(DateTime), "_fromDate"),
-                new DbParam(userDetails.AttendenceToDay, typeof(DateTime), "_toDate"),
-            };
+                userId = userDetails.UserId,
+                employeeUid = userDetails.EmployeeUid,
+                fromDate = userDetails.AttendenceFromDay,
+                toDate = userDetails.AttendenceToDay,
+            });
 
-            var Result = _db.GetDataset("sp_dashboard_get", dbParams);
             if (Result != null && Result.Tables.Count == 4)
             {
                 Result.Tables[0].TableName = "BillDetail";
@@ -39,6 +38,6 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        
+
     }
 }

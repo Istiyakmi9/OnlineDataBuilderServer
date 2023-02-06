@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -250,13 +251,11 @@ namespace CoreServiceLayer.Implementation
             DataSet Result = null;
             if (userId > 0)
             {
-                DbParam[] dbParams = new DbParam[]
+                Result = _db.GetDataSet("sp_document_filedetail_get", new
                 {
-                        new DbParam(userId, typeof(long), "_OwnerId"),
-                        new DbParam(userTypeId, typeof(int), "_UserTypeId")
-                };
-
-                Result = _db.GetDataset("sp_document_filedetail_get", dbParams);
+                    OwnerId = userId,
+                    UserTypeId = userTypeId,
+                });
             }
 
             return Result;
@@ -324,18 +323,18 @@ namespace CoreServiceLayer.Implementation
             }
 
             var fileInfo = JsonConvert.SerializeObject((from n in fileDetail.AsEnumerable()
-                            select new
-                            {
-                                FileId = n.FileUid,
-                                FileOwnerId = n.UserId,
-                                FileName = n.FileName,
-                                FilePath = n.FilePath,
-                                ParentFolder = n.ParentFolder,
-                                FileExtension = n.FileExtension,
-                                StatusId = 0,
-                                UserTypeId = (int)n.UserTypeId,
-                                AdminId = 1
-                            }));
+                                                        select new
+                                                        {
+                                                            FileId = n.FileUid,
+                                                            FileOwnerId = n.UserId,
+                                                            FileName = n.FileName,
+                                                            FilePath = n.FilePath,
+                                                            ParentFolder = n.ParentFolder,
+                                                            FileExtension = n.FileExtension,
+                                                            StatusId = 0,
+                                                            UserTypeId = (int)n.UserTypeId,
+                                                            AdminId = 1
+                                                        }));
 
             // DataTable table = Converter.ToDataTable(fileInfo);
             var result = _db.ExecuteAsync(procedure, new { InsertFileJsonData = fileInfo }, false);
@@ -344,21 +343,24 @@ namespace CoreServiceLayer.Implementation
 
         public string DeleteFilesEntry(List<string> fileIds, string GetFilesProcedure)
         {
-
             string Result = "Fail";
             if (fileIds != null && fileIds.Count > 0)
             {
-                DbParam[] dbParams = new DbParam[]
+                DataSet FileSet = _db.GetDataSet(GetFilesProcedure, new
                 {
-                    new DbParam(fileIds.Aggregate((x, y) => x + "," + y), typeof(string), "_FileIds")
-                };
+                    FileIds = fileIds.Aggregate((x, y) => x + "," + y)
+                });
 
-                DataSet FileSet = _db.GetDataset(GetFilesProcedure, dbParams);
                 if (FileSet.Tables.Count > 0)
                 {
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
-                    Result = _db.ExecuteNonQuery(ApplicationConstants.deleteUserFile, dbParams, true);
-                    if (Result == "Deleted successfully")
+                    var dbResult = _db.Execute(ApplicationConstants.deleteUserFile, new
+                    {
+                        FileIds = fileIds.Aggregate((x, y) => x + "," + y)
+                    }, true);
+
+                    Result = dbResult.statusMessage;
+                    if (dbResult.statusMessage == "Deleted successfully")
                         DeleteFiles(files);
                 }
             }

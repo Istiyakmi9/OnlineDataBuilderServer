@@ -25,14 +25,13 @@ namespace ServiceLayer.Code
             if (filterModel.PageSize < 10)
                 filterModel.PageSize = 10;
 
-            DbParam[] param = new DbParam[]
+            DataSet ds = this.db.GetDataSet("SP_liveurl_get", new
             {
-                new DbParam(filterModel.SearchString, typeof(string), "@searchString"),
-                new DbParam(filterModel.PageIndex, typeof(int), "@pageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "@pageSize")
-            };
+                searchString = filterModel.SearchString,
+                pageIndex = filterModel.PageIndex,
+                pageSize = filterModel.PageSize,
+            });
 
-            DataSet ds = this.db.GetDataset("SP_liveurl_get", param);
             return ds;
         }
 
@@ -43,15 +42,14 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(liveUrlModal.url))
                 return null;
 
-            DbParam[] param = new DbParam[]
+            this.db.Execute("SP_liveurl_InsUpd", new
             {
-                new DbParam(liveUrlModal.savedUrlId, typeof(long), "@savedUrlId"),
-                new DbParam(liveUrlModal.method, typeof(string), "@method"),
-                new DbParam(liveUrlModal.paramters, typeof(string), "@parameter"),
-                new DbParam(liveUrlModal.url, typeof(string), "@url")
-            };
+                savedUrlId = liveUrlModal.savedUrlId,
+                method = liveUrlModal.method,
+                parameter = liveUrlModal.paramters,
+                url = liveUrlModal.url,
+            }, false);
 
-            this.db.ExecuteNonQuery("SP_liveurl_InsUpd", param, false);
             DataSet ds = LoadPageData(new FilterModel { SearchString = "1=1" });
             return ds;
         }
