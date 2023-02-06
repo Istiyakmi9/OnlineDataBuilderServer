@@ -196,6 +196,7 @@ namespace OnlineDataBuilder
             services.AddScoped<ICompanyNotificationService, CompanyNotificationService>();
             services.AddScoped<IServiceRequestService, ServiceRequestService>();
             services.AddScoped<IApprovalChainService, ApprovalChainService>();
+            services.AddScoped<IShiftService, ShiftService>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

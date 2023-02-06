@@ -62,17 +62,16 @@ namespace ServiceLayer.Code
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
         {
-            DbParam[] param = new DbParam[]
+            var result = this.db.Execute<string>("SP_OnlineDocument_InsUpd", new
             {
-                new DbParam(createPageModel.OnlineDocumentModel.Title, typeof(string), "@Title"),
-                new DbParam(createPageModel.OnlineDocumentModel.Description, typeof(string), "@Description"),
-                new DbParam(createPageModel.OnlineDocumentModel.DocumentId, typeof(int), "@DocumentId"),
-                new DbParam(createPageModel.Mobile, typeof(string), "@Mobile"),
-                new DbParam(createPageModel.Email, typeof(string), "@Email"),
-                new DbParam(createPageModel.OnlineDocumentModel.DocPath, typeof(string), "@DocPath")
-            };
+                Title = createPageModel.OnlineDocumentModel.Title,
+                Description = createPageModel.OnlineDocumentModel.Description,
+                DocumentId = createPageModel.OnlineDocumentModel.DocumentId,
+                Mobile = createPageModel.Mobile,
+                Email = createPageModel.Email,
+                DocPath = createPageModel.OnlineDocumentModel.DocPath
+            }, true);
 
-            var result = this.db.ExecuteNonQuery("SP_OnlineDocument_InsUpd", param, true);
             return result;
         }
 
@@ -187,6 +186,9 @@ namespace ServiceLayer.Code
                 Result.Tables[0].TableName = "Files";
                 Result.Tables[1].TableName = "Employee";
                 Result.Tables[2].TableName = "EmployeesList";
+            } else
+            {
+                Result = null;
             }
             return Result;
         }
@@ -381,16 +383,15 @@ namespace ServiceLayer.Code
             string status = string.Empty;
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
             fileDetail.UpdatedOn = TimeZoneInfo.ConvertTimeFromUtc(fileDetail.UpdatedOn, istTimeZome);
-            DbParam[] dbParams = new DbParam[]
+            status = this.db.Execute<string>("sp_FileDetail_PatchRecord", new
             {
-                new DbParam(Uid, typeof(long), "_FileId"),
-                new DbParam(fileDetail.StatusId, typeof(long), "_StatusId"),
-                new DbParam(fileDetail.UpdatedOn, typeof(DateTime), "_UpdatedOn"),
-                new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
-                new DbParam(fileDetail.Notes, typeof(string), "_Notes"),
-            };
+                FileId = Uid,
+                StatusId = fileDetail.StatusId,
+                UpdatedOn = fileDetail.UpdatedOn,
+                AdminId = _currentSession.CurrentUserDetail.UserId,
+                Notes = fileDetail.Notes,
+            }, true);
 
-            status = this.db.ExecuteNonQuery("sp_FileDetail_PatchRecord", dbParams, true);
             return status;
         }
 

@@ -240,6 +240,7 @@ namespace ServiceLayer.Code
                         }
 
                         loginResponse.Menu = ds.Tables[1];
+                        loginResponse.Department = ds.Tables[3];
                         loginResponse.UserDetail = userDetail;
                         loginResponse.UserTypeId = authUser.UserTypeId;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
@@ -269,13 +270,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Incorrect old password");
 
             string newEncryptedPassword = _authenticationService.Encrypt(authUser.NewPassword, _configuration.GetSection("EncryptSecret").Value);
-            DbParam[] dbParams = new DbParam[]
+            var result = db.Execute<string>("sp_Reset_Password", new
             {
-                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
-                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
-                new DbParam(newEncryptedPassword, typeof(System.String), "_NewPassword")
-            };
-            var result = db.ExecuteNonQuery("sp_Reset_Password", dbParams, true);
+                EmailId = authUser.EmailId,
+                MobileNo = authUser.Mobile,
+                NewPassword = newEncryptedPassword,
+            }, true);
+
             if (result == "Update")
             {
                 Status = "Password changed successfully, Please logout and login again";

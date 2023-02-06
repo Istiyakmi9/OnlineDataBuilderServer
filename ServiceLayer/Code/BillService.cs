@@ -1009,18 +1009,16 @@ namespace ServiceLayer.Code
                 }
             }
 
-            DbParam[] dbParams = new DbParam[]
+            result = this.db.Execute<string>("sp_gstdetail_insupd", new
             {
-                new DbParam(createPageModel.GstId, typeof(long), "_gstId"),
-                new DbParam(createPageModel.Billno, typeof(string), "_billno"),
-                new DbParam(createPageModel.Gststatus, typeof(int), "_gststatus"),
-                new DbParam(createPageModel.Paidon, typeof(DateTime), "_paidon"),
-                new DbParam(createPageModel.Paidby, typeof(long), "_paidby"),
-                new DbParam(createPageModel.Amount, typeof(double), "_amount"),
-                new DbParam(createPageModel.FileId, typeof(long), "_fileId")
-            };
-
-            result = this.db.ExecuteNonQuery("sp_gstdetail_insupd", dbParams, true);
+                gstId = createPageModel.GstId,
+                billno = createPageModel.Billno,
+                gststatus = createPageModel.Gststatus,
+                paidon = createPageModel.Paidon,
+                paidby = createPageModel.Paidby,
+                amount = createPageModel.Amount,
+                fileId = createPageModel.FileId,
+            }, true);
             return result;
         }
 

@@ -159,14 +159,12 @@ namespace ServiceLayer.Code
 
         private void SaveRefreshToken(RefreshTokenModal refreshToken, long userId)
         {
-            DbParam[] param = new DbParam[]
+            _db.Execute<string>("sp_UpdateRefreshToken", new
             {
-                new DbParam(userId, typeof(long), "_UserId"),
-                new DbParam(refreshToken.RefreshToken, typeof(string), "_RefreshToken"),
-                new DbParam(refreshToken.Expires, typeof(DateTime), "_ExpiryTime")
-            };
-
-            _db.ExecuteNonQuery("sp_UpdateRefreshToken", param, false);
+                UserId = userId,
+                RefreshToken = refreshToken.RefreshToken,
+                ExpiryTime = refreshToken.Expires
+            }, false);
         }
 
         public RefreshTokenModal GenerateRefreshToken(string ipAddress)

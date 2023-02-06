@@ -623,7 +623,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
         {
-            return GetDataSet(ProcedureName, Parameters, OutParam);
+            return GetDataSet(ProcedureName, Parameters, OutParam) ;
         }
 
         public (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
