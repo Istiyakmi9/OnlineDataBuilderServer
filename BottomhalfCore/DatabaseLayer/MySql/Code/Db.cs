@@ -21,22 +21,52 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         private MySqlDataReader reader = null;
         private bool IsTransactionStarted = false;
         private DataSet ds = null;
+        private readonly string _connectionString;
+        private static readonly object _lock = new object();
 
         public Db(string ConnectionString)
         {
-            SetupConnection(ConnectionString);
+            _connectionString = ConnectionString;
+            con = new MySqlConnection();
+            cmd = new MySqlCommand();
         }
 
-        public void SetupConnection(string ConnectionString)
+        private async Task<MySqlConnection> OpenConnectionSecurelyAsync()
         {
             if (cmd != null)
                 cmd.Parameters.Clear();
-            if (ConnectionString != null)
-            {
-                con = new MySqlConnection();
-                cmd = new MySqlCommand();
-                con.ConnectionString = ConnectionString;
-            }
+
+            var connection = new MySqlConnection(_connectionString);
+            await connection.OpenAsync();
+            return connection;
+        }
+
+        private MySqlConnection OpenConnectionSecurely()
+        {
+            if (cmd != null)
+                cmd.Parameters.Clear();
+
+            var connection = new MySqlConnection(_connectionString);
+            connection.Open();
+            return connection;
+        }
+
+        private MySqlConnection GetConnectionAsync()
+        {
+            if (cmd != null)
+                cmd.Parameters.Clear();
+
+            var connection = new MySqlConnection(_connectionString);
+            return connection;
+        }
+
+        private MySqlConnection GetConnection()
+        {
+            if (cmd != null)
+                cmd.Parameters.Clear();
+
+            var connection = new MySqlConnection(_connectionString);
+            return connection;
         }
 
         private void HandleSqlException(Exception ex)
@@ -47,401 +77,89 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 this.transaction.Rollback();
             }
 
+            con = cmd.Connection;
             if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
                 this.con.Close();
-
-            throw ex;
         }
 
         public void StartTransaction(IsolationLevel isolationLevel)
         {
-            try
-            {
-                this.IsTransactionStarted = true;
-                if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
-                    this.con.Close();
+            //try
+            //{
+            //    this.IsTransactionStarted = true;
+            //    if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
+            //        this.con.Close();
 
-                this.con.Open();
-                transaction = this.con.BeginTransaction(isolationLevel);
-            }
-            catch (Exception ex)
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
+            //    this.con.Open();
+            //    transaction = this.con.BeginTransaction(isolationLevel);
+            //}
+            //catch (Exception ex)
+            //{
+            //    if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+            //        con.Close();
 
-                throw new HiringBellException("Fail to perform Database operation.", ex);
-            }
+            //    throw new HiringBellException("Fail to perform Database operation.", ex);
+            //}
         }
 
         public void Commit()
         {
-            try
-            {
-                this.IsTransactionStarted = false;
-                this.transaction.Commit();
-            }
-            catch (Exception ex)
-            {
-                throw new HiringBellException("Fail to perform Database operation.", ex);
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
-            }
+            //try
+            //{
+            //    this.IsTransactionStarted = false;
+            //    this.transaction.Commit();
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new HiringBellException("Fail to perform Database operation.", ex);
+            //}
+            //finally
+            //{
+            //    if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+            //        con.Close();
+            //}
         }
 
         public void RollBack()
         {
-            try
-            {
-                if (this.IsTransactionStarted && this.transaction != null)
-                {
-                    this.IsTransactionStarted = false;
-                    this.transaction.Rollback();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new HiringBellException("Fail to perform Database operation.", ex);
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
-            }
+            //try
+            //{
+            //    if (this.IsTransactionStarted && this.transaction != null)
+            //    {
+            //        this.IsTransactionStarted = false;
+            //        this.transaction.Rollback();
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new HiringBellException("Fail to perform Database operation.", ex);
+            //}
+            //finally
+            //{
+            //    if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+            //        con.Close();
+            //}
+        }
+
+        private async Task CloseSecurelyAsync()
+        {
+            con = cmd.Connection;
+            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
+                await con.CloseAsync();
+        }
+
+        private void CloseSecurely()
+        {
+            con = cmd.Connection;
+            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
+                con.Close();
         }
 
         /*===========================================  GetDataSet =============================================================*/
 
         #region GetDataSet
 
-        private void PrepareArguments<T>(object instance)
-        {
-            List<PropertyInfo> properties = instance.GetType().GetProperties().ToList();
-            PrepareArguments(instance, properties);
-        }
 
-        private void PrepareArguments(object instance, List<PropertyInfo> properties)
-        {
-
-            if (instance != null)
-            {
-                this.cmd.Parameters.Clear();
-
-                dynamic fieldValue = null;
-                PropertyInfo prop = null;
-                foreach (PropertyInfo p in properties)
-                {
-                    prop = instance.GetType().GetProperty(p.Name);
-                    if (prop != null)
-                    {
-                        fieldValue = instance.GetType().GetProperty(p.Name).GetValue(instance, null);
-                        if (fieldValue != null)
-                        {
-                            if (p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(Nullable<DateTime>))
-                            {
-                                if (Convert.ToDateTime(fieldValue).Year == 1)
-                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = Convert.ToDateTime("1/1/1976");
-                                else
-                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.DateTime).Value = fieldValue.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                            }
-                            else if (p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?))
-                            {
-                                if (fieldValue != null)
-                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.Bit).Value = Convert.ToBoolean(fieldValue);
-                                else
-                                    cmd.Parameters.Add($"_{p.Name}", MySqlDbType.Bit).Value = null;
-                            }
-                            else
-                                cmd.Parameters.Add($"_{p.Name}", MySqlDbType.VarChar).Value = fieldValue;
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
-                        }
-                    }
-                }
-            }
-        }
-
-        public string Execute<T>(string ProcedureName, dynamic instance, bool OutParam)
-        {
-            string state = "";
-            try
-            {
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                this.PrepareArguments<T>(instance);
-
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
-
-                if (con.State != ConnectionState.Open)
-                    con.Open();
-                var result = cmd.ExecuteNonQuery();
-                if (OutParam)
-                    state = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                else
-                    state = result.ToString();
-                return state;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                CloseConnection();
-            }
-        }
-
-        private async Task CloseConnectionAsync()
-        {
-            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
-                await con.CloseAsync();
-        }
-
-        private void CloseConnection()
-        {
-            if (!this.IsTransactionStarted && (con.State == ConnectionState.Open || con.State == ConnectionState.Broken))
-                con.Close();
-        }
-
-        public async Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false)
-        {
-            try
-            {
-                string status = string.Empty;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                this.PrepareArguments<string>(instance);
-
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
-
-                if (con.State != ConnectionState.Open)
-                    con.Open();
-                var result = await cmd.ExecuteNonQueryAsync();
-                if (OutParam)
-                    status = cmd.Parameters["_ProcessingResult"].Value.ToString();
-
-                return DbResult.Build(result, status);
-            }
-            catch (Exception ex)
-            {
-                await CloseConnectionAsync();
-                throw ex;
-            }
-            finally
-            {
-                await CloseConnectionAsync();
-            }
-        }
-
-        public List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new()
-        {
-            List<T> result = null;
-            try
-            {
-                ds = null;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                con.Open();
-
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
-
-                reader = cmd.ExecuteReader();
-                result = this.ReadAndConvertToType<T>(reader);
-            }
-            catch (MySqlException MySqlException)
-            {
-                HandleSqlException(MySqlException);
-            }
-            catch (Exception ex)
-            {
-                HandleSqlException(ex);
-            }
-            finally
-            {
-                CloseConnection();
-            }
-
-            return result;
-        }
-
-        private List<T> GetList<T>(string ProcedureName, List<PropertyInfo> properties, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            List<T> result = null;
-            try
-            {
-                ds = null;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-
-                if (Parameters != null)
-                {
-                    PrepareArguments(Parameters, properties);
-                }
-
-                if (con.State != ConnectionState.Open)
-                    con.Open();
-
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
-
-                reader = cmd.ExecuteReader();
-                result = this.ReadAndConvertToType<T>(reader);
-            }
-            catch (MySqlException MySqlException)
-            {
-                throw MySqlException;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                CloseConnection();
-            }
-
-            return result;
-        }
-
-        public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            T data = default(T);
-            if (Parameters == null)
-                Parameters = new { };
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = result.FirstOrDefault();
-            }
-
-            return data;
-        }
-
-        public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
-        {
-            List<T> data = new List<T>();
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
-            List<T> result = this.GetList<T>(ProcedureName, properties, Parameters, OutParam);
-            if (result != null)
-            {
-                if (result.Count > 0)
-                    data = result;
-            }
-
-            return data;
-        }
-
-        private List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader) where T : new()
-        {
-            List<T> items = new List<T>();
-            try
-            {
-                List<PropertyInfo> props = typeof(T).GetProperties().ToList();
-                if (dataReader.HasRows)
-                {
-                    var fieldNames = Enumerable.Range(0, dataReader.FieldCount).Select(i => dataReader.GetName(i)).ToArray();
-                    while (dataReader.Read())
-                    {
-                        T t = new T();
-                        Parallel.ForEach(props, x =>
-                        {
-                            if (fieldNames.Contains(x.Name))
-                            {
-                                if (reader[x.Name] != DBNull.Value)
-                                {
-                                    try
-                                    {
-                                        if (x.PropertyType.IsGenericType)
-                                        {
-                                            switch (x.PropertyType.GenericTypeArguments.First().Name)
-                                            {
-                                                case nameof(Boolean):
-                                                    x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
-                                                    break;
-                                                case nameof(Int32):
-                                                    x.SetValue(t, Convert.ToInt32(reader[x.Name]));
-                                                    break;
-                                                case nameof(Int64):
-                                                    x.SetValue(t, Convert.ToInt64(reader[x.Name]));
-                                                    break;
-                                                case nameof(Decimal):
-                                                    x.SetValue(t, Convert.ToDecimal(reader[x.Name]));
-                                                    break;
-                                                default:
-                                                    x.SetValue(t, reader[x.Name]);
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            switch (x.PropertyType.Name)
-                                            {
-                                                case nameof(Boolean):
-                                                    x.SetValue(t, Convert.ToBoolean(reader[x.Name]));
-                                                    break;
-                                                case nameof(Int32):
-                                                    x.SetValue(t, Convert.ToInt32(reader[x.Name]));
-                                                    break;
-                                                case nameof(Int64):
-                                                    x.SetValue(t, Convert.ToInt64(reader[x.Name]));
-                                                    break;
-                                                case nameof(Decimal):
-                                                    x.SetValue(t, Convert.ToDecimal(reader[x.Name]));
-                                                    break;
-                                                default:
-                                                    x.SetValue(t, reader[x.Name]);
-                                                    break;
-                                            }
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        throw ex;
-                                    }
-                                }
-                            }
-                        });
-
-                        items.Add(t);
-                    }
-                }
-            }
-            catch (MySqlException MySqlException)
-            {
-                throw MySqlException;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-            return items;
-        }
 
         public DataSet GetDataset(string ProcedureName, DbParam[] param)
         {
@@ -449,9 +167,9 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             {
                 ds = null;
                 cmd = new MySqlCommand();
-                cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
+                cmd.Connection = GetConnection();
                 cmd = AddCommandParameter(cmd, param);
                 da = new MySqlDataAdapter();
                 da.SelectCommand = cmd;
@@ -461,121 +179,21 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 {
                     return ds;
                 }
-            }
-            catch (MySqlException MySqlException)
-            {
-                if (con.State == ConnectionState.Open)
-                    con.Close();
-                throw MySqlException;
-            }
-            catch (Exception ex)
-            {
-                if (con.State == ConnectionState.Open || con.State == ConnectionState.Broken)
-                    con.Close();
-                throw ex;
-            }
-            finally
-            {
-                if (!this.IsTransactionStarted)
-                    con.Close();
-            }
-
-            return ds;
-        }
-
-        public DataSet GetDataset(string ProcedureName)
-        {
-            try
-            {
-                ds = null;
-                cmd.Parameters.Clear();
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                da = new MySqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-                if (ds.Tables.Count > 0)
-                {
-                    return ds;
-                }
-            }
-            finally
-            {
-                con.Close();
-            }
-
-            return ds;
-        }
-
-        public DataSet GetDataset(string ProcedureName, DbParam[] param, bool OutParam, ref string PrcessingStatus)
-        {
-            try
-            {
-                ds = null;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd = AddCommandParameter(cmd, param);
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 250).Direction = ParameterDirection.Output;
-                }
-
-                da = new MySqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-                if (OutParam)
-                    PrcessingStatus = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                if (ds.Tables.Count > 0)
-                {
-                    return ds;
-                }
-
-                return ds;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        public Object ExecuteSingle(string ProcedureName, DbParam[] param, bool OutParam)
-        {
-            Object OutPut = null;
-            try
-            {
-                cmd.Parameters.Clear();
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd = AddCommandParameter(cmd, param);
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar).Direction = ParameterDirection.Output;
-                }
-
-                con.Open();
-                OutPut = cmd.ExecuteScalar();
-                if (OutParam)
-                    OutPut = cmd.Parameters["_ProcessingResult"].Value;
             }
             catch (MySqlException ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
             catch (Exception ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
-            finally
-            {
-                CloseConnection();
-            }
-            return OutPut;
+
+            return ds;
         }
+
 
         public string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam)
         {
@@ -583,17 +201,15 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             string fileId = DateTime.Now.Ticks.ToString();
             try
             {
-                cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
-                cmd.Parameters.Clear();
+                cmd.Connection = OpenConnectionSecurely();
                 cmd = AddCommandParameter(cmd, param);
                 if (OutParam)
                 {
                     cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
                 }
 
-                con.Open();
                 var result = cmd.ExecuteNonQuery();
                 if (OutParam)
                     state = cmd.Parameters["_ProcessingResult"].Value.ToString();
@@ -603,15 +219,22 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
             finally
             {
-                CloseConnection();
+                CloseSecurely();
             }
         }
 
         #endregion
+
+
+
+
+
+
 
         /*===========================================  Bulk Insert Update =====================================================*/
 
@@ -620,15 +243,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         private async Task<DbResult> BatchInsertUpdateCoreAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
         {
             string statusMessage = string.Empty;
-            cmd.Connection = con;
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = ProcedureName;
             cmd.UpdatedRowSource = UpdateRowSource.None;
+            cmd.Connection = await OpenConnectionSecurelyAsync();
 
             int Initial = 0;
             Type ColumnType = null;
             string ColumnValue = string.Empty;
-            cmd.Parameters.Clear();
             foreach (DataColumn column in table.Columns)
             {
                 ColumnType = table.Rows[Initial][column].GetType();
@@ -658,8 +280,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             MySqlDataAdapter da = new MySqlDataAdapter();
             da.InsertCommand = cmd;
             da.UpdateBatchSize = 4;
-            if (con.State != ConnectionState.Open)
-                con.Open();
             var state = await da.UpdateAsync(table);
             return DbResult.Build(state, statusMessage);
         }
@@ -669,15 +289,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             int state = -1;
             try
             {
-                cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
                 cmd.UpdatedRowSource = UpdateRowSource.None;
+                cmd.Connection = OpenConnectionSecurely();
 
                 int Initial = 0;
                 Type ColumnType = null;
                 string ColumnValue = string.Empty;
-                cmd.Parameters.Clear();
                 foreach (DataColumn column in table.Columns)
                 {
                     ColumnType = table.Rows[Initial][column].GetType();
@@ -713,11 +332,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
             finally
             {
-                CloseConnection();
+                CloseSecurely();
             }
 
             return state;
@@ -731,13 +351,26 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
             finally
             {
-                await CloseConnectionAsync();
+                await CloseSecurelyAsync();
             }
         }
+
+
+
+
+
+
+
+
+
+
+
+
 
         public class DbTypeDetail
         {
@@ -771,11 +404,10 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             try
             {
                 string state = "";
-                cmd.Connection = con;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = ProcedureName;
                 cmd.UpdatedRowSource = UpdateRowSource.None;
-                cmd.Parameters.Clear();
+                cmd.Connection = OpenConnectionSecurely();
 
                 foreach (DataColumn column in table.Columns)
                 {
@@ -799,11 +431,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (Exception ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
             finally
             {
-                CloseConnection();
+                CloseSecurely();
             }
         }
 
@@ -864,63 +497,116 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return cmd;
         }
 
-        public void UserDefineTypeBulkInsert(DataSet dataset, string ProcedureName, bool OutParam)
-        {
-            throw new NotImplementedException();
-        }
 
-        public DataSet CommonadBuilderBulkInsertUpdate(string SelectQuery, string TableName)
+
+
+
+
+
+
+
+
+
+        #endregion
+
+
+        // ------------------------  database code with lock and thread safty ------------------------------
+
+        private List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader) where T : new()
         {
+            List<T> items = new List<T>();
             try
             {
-                da = new MySqlDataAdapter();
-                da.SelectCommand = new MySqlCommand(SelectQuery, con);
-                builder = new MySqlCommandBuilder(da);
-                con.Open();
-                DataSet ds = new DataSet();
-                da.Fill(ds, TableName);
-                da.Update(ds, TableName);
-                return ds;
+                List<PropertyInfo> props = typeof(T).GetProperties().ToList();
+                if (dataReader.HasRows)
+                {
+                    var fieldNames = Enumerable.Range(0, dataReader.FieldCount).Select(i => dataReader.GetName(i)).ToArray();
+                    while (dataReader.Read())
+                    {
+                        T t = new T();
+                        Parallel.ForEach(props, x =>
+                        {
+                            if (fieldNames.Contains(x.Name))
+                            {
+                                if (dataReader[x.Name] != DBNull.Value)
+                                {
+                                    try
+                                    {
+                                        if (x.PropertyType.IsGenericType)
+                                        {
+                                            switch (x.PropertyType.GenericTypeArguments.First().Name)
+                                            {
+                                                case nameof(Boolean):
+                                                    x.SetValue(t, Convert.ToBoolean(dataReader[x.Name]));
+                                                    break;
+                                                case nameof(Int32):
+                                                    x.SetValue(t, Convert.ToInt32(dataReader[x.Name]));
+                                                    break;
+                                                case nameof(Int64):
+                                                    x.SetValue(t, Convert.ToInt64(dataReader[x.Name]));
+                                                    break;
+                                                case nameof(Decimal):
+                                                    x.SetValue(t, Convert.ToDecimal(dataReader[x.Name]));
+                                                    break;
+                                                default:
+                                                    x.SetValue(t, dataReader[x.Name]);
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            switch (x.PropertyType.Name)
+                                            {
+                                                case nameof(Boolean):
+                                                    x.SetValue(t, Convert.ToBoolean(dataReader[x.Name]));
+                                                    break;
+                                                case nameof(Int32):
+                                                    x.SetValue(t, Convert.ToInt32(dataReader[x.Name]));
+                                                    break;
+                                                case nameof(Int64):
+                                                    x.SetValue(t, Convert.ToInt64(dataReader[x.Name]));
+                                                    break;
+                                                case nameof(Decimal):
+                                                    x.SetValue(t, Convert.ToDecimal(dataReader[x.Name]));
+                                                    break;
+                                                default:
+                                                    x.SetValue(t, dataReader[x.Name]);
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        HandleSqlException(ex);
+                                        throw ex;
+                                    }
+                                }
+                            }
+                        });
+
+                        items.Add(t);
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                HandleSqlException(ex);
+                throw ex;
             }
             catch (Exception ex)
             {
+                HandleSqlException(ex);
                 throw ex;
             }
-            finally
-            {
-                CloseConnection();
-            }
+
+            return items;
         }
 
         public (T, Q) GetMulti<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
             where T : new()
             where Q : new()
         {
-            try
-            {
-                T firstInstance = default(T);
-                Q secondInstance = default(Q);
-                object userType = Parameters;
-                var properties = userType.GetType().GetProperties().ToList();
-
-                int tableCount = 0;
-                var result = FetchFromReader<T, Q>(ProcedureName, properties, out tableCount, Parameters, OutParam);
-                if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
-                {
-                    if (result.Item1.Count > 0)
-                        firstInstance = (result.Item1 as List<T>).SingleOrDefault();
-
-                    if (result.Item2.Count > 0)
-                        secondInstance = (result.Item2 as List<Q>).SingleOrDefault();
-                }
-
-                return (firstInstance, secondInstance);
-            }
-            catch
-            {
-                CloseConnection();
-                throw;
-            }
+            return Get<T, Q>(ProcedureName, Parameters, OutParam);
         }
 
         public (T, Q, R) GetMulti<T, Q, R>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
@@ -931,31 +617,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             throw new NotImplementedException();
         }
 
-        public (List<T>, List<R>) GetList<T, R>(string ProcedureName, dynamic Parameters, bool OutParam = false)
+        public (List<T>, List<Q>) GetList<T, Q>(string ProcedureName, dynamic Parameters, bool OutParam = false)
             where T : new()
-            where R : new()
+            where Q : new()
         {
             try
             {
                 List<T> firstInstance = default(List<T>);
-                List<R> secondInstance = default(List<R>);
-                object userType = Parameters;
-                var properties = userType.GetType().GetProperties().ToList();
+                List<Q> secondInstance = default(List<Q>);
 
-                int tableCount = 0;
-                var result = FetchFromReader<T, R>(ProcedureName, properties, out tableCount, Parameters, OutParam);
-                if (tableCount == 2 && result.Item1 != null && result.Item2 != null)
-                {
-                    firstInstance = result.Item1;
-                    secondInstance = result.Item2;
-                }
+                GenericReaderData genericReaderData = NativeGet<T, Q>(ProcedureName, Parameters, OutParam);
+
+                if (genericReaderData.ResultSet.Count != 2)
+                    throw HiringBellException.ThrowBadRequest("Fail to get the result. Got database error");
+
+                if (genericReaderData.ResultSet[0] != null)
+                    firstInstance = (genericReaderData.ResultSet[0] as List<T>);
+
+                if (genericReaderData.ResultSet[1] != null)
+                    secondInstance = (genericReaderData.ResultSet[1] as List<Q>);
 
                 return (firstInstance, secondInstance);
             }
-            catch
+            catch (Exception ex)
             {
-                CloseConnection();
-                throw;
+                throw ex;
             }
         }
 
@@ -967,111 +653,362 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             throw new NotImplementedException();
         }
 
+        public DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        {
+            return GetDataSet(ProcedureName, Parameters, OutParam) ;
+        }
 
-        private Tuple<List<T>, List<Q>> FetchFromReader<T, Q>(string ProcedureName, List<PropertyInfo> properties, out int tableCount, dynamic Parameters = null, bool OutParam = false)
+        public (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
             where T : new()
             where Q : new()
         {
-            tableCount = 0;
-            List<T> firstResult = null;
-            List<Q> secondResult = null;
             try
             {
-                ds = null;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
+                T firstInstance = default(T);
+                Q secondInstance = default(Q);
 
-                if (Parameters != null)
-                {
-                    PrepareArguments(Parameters, properties);
-                }
+                GenericReaderData genericReaderData = NativeGet<T, Q>(ProcedureName, Parameters, OutParam);
 
-                con.Open();
+                if (genericReaderData.ResultSet.Count != 2)
+                    throw HiringBellException.ThrowBadRequest("Fail to get the result. Got database error");
 
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
+                if (genericReaderData.ResultSet[0] != null)
+                    firstInstance = (genericReaderData.ResultSet[0] as List<T>).SingleOrDefault();
 
-                reader = cmd.ExecuteReader();
-                firstResult = this.ReadAndConvertToType<T>(reader);
-                tableCount++;
-                if (!reader.NextResult())
-                    throw new HiringBellException("[DB Query] getting error while trying to read data.");
+                if (genericReaderData.ResultSet[1] != null)
+                    secondInstance = (genericReaderData.ResultSet[1] as List<Q>).SingleOrDefault();
 
-                secondResult = this.ReadAndConvertToType<Q>(reader);
-                tableCount++;
-            }
-            catch (HiringBellException Hex)
-            {
-                throw Hex;
-            }
-            catch (MySqlException MySqlException)
-            {
-                throw MySqlException;
+                return (firstInstance, secondInstance);
             }
             catch (Exception ex)
             {
                 throw ex;
             }
-            finally
-            {
-                CloseConnection();
-            }
-
-            return Tuple.Create(firstResult, secondResult);
         }
 
-        public DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        public class GenericReaderData
         {
+            public List<dynamic> ResultSet { set; get; } = new List<dynamic>();
+        }
+
+        private GenericReaderData NativeGet<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
+        {
+            GenericReaderData genericReaderData = new GenericReaderData();
             try
             {
-                ds = null;
-                cmd = new MySqlCommand();
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
+                object userType = Parameters;
+                List<PropertyInfo> properties = userType.GetType().GetProperties().ToList();
 
-                if (Parameters != null)
+                lock (_lock)
                 {
-                    object userType = Parameters;
-                    var properties = userType.GetType().GetProperties().ToList();
-                    PrepareArguments(Parameters, properties);
-                }
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
 
-                con.Open();
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = ProcedureName;
+                            connection.Open();
+                            command.Connection = connection;
 
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                }
+                            if (Parameters != null)
+                            {
+                                util.BindParametersWithValue(Parameters, properties, command, OutParam);
+                            }
 
-                da = new MySqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-                if (ds.Tables.Count > 0)
-                {
-                    return ds;
+                            var dataReader = command.ExecuteReader();
+                            var firstResult = this.ReadAndConvertToType<T>(dataReader);
+                            genericReaderData.ResultSet.Add(firstResult);
+
+                            if (!dataReader.NextResult())
+                                throw new HiringBellException("[DB Query] getting error while trying to read data.");
+
+                            var secondResult = this.ReadAndConvertToType<Q>(dataReader);
+                            genericReaderData.ResultSet.Add(secondResult);
+                        }
+                    }
                 }
-            }
-            catch (MySqlException MySqlException)
-            {
-                throw MySqlException;
             }
             catch (Exception ex)
             {
                 throw ex;
             }
-            finally
-            {
-                CloseConnection();
-            }
 
-            return ds;
+            return genericReaderData;
         }
 
-        #endregion
+        //public List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new()
+        //{
+        //    List<T> result = null;
+        //    try
+        //    {
+        //        ds = null;
+        //        cmd.CommandType = CommandType.StoredProcedure;
+        //        cmd.CommandText = ProcedureName;
+        //        cmd.Connection = OpenConnectionSecurely();
+
+        //        if (OutParam)
+        //        {
+        //            cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+        //        }
+
+        //        reader = cmd.ExecuteReader();
+        //        result = this.ReadAndConvertToType<T>(reader);
+        //    }
+        //    catch (MySqlException ex)
+        //    {
+        //        HandleSqlException(ex);
+        //        throw ex;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        HandleSqlException(ex);
+        //        throw ex;
+        //    }
+        //    finally
+        //    {
+        //        CloseSecurely();
+        //    }
+
+        //    return result;
+        //}
+
+        public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            List<T> result = this.NativeGetList<T>(ProcedureName, Parameters, OutParam);
+            if (result == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get data.");
+
+            return result;
+        }
+
+        private List<T> NativeGetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            List<T> result = null;
+            object userType = Parameters;
+            var properties = userType.GetType().GetProperties().ToList();
+
+            try
+            {
+                lock (_lock)
+                {
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
+
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = ProcedureName;
+                            connection.Open();
+                            command.Connection = connection;
+
+                            if (Parameters != null)
+                            {
+                                util.BindParametersWithValue(Parameters, properties, command, OutParam);
+                            }
+                            var dataReader = command.ExecuteReader();
+                            result = this.ReadAndConvertToType<T>(dataReader);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return result;
+        }
+
+        public T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        {
+            T data = default(T);
+            if (Parameters == null)
+                Parameters = new { };
+
+            List<T> result = this.NativeGetList<T>(ProcedureName, Parameters, OutParam);
+            if (result != null)
+            {
+                if (result.Count > 0)
+                    data = result.FirstOrDefault();
+            }
+
+            return data;
+        }
+
+        public async Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        {
+            DataSet dataSet = new DataSet();
+            try
+            {
+                lock (_lock)
+                {
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
+                            if (Parameters != null)
+                            {
+                                object userType = Parameters;
+                                var properties = userType.GetType().GetProperties().ToList();
+                                util.BindParametersWithValue(Parameters, properties, command);
+                            }
+
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = ProcedureName;
+                            command.Connection = connection;
+                            using (MySqlDataAdapter dataAdapter = new MySqlDataAdapter())
+                            {
+                                connection.Open();
+                                dataAdapter.SelectCommand = command;
+                                dataAdapter.Fill(dataSet);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return await Task.FromResult(dataSet);
+        }
+
+        private async Task<int> ExecuteSingleAsync(string ProcedureName, dynamic Parameters, bool IsOutParam = false)
+        {
+            int rowsAffected = 0;
+            try
+            {
+                lock (_lock)
+                {
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
+                            if (Parameters == null)
+                            {
+                                throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
+                            }
+
+                            object userType = Parameters;
+                            var properties = userType.GetType().GetProperties().ToList();
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = ProcedureName;
+                            connection.Open();
+                            command.Connection = connection;
+
+                            util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
+                            rowsAffected = command.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return await Task.FromResult(rowsAffected);
+        }
+
+        public async Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)
+        {
+            int rowsAffected = 0;
+            try
+            {
+                lock (_lock)
+                {
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
+                            if (Parameters == null)
+                            {
+                                throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
+                            }
+
+                            object userType = Parameters.First();
+                            var properties = userType.GetType().GetProperties().ToList();
+                            util.Addarameters(properties, command);
+
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = ProcedureName;
+                            connection.Open();
+                            command.Connection = connection;
+
+                            int i = 0;
+                            while (i < Parameters.Count)
+                            {
+                                dynamic data = Parameters.ElementAt(i);
+                                util.BindParametersValue(data, properties, command, IsOutParam);
+                                rowsAffected += command.ExecuteNonQuery();
+                                i++;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return await Task.FromResult(rowsAffected);
+        }
+
+        public async Task<DbResult> ExecuteAsync(string ProcedureName, dynamic Parameters, bool OutParam = false)
+        {
+            return await ExecuteSingleAsync(ProcedureName, Parameters, OutParam);
+        }
+
+        public string Execute<T>(string ProcedureName, dynamic Parameters, bool IsOutParam)
+        {
+            string state = "";
+            int rowsAffected = 0;
+            try
+            {
+                lock (_lock)
+                {
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
+                            if (Parameters == null)
+                            {
+                                throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
+                            }
+
+                            object userType = Parameters;
+                            var properties = userType.GetType().GetProperties().ToList();
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = ProcedureName;
+                            connection.Open();
+                            command.Connection = connection;
+
+                            util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
+                            rowsAffected = command.ExecuteNonQuery();
+                            if (IsOutParam)
+                                state = command.Parameters["_ProcessingResult"].Value.ToString();
+                            else
+                                state = rowsAffected.ToString();
+                            return state;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

@@ -141,7 +141,8 @@ namespace OnlineDataBuilder
                     DocumentFolder = fileLocationDetail.Location,
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
                     BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath),
-                    LogoPath = Path.Combine(fileLocationDetail.Location, fileLocationDetail.LogoPath)
+                    LogoPath = Path.Combine(fileLocationDetail.Location, fileLocationDetail.LogoPath),
+                    ConnectionString = Configuration.GetConnectionString("OnlinedatabuilderDb")
                 };
 
                 return locationDetail;
@@ -191,7 +192,7 @@ namespace OnlineDataBuilder
             services.AddScoped<Approval>();
             services.AddScoped<Restriction>();
             services.AddScoped<YearEndCalculation>();
-            services.AddScoped<IProductService, ProductService > ();
+            services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICompanyNotificationService, CompanyNotificationService>();
             services.AddScoped<IServiceRequestService, ServiceRequestService>();
             services.AddScoped<IApprovalChainService, ApprovalChainService>();

@@ -357,7 +357,10 @@ namespace CoreServiceLayer.Implementation
                 if (FileSet.Tables.Count > 0)
                 {
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
-                    Result = _db.ExecuteNonQuery(ApplicationConstants.deleteUserFile, dbParams, true);
+                    Result = _db.Execute<string>(ApplicationConstants.deleteUserFile, new
+                    {
+                        FileIds = fileIds.Aggregate((x, y) => x + "," + y)
+                    }, true);
                     if (Result == "Deleted successfully")
                         DeleteFiles(files);
                 }

@@ -52,7 +52,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetRoles()
         {
-            DataSet result = _db.GetDataset("sp_AccessLevel_Sel");
+            DataSet result = _db.FetchDataSet("sp_AccessLevel_Sel");
             return result;
         }
 
@@ -72,8 +72,7 @@ namespace ServiceLayer.Code
                 new DbParam(accessLevelId, typeof(string), "_AccessLevelId")
             };
 
-            string message = string.Empty;
-            var result = _db.GetDataset("sp_AccessLevel_InsUpd", dbParams, true, ref message);
+            var result = _db.FetchDataSet("sp_AccessLevel_InsUpd", dbParams, true);
             if (result != null && result.Tables.Count > 0)
             {
                 _cacheManager.LoadApplicationData(true);

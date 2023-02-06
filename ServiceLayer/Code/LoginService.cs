@@ -80,21 +80,19 @@ namespace ServiceLayer.Code
             if (googleResponseModal != null)
             {
                 userDetail.EmailId = googleResponseModal.email;
-                DbParam[] param = new DbParam[]
+                var ResultSet = this.db.Execute<string>("sp_UserDetail_Ins", new
                 {
-                    new DbParam(userDetail.UserId, typeof(long), "_UserId"),
-                    new DbParam(userDetail.FirstName, typeof(string), "_FirstName"),
-                    new DbParam(userDetail.LastName, typeof(string), "_LastName"),
-                    new DbParam(userDetail.Mobile, typeof(string), "_MobileNo"),
-                    new DbParam(userDetail.EmailId, typeof(string), "_EmailId"),
-                    new DbParam(userDetail.Address, typeof(string), "_Address"),
-                    new DbParam(userDetail.CompanyName, typeof(string), "_CompanyName"),
-                    new DbParam(null, typeof(string), "_AdminId")
-                };
-
-                var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_Ins", param, true);
+                    UserId = userDetail.UserId,
+                    FirstName = userDetail.FirstName,
+                    LastName = userDetail.LastName,
+                    MobileNo = userDetail.Mobile,
+                    EmailId = userDetail.EmailId,
+                    Address = userDetail.Address,
+                    CompanyName = userDetail.CompanyName,
+                    AdminId = 0
+                }, true);
                 if (!string.IsNullOrEmpty(ResultSet))
-                    loginResponse = FetchUserDetail(userDetail, "sp_Userlogin_Auth");
+                    loginResponse = await FetchUserDetail(userDetail, "sp_Userlogin_Auth");
             }
             return loginResponse;
         }
@@ -165,16 +163,14 @@ namespace ServiceLayer.Code
                 ProcedureName = "sp_Employeelogin_Auth";
             else
                 throw new HiringBellException("UserType is invalid. Only system user allowed");
-            return await Task.Run(() =>
-            {
-                LoginResponse loginResponse = default;
-                if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
-                {
-                    loginResponse = FetchUserDetail(authUser, ProcedureName);
-                }
 
-                return loginResponse;
-            });
+            LoginResponse loginResponse = default;
+            if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
+            {
+                loginResponse = await FetchUserDetail(authUser, ProcedureName);
+            }
+
+            return loginResponse;
         }
 
         public async Task<LoginResponse> AuthenticateUser(UserDetail authUser)
@@ -189,25 +185,24 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Invalid userId or password.");
                 }
 
-                loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
+                loginResponse = await FetchUserDetail(authUser, "sp_Employeelogin_Auth");
             }
 
             return await Task.FromResult(loginResponse);
         }
 
-        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
+        private async Task<LoginResponse> FetchUserDetail(UserDetail authUser, string ProcedureName)
         {
             LoginResponse loginResponse = default;
-            DbParam[] param = new DbParam[]
+            DataSet ds = await db.GetDataSet(ProcedureName, new
             {
-                new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
-                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
-                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
-                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(1000, typeof(int), "_PageSize")
-            };
+                UserId = authUser.UserId,
+                MobileNo = authUser.Mobile,
+                EmailId = authUser.EmailId,
+                UserTypeId = authUser.UserTypeId,
+                PageSize = 1000
+            });
 
-            DataSet ds = db.GetDataset(ProcedureName, param);
             if (ds != null && ds.Tables.Count == 4)
             {
                 if (ds.Tables[0].Rows.Count > 0)
@@ -275,13 +270,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Incorrect old password");
 
             string newEncryptedPassword = _authenticationService.Encrypt(authUser.NewPassword, _configuration.GetSection("EncryptSecret").Value);
-            DbParam[] dbParams = new DbParam[]
+            var result = db.Execute<string>("sp_Reset_Password", new
             {
-                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
-                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
-                new DbParam(newEncryptedPassword, typeof(System.String), "_NewPassword")
-            };
-            var result = db.ExecuteNonQuery("sp_Reset_Password", dbParams, true);
+                EmailId = authUser.EmailId,
+                MobileNo = authUser.Mobile,
+                NewPassword = newEncryptedPassword,
+            }, true);
+
             if (result == "Update")
             {
                 Status = "Password changed successfully, Please logout and login again";

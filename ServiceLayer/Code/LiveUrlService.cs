@@ -43,15 +43,13 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(liveUrlModal.url))
                 return null;
 
-            DbParam[] param = new DbParam[]
+            this.db.Execute<string>("SP_liveurl_InsUpd", new
             {
-                new DbParam(liveUrlModal.savedUrlId, typeof(long), "@savedUrlId"),
-                new DbParam(liveUrlModal.method, typeof(string), "@method"),
-                new DbParam(liveUrlModal.paramters, typeof(string), "@parameter"),
-                new DbParam(liveUrlModal.url, typeof(string), "@url")
-            };
-
-            this.db.ExecuteNonQuery("SP_liveurl_InsUpd", param, false);
+                savedUrlId = liveUrlModal.savedUrlId,
+                method = liveUrlModal.method,
+                parameter = liveUrlModal.paramters,
+                url = liveUrlModal.url
+            }, false);
             DataSet ds = LoadPageData(new FilterModel { SearchString = "1=1" });
             return ds;
         }

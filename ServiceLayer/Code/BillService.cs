@@ -836,39 +836,38 @@ namespace ServiceLayer.Code
                         destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
                         _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
 
-                        dbParams = new DbParam[]
+                        var fileId = this.db.Execute<string>("sp_filedetail_insupd", new
                         {
-                            new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                            new DbParam(pdfModal.receiverCompanyId, typeof(long), "_ClientId"),
-                            new DbParam(fileDetail.FileName, typeof(string), "_FileName"),
-                            new DbParam(fileDetail.FilePath, typeof(string), "_FilePath"),
-                            new DbParam(fileDetail.FileExtension, typeof(string), "_FileExtension"),
-                            new DbParam(pdfModal.StatusId, typeof(long), "_StatusId"),
-                            new DbParam(bill.NextBillNo, typeof(int), "_GeneratedBillNo"),
-                            new DbParam(bill.BillUid, typeof(int), "_BillUid"),
-                            new DbParam(pdfModal.billId, typeof(long), "_BillDetailId"),
-                            new DbParam(pdfModal.billNo, typeof(string), "_BillNo"),
-                            new DbParam(pdfModal.packageAmount, typeof(double), "_PaidAmount"),
-                            new DbParam(pdfModal.billingMonth.Month, typeof(int), "_BillForMonth"),
-                            new DbParam(pdfModal.billYear, typeof(int), "_BillYear"),
-                            new DbParam(pdfModal.workingDay, typeof(int), "_NoOfDays"),
-                            new DbParam(pdfModal.daysAbsent, typeof(double), "_NoOfDaysAbsent"),
-                            new DbParam(pdfModal.iGST, typeof(float), "_IGST"),
-                            new DbParam(pdfModal.sGST, typeof(float), "_SGST"),
-                            new DbParam(pdfModal.cGST, typeof(float), "_CGST"),
-                            new DbParam(ApplicationConstants.TDS, typeof(float), "_TDS"),
-                            new DbParam(ApplicationConstants.Pending, typeof(int), "_BillStatusId"),
-                            new DbParam(pdfModal.PaidOn, typeof(DateTime), "_PaidOn"),
-                            new DbParam(pdfModal.FileId, typeof(int), "_FileDetailId"),
-                            new DbParam(pdfModal.UpdateSeqNo, typeof(int), "_UpdateSeqNo"),
-                            new DbParam(pdfModal.EmployeeId, typeof(int), "_EmployeeUid"),
-                            new DbParam(pdfModal.dateOfBilling, typeof(DateTime), "_BillUpdatedOn"),
-                            new DbParam(pdfModal.IsCustomBill, typeof(bool), "_IsCustomBill"),
-                            new DbParam(UserType.Employee, typeof(int), "_UserTypeId"),
-                            new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId")
-                        };
+                            FileId = fileDetail.FileId,
+                            ClientId = pdfModal.receiverCompanyId,
+                            FileName = fileDetail.FileName,
+                            FilePath = fileDetail.FilePath,
+                            FileExtension = fileDetail.FileExtension,
+                            StatusId = pdfModal.StatusId,
+                            GeneratedBillNo = bill.NextBillNo,
+                            BillUid = bill.BillUid,
+                            BillDetailId = pdfModal.billId,
+                            BillNo = pdfModal.billNo,
+                            PaidAmount = pdfModal.packageAmount,
+                            BillForMonth = pdfModal.billingMonth.Month,
+                            BillYear = pdfModal.billYear,
+                            NoOfDays = pdfModal.workingDay,
+                            NoOfDaysAbsent = pdfModal.daysAbsent,
+                            IGST = pdfModal.iGST,
+                            SGST = pdfModal.sGST,
+                            CGST = pdfModal.cGST,
+                            TDS = ApplicationConstants.TDS,
+                            BillStatusId = ApplicationConstants.Pending,
+                            PaidOn = pdfModal.PaidOn,
+                            FileDetailId = pdfModal.FileId,
+                            UpdateSeqNo = pdfModal.UpdateSeqNo,
+                            EmployeeUid = pdfModal.EmployeeId,
+                            BillUpdatedOn = pdfModal.dateOfBilling,
+                            IsCustomBill = pdfModal.IsCustomBill,
+                            UserTypeId = UserType.Employee,
+                            AdminId = _currentSession.CurrentUserDetail.UserId,
+                        }, true);
 
-                        var fileId = this.db.ExecuteNonQuery("sp_filedetail_insupd", dbParams, true);
                         if (string.IsNullOrEmpty(fileId))
                         {
                             List<Files> files = new List<Files>();
@@ -1011,18 +1010,16 @@ namespace ServiceLayer.Code
                 }
             }
 
-            DbParam[] dbParams = new DbParam[]
+            result = this.db.Execute<string>("sp_gstdetail_insupd", new
             {
-                new DbParam(createPageModel.GstId, typeof(long), "_gstId"),
-                new DbParam(createPageModel.Billno, typeof(string), "_billno"),
-                new DbParam(createPageModel.Gststatus, typeof(int), "_gststatus"),
-                new DbParam(createPageModel.Paidon, typeof(DateTime), "_paidon"),
-                new DbParam(createPageModel.Paidby, typeof(long), "_paidby"),
-                new DbParam(createPageModel.Amount, typeof(double), "_amount"),
-                new DbParam(createPageModel.FileId, typeof(long), "_fileId")
-            };
-
-            result = this.db.ExecuteNonQuery("sp_gstdetail_insupd", dbParams, true);
+                gstId = createPageModel.GstId,
+                billno = createPageModel.Billno,
+                gststatus = createPageModel.Gststatus,
+                paidon = createPageModel.Paidon,
+                paidby = createPageModel.Paidby,
+                amount = createPageModel.Amount,
+                fileId = createPageModel.FileId,
+            }, true);
             return result;
         }
 
