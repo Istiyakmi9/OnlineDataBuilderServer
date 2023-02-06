@@ -256,14 +256,7 @@ namespace ServiceLayer.Code
         public async Task<OrganizationDetail> InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             OrganizationDetail company = new OrganizationDetail();
-            if (string.IsNullOrEmpty(companyInfo.Email))
-                throw new HiringBellException("Invalid organization email.");
-
-            if (string.IsNullOrEmpty(companyInfo.PrimaryPhoneNo))
-                throw new HiringBellException("Invalid organization primary phone No#");
-
-            if (string.IsNullOrEmpty(companyInfo.CompanyName))
-                throw new HiringBellException("Invalid company name.");
+            ValidateCompany(companyInfo);
 
             company = _db.Get<OrganizationDetail>("sp_company_getById", new { companyInfo.CompanyId });
 
@@ -306,6 +299,39 @@ namespace ServiceLayer.Code
                 await UpdateOrganizationLogo(companyInfo, fileCollection);
 
             return company;
+        }
+
+        private void ValidateCompany(OrganizationDetail companyInfo)
+        {
+            if (string.IsNullOrEmpty(companyInfo.Email))
+                throw new HiringBellException("Invalid organization email.");
+
+            if (string.IsNullOrEmpty(companyInfo.PrimaryPhoneNo))
+                throw new HiringBellException("Invalid organization primary phone No#");
+
+            if (string.IsNullOrEmpty(companyInfo.CompanyName))
+                throw new HiringBellException("Invalid company name.");
+
+            if (string.IsNullOrEmpty(companyInfo.FirstAddress))
+                throw new HiringBellException("First address is null or empty");
+
+            if (string.IsNullOrEmpty(companyInfo.SecondAddress))
+                throw new HiringBellException("Second address is null or empty");
+
+            if (string.IsNullOrEmpty(companyInfo.GSTNo))
+                throw new HiringBellException("GSTIN number is null or empty");
+
+            if (string.IsNullOrEmpty(companyInfo.Country))
+                throw new HiringBellException("Country is null or empty");
+
+            if (string.IsNullOrEmpty(companyInfo.State))
+                throw new HiringBellException("State is null or empty");
+
+            if (string.IsNullOrEmpty(companyInfo.City))
+                throw new HiringBellException("City is null or empty");
+
+            if (companyInfo.Pincode <= 0)
+                throw new HiringBellException("Pincode is empty");
         }
 
         public List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail)
