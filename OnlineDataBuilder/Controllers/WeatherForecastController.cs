@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ModalLayer.Modal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -74,6 +75,9 @@ namespace OnlineDataBuilder.Controllers
 
             //    var result1 = await _db.ExecuteListAsync("sp_test_insupd", testDatas);
             //});
+
+            //(EmailTemplate emailTemplate, EmailSettingDetail emailSetting) =
+            //    _db.Get<EmailTemplate, EmailSettingDetail>("sp_email_template_by_id", new { EmailTemplateId = 1 });
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

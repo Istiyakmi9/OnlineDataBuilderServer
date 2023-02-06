@@ -578,12 +578,12 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        public T Get<T>(string ProcedureName, T instance, bool OutParam) where T : new()
+        public T Get<T>(string ProcedureName, T instance, bool OutParam) where T : class
         {
             throw new NotImplementedException();
         }
 
-        public T Get<T>(string ProcedureName, bool OutParam = false) where T : new()
+        public T Get<T>(string ProcedureName, bool OutParam = false) where T : class
         {
             throw new NotImplementedException();
         }
@@ -608,12 +608,12 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : class
         {
             throw new NotImplementedException();
         }
 
-        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : class
         {
             throw new NotImplementedException();
         }
@@ -674,6 +674,13 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         }
 
         public Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
         {
             throw new NotImplementedException();
         }

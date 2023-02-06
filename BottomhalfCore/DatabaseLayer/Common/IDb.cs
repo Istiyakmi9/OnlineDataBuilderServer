@@ -16,11 +16,8 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         DataSet GetDataset(string ProcedureName, DbParam[] param);
         int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam);
         Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam);
-        Object ExecuteSingle(string ProcedureName, DbParam[] param, bool OutParam);
         string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam);
-        void UserDefineTypeBulkInsert(DataSet dataset, string ProcedureName, bool OutParam);
         string InsertUpdateBatchRecord(string ProcedureName, DataTable table, Boolean OutParam = false);
-        DataSet CommonadBuilderBulkInsertUpdate(string SelectQuery, string TableName);
         void StartTransaction(IsolationLevel isolationLevel);
         void Commit();
         void RollBack();
@@ -37,8 +34,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
             where T : new()
             where Q : new()
             where R : new();
-        List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new();
-        List<T> GetList<T>(string ProcedureName, dynamic Parameters, bool OutParam = false) where T : new();
+        List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
         (List<T>, List<R>) GetList<T, R>(string ProcedureName, dynamic Parameters, bool OutParam = false)
             where T : new()
             where R : new();
@@ -48,5 +44,12 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
             where Q : new();
         DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
         Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
+
+
+        // --------------------new -----------------------------
+
+        (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new();
     }
 }
