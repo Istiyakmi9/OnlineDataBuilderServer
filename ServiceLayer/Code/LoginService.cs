@@ -244,16 +244,13 @@ namespace ServiceLayer.Code
                         loginResponse.UserDetail = userDetail;
                         loginResponse.UserTypeId = authUser.UserTypeId;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
-                        if (authUser.UserTypeId == (int)UserType.Admin)
-                        {
-                            loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
-                                                           .Select(x => new AutoCompleteEmployees
-                                                           {
-                                                               value = x.Field<long>("EmployeeUid"),
-                                                               text = x.Field<string>("Name"),
-                                                               email = x.Field<string>("Email")
-                                                           }).ToList<AutoCompleteEmployees>();
-                        }
+                        loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
+                                                       .Select(x => new AutoCompleteEmployees
+                                                       {
+                                                           value = x.Field<long>("EmployeeUid"),
+                                                           text = x.Field<string>("Name"),
+                                                           email = x.Field<string>("Email")
+                                                       }).ToList<AutoCompleteEmployees>();
                     }
                 }
             }
