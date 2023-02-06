@@ -819,12 +819,9 @@ namespace ServiceLayer.Code
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Employee,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
-                                    });
+                                    }).ToList();
 
-                    DataTable table = Converter.ToDataTable(fileInfo);
-                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    var result = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, true);
-                    _db.Commit();
+                    var batchResult = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }
 
                 var ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
@@ -832,7 +829,6 @@ namespace ServiceLayer.Code
             }
             catch
             {
-                _db.RollBack();
                 throw;
             }
         }

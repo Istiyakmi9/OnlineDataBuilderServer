@@ -64,14 +64,14 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("EditCurrentFile")]
-        public IResponse<ApiResponse> EditCurrentFile([FromBody] Files fileDetail)
+        public async Task<ApiResponse> EditCurrentFile([FromBody] Files fileDetail)
         {
-            var Result = _ionlineDocumentService.EditCurrentFileService(fileDetail);
+            var Result = await _ionlineDocumentService.EditCurrentFileService(fileDetail);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 
         [HttpPost("UploadDocumentDetail")]
-        public IResponse<ApiResponse> UploadDocumentDetail()
+        public async Task<ApiResponse> UploadDocumentDetail()
         {
             _httpContext.Request.Form.TryGetValue("facultObject", out StringValues RegistrationData);
             _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
@@ -82,7 +82,7 @@ namespace OnlineDataBuilder.Controllers
                 if (createPageModel != null)
                 {
                     IFormFileCollection files = _httpContext.Request.Form.Files;
-                    var Result = _ionlineDocumentService.UploadDocumentDetail(createPageModel, files, fileDetail);
+                    var Result = await _ionlineDocumentService.UploadDocumentDetail(createPageModel, files, fileDetail);
                     BuildResponse(Result, HttpStatusCode.OK);
                 }
             }
@@ -118,9 +118,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UploadDocumentRecords")]
-        public IResponse<ApiResponse> UploadDocumentRecords([FromBody] List<ProfessionalUserDetail> uploadDocument)
+        public async Task<ApiResponse> UploadDocumentRecords([FromBody] List<ProfessionalUserDetail> uploadDocument)
         {
-            var result = _ionlineDocumentService.UploadDocumentRecord(uploadDocument);
+            var result = await _ionlineDocumentService.UploadDocumentRecord(uploadDocument);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

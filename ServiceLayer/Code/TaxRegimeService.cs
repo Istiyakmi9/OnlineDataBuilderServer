@@ -131,11 +131,9 @@ namespace ServiceLayer.Code
                                   n.MaxTaxSlab,
                                   n.TaxRatePercentage,
                                   n.TaxAmount
-                              });
-                var table = Converter.ToDataTable(regime);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var status = await _db.BatchInsertUpdateAsync("sp_tax_regime_insupd", table, true);
-                _db.Commit();
+                              }).ToList();
+
+                var status = await _db.ExecuteListAsync("sp_tax_regime_insupd", regime, true);
                 return this.GetAllRegimeService();
             }
             catch (Exception)
@@ -228,11 +226,9 @@ namespace ServiceLayer.Code
                                     n.TaxAmount,
                                     n.Gender,
                                     n.CompanyId
-                                });
-                var table = Converter.ToDataTable(allSlabs);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var status = await _db.BatchInsertUpdateAsync("sp_ptax_slab_insupd", table, true);
-                _db.Commit();
+                                }).ToList();
+
+                var status = await _db.ExecuteListAsync("sp_ptax_slab_insupd", allSlabs, true);
                 return this.GetPTaxSlabByCompIdService(companyId);
             }
             catch (Exception)
@@ -303,16 +299,13 @@ namespace ServiceLayer.Code
                                   n.MinSurcahrgeSlab,
                                   n.MaxSurchargeSlab,
                                   n.SurchargeRatePercentage
-                              });
-                var table = Converter.ToDataTable(slabs);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var status = await _db.BatchInsertUpdateAsync("sp_surcharge_slab_insupd", table, true);
-                _db.Commit();
+                              }).ToList();
+
+                var status = await _db.ExecuteListAsync("sp_surcharge_slab_insupd", slabs, true);
                 return this.GetAllSurchargeService();
             }
             catch (Exception)
             {
-                _db.RollBack();
                 throw;
             }
         } 

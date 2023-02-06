@@ -206,209 +206,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         /*===========================================  Bulk Insert Update =====================================================*/
 
-        #region Bulk Insert Update
-
-        private async Task<DbResult> BatchInsertUpdateCoreAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
-        {
-            string statusMessage = string.Empty;
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = ProcedureName;
-            cmd.UpdatedRowSource = UpdateRowSource.None;
-            cmd.Connection = await OpenConnectionSecurelyAsync();
-
-            int Initial = 0;
-            Type ColumnType = null;
-            string ColumnValue = string.Empty;
-            foreach (DataColumn column in table.Columns)
-            {
-                ColumnType = table.Rows[Initial][column].GetType();
-                if (ColumnType == typeof(System.String))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-                else if (ColumnType == typeof(System.Int16))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int16, 2, column.ColumnName);
-                else if (ColumnType == typeof(System.Int32))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int32, 4, column.ColumnName);
-                else if (ColumnType == typeof(System.Double) || ColumnType == typeof(System.Single))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Decimal, 8, column.ColumnName);
-                else if (ColumnType == typeof(System.Int64) || ColumnType == typeof(System.Decimal))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int64, 8, column.ColumnName);
-                else if (ColumnType == typeof(System.Char))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, 1, column.ColumnName);
-                else if (ColumnType == typeof(System.Boolean))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Bit, 1, column.ColumnName);
-                else if (ColumnType == typeof(System.DateTime))
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.DateTime, 8, column.ColumnName);
-                else
-                    cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-            }
-
-            if (IsOutparam)
-                cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, ColumnValue.Length, "ProcessingResult").Direction = ParameterDirection.Output;
-
-            MySqlDataAdapter da = new MySqlDataAdapter();
-            da.InsertCommand = cmd;
-            da.UpdateBatchSize = 4;
-            var state = await da.UpdateAsync(table);
-            return DbResult.Build(state, statusMessage);
-        }
-
-        public int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam)
-        {
-            int state = -1;
-            try
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd.UpdatedRowSource = UpdateRowSource.None;
-                cmd.Connection = OpenConnectionSecurely();
-
-                int Initial = 0;
-                Type ColumnType = null;
-                string ColumnValue = string.Empty;
-                foreach (DataColumn column in table.Columns)
-                {
-                    ColumnType = table.Rows[Initial][column].GetType();
-                    if (ColumnType == typeof(System.String))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-                    else if (ColumnType == typeof(System.Int16))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int16, 2, column.ColumnName);
-                    else if (ColumnType == typeof(System.Int32))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int32, 4, column.ColumnName);
-                    else if (ColumnType == typeof(System.Double) || ColumnType == typeof(System.Single))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Decimal, 8, column.ColumnName);
-                    else if (ColumnType == typeof(System.Int64) || ColumnType == typeof(System.Decimal))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Int64, 8, column.ColumnName);
-                    else if (ColumnType == typeof(System.Char))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, 1, column.ColumnName);
-                    else if (ColumnType == typeof(System.Boolean))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.Bit, 1, column.ColumnName);
-                    else if (ColumnType == typeof(System.DateTime))
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.DateTime, 8, column.ColumnName);
-                    else
-                        cmd.Parameters.Add("_" + column.ColumnName, MySqlDbType.VarChar, ColumnValue.Length, column.ColumnName);
-                }
-
-                if (IsOutparam)
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, ColumnValue.Length, "ProcessingResult").Direction = ParameterDirection.Output;
-
-                MySqlDataAdapter da = new MySqlDataAdapter();
-                da.InsertCommand = cmd;
-                da.UpdateBatchSize = 4;
-                if (con.State != ConnectionState.Open)
-                    con.Open();
-                state = da.Update(table);
-            }
-            catch (Exception ex)
-            {
-                HandleSqlException(ex);
-                throw ex;
-            }
-            finally
-            {
-                CloseSecurely();
-            }
-
-            return state;
-        }
-
-        public async Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam)
-        {
-            try
-            {
-                return await this.BatchInsertUpdateCoreAsync(ProcedureName, table, IsOutparam);
-            }
-            catch (Exception ex)
-            {
-                HandleSqlException(ex);
-                throw ex;
-            }
-            finally
-            {
-                await CloseSecurelyAsync();
-            }
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public class DbTypeDetail
-        {
-            public MySqlDbType DbType { set; get; }
-            public int Size { set; get; }
-        }
-
-
-        private DbTypeDetail GetType(Type ColumnType)
-        {
-            if (ColumnType == typeof(System.String))
-                return new DbTypeDetail { DbType = MySqlDbType.VarChar, Size = 250 };
-            else if (ColumnType == typeof(System.Int64))
-                return new DbTypeDetail { DbType = MySqlDbType.Int64, Size = 8 };
-            else if (ColumnType == typeof(System.Int32))
-                return new DbTypeDetail { DbType = MySqlDbType.Int32, Size = 4 };
-            else if (ColumnType == typeof(System.Char))
-                return new DbTypeDetail { DbType = MySqlDbType.VarChar, Size = 1 };
-            else if (ColumnType == typeof(System.DateTime))
-                return new DbTypeDetail { DbType = MySqlDbType.DateTime, Size = 10 };
-            else if (ColumnType == typeof(System.Double))
-                return new DbTypeDetail { DbType = MySqlDbType.Int64, Size = 8 };
-            else if (ColumnType == typeof(System.Boolean))
-                return new DbTypeDetail { DbType = MySqlDbType.Bit, Size = 1 };
-            else
-                return new DbTypeDetail { DbType = MySqlDbType.VarChar, Size = 250 };
-        }
-
-        public string InsertUpdateBatchRecord(string ProcedureName, DataTable table, Boolean OutParam = false)
-        {
-            try
-            {
-                string state = "";
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd.UpdatedRowSource = UpdateRowSource.None;
-                cmd.Connection = OpenConnectionSecurely();
-
-                foreach (DataColumn column in table.Columns)
-                {
-                    var DbType = this.GetType(column.DataType);
-                    cmd.Parameters.Add("_" + column.ColumnName, DbType.DbType, DbType.Size, column.ColumnName);
-                }
-
-                if (OutParam)
-                    cmd.Parameters.Add("_ProcessingResult", MySqlDbType.Int32).Direction = ParameterDirection.Output;
-
-                da = new MySqlDataAdapter();
-                da.InsertCommand = cmd;
-                da.UpdateBatchSize = 2;
-                con.Open();
-                int Count = da.Update(table);
-                if (OutParam)
-                    state = cmd.Parameters["_ProcessingResult"].Value.ToString();
-                else if (Count > 0)
-                    state = "Successfull";
-                return state;
-            }
-            catch (Exception ex)
-            {
-                HandleSqlException(ex);
-                throw ex;
-            }
-            finally
-            {
-                CloseSecurely();
-            }
-        }
-
-        #endregion
 
         #region Common
 
@@ -464,15 +261,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             return cmd;
         }
-
-
-
-
-
-
-
-
-
 
 
         #endregion
@@ -708,42 +496,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return genericReaderData;
         }
 
-        //public List<T> GetList<T>(string ProcedureName, bool OutParam = false) where T : new()
-        //{
-        //    List<T> result = null;
-        //    try
-        //    {
-        //        ds = null;
-        //        cmd.CommandType = CommandType.StoredProcedure;
-        //        cmd.CommandText = ProcedureName;
-        //        cmd.Connection = OpenConnectionSecurely();
-
-        //        if (OutParam)
-        //        {
-        //            cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-        //        }
-
-        //        reader = cmd.ExecuteReader();
-        //        result = this.ReadAndConvertToType<T>(reader);
-        //    }
-        //    catch (MySqlException ex)
-        //    {
-        //        HandleSqlException(ex);
-        //        throw ex;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        HandleSqlException(ex);
-        //        throw ex;
-        //    }
-        //    finally
-        //    {
-        //        CloseSecurely();
-        //    }
-
-        //    return result;
-        //}
-
+       
         public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             List<T> result = this.NativeGetList<T>(ProcedureName, Parameters, OutParam);
@@ -893,6 +646,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
 
             return await Task.FromResult(dbResult);
+        }
+
+        public async Task<int> ExecuteListAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false)
+        {
+            return await ExecuteListAsync(ProcedureName, Parameters, IsOutParam);
         }
 
         public async Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)

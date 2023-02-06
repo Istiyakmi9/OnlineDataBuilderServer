@@ -234,16 +234,12 @@ namespace ServiceLayer.Code
                                     UpdatedBy = _currentSession.CurrentUserDetail.UserId,
                                     CreatedOn = DateTime.Now,
                                     UpdatedOn = DateTime.Now
-                                });
+                                }).ToList();
 
-                DataTable table = Converter.ToDataTable(fileInfo);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var taskResult = await _db.BatchInsertUpdateAsync("sp_Files_InsUpd", table, false);
-                _db.Commit();
+                var batchResult = await _db.ExecuteListAsync("sp_Files_InsUpd", fileInfo);
             }
             catch
             {
-                _db.RollBack();
                 if (File.Exists(companyLogo))
                     File.Delete(companyLogo);
 
@@ -536,7 +532,7 @@ namespace ServiceLayer.Code
                 if (File.Exists(ActualPath))
                     File.Delete(ActualPath);
             }
-            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = companyFile.CompanyId});
+            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = companyFile.CompanyId });
             return fileList;
 
         }

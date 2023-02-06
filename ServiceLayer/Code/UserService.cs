@@ -65,7 +65,7 @@ namespace ServiceLayer.Code
             return profileDetail;
         }
 
-        public ProfileDetail UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
+        public async Task<ProfileDetail> UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
             if (string.IsNullOrEmpty(professionalUser.Email))
             {
@@ -95,13 +95,9 @@ namespace ServiceLayer.Code
                                     FileExtension = n.FileExtension,
                                     UserTypeId = UserTypeId,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
-                                });
+                                }).ToList();
 
-                DataTable table = Converter.ToDataTable(fileInfo);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("sp_userfiledetail_Upload", table, true);
-
-                _db.Commit();
+                int insertedCount = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
             }
 
             var value = this.UpdateProfile(professionalUser, UserTypeId, IsProfileImageRequest);
@@ -137,19 +133,16 @@ namespace ServiceLayer.Code
                                     FileExtension = n.FileExtension,
                                     UserTypeId = UserTypeId,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
-                                });
+                                }).ToList();
 
-                DataTable table = Converter.ToDataTable(fileInfo);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var status = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, true);
-                _db.Commit();
+                var status = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
                 file = files[0];
             }
 
             return file;
         }
 
-        public string UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection, List<Files> files)
+        public async Task<string> UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection, List<Files> files)
         {
             string result = string.Empty;
             if (Int32.Parse(UserId) <= 0)
@@ -176,12 +169,9 @@ namespace ServiceLayer.Code
                                     FileExtension = n.FileExtension,
                                     UserTypeId = UserTypeId,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
-                                });
+                                }).ToList();
 
-                DataTable table = Converter.ToDataTable(fileInfo);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                int insertedCount = _db.BatchInsert("", table, true);
-                _db.Commit();
+                int insertedCount = await _db.ExecuteListAsync("", fileInfo, true);
                 if (insertedCount == 1)
                     result = "Declaration Uploaded Successfully.";
             }

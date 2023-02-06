@@ -10,15 +10,15 @@ namespace ServiceLayer.Interface
     {
         List<OnlineDocumentModel> CreateDocument(CreatePageModel createPageModel);
         string DeleteFilesService(List<Files> fileDetails);
-        string EditCurrentFileService(Files editFile);
-        string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
+        Task<string> EditCurrentFileService(Files editFile);
+        Task<string> UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection files, List<Files> fileDetail);
         DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel);
         DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel);
         List<Files> EditFileService(Files files);
         string DeleteDataService(string Uid);
         FileDetail ReGenerateService(GenerateBillFileDetail fileDetail);
         string UpdateRecord(FileDetail fileDetail, long Uid);
-        string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocument);
+        Task<string> UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocument);
         DataSet GetProfessionalCandidatesRecords(FilterModel filterModel);
         Task<DataSet> UploadFilesOrDocuments(List<Files> fileDetail, IFormFileCollection files);
         DataSet GetDocumentResultById(Files fileDetail);

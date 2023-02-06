@@ -134,7 +134,8 @@ namespace ServiceLayer.Code
 
                 if (FileSet.Tables.Count > 0)
                 {
-                    db.InsertUpdateBatchRecord("sp_OnlieDocument_Del_Multi", documentFileSet.Tables[0]);
+                    // db.InsertUpdateBatchRecord("sp_OnlieDocument_Del_Multi", documentFileSet.Tables[0]);
+                    db.ExecuteListAsync<DocumentFile>("sp_OnlieDocument_Del_Multi", deletingFiles);
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
                     _fileService.DeleteFiles(files);
                     Result = "Success";
@@ -143,7 +144,7 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public string EditCurrentFileService(Files editFile)
+        public async Task<string> EditCurrentFileService(Files editFile)
         {
             string Result = "Fail";
             if (editFile != null)
@@ -151,14 +152,10 @@ namespace ServiceLayer.Code
                 editFile.BillTypeId = 1;
                 editFile.UserId = 1;
 
-                DataSet fileDs = Converter.ToDataSet<Files>(new List<Files>() { editFile });
-                if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
-                {
-                    DataTable table = fileDs.Tables[0];
-                    table.TableName = "Files";
-                    db.InsertUpdateBatchRecord("sp_Files_InsUpd", table);
+                int rowsAffected = await db.ExecuteListAsync<Files>("sp_Files_InsUpd", new List<Files>() { editFile });
+                Result = "Fail";
+                if (rowsAffected > 0)
                     Result = "Success";
-                }
             }
             return Result;
         }
@@ -186,7 +183,8 @@ namespace ServiceLayer.Code
                 Result.Tables[0].TableName = "Files";
                 Result.Tables[1].TableName = "Employee";
                 Result.Tables[2].TableName = "EmployeesList";
-            } else
+            }
+            else
             {
                 Result = null;
             }
@@ -395,11 +393,13 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public string UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocuments)
+        public async Task<string> UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocuments)
         {
-            DataSet ds = Converter.ToDataSet<ProfessionalUserDetail>(uploadDocuments);
-            var status = this.db.BatchInsert("sp_ProfessionalCandidates_InsUpdate", ds.Tables[0], true);
-            return "Uploaded success";
+            string result = "Fail to insert or update";
+            var rowsAffected = await this.db.ExecuteListAsync("sp_ProfessionalCandidates_InsUpdate", uploadDocuments, true);
+            if (rowsAffected > 0)
+                result = "Uploaded success";
+            return result;
 
         }
 
@@ -416,7 +416,7 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public string UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection FileCollection, List<Files> fileDetail)
+        public async Task<string> UploadDocumentDetail(CreatePageModel createPageModel, IFormFileCollection FileCollection, List<Files> fileDetail)
         {
             string Result = "Fail";
             var NewDocId = InsertOnlineDocument(createPageModel);
@@ -436,14 +436,11 @@ namespace ServiceLayer.Code
                             item.UserId = 1;
                             item.PaidOn = null;
                         });
-                        DataSet fileDs = Converter.ToDataSet<Files>(files);
-                        if (fileDs != null && fileDs.Tables.Count > 0 && fileDs.Tables[0].Rows.Count > 0)
-                        {
-                            DataTable table = fileDs.Tables[0];
-                            table.TableName = "Files";
-                            db.InsertUpdateBatchRecord("sp_Files_InsUpd", table);
-                            Result = "Success";
-                        }
+
+                        int rowsAffected = await db.ExecuteListAsync<Files>("sp_Files_InsUpd", files);
+                        Result = "Success";
+                        if (rowsAffected == 0)
+                            Result = "Fail";
                     }
                 }
             }

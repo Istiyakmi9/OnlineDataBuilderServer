@@ -695,6 +695,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public Task<int> ExecuteListAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }

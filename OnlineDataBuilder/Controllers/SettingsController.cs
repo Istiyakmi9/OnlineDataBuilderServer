@@ -89,9 +89,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("EnableSalaryComponentDetail/{componentId}")]
-        public IResponse<ApiResponse> EnableSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
+        public async Task<ApiResponse> EnableSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
         {
-            var result = _settingService.EnableSalaryComponentDetailService(componentId, component);
+            var result = await _settingService.EnableSalaryComponentDetailService(componentId, component);
             return BuildResponse(result);
         }
 

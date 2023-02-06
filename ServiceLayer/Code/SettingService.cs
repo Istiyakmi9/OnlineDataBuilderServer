@@ -255,8 +255,7 @@ namespace ServiceLayer.Code
                                             AdminId = _currentSession.CurrentUserDetail.UserId
                                         }).ToList();
 
-                DataTable table = Converter.ToDataTable(updateComponents);
-                int statue = _db.BatchInsert("sp_salary_components_insupd", table, true);
+                int statue = await _db.ExecuteListAsync("sp_salary_components_insupd", updateComponents, true);
 
                 if (statue <= 0)
                     throw new HiringBellException("Unable to update detail");
@@ -295,42 +294,13 @@ namespace ServiceLayer.Code
                     });
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
-                DataTable table = Converter.ToDataTable(salaryGroups);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
-                _db.Commit();
-
+               
+                var statue = await _db.ExecuteListAsync("sp_salary_group_insupd", salaryGroups, true);
                 await Task.CompletedTask;
             }
         }
 
-        private void AddorRemoveListSalaryComponentfromSalaryGroup(List<SalaryComponents> components)
-        {
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
-            if (salaryGroups.Count > 0)
-            {
-                List<SalaryComponents> salaryComponents = null;
-                foreach (SalaryGroup salaryGroup in salaryGroups)
-                {
-                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-                    Parallel.For(0, components.Count, i =>
-                    {
-                        if (components[i].IsOpted == true)
-                            salaryComponents.Add(components[i]);
-                        else
-                            salaryComponents.RemoveAll(x => x.ComponentId == components[i].ComponentId);
-
-                    });
-                    salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-                }
-                DataTable table = Converter.ToDataTable(salaryGroups);
-                int statue = _db.BatchInsert("sp_salary_group_insupd", table, true);
-                if (statue <= 0)
-                    throw new HiringBellException("Unable to update detail");
-            }
-        }
-
-        private int AddorRemoveSalaryComponentfromSalaryGroup(SalaryComponents components)
+        private async Task<int> AddorRemoveSalaryComponentfromSalaryGroup(SalaryComponents components)
         {
             int status = 0;
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
@@ -347,8 +317,8 @@ namespace ServiceLayer.Code
 
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
-                DataTable table = Converter.ToDataTable(salaryGroups);
-                status = _db.BatchInsert("sp_salary_group_insupd", table, true);
+
+                status = await _db.ExecuteListAsync("sp_salary_group_insupd", salaryGroups, true);
                 if (status <= 0)
                     throw new HiringBellException("Unable to update detail");
             }
@@ -357,7 +327,7 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public List<SalaryComponents> EnableSalaryComponentDetailService(string componentId, SalaryComponents component)
+        public async Task<List<SalaryComponents>> EnableSalaryComponentDetailService(string componentId, SalaryComponents component)
         {
             List<SalaryComponents> salaryComponents = null;
 
@@ -408,7 +378,7 @@ namespace ServiceLayer.Code
                 if (!ApplicationConstants.IsExecuted(status))
                     throw new HiringBellException("Fail to update the record.");
 
-                int returnstatus = this.AddorRemoveSalaryComponentfromSalaryGroup(component);
+                int returnstatus = await this.AddorRemoveSalaryComponentfromSalaryGroup(component);
                 if (returnstatus <= 0)
                     throw new HiringBellException("Unable to update detail");
 

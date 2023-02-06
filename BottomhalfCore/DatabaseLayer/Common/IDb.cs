@@ -13,16 +13,14 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
     {
         /*===========================================  GetDataSet =============================================================*/
         Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false);
-        int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam);
-        Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam);
         string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam);
-        string InsertUpdateBatchRecord(string ProcedureName, DataTable table, Boolean OutParam = false);
         void StartTransaction(IsolationLevel isolationLevel);
         void Commit();
         void RollBack();
 
         /*=========================================  Generic type =====================================*/
 
+        Task<int> ExecuteListAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false);
         string Execute<T>(string ProcedureName, dynamic instance, bool OutParam);
         DbResult Execute(string ProcedureName, dynamic Parameters, bool OutParam = false);
         Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false);
