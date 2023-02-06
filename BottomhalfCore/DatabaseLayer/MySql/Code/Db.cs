@@ -648,12 +648,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return await Task.FromResult(dbResult);
         }
 
-        public async Task<int> ExecuteListAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false)
+        public async Task<int> BulkExecuteAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false)
         {
             return await ExecuteListAsync(ProcedureName, Parameters, IsOutParam);
         }
 
-        public async Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)
+        public async Task<int> ExecuteListAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false)
         {
             int rowsAffected = 0;
             try
@@ -750,6 +750,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             {
                 throw ex;
             }
+        }
+
+        public Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -236,7 +236,7 @@ namespace ServiceLayer.Code
                                     UpdatedOn = DateTime.Now
                                 }).ToList();
 
-                var batchResult = await _db.ExecuteListAsync("sp_Files_InsUpd", fileInfo);
+                var batchResult = await _db.BulkExecuteAsync("sp_Files_InsUpd", fileInfo);
             }
             catch
             {

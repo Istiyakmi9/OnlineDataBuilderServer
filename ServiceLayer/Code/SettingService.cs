@@ -255,7 +255,7 @@ namespace ServiceLayer.Code
                                             AdminId = _currentSession.CurrentUserDetail.UserId
                                         }).ToList();
 
-                int statue = await _db.ExecuteListAsync("sp_salary_components_insupd", updateComponents, true);
+                int statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
 
                 if (statue <= 0)
                     throw new HiringBellException("Unable to update detail");
@@ -295,7 +295,7 @@ namespace ServiceLayer.Code
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
                
-                var statue = await _db.ExecuteListAsync("sp_salary_group_insupd", salaryGroups, true);
+                var statue = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
                 await Task.CompletedTask;
             }
         }
@@ -318,7 +318,7 @@ namespace ServiceLayer.Code
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
 
-                status = await _db.ExecuteListAsync("sp_salary_group_insupd", salaryGroups, true);
+                status = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
                 if (status <= 0)
                     throw new HiringBellException("Unable to update detail");
             }

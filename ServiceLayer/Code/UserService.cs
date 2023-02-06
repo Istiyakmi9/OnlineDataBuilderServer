@@ -97,7 +97,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                int insertedCount = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
+                int insertedCount = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
             }
 
             var value = this.UpdateProfile(professionalUser, UserTypeId, IsProfileImageRequest);
@@ -135,7 +135,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                var status = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
+                var status = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 file = files[0];
             }
 
@@ -171,7 +171,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                int insertedCount = await _db.ExecuteListAsync("", fileInfo, true);
+                int insertedCount = await _db.BulkExecuteAsync("", fileInfo, true);
                 if (insertedCount == 1)
                     result = "Declaration Uploaded Successfully.";
             }

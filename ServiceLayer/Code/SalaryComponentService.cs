@@ -105,7 +105,7 @@ namespace ServiceLayer.Code
                                       Admin = n.CreatedBy,
                                   }).ToList();
 
-                await _db.ExecuteListAsync("sp_salary_components_insupd", itemOfRows, true);
+                await _db.BulkExecuteAsync("sp_salary_components_insupd", itemOfRows, true);
             }
 
             return salaryComponents;
@@ -155,7 +155,7 @@ namespace ServiceLayer.Code
                                       AdminId = _currentSession.CurrentUserDetail.UserId,
                                   }).ToList();
 
-                int count = await _db.ExecuteListAsync("sp_salary_components_insupd", itemOfRows, true);
+                int count = await _db.BulkExecuteAsync("sp_salary_components_insupd", itemOfRows, true);
                 if (count > 0)
                 {
                     if (result.Count > 0)
@@ -322,7 +322,7 @@ namespace ServiceLayer.Code
                 }
                 
                 //var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
-                var result = await _db.ExecuteListAsync("sp_salary_group_insupd", salaryGroups, true);
+                var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
                 await Task.CompletedTask;
             }
         }
