@@ -133,7 +133,7 @@ namespace ServiceLayer.Code
                                   n.TaxAmount
                               }).ToList();
 
-                var status = await _db.ExecuteListAsync("sp_tax_regime_insupd", regime, true);
+                var status = await _db.BulkExecuteAsync("sp_tax_regime_insupd", regime, true);
                 return this.GetAllRegimeService();
             }
             catch (Exception)
@@ -228,7 +228,7 @@ namespace ServiceLayer.Code
                                     n.CompanyId
                                 }).ToList();
 
-                var status = await _db.ExecuteListAsync("sp_ptax_slab_insupd", allSlabs, true);
+                var status = await _db.BulkExecuteAsync("sp_ptax_slab_insupd", allSlabs, true);
                 return this.GetPTaxSlabByCompIdService(companyId);
             }
             catch (Exception)
@@ -301,7 +301,7 @@ namespace ServiceLayer.Code
                                   n.SurchargeRatePercentage
                               }).ToList();
 
-                var status = await _db.ExecuteListAsync("sp_surcharge_slab_insupd", slabs, true);
+                var status = await _db.BulkExecuteAsync("sp_surcharge_slab_insupd", slabs, true);
                 return this.GetAllSurchargeService();
             }
             catch (Exception)

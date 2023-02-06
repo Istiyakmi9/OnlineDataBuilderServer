@@ -597,7 +597,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId,
                                 }).ToList();
 
-            var result = await _db.ExecuteListAsync("sp_employee_leaveplan_upd", employeeInfo, true);
+            var result = await _db.BulkExecuteAsync("sp_employee_leaveplan_upd", employeeInfo, true);
 
             if (result <= 0)
                 throw new HiringBellException("Fail to insert or update employee leave plan deatils.");

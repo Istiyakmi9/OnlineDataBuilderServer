@@ -135,7 +135,7 @@ namespace ServiceLayer.Code
                 if (FileSet.Tables.Count > 0)
                 {
                     // db.InsertUpdateBatchRecord("sp_OnlieDocument_Del_Multi", documentFileSet.Tables[0]);
-                    db.ExecuteListAsync<DocumentFile>("sp_OnlieDocument_Del_Multi", deletingFiles);
+                    db.BulkExecuteAsync<DocumentFile>("sp_OnlieDocument_Del_Multi", deletingFiles);
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
                     _fileService.DeleteFiles(files);
                     Result = "Success";
@@ -152,7 +152,7 @@ namespace ServiceLayer.Code
                 editFile.BillTypeId = 1;
                 editFile.UserId = 1;
 
-                int rowsAffected = await db.ExecuteListAsync<Files>("sp_Files_InsUpd", new List<Files>() { editFile });
+                int rowsAffected = await db.BulkExecuteAsync<Files>("sp_Files_InsUpd", new List<Files>() { editFile });
                 Result = "Fail";
                 if (rowsAffected > 0)
                     Result = "Success";
@@ -396,7 +396,7 @@ namespace ServiceLayer.Code
         public async Task<string> UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocuments)
         {
             string result = "Fail to insert or update";
-            var rowsAffected = await this.db.ExecuteListAsync("sp_ProfessionalCandidates_InsUpdate", uploadDocuments, true);
+            var rowsAffected = await this.db.BulkExecuteAsync("sp_ProfessionalCandidates_InsUpdate", uploadDocuments, true);
             if (rowsAffected > 0)
                 result = "Uploaded success";
             return result;
@@ -437,7 +437,7 @@ namespace ServiceLayer.Code
                             item.PaidOn = null;
                         });
 
-                        int rowsAffected = await db.ExecuteListAsync<Files>("sp_Files_InsUpd", files);
+                        int rowsAffected = await db.BulkExecuteAsync<Files>("sp_Files_InsUpd", files);
                         Result = "Success";
                         if (rowsAffected == 0)
                             Result = "Fail";

@@ -112,7 +112,7 @@ namespace ServiceLayer.Code
                                 }
                     ).ToList<ApprovalChainDetail>();
 
-                    var rowsEffected = await _db.ExecuteListAsync("sp_approval_chain_detail_insupd", data, true);
+                    var rowsEffected = await _db.BulkExecuteAsync("sp_approval_chain_detail_insupd", data, true);
                     if (rowsEffected == 0)
                         throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
 

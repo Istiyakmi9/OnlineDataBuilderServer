@@ -821,7 +821,7 @@ namespace ServiceLayer.Code
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
 
-                    var batchResult = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
+                    var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }
 
                 var ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);

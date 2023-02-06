@@ -20,7 +20,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
 
         /*=========================================  Generic type =====================================*/
 
-        Task<int> ExecuteListAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false);
+        Task<int> BulkExecuteAsync<T>(string ProcedureName, List<T> Parameters, bool IsOutParam = false);
         string Execute<T>(string ProcedureName, dynamic instance, bool OutParam);
         DbResult Execute(string ProcedureName, dynamic Parameters, bool OutParam = false);
         Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false);

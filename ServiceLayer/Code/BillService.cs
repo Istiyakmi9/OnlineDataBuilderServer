@@ -1003,7 +1003,7 @@ namespace ServiceLayer.Code
                                             AdminId = 1
                                         }).ToList();
 
-                        this.db.ExecuteListAsync(ApplicationConstants.InserUserFileDetail, fileInfo, true);
+                        this.db.BulkExecuteAsync(ApplicationConstants.InserUserFileDetail, fileInfo, true);
                     }
                 }
             }
