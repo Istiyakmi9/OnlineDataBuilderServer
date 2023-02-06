@@ -84,61 +84,61 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public void StartTransaction(IsolationLevel isolationLevel)
         {
-            try
-            {
-                this.IsTransactionStarted = true;
-                if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
-                    this.con.Close();
+            //try
+            //{
+            //    this.IsTransactionStarted = true;
+            //    if (this.con.State == ConnectionState.Open || this.con.State == ConnectionState.Broken)
+            //        this.con.Close();
 
-                this.con.Open();
-                transaction = this.con.BeginTransaction(isolationLevel);
-            }
-            catch (Exception ex)
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
+            //    this.con.Open();
+            //    transaction = this.con.BeginTransaction(isolationLevel);
+            //}
+            //catch (Exception ex)
+            //{
+            //    if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+            //        con.Close();
 
-                throw new HiringBellException("Fail to perform Database operation.", ex);
-            }
+            //    throw new HiringBellException("Fail to perform Database operation.", ex);
+            //}
         }
 
         public void Commit()
         {
-            try
-            {
-                this.IsTransactionStarted = false;
-                this.transaction.Commit();
-            }
-            catch (Exception ex)
-            {
-                throw new HiringBellException("Fail to perform Database operation.", ex);
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
-            }
+            //try
+            //{
+            //    this.IsTransactionStarted = false;
+            //    this.transaction.Commit();
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new HiringBellException("Fail to perform Database operation.", ex);
+            //}
+            //finally
+            //{
+            //    if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+            //        con.Close();
+            //}
         }
 
         public void RollBack()
         {
-            try
-            {
-                if (this.IsTransactionStarted && this.transaction != null)
-                {
-                    this.IsTransactionStarted = false;
-                    this.transaction.Rollback();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new HiringBellException("Fail to perform Database operation.", ex);
-            }
-            finally
-            {
-                if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
-                    con.Close();
-            }
+            //try
+            //{
+            //    if (this.IsTransactionStarted && this.transaction != null)
+            //    {
+            //        this.IsTransactionStarted = false;
+            //        this.transaction.Rollback();
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new HiringBellException("Fail to perform Database operation.", ex);
+            //}
+            //finally
+            //{
+            //    if (con.State == ConnectionState.Broken || con.State == ConnectionState.Open)
+            //        con.Close();
+            //}
         }
 
         private async Task CloseSecurelyAsync()
