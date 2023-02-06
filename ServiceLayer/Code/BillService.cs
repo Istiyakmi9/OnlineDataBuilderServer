@@ -1001,10 +1001,9 @@ namespace ServiceLayer.Code
                                             StatusId = 0,
                                             UserTypeId = (int)n.UserTypeId,
                                             AdminId = 1
-                                        });
+                                        }).ToList();
 
-                        DataTable table = Converter.ToDataTable(fileInfo);
-                        this.db.BatchInsert(ApplicationConstants.InserUserFileDetail, table, true);
+                        this.db.ExecuteListAsync(ApplicationConstants.InserUserFileDetail, fileInfo, true);
                     }
                 }
             }

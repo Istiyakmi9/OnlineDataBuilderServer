@@ -9,8 +9,8 @@ namespace ServiceLayer.Interface
     {
         SalaryComponents GetSalaryComponentByIdService();
         List<SalaryComponents> GetSalaryComponentsDetailService();
-        List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents);
-        List<SalaryComponents> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents);
+        Task<List<SalaryComponents>> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents);
+        Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents);
         List<SalaryGroup> GetSalaryGroupService(int CompanyId);
         dynamic GetCustomSalryPageDataService(int CompanyId);
         SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId);

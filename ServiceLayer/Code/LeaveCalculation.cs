@@ -236,17 +236,12 @@ namespace ServiceLayer.Code
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief),
                                      AccrualRunDay = r.AccrualRunDay,
                                      NextAccrualRunDate = r.NextAccrualRunDate
-                                 });
+                                 }).ToList();
 
-            var table = Converter.ToDataTable(tableJsonData);
-
-            _db.StartTransaction(System.Data.IsolationLevel.ReadUncommitted);
-
-            var result = await _db.BatchInsertUpdateAsync("sp_employee_leave_payroll_and_otherdetail_insupd", table, true);
-            if (result.rowsEffected != detail.Count)
+            // var result = await _db.BatchInsertUpdateAsync("sp_employee_leave_payroll_and_otherdetail_insupd", table, true);
+            var rowsAffected = await _db.ExecuteListAsync("sp_employee_leave_payroll_and_otherdetail_insupd", tableJsonData, true);
+            if (rowsAffected != detail.Count)
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
-
-            _db.Commit();
         }
 
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
@@ -254,7 +249,7 @@ namespace ServiceLayer.Code
             var leaveCalculationModal = new LeaveCalculationModal();
             leaveCalculationModal.presentDate = DateTime.UtcNow;
 
-            var ds = _db.FetchDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
+            var ds = _db.GetDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
             if (ds != null && ds.Tables.Count == 3)
             {

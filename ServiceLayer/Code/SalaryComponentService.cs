@@ -63,7 +63,7 @@ namespace ServiceLayer.Code
             return salaryGroup;
         }
 
-        public List<SalaryComponents> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents)
+        public async Task<List<SalaryComponents>> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents)
         {
             if (salaryComponents.Count > 0)
             {
@@ -105,14 +105,13 @@ namespace ServiceLayer.Code
                                       Admin = n.CreatedBy,
                                   }).ToList();
 
-                var table = Converter.ToDataTable(itemOfRows);
-                _db.BatchInsert("sp_salary_components_insupd", table, true);
+                await _db.ExecuteListAsync("sp_salary_components_insupd", itemOfRows, true);
             }
 
             return salaryComponents;
         }
 
-        public List<SalaryComponents> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents)
+        public async Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents)
         {
             List<SalaryComponents> finalResult = new List<SalaryComponents>();
             if (salaryComponents.Count > 0)
@@ -156,8 +155,7 @@ namespace ServiceLayer.Code
                                       AdminId = _currentSession.CurrentUserDetail.UserId,
                                   }).ToList();
 
-                var table = BottomhalfCore.Services.Code.Converter.ToDataTable(itemOfRows);
-                int count = _db.BatchInsert("sp_salary_components_insupd", table, true);
+                int count = await _db.ExecuteListAsync("sp_salary_components_insupd", itemOfRows, true);
                 if (count > 0)
                 {
                     if (result.Count > 0)
@@ -322,11 +320,9 @@ namespace ServiceLayer.Code
                     }
                     item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
-                var table = Converter.ToDataTable(salaryGroups);
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
-                _db.Commit();
-
+                
+                //var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
+                var result = await _db.ExecuteListAsync("sp_salary_group_insupd", salaryGroups, true);
                 await Task.CompletedTask;
             }
         }

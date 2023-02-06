@@ -29,9 +29,11 @@ namespace ServiceLayer.Code
                                       AccessibilityId = n.Permission
                                   }).ToList<RoleAccessibilityMapping>();
 
-            DataSet ds = Converter.ToDataSet<RoleAccessibilityMapping>(permissionMenu);
-            var result = await _db.BatchInsertUpdateAsync("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
-            if (result.rowsEffected != rolesAndMenus.Menu.Count)
+            
+            //var result = await _db.BatchInsertUpdateAsync("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
+            var rowsAffected = await _db.ExecuteListAsync("sp_role_accessibility_mapping_InsUpd", permissionMenu);
+
+            if (rowsAffected != rolesAndMenus.Menu.Count)
                 throw new HiringBellException("Fail to insert or update roles permission.");
 
             return ApplicationConstants.Successfull;
@@ -52,7 +54,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetRoles()
         {
-            DataSet result = _db.FetchDataSet("sp_AccessLevel_Sel");
+            DataSet result = _db.GetDataSet("sp_AccessLevel_Sel");
             return result;
         }
 

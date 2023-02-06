@@ -3,6 +3,7 @@ using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
@@ -17,7 +18,7 @@ namespace ServiceLayer.Interface
         LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, int leavePlanId, LeaveEndYearProcessing leaveEndYearProcessing);
         LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, int leavePlanId, LeaveApproval leaveApproval);        
         LeavePlanConfiguration GetLeaveConfigurationDetail(int leavePlanTypeId);
-        string AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees);
+        Task<string> AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees);
         List<EmpLeavePlanMapping> GetEmpMappingByLeavePlanIdService(int leavePlanId);
         LeavePlanConfiguration UpdateLeaveFromManagement(int leavePlanTypeId, int leavePlanId, ManagementLeave managementLeave);
     }

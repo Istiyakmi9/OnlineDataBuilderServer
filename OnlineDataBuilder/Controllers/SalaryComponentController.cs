@@ -51,17 +51,17 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("UpdateSalaryComponents")]
-        public IResponse<ApiResponse> UpdateSalaryComponents(List<SalaryComponents> salaryComponents)
+        public async Task<ApiResponse> UpdateSalaryComponents(List<SalaryComponents> salaryComponents)
         {
-            var result = _salaryComponentService.UpdateSalaryComponentService(salaryComponents);
+            var result = await _salaryComponentService.UpdateSalaryComponentService(salaryComponents);
             return BuildResponse(result);
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateSalaryComponentsByExcel")]
-        public IResponse<ApiResponse> InsertUpdateSalaryComponentsByExcel(List<SalaryComponents> salaryComponents)
+        public async Task<ApiResponse> InsertUpdateSalaryComponentsByExcel(List<SalaryComponents> salaryComponents)
         {
-            var result = _salaryComponentService.InsertUpdateSalaryComponentsByExcelService(salaryComponents);
+            var result = await _salaryComponentService.InsertUpdateSalaryComponentsByExcelService(salaryComponents);
             return BuildResponse(result);
         }
 

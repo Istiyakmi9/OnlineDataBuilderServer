@@ -5,6 +5,7 @@ using ModalLayer.Modal.Leaves;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -83,7 +84,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("AddUpdateEmpLeavePlan/{leavePlanId}")]
-        public IResponse<ApiResponse> AddUpdateEmpLeavePlan([FromRoute] int leavePlanId, [FromBody] List<Employee> employees)
+        public async Task<ApiResponse> AddUpdateEmpLeavePlan([FromRoute] int leavePlanId, [FromBody] List<Employee> employees)
         {
             var result = _manageLeavePlanService.AddUpdateEmpLeavePlanService(leavePlanId, employees);
             return BuildResponse(result);

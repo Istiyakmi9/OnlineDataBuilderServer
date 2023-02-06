@@ -584,7 +584,7 @@ namespace ServiceLayer.Code
             return leavePlanConfiguration;
         }
 
-        public string AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees)
+        public async Task<string> AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees)
         {
             string status = string.Empty;
             if (leavePlanId <= 0)
@@ -595,9 +595,9 @@ namespace ServiceLayer.Code
                                     EmployeeId = employee.EmployeeUid,
                                     LeavePlanId = employee.LeavePlanId,
                                     AdminId = _currentSession.CurrentUserDetail.UserId,
-                                });
-            var table = Converter.ToDataTable(employeeInfo);
-            var result = _db.BatchInsert("sp_employee_leaveplan_upd", table, true);
+                                }).ToList();
+
+            var result = await _db.ExecuteListAsync("sp_employee_leaveplan_upd", employeeInfo, true);
 
             if (result <= 0)
                 throw new HiringBellException("Fail to insert or update employee leave plan deatils.");

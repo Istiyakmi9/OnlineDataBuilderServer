@@ -130,19 +130,15 @@ namespace ServiceLayer.Code
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Client,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
-                                    });
+                                    }).ToList();
 
-                    DataTable table = Converter.ToDataTable(fileInfo);
-                    _db.StartTransaction(IsolationLevel.ReadUncommitted);
-                    var taskResult = await _db.BatchInsertUpdateAsync("sp_userfiledetail_Upload", table, true);
-                    _db.Commit();
+                    var batchResult = await _db.ExecuteListAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }
 
                 return organization;
             }
             catch (Exception)
             {
-                _db.RollBack();
                 throw;
             }
 

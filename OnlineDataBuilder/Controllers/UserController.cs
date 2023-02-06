@@ -43,7 +43,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UploadProfileDetailFile/{userId}/{UserTypeId}")]
-        public IResponse<ApiResponse> UploadProfileDetailFile(string userId, int UserTypeId)
+        public async Task<ApiResponse> UploadProfileDetailFile(string userId, int UserTypeId)
         {
             StringValues UserInfoData = default(string);
             _httpContext.Request.Form.TryGetValue("userInfo", out UserInfoData);
@@ -51,7 +51,7 @@ namespace OnlineDataBuilder.Controllers
             {
                 var userInfo = JsonConvert.DeserializeObject<ProfessionalUser>(UserInfoData);
                 IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = _userService.UploadUserInfo(userId, userInfo, files, UserTypeId);
+                var Result = await _userService.UploadUserInfo(userId, userInfo, files, UserTypeId);
                 return BuildResponse(Result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
@@ -80,7 +80,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("UploadDeclaration/{UserId}/{UserTypeId}")]
-        public IResponse<ApiResponse> UploadDeclaration(string UserId, int UserTypeId)
+        public async Task<ApiResponse> UploadDeclaration(string UserId, int UserTypeId)
         {
             StringValues userDetail = default(string);
             _httpContext.Request.Form.TryGetValue("UserDetail", out userDetail);
@@ -90,7 +90,7 @@ namespace OnlineDataBuilder.Controllers
                 var UserInfo = JsonConvert.DeserializeObject<UserDetail>(userDetail);
                 List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
                 IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                var result = _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, fileDetail, files);
+                var result = await _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, fileDetail, files);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             return BuildResponse("No files found", HttpStatusCode.OK);
