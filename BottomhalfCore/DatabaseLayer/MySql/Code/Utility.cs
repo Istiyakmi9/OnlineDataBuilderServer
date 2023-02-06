@@ -118,7 +118,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     if (prop != null)
                     {
                         var type = Type.GetType(param.TypeQualifiedName);
-                        cmd.Parameters.Add($"_{p.Name}", param.DbType).Value = Convert.ChangeType(prop.GetValue(instance, null), type);
+                        var value = prop.GetValue(instance, null);
+                        if (value != null)
+                            cmd.Parameters.Add($"_{p.Name}", param.DbType).Value = Convert.ChangeType(value, type);
+                        else
+                            cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
                     }
                     else
                     {
