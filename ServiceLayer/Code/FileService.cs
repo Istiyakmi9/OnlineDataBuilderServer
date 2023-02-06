@@ -161,13 +161,14 @@ namespace CoreServiceLayer.Implementation
                         if (currentFile != null)
                         {
                             string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
-                            string oldFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, OldName);
                             if (File.Exists(FilePath))
                                 File.Delete(FilePath);
-
-                            if (File.Exists(oldFilePath) && !string.IsNullOrEmpty(OldName))
-                                File.Delete(oldFilePath);
-
+                            if (OldName != null)
+                            {
+                                string oldFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, OldName);
+                                if (File.Exists(oldFilePath) && !string.IsNullOrEmpty(OldName))
+                                    File.Delete(oldFilePath);
+                            }
                             currentFile.FileExtension = Extension;
                             currentFile.DocumentId = Convert.ToInt64(ProfileUid);
                             currentFile.FilePath = ActualPath;
