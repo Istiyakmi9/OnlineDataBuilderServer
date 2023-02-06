@@ -755,10 +755,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         private List<T> NativeGetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
-            List<T> result = null;
-            object userType = Parameters;
-            var properties = userType.GetType().GetProperties().ToList();
-
+            List<T> result = null;            
             try
             {
                 lock (_lock)
@@ -776,6 +773,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
                             if (Parameters != null)
                             {
+                                object userType = Parameters;
+                                var properties = userType.GetType().GetProperties().ToList();
                                 util.BindParametersWithValue(Parameters, properties, command, OutParam);
                             }
                             var dataReader = command.ExecuteReader();
@@ -854,9 +853,9 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return await Task.FromResult(dataSet);
         }
 
-        private async Task<int> ExecuteSingleAsync(string ProcedureName, dynamic Parameters, bool IsOutParam = false)
+        private async Task<DbResult> ExecuteSingleAsync(string ProcedureName, dynamic Parameters, bool IsOutParam = false)
         {
-            int rowsAffected = 0;
+            DbResult dbResult = new DbResult();
             try
             {
                 lock (_lock)
@@ -879,7 +878,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             command.Connection = connection;
 
                             util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
-                            rowsAffected = command.ExecuteNonQuery();
+                            dbResult.rowsEffected = command.ExecuteNonQuery();
+                            if (IsOutParam)
+                                dbResult.statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                            else
+                                dbResult.statusMessage = dbResult.rowsEffected.ToString();
                         }
                     }
                 }
@@ -889,7 +892,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 throw ex;
             }
 
-            return await Task.FromResult(rowsAffected);
+            return await Task.FromResult(dbResult);
         }
 
         public async Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)
