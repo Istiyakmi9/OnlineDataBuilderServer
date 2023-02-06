@@ -94,7 +94,7 @@ namespace ServiceLayer.Code
 
                 var ResultSet = this.db.ExecuteNonQuery("sp_UserDetail_Ins", param, true);
                 if (!string.IsNullOrEmpty(ResultSet))
-                    loginResponse = FetchUserDetail(userDetail, "sp_Userlogin_Auth");
+                    loginResponse = await FetchUserDetail(userDetail, "sp_Userlogin_Auth");
             }
             return loginResponse;
         }
@@ -165,16 +165,14 @@ namespace ServiceLayer.Code
                 ProcedureName = "sp_Employeelogin_Auth";
             else
                 throw new HiringBellException("UserType is invalid. Only system user allowed");
-            return await Task.Run(() =>
-            {
-                LoginResponse loginResponse = default;
-                if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
-                {
-                    loginResponse = FetchUserDetail(authUser, ProcedureName);
-                }
 
-                return loginResponse;
-            });
+            LoginResponse loginResponse = default;
+            if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
+            {
+                loginResponse = await FetchUserDetail(authUser, ProcedureName);
+            }
+
+            return loginResponse;
         }
 
         public async Task<LoginResponse> AuthenticateUser(UserDetail authUser)
@@ -189,25 +187,24 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Invalid userId or password.");
                 }
 
-                loginResponse = FetchUserDetail(authUser, "sp_Employeelogin_Auth");
+                loginResponse = await FetchUserDetail(authUser, "sp_Employeelogin_Auth");
             }
 
             return await Task.FromResult(loginResponse);
         }
 
-        private LoginResponse FetchUserDetail(UserDetail authUser, string ProcedureName)
+        private async Task<LoginResponse> FetchUserDetail(UserDetail authUser, string ProcedureName)
         {
             LoginResponse loginResponse = default;
-            DbParam[] param = new DbParam[]
+            DataSet ds = await db.GetDataSet(ProcedureName, new
             {
-                new DbParam(authUser.UserId, typeof(System.Int64), "_UserId"),
-                new DbParam(authUser.Mobile, typeof(System.String), "_MobileNo"),
-                new DbParam(authUser.EmailId, typeof(System.String), "_EmailId"),
-                new DbParam(authUser.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(1000, typeof(int), "_PageSize")
-            };
+                UserId = authUser.UserId,
+                MobileNo = authUser.Mobile,
+                EmailId = authUser.EmailId,
+                UserTypeId = authUser.UserTypeId,
+                PageSize = 1000
+            });
 
-            DataSet ds = db.GetDataset(ProcedureName, param);
             if (ds != null && ds.Tables.Count == 3)
             {
                 if (ds.Tables[0].Rows.Count > 0)

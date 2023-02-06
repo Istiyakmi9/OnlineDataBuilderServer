@@ -102,65 +102,6 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             return ds;
         }
 
-        public DataSet GetDataset(string ProcedureName)
-        {
-            try
-            {
-                ds = null;
-                cmd.Parameters.Clear();
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                da = new SqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-                if (ds.Tables.Count > 0)
-                {
-                    return ds;
-                }
-            }
-            finally
-            {
-                con.Close();
-            }
-
-            return ds;
-        }
-
-        public DataSet GetDataset(string ProcedureName, DbParam[] param, bool OutParam, ref string PrcessingStatus)
-        {
-            try
-            {
-                ds = null;
-                cmd.Connection = con;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd = AddCommandParameter(cmd, param);
-                if (OutParam)
-                {
-                    cmd.Parameters.Add("@ProcessingResult", SqlDbType.VarChar, 250).Direction = ParameterDirection.Output;
-                }
-
-                da = new SqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-                if (OutParam)
-                    PrcessingStatus = cmd.Parameters["@ProcessingResult"].Value.ToString();
-                if (ds.Tables.Count > 0)
-                {
-                    return ds;
-                }
-
-                return ds;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         public Object ExecuteSingle(string ProcedureName, DbParam[] param, bool OutParam)
         {
             Object OutPut = null;
@@ -637,12 +578,12 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        public T Get<T>(string ProcedureName, T instance, bool OutParam) where T : new()
+        public T Get<T>(string ProcedureName, T instance, bool OutParam) where T : class
         {
             throw new NotImplementedException();
         }
 
-        public T Get<T>(string ProcedureName, bool OutParam = false) where T : new()
+        public T Get<T>(string ProcedureName, bool OutParam = false) where T : class
         {
             throw new NotImplementedException();
         }
@@ -667,12 +608,12 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        public T GetValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : class
         {
             throw new NotImplementedException();
         }
 
-        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
+        public List<T> GetListValue<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : class
         {
             throw new NotImplementedException();
         }
@@ -723,6 +664,23 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         }
 
         public Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, bool IsOutparam)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+            where T : new()
+            where Q : new()
         {
             throw new NotImplementedException();
         }
