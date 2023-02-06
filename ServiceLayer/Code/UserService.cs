@@ -223,14 +223,13 @@ namespace ServiceLayer.Code
 
             var value = string.Empty;
             ProfileDetail profileDetail = new ProfileDetail();
-            DbParam[] param = new DbParam[]
+            
+            var Result = _db.GetDataSet("sp_professionaldetail_filter", new
             {
-               new DbParam(userId, typeof(long), "_UserId"),
-               new DbParam(null, typeof(string), "_Mobile"),
-               new DbParam(null, typeof(string), "_Email")
-            };
-
-            var Result = _db.GetDataset("sp_professionaldetail_filter", param);
+                UserId = userId,
+                Mobile = _currentSession.CurrentUserDetail.Mobile,
+                Email = _currentSession.CurrentUserDetail.Email,
+            });
 
             if (Result.Tables.Count == 0)
             {

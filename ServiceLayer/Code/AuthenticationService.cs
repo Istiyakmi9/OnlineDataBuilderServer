@@ -14,6 +14,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -122,7 +123,7 @@ namespace ServiceLayer.Code
             return generatedToken;
         }
 
-        public RefreshTokenModal RenewAndGenerateNewToken(string Mobile, string Email, string UserRole)
+        public async Task<RefreshTokenModal> RenewAndGenerateNewToken(string Mobile, string Email, string UserRole)
         {
             long UserId = 0;
             string TokenUserId = ReadJwtToken();
@@ -131,13 +132,13 @@ namespace ServiceLayer.Code
             RefreshTokenModal refreshTokenModal = default;
             if (UserId > 0 || !string.IsNullOrEmpty(Email) || !string.IsNullOrEmpty(Mobile))
             {
-                DbParam[] param = new DbParam[]
+                var ResultSet = await _db.GetDataSetAsync("SP_AuthenticationToken_VerifyAndGet", new
                 {
-                    new DbParam(UserId, typeof(long), "_UserId"),
-                    new DbParam(Mobile, typeof(string), "_Mobile"),
-                    new DbParam(Email, typeof(string), "_Email")
-                };
-                var ResultSet = _db.GetDataset("SP_AuthenticationToken_VerifyAndGet", param);
+                    UserId,
+                    Mobile,
+                    Email,
+                });
+
                 if (ResultSet.Tables.Count > 0)
                 {
                     var Result = Converter.ToList<TokenModal>(ResultSet.Tables[0]);
