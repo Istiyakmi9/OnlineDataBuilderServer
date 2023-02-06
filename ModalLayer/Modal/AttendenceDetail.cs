@@ -34,6 +34,7 @@ namespace ModalLayer.Modal
         public bool IsOpen { get; set; }
         public int CompanyId { get; set; }
         public bool IsWeekend { get; set; }
+        public List<string> Emails { get; set; }
     }
 
     public class AttendanceWithClientDetail
