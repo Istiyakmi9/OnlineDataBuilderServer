@@ -208,7 +208,7 @@ namespace ServiceLayer.Code
             };
 
             DataSet ds = db.GetDataset(ProcedureName, param);
-            if (ds != null && ds.Tables.Count == 3)
+            if (ds != null && ds.Tables.Count == 4)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -245,6 +245,7 @@ namespace ServiceLayer.Code
                         }
 
                         loginResponse.Menu = ds.Tables[1];
+                        loginResponse.Department = ds.Tables[3];
                         loginResponse.UserDetail = userDetail;
                         loginResponse.UserTypeId = authUser.UserTypeId;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
