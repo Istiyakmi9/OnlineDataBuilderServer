@@ -13,7 +13,6 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
     {
         /*===========================================  GetDataSet =============================================================*/
         Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false);
-        DataSet GetDataset(string ProcedureName, DbParam[] param);
         int BatchInsert(string ProcedureName, DataTable table, Boolean IsOutparam);
         Task<DbResult> BatchInsertUpdateAsync(string ProcedureName, DataTable table, Boolean IsOutparam);
         string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam);
@@ -25,6 +24,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         /*=========================================  Generic type =====================================*/
 
         string Execute<T>(string ProcedureName, dynamic instance, bool OutParam);
+        DbResult Execute(string ProcedureName, dynamic Parameters, bool OutParam = false);
         Task<DbResult> ExecuteAsync(string ProcedureName, dynamic instance, bool OutParam = false);
         T Get<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new();
         (T, Q) GetMulti<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
@@ -43,7 +43,8 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
             where R : new()
             where Q : new();
         DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
-        Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
+        Task<DataSet> GetDataSetAsync(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
+        DataSet GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
 
 
         // --------------------new -----------------------------

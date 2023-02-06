@@ -161,38 +161,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
 
 
-        public DataSet GetDataset(string ProcedureName, DbParam[] param)
-        {
-            try
-            {
-                ds = null;
-                cmd = new MySqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = ProcedureName;
-                cmd.Connection = GetConnection();
-                cmd = AddCommandParameter(cmd, param);
-                da = new MySqlDataAdapter();
-                da.SelectCommand = cmd;
-                ds = new DataSet();
-                da.Fill(ds);
-                if (ds.Tables.Count > 0)
-                {
-                    return ds;
-                }
-            }
-            catch (MySqlException ex)
-            {
-                HandleSqlException(ex);
-                throw ex;
-            }
-            catch (Exception ex)
-            {
-                HandleSqlException(ex);
-                throw ex;
-            }
-
-            return ds;
-        }
 
 
         public string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam)
@@ -840,7 +808,13 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return data;
         }
 
-        public async Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        public DataSet GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        {
+            Task<DataSet> taskResult = GetDataSetAsync(ProcedureName, Parameters, OutParam);
+            return taskResult.Result;
+        }
+
+        public async Task<DataSet> GetDataSetAsync(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
         {
             DataSet dataSet = new DataSet();
             try
@@ -962,6 +936,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
 
             return await Task.FromResult(rowsAffected);
+        }
+
+        public DbResult Execute(string ProcedureName, dynamic Parameters, bool OutParam = false)
+        {
+            var dbResult = ExecuteSingleAsync(ProcedureName, Parameters, OutParam);
+            return dbResult.Result;
         }
 
         public async Task<DbResult> ExecuteAsync(string ProcedureName, dynamic Parameters, bool OutParam = false)

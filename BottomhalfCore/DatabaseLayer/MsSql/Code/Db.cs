@@ -668,7 +668,7 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        public Task<DataSet> GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        public Task<DataSet> GetDataSetAsync(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
         {
             throw new NotImplementedException();
         }
@@ -681,6 +681,16 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
         public (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
             where T : new()
             where Q : new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public DataSet GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DbResult Execute(string ProcedureName, dynamic Parameters, bool OutParam = false)
         {
             throw new NotImplementedException();
         }

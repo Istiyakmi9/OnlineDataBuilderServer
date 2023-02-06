@@ -85,16 +85,15 @@ namespace ServiceLayer.Code
             if (timesheetDetail.EmployeeId <= 0 || timesheetDetail.ClientId <= 0)
                 throw new HiringBellException("Invalid Employee or Client id passed.");
 
-            DbParam[] dbParams = new DbParam[]
+            var Result = _db.GetDataSet("sp_employee_timesheet_get", new
             {
-                new DbParam(timesheetDetail.EmployeeId, typeof(int), "_EmployeeId"),
-                new DbParam(timesheetDetail.ClientId, typeof(int), "_ClientId"),
-                new DbParam(timesheetDetail.UserTypeId, typeof(int), "_UserTypeId"),
-                new DbParam(timesheetDetail.ForYear, typeof(int), "_ForYear"),
-                new DbParam(timesheetDetail.ForMonth, typeof(int), "_ForMonth")
-            };
+                EmployeeId = timesheetDetail.EmployeeId,
+                ClientId = timesheetDetail.ClientId,
+                UserTypeId = timesheetDetail.UserTypeId,
+                ForYear = timesheetDetail.ForYear,
+                ForMonth = timesheetDetail.ForMonth,
+            });
 
-            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
             if (Result.Tables.Count == 2)
             {
 
@@ -427,22 +426,16 @@ namespace ServiceLayer.Code
             List<TimesheetDetail> timesheetDetail = new List<TimesheetDetail>();
             DateTime current = DateTime.UtcNow;
 
-            DbParam[] dbParams = new DbParam[]
+            var currentTimesheetDetail = _db.Get<TimesheetDetail>("sp_employee_timesheet_get", new
             {
-                new DbParam(employeeId, typeof(long), "_EmployeeId"),
-                new DbParam(clientId, typeof(int), "_ClientId"),
-                new DbParam(_currentSession.CurrentUserDetail.RoleId, typeof(int), "_UserTypeId"),
-                new DbParam(current.Year, typeof(int), "_ForYear"),
-                new DbParam(current.Month, typeof(int), "_ForMonth")
-            };
+                EmployeeId = employeeId,
+                ClientId = clientId,
+                UserTypeId = _currentSession.CurrentUserDetail.RoleId,
+                ForYear = current.Year,
+                ForMonth = current.Month,
+            });
 
-            var Result = _db.GetDataset("sp_employee_timesheet_get", dbParams);
-            if (Result.Tables.Count == 1 && Result.Tables[0].Rows.Count > 0)
-            {
-                var currentTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
-                timesheetDetail = JsonConvert.DeserializeObject<List<TimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
-            }
-
+            timesheetDetail = JsonConvert.DeserializeObject<List<TimesheetDetail>>(currentTimesheetDetail.TimesheetMonthJson);
             return timesheetDetail;
         }
 

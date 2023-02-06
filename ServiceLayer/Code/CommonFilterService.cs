@@ -31,16 +31,15 @@ namespace ServiceLayer.Code
         private List<T> GetList<T>(FilterModel filterModel, string ProcedureName)
             where T : new()
         {
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(filterModel.SearchString, typeof(string), "_searchString"),
-                new DbParam(filterModel.SortBy, typeof(string), "_sortBy"),
-                new DbParam(filterModel.PageIndex, typeof(int), "_pageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "_pageSize")
-            };
-
             List<T> filterResult = default;
-            var Result = _db.GetDataset(ProcedureName, dbParams);
+            var Result = _db.GetDataSet(ProcedureName, new
+            {
+                searchString = filterModel.SearchString,
+                sortBy = filterModel.SortBy,
+                pageIndex = filterModel.PageIndex,
+                pageSize = filterModel.PageSize,
+            });
+
             if (Result.Tables.Count > 0 && Result.Tables[0].Rows.Count > 0)
             {
                 filterResult = Converter.ToList<T>(Result.Tables[0]);

@@ -90,16 +90,15 @@ namespace ServiceLayer.Code
 
         public DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel)
         {
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
-                new DbParam(filterModel.PageIndex, typeof(int), "_PageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "_PageSize"),
-                new DbParam(filterModel.SortBy, typeof(string), "_SortBy"),
-            };
-
             DocumentWithFileModel documentWithFileModel = new DocumentWithFileModel();
-            var Result = this.db.GetDataset("SP_OnlineDocument_With_Files_Get", dbParams);
+            var Result = this.db.GetDataSet("SP_OnlineDocument_With_Files_Get", new
+            {
+                SearchString = filterModel.SearchString,
+                PageIndex = filterModel.PageIndex,
+                PageSize = filterModel.PageSize,
+                SortBy = filterModel.SortBy,
+            });
+
             if (Result.Tables.Count == 3)
             {
                 documentWithFileModel.onlineDocumentModel = Converter.ToList<OnlineDocumentModel>(Result.Tables[0]);
@@ -127,14 +126,12 @@ namespace ServiceLayer.Code
 
 
                 DataSet documentFileSet = Converter.ToDataSet<DocumentFile>(deletingFiles);
-
-                DbParam[] dbParams = new DbParam[]
+                DataSet FileSet = db.GetDataSet("sp_OnlieDocument_GetFiles", new
                 {
-                    new DbParam(fileDetails.FirstOrDefault().DocumentId, typeof(int), "@DocumentId"),
-                    new DbParam(fileDetails.Select(x=>x.FileUid.ToString()).Aggregate((x,y) => x + "," + y), typeof(string), "@FileUid")
-                };
+                    DocumentId = fileDetails.FirstOrDefault().DocumentId,
+                    FileUid = fileDetails.Select(x => x.FileUid.ToString()).Aggregate((x, y) => x + "," + y),
+                });
 
-                DataSet FileSet = db.GetDataset("sp_OnlieDocument_GetFiles", dbParams);
                 if (FileSet.Tables.Count > 0)
                 {
                     db.InsertUpdateBatchRecord("sp_OnlieDocument_Del_Multi", documentFileSet.Tables[0]);
@@ -168,36 +165,22 @@ namespace ServiceLayer.Code
 
         public Bills GetBillData()
         {
-            Bills bill = default;
-            DbParam[] param = new DbParam[]
-            {
-                new DbParam(1, typeof(long), "_BillTypeUid")
-            };
-            DataSet ds = db.GetDataset("sp_billdata_get", param);
-            if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
-            {
-                var bills = Converter.ToList<Bills>(ds.Tables[0]);
-                if (bills != null && bills.Count > 0)
-                {
-                    bill = bills[0];
-                }
-            }
+            Bills bill = db.Get<Bills>("sp_billdata_get", new { BillTypeUid = 1 });
             return bill;
         }
 
         public DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel)
         {
-            DbParam[] dbParams = new DbParam[]
+            var Result = this.db.GetDataSet("sp_billdetail_filter", new
             {
-                new DbParam(Type, typeof(string), "_Type"),
-                new DbParam(Uid, typeof(string), "_Uid"),
-                new DbParam(filterModel.SearchString, typeof(string), "_searchString"),
-                new DbParam(filterModel.SortBy, typeof(string), "_sortBy"),
-                new DbParam(filterModel.PageIndex, typeof(int), "_pageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "_pageSize")
-            };
+                Type = Type,
+                Uid = Uid,
+                searchString = filterModel.SearchString,
+                sortBy = filterModel.SortBy,
+                pageIndex = filterModel.PageIndex,
+                pageSize = filterModel.PageSize,
+            });
 
-            var Result = this.db.GetDataset("sp_billdetail_filter", dbParams);
             if (Result.Tables.Count == 3)
             {
                 Result.Tables[0].TableName = "Files";
@@ -247,16 +230,16 @@ namespace ServiceLayer.Code
                 Organization organization = null;
                 BankDetail senderBankDetail = null;
                 List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
-                DbParam[] dbParams = new DbParam[]
-                {
-                    new DbParam(_currentSession.CurrentUserDetail.UserId, typeof(long), "_AdminId"),
-                    new DbParam(fileDetail.EmployeeId, typeof(long), "_EmployeeId"),
-                    new DbParam(fileDetail.ClientId, typeof(long), "_ClientId"),
-                    new DbParam(fileDetail.FileId, typeof(long), "_FileId"),
-                    new DbParam(UserType.Employee, typeof(int), "_UserTypeId")
-                };
 
-                var Result = this.db.GetDataset("sp_ExistingBill_GetById", dbParams);
+                var Result = this.db.GetDataSet("sp_ExistingBill_GetById", new
+                {
+                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                    EmployeeId = fileDetail.EmployeeId,
+                    ClientId = fileDetail.ClientId,
+                    FileId = fileDetail.FileId,
+                    UserTypeId = UserType.Employee,
+                });
+
                 if (Result.Tables.Count == 6)
                 {
                     billDetail = Converter.ToType<BillDetail>(Result.Tables[0]);
@@ -422,14 +405,14 @@ namespace ServiceLayer.Code
 
         public DataSet GetProfessionalCandidatesRecords(FilterModel filterModel)
         {
-            DbParam[] dbParams = new DbParam[]
+            DataSet Result = this.db.GetDataSet("SP_professionalcandidates_filter", new
             {
-                new DbParam(filterModel.SearchString, typeof(string), "_SearchString"),
-                new DbParam(filterModel.PageIndex, typeof(int), "_PageIndex"),
-                new DbParam(filterModel.PageSize, typeof(int), "_PageSize"),
-                new DbParam(filterModel.SortBy, typeof(string), "_SortBy")
-            };
-            DataSet Result = this.db.GetDataset("SP_professionalcandidates_filter", dbParams);
+                SearchString = filterModel.SearchString,
+                PageIndex = filterModel.PageIndex,
+                PageSize = filterModel.PageSize,
+                SortBy = filterModel.SortBy,
+            });
+
             return Result;
         }
 
@@ -480,32 +463,18 @@ namespace ServiceLayer.Code
                         string userEmail = null;
                         if (file.UserTypeId == UserType.Employee)
                         {
-                            DbParam[] dbParams = new DbParam[]
+                            var employee = this.db.Get<Employee>("SP_Employees_ById", new
                             {
-                            new DbParam(file.UserId, typeof(long), "_EmployeeId"),
-                            new DbParam(1, typeof(int), "_IsActive")
-                            };
+                                EmployeeId = file.UserId,
+                                IsActive = 1,
+                            });
 
-                            DataSet ResultSet = this.db.GetDataset("SP_Employees_ById", dbParams);
-                            if (ResultSet != null && ResultSet.Tables.Count == 1)
-                            {
-                                var employee = Converter.ToList<Employee>(ResultSet.Tables[0]).Single();
-                                userEmail = employee.Email;
-                            }
+                            userEmail = employee.Email;
                         }
                         else if (file.UserTypeId == UserType.Client)
                         {
-                            DbParam[] dbParams = new DbParam[]
-                            {
-                            new DbParam(file.UserId, typeof(string), "_userId"),
-                            };
-
-                            DataSet ResultSet = this.db.GetDataset("sp_UserDetail_ById", dbParams);
-                            if (ResultSet != null && ResultSet.Tables.Count == 1)
-                            {
-                                var userDetail = Converter.ToList<UserDetail>(ResultSet.Tables[0]).Single();
-                                userEmail = userDetail.EmailId;
-                            }
+                            var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
+                            userEmail = userDetail.EmailId;
                         }
 
                         if (!string.IsNullOrEmpty(userEmail))
@@ -552,13 +521,11 @@ namespace ServiceLayer.Code
             DataSet Result = null;
             if (fileDetail != null)
             {
-                DbParam[] dbParams = new DbParam[]
+                Result = this.db.GetDataSet("sp_document_filedetail_get", new
                 {
-                        new DbParam(fileDetail.UserId, typeof(long), "_OwnerId"),
-                        new DbParam(fileDetail.UserTypeId, typeof(long), "_UserTypeId")
-                };
-
-                Result = this.db.GetDataset("sp_document_filedetail_get", dbParams);
+                    OwnerId = fileDetail.UserId,
+                    UserTypeId = fileDetail.UserTypeId,
+                });
             }
 
             return Result;
@@ -584,12 +551,7 @@ namespace ServiceLayer.Code
             //var dataSet = new DataSet();
             //dataSet.Tables.Add(table);
 
-            DbParam[] dbParams = new DbParam[]
-            {
-                new DbParam(JsonConvert.SerializeObject(fileInfo), typeof(string), "_InsertFileJsonData")
-            };
-
-            return this.db.GetDataset(ApplicationConstants.InserUserFileDetail, dbParams);
+            return this.db.GetDataSet(ApplicationConstants.InserUserFileDetail, new { InsertFileJsonData = JsonConvert.SerializeObject(fileInfo) });
         }
     }
 }

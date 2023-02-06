@@ -40,14 +40,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(ClientId), FieldValue = ClientId.ToString() };
 
             //Organization client = default;
-            DbParam[] param = new DbParam[]
+            var resultSet = _db.GetDataSet("SP_Client_ById", new
             {
-                new DbParam(ClientId, typeof(long), "_ClientId"),
-                new DbParam(IsActive, typeof(bool), "_IsActive"),
-                new DbParam(UserTypeId, typeof(int), "_UserTypeId")
-            };
+                ClientId = ClientId,
+                IsActive = IsActive,
+                UserTypeId = UserTypeId,
+            });
 
-            var resultSet = _db.GetDataset("SP_Client_ById", param);
             if (resultSet.Tables.Count == 2)
             {
                 resultSet.Tables[0].TableName = "client";

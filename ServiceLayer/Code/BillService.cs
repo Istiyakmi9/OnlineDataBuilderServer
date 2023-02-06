@@ -716,19 +716,17 @@ namespace ServiceLayer.Code
 
                 Organization sender = null;
                 Organization receiver = null;
-                DataSet ds = new DataSet();
-                DbParam[] dbParams = new DbParam[]
+                DataSet ds = this.db.GetDataSet("sp_Billing_detail", new
                 {
-                    new DbParam(pdfModal.receiverCompanyId, typeof(long), "_receiver"),
-                    new DbParam(pdfModal.senderId, typeof(long), "_sender"),
-                    new DbParam(pdfModal.billNo, typeof(string), "_billNo"),
-                    new DbParam(pdfModal.EmployeeId, typeof(long), "_employeeId"),
-                    new DbParam(UserType.Employee, typeof(int), "_userTypeId"),
-                    new DbParam(pdfModal.billingMonth.Month, typeof(long), "_forMonth"),
-                    new DbParam(pdfModal.billYear, typeof(long), "_forYear")
-                };
+                    receiver = pdfModal.receiverCompanyId,
+                    sender = pdfModal.senderId,
+                    billNo = pdfModal.billNo,
+                    employeeId = pdfModal.EmployeeId,
+                    userTypeId = UserType.Employee,
+                    forMonth = pdfModal.billingMonth.Month,
+                    forYear = pdfModal.billYear
+                });
 
-                ds = this.db.GetDataset("sp_Billing_detail", dbParams);
                 if (ds.Tables.Count == 4)
                 {
                     sender = Converter.ToType<Organization>(ds.Tables[0]);
@@ -836,7 +834,7 @@ namespace ServiceLayer.Code
                         destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
                         _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
 
-                        var fileId = this.db.Execute<string>("sp_filedetail_insupd", new
+                        var dbResult = this.db.Execute("sp_filedetail_insupd", new
                         {
                             FileId = fileDetail.FileId,
                             ClientId = pdfModal.receiverCompanyId,
@@ -865,10 +863,10 @@ namespace ServiceLayer.Code
                             BillUpdatedOn = pdfModal.dateOfBilling,
                             IsCustomBill = pdfModal.IsCustomBill,
                             UserTypeId = UserType.Employee,
-                            AdminId = _currentSession.CurrentUserDetail.UserId,
+                            AdminId = _currentSession.CurrentUserDetail.UserId
                         }, true);
 
-                        if (string.IsNullOrEmpty(fileId))
+                        if (!string.IsNullOrEmpty(dbResult.statusMessage))
                         {
                             List<Files> files = new List<Files>();
                             files.Add(new Files
@@ -877,12 +875,13 @@ namespace ServiceLayer.Code
                                 FileName = fileDetail.FileName
                             });
                             this.fileService.DeleteFiles(files);
+                            throw HiringBellException.ThrowBadRequest("Failt to execute. Please contact admin.");
                         }
-                        else
-                        {
-                            fileDetail.FileId = Convert.ToInt32(fileId);
-                            fileDetail.DiskFilePath = null;
-                        }
+
+                        var fileId = Convert.ToInt32(dbResult.statusMessage);
+                        fileDetail.FileId = Convert.ToInt32(fileId);
+                        fileDetail.DiskFilePath = null;
+
                     }
                     else
                     {
@@ -1355,7 +1354,7 @@ namespace ServiceLayer.Code
             }
             catch (Exception e)
             {
-                throw new HiringBellException(e.Message); 
+                throw new HiringBellException(e.Message);
             }
         }
         private String ConvertNumber(Int64 i)
@@ -1378,9 +1377,9 @@ namespace ServiceLayer.Code
                 return ConvertNumber(i / 100000) + " Lakh " + ((i % 100000 > 0) ? " " + ConvertNumber(i % 100000) : "");
 
             if (i < 1000000000)
-                return ConvertNumber(i / 10000000) + " Crore "+ ((i % 10000000 > 0) ? " " + ConvertNumber(i % 10000000) : "");
+                return ConvertNumber(i / 10000000) + " Crore " + ((i % 10000000 > 0) ? " " + ConvertNumber(i % 10000000) : "");
 
-            return ConvertNumber(i / 1000000000) + " Arab "+ ((i % 1000000000 > 0) ? " " + ConvertNumber(i % 1000000000) : "");
+            return ConvertNumber(i / 1000000000) + " Arab " + ((i % 1000000000 > 0) ? " " + ConvertNumber(i % 1000000000) : "");
         }
         private decimal PTaxCalculation(decimal CTC, List<PTaxSlab> pTaxSlabs)
         {

@@ -229,12 +229,11 @@ namespace ServiceLayer.Code
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
         {
             DataSet finalResultSet = new DataSet();
-            DbParam[] param = new DbParam[]
+            var resultset = _db.GetDataSet("SP_ManageEmployeeDetail_Get", new
             {
-                new DbParam(EmployeeId, typeof(long), "_employeeId")
-            };
+                employeeId = EmployeeId
+            });
 
-            var resultset = _db.GetDataset("SP_ManageEmployeeDetail_Get", param);
             if (resultset.Tables.Count == 6)
             {
                 resultset.Tables[0].TableName = "Employee";
@@ -265,11 +264,11 @@ namespace ServiceLayer.Code
 
         public DataSet GetManageClientService(long EmployeeId)
         {
-            DbParam[] param = new DbParam[]
+            var resultset = _db.GetDataSet("SP_MappedClients_Get", new
             {
-                new DbParam(EmployeeId, typeof(long), "_employeeId")
-            };
-            var resultset = _db.GetDataset("SP_MappedClients_Get", param);
+                employeeId = EmployeeId
+            });
+
             if (resultset.Tables.Count == 1)
             {
                 resultset.Tables[0].TableName = "AllocatedClients";
@@ -293,20 +292,20 @@ namespace ServiceLayer.Code
 
             this.ValidateEmployeeDetails(employee);
 
-            DbParam[] param = new DbParam[]
+            var resultset = _db.GetDataSet("SP_Employees_AddUpdateRemoteClient", new
             {
-                new DbParam(employee.EmployeeMappedClientsUid, typeof(long), "_employeeMappedClientsUid"),
-                new DbParam(employee.EmployeeUid, typeof(long), "_employeeUid"),
-                new DbParam(employee.ClientUid, typeof(long), "_clientUid"),
-                new DbParam(employee.FinalPackage, typeof(float), "_finalPackage"),
-                new DbParam(employee.ActualPackage, typeof(float), "_actualPackage"),
-                new DbParam(employee.TakeHomeByCandidate, typeof(float), "_takeHome"),
-                new DbParam(employee.IsPermanent, typeof(bool), "_isPermanent"),
-                new DbParam(employee.BillingHours, typeof(int), "_BillingHours"),
-                new DbParam(employee.WorkingDaysPerWeek, typeof(int), "_DaysPerWeek"),
-                new DbParam(employee.DateOfLeaving, typeof(DateTime), "_DateOfLeaving")
-            };
-            var resultset = _db.GetDataset("SP_Employees_AddUpdateRemoteClient", param);
+                employeeMappedClientsUid = employee.EmployeeMappedClientsUid,
+                employeeUid = employee.EmployeeUid,
+                clientUid = employee.ClientUid,
+                finalPackage = employee.FinalPackage,
+                actualPackage = employee.ActualPackage,
+                takeHome = employee.TakeHomeByCandidate,
+                isPermanent = employee.IsPermanent,
+                BillingHours = employee.BillingHours,
+                DaysPerWeek = employee.WorkingDaysPerWeek,
+                DateOfLeaving = employee.DateOfLeaving,
+            });
+
             return resultset;
         }
 
@@ -474,11 +473,11 @@ namespace ServiceLayer.Code
                 TotalLeaveApplied = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveApplied,
                 TotalApprovedLeave = employeeCompleteDetailModal.LeaveRequestDetail.TotalApprovedLeave,
                 TotalLeaveQuota = employeeCompleteDetailModal.LeaveRequestDetail.TotalLeaveQuota,
-                TotalRejectedAmount = employeeCompleteDetailModal.EmployeeDeclarations.TotalRejectedAmount ,
-                EmployeeCurrentRegime = employeeCompleteDetailModal.EmployeeDeclarations.EmployeeCurrentRegime ,
-                DeclarationStartMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationStartMonth ,
-                DeclarationEndMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationEndMonth ,
-                DeclarationFromYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear ,
+                TotalRejectedAmount = employeeCompleteDetailModal.EmployeeDeclarations.TotalRejectedAmount,
+                EmployeeCurrentRegime = employeeCompleteDetailModal.EmployeeDeclarations.EmployeeCurrentRegime,
+                DeclarationStartMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationStartMonth,
+                DeclarationEndMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationEndMonth,
+                DeclarationFromYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear,
                 DeclarationToYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationToYear,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
@@ -912,7 +911,8 @@ namespace ServiceLayer.Code
             string employeeName = employeeOfferLetter.FirstName + "_" + employeeOfferLetter.LastName;
             var html = GetHtmlString(company, employeeOfferLetter);
             var folderPath = GeneratedPdfOfferLetter(html, employeeName);
-            var file = new FileDetail {
+            var file = new FileDetail
+            {
                 FileName = employeeName,
                 FilePath = folderPath
             };
@@ -947,7 +947,7 @@ namespace ServiceLayer.Code
         {
             string html = string.Empty;
             var LetterType = 1;
-            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId=1, LetterType });
+            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId = 1, LetterType });
             if (File.Exists(result.FilePath))
                 html = File.ReadAllText(result.FilePath);
 
