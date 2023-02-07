@@ -112,22 +112,19 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             foreach (PropertyInfo p in properties)
             {
                 var param = _helperService.GetDataType(p.PropertyType);
-                if (param != null)
+                var prop = instance.GetType().GetProperty(p.Name);
+                if (prop != null && param != null)
                 {
-                    var prop = instance.GetType().GetProperty(p.Name);
-                    if (prop != null)
-                    {
-                        var type = Type.GetType(param.TypeQualifiedName);
-                        var value = prop.GetValue(instance, null);
-                        if (value != null)
-                            cmd.Parameters.Add($"_{p.Name}", param.DbType).Value = Convert.ChangeType(value, type);
-                        else
-                            cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
-                    }
+                    var type = Type.GetType(param.TypeQualifiedName);
+                    var value = prop.GetValue(instance, null);
+                    if (value != null)
+                        cmd.Parameters.Add($"_{p.Name}", param.DbType).Value = Convert.ChangeType(value, type);
                     else
-                    {
                         cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
-                    }
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
                 }
             }
 
