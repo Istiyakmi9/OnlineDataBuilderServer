@@ -89,7 +89,7 @@ namespace ServiceLayer.Code
                     OtherEmail_3 = client.OtherEmail_3,
                     OtherEmail_4 = client.OtherEmail_4,
                     Fax = client.Fax,
-                    GSTNO = client.GSTNO,
+                    GSTNO = client.GSTNo,
                     PanNo = client.PanNo,
                     Pincode = client.Pincode,
                     Country = client.Country,
