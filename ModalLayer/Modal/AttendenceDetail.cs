@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ModalLayer.Modal.Leaves;
+using System;
 using System.Collections.Generic;
 
 namespace ModalLayer.Modal
@@ -10,13 +11,18 @@ namespace ModalLayer.Modal
         public int UserTypeId { get; set; }
         public DateTime AttendanceDay { get; set; }
         public double BillingHours { get; set; }
-        public int TotalMinutes { get; set; }
+        public int TotalMinutes { get; set; } // total effective minutes
         public bool IsHoliday { get; set; }
         public int PresentDayStatus { get; set; } = (int)DayStatus.Empty;
         public int IsTimeAttendacneApproved { get; set; } = 0;
         public bool IsOnLeave { get; set; }
         public long LeaveId { set; get; }
         public int AttendenceStatus { get; set; }
+        public string LogOn { get; set; } // HH:MM
+        public string LogOff { get; set; } // HH:MM
+        public int GrossMinutes { get; set; } // total gross minutes per day
+        public int SessionType { get; set; } // 1 = full day, 2 = first half and 3 = second half
+        public int LunchBreanInMinutes { get; set; } // 1 = full day, 2 = first half and 3 = second half
         public DateTime SubmittedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
         public int ForYear { get; set; }
@@ -41,5 +47,17 @@ namespace ModalLayer.Modal
     {
         public List<AttendenceDetail> AttendacneDetails { set; get; }
         public Employee EmployeeDetail { set; get; }
+    }
+
+    public class AttendanceDetailBuildModal
+    {
+        public int attendanceSubmissionLimit { get; set; }
+        public Attendance attendance { set; get; }
+        public int SessionType { set; get; } = 1;
+        public DateTime firstDate { set; get; }
+        public DateTime presentDate { set; get; }
+        public List<Calendar> calendars { set; get; }
+        public ShiftDetail shiftDetail { set; get; }
+        public LeaveDetail leaveDetail{ set; get; }
     }
 }
