@@ -42,6 +42,7 @@ namespace ModalLayer.Modal
         public DateTime? UpdatedOn { get; set; }
         public string OldFileName { get; set; }
         public int AttendanceSubmissionLimit { get; set; }
+        public int WorkShiftId { get; set; }
     }
 
     public class EmployeeEmailMobileCheck

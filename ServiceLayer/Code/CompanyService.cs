@@ -423,6 +423,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.DeclarationEndMonth = companySetting.DeclarationEndMonth;
                 companySettingDetail.IsPrimary = companySetting.IsPrimary;
                 companySettingDetail.FinancialYear = companySetting.FinancialYear;
+                companySettingDetail.AttendanceSubmissionLimit = companySetting.AttendanceSubmissionLimit;
             }
             companySettingDetail.DefaultManagers = JsonConvert.SerializeObject(companySetting.ManagerLevelId);
 
@@ -437,6 +438,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.IsPrimary,
                 companySettingDetail.FinancialYear,
                 companySettingDetail.DefaultManagers,
+                companySettingDetail.AttendanceSubmissionLimit,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
