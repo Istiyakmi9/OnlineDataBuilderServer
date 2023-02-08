@@ -521,7 +521,7 @@ namespace ServiceLayer.Code
                 Result = this.db.GetDataSet("sp_document_filedetail_get", new
                 {
                     OwnerId = fileDetail.UserId,
-                    UserTypeId = fileDetail.UserTypeId,
+                    UserTypeId = (int)fileDetail.UserTypeId,
                 });
             }
 
