@@ -316,7 +316,7 @@ namespace ServiceLayer.Code
                                             EmployeeName = _currentSession.CurrentUserDetail.FullName,
                                             Mobile = _currentSession.CurrentUserDetail.Mobile,
                                             ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                                            Notify = n.Emails
+                                            Emails = n.Emails,
                                             ManagerName = _currentSession.CurrentUserDetail.ManagerName,
                                             LogOn = n.LogOn,
                                             LogOff = n.LogOff,
