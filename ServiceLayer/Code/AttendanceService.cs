@@ -230,6 +230,8 @@ namespace ServiceLayer.Code
         public async Task<string> SubmitAttendanceService(AttendenceDetail attendenceApplied)
         {
             string Result = string.Empty;
+            var attendancemonth = _timezoneConverter.ToIstTime(attendenceApplied.AttendanceDay).Month;
+            var attendanceyear = _timezoneConverter.ToIstTime(attendenceApplied.AttendanceDay).Year;
             // this value should come from database as configured by user.
             int dailyWorkingHours = 9;
             DateTime workingDate = (DateTime)attendenceApplied.AttendenceFromDay;
@@ -252,8 +254,8 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = attendenceApplied.EmployeeUid,
                 UserTypeId = attendenceApplied.UserTypeId,
-                ForMonth = attendenceApplied.AttendanceDay.Month,
-                ForYear = attendenceApplied.AttendanceDay.Year
+                ForMonth = attendancemonth,
+                ForYear = attendanceyear
             });
             if (employee == null)
                 throw HiringBellException.ThrowBadRequest("Employee deatil not found. Please contact to admin");
@@ -314,6 +316,7 @@ namespace ServiceLayer.Code
                                             EmployeeName = _currentSession.CurrentUserDetail.FullName,
                                             Mobile = _currentSession.CurrentUserDetail.Mobile,
                                             ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                                            Notify = n.Emails
                                             ManagerName = _currentSession.CurrentUserDetail.ManagerName,
                                             LogOn = n.LogOn,
                                             LogOff = n.LogOff,

@@ -53,6 +53,7 @@ namespace ServiceLayer.Code
                 oldshift.OfficeTime = shiftDetail.OfficeTime;
                 oldshift.Duration = shiftDetail.Duration;
                 oldshift.Status = shiftDetail.Status;
+                oldshift.LunchDuration = shiftDetail.LunchDuration;
             }
             oldshift.AdminId = _session.CurrentUserDetail.UserId;
             var result = _db.Execute<ShiftDetail>("sp_work_shifts_insupd", oldshift, true);

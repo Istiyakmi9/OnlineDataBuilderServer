@@ -57,6 +57,7 @@ namespace ServiceLayer.Code
         {
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            declaration.Email = employeeDeclaration.Email;
             SalaryComponents salaryComponent = null;
             if (declaration != null && !string.IsNullOrEmpty(declaration.DeclarationDetail))
             {
@@ -208,6 +209,14 @@ namespace ServiceLayer.Code
                 List<int> fileIds = new List<int>();
                 if (FileCollection.Count > 0)
                 {
+                    if (string.IsNullOrEmpty(declaration.DocumentPath))
+                    {
+                        declaration.DocumentPath = Path.Combine(
+                            _fileLocationDetail.UserFolder,
+                            declaration.Email,
+                            ApplicationConstants.DeclarationDocumentPath
+                        );
+                    }
                     // save file to server filesystem
                     _fileService.SaveFileToLocation(declaration.DocumentPath, files, FileCollection);
 

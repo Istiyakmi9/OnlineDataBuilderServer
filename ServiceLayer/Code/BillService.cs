@@ -117,12 +117,12 @@ namespace ServiceLayer.Code
                 Replace("[[dateOfBilling]]", billModal.PdfModal.dateOfBilling.ToString("dd MMM, yyyy")).
                 Replace("[[senderFirstAddress]]", billModal.Sender.FirstAddress).
                 Replace("[[senderCompanyName]]", billModal.Sender.CompanyName).
-                Replace("[[senderGSTNo]]", billModal.Sender.GSTNO).
+                Replace("[[senderGSTNo]]", billModal.Sender.GSTNo).
                 Replace("[[senderSecondAddress]]", billModal.Sender.SecondAddress).
                 Replace("[[senderPrimaryContactNo]]", billModal.Sender.PrimaryPhoneNo).
                 Replace("[[senderEmail]]", billModal.Sender.Email).
                 Replace("[[receiverCompanyName]]", billModal.Receiver.ClientName).
-                Replace("[[receiverGSTNo]]", billModal.Receiver.GSTNO).
+                Replace("[[receiverGSTNo]]", billModal.Receiver.GSTNo).
                 Replace("[[receiverFirstAddress]]", billModal.Receiver.FirstAddress).
                 Replace("[[receiverSecondAddress]]", billModal.Receiver.SecondAddress).
                 Replace("[[receiverPrimaryContactNo]]", billModal.Receiver.PrimaryPhoneNo).
@@ -186,7 +186,7 @@ namespace ServiceLayer.Code
         private void FillSenderDetail(Organization organization, PdfModal pdfModal)
         {
             pdfModal.senderCompanyName = organization.CompanyName;
-            pdfModal.senderGSTNo = organization.GSTNO;
+            pdfModal.senderGSTNo = organization.GSTNo;
             pdfModal.senderEmail = organization.Email;
             pdfModal.senderFirstAddress = organization.FirstAddress;
             pdfModal.senderPrimaryContactNo = organization.PrimaryPhoneNo;
@@ -202,7 +202,7 @@ namespace ServiceLayer.Code
             pdfModal.receiverPrimaryContactNo = organization.PrimaryPhoneNo;
             pdfModal.receiverSecondAddress = organization.SecondAddress;
             pdfModal.receiverThirdAddress = organization.ThirdAddress;
-            pdfModal.receiverGSTNo = organization.GSTNO;
+            pdfModal.receiverGSTNo = organization.GSTNo;
         }
 
         public async Task<dynamic> UpdateGeneratedBillService(BillGenerationModal billModal)
