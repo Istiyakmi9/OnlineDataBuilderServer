@@ -11,6 +11,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using NUnit.Framework.Internal.Execution;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
@@ -485,9 +486,10 @@ namespace ServiceLayer.Code
                 DeclarationEndMonth = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationEndMonth,
                 DeclarationFromYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear,
                 DeclarationToYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationToYear,
+                WorkShiftId = employeeCompleteDetailModal.EmployeeDetail.WorkShiftId,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);
+            }, true);;
 
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to active the employee. Please contact to admin");
@@ -795,6 +797,7 @@ namespace ServiceLayer.Code
                     RegistrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(DateTime.Now, _currentSession.TimeZone),
                     EmployeeDeclarationId = declarationId,
                     DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
+                    employee.WorkShiftId,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 },
                     true
