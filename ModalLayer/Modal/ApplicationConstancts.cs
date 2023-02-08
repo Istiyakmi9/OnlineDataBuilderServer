@@ -237,8 +237,11 @@ public enum LeaveType
 
 public enum RequestType
 {
-    Leave = 1,
-    Attandance = 2
+    Product = 1,
+    Service = 2,
+    Booking = 3,
+    Leave = 5,
+    Attandance = 4
 }
 
 public static class Bot
