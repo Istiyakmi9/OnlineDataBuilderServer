@@ -19,7 +19,7 @@ namespace ServiceLayer.Code.SendEmail
         }
 
         #region ATTENDANCE APPROVAL
-        private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(AttendanceDetails attendanceDetails, ItemStatus status)
+        private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(AttendenceDetail attendanceDetails, ItemStatus status)
         {
             var templateReplaceModal = new TemplateReplaceModal
             {
@@ -38,7 +38,7 @@ namespace ServiceLayer.Code.SendEmail
             return await Task.FromResult(templateReplaceModal);
         }
 
-        public async Task AttendaceApprovalStatusSendEmail(AttendanceDetails attendanceDetails, ItemStatus status)
+        public async Task AttendaceApprovalStatusSendEmail(AttendenceDetail attendanceDetails, ItemStatus status)
         {
             var templateReplaceModal = await GetAttendanceApprovalTemplate(attendanceDetails, status);
             if (attendanceDetails.Notify.Count > 0)
