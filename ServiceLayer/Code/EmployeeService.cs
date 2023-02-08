@@ -41,6 +41,7 @@ namespace ServiceLayer.Code
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IEMailManager _eMailManager;
+        private readonly ILeaveCalculation _leaveCalculation;
 
         public EmployeeService(IDb db,
             CommonFilterService commonFilterService,
@@ -54,9 +55,14 @@ namespace ServiceLayer.Code
             IAuthenticationService authenticationService,
             ITimezoneConverter timezoneConverter,
             ILogger<EmployeeService> logger,
-            FileLocationDetail fileLocationDetail, HtmlToPdfConverter htmlToPdfConverter, IHostingEnvironment hostingEnvironment, IEMailManager eMailManager)
+            FileLocationDetail fileLocationDetail,
+            HtmlToPdfConverter htmlToPdfConverter,
+            IHostingEnvironment hostingEnvironment,
+            ILeaveCalculation leaveCalculation,
+            IEMailManager eMailManager)
         {
             _db = db;
+            _leaveCalculation = leaveCalculation;
             _cacheManager = cacheManager;
             _loginService = loginService;
             _authenticationService = authenticationService;
@@ -537,7 +543,10 @@ namespace ServiceLayer.Code
             if (employeeEmailMobileCheck.EmployeeCount > 0)
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
-            return await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+            if (employeeCalculation.EmployeeId > 0)
+                await _leaveCalculation.GetLeaveDetailService(employeeCalculation.EmployeeId);
+            return result;
         }
 
         private EmployeeDeclaration GetDeclarationInstance(DataTable declarationTable, Employee employee)
@@ -797,7 +806,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Fail to insert or update record. Contact to admin.");
                 }
 
-                long currentEmployeeId = Convert.ToInt64(employeeId);
+                eCal.EmployeeId = Convert.ToInt64(employeeId);
                 if (fileCollection.Count > 0)
                 {
                     var files = fileCollection.Select(x => new Files
@@ -813,7 +822,7 @@ namespace ServiceLayer.Code
                                     select new
                                     {
                                         FileId = n.FileUid,
-                                        FileOwnerId = currentEmployeeId,
+                                        FileOwnerId = eCal.EmployeeId,
                                         FileName = n.FileName,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
@@ -824,7 +833,7 @@ namespace ServiceLayer.Code
                     var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }
 
-                var ResultSet = this.GetManageEmployeeDetailService(currentEmployeeId);
+                var ResultSet = this.GetManageEmployeeDetailService(eCal.EmployeeId);
                 return ResultSet;
             }
             catch
