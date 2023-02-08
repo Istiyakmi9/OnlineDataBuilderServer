@@ -22,5 +22,6 @@ namespace ServiceLayer.Interface
         Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection);
         Task<List<Files>> GetCompanyFiles(int CompanyId);
         Task<List<Files>> DeleteCompanyFilesService(Files companyFile);
+        Task<CompanySetting> GetCompanySettingByCompanyId(int companyId);
     }
 }

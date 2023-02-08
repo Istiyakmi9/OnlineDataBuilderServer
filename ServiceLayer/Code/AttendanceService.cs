@@ -3,7 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer;
 using ModalLayer.Modal;
-using MySqlX.XDevAPI.Common;
+using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -21,13 +21,16 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly AttendanceEmailService _attendanceEmailService;
+        private readonly ICompanyService _companyService;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
+            ICompanyService _companyService,
             AttendanceEmailService attendanceEmailService)
         {
             _db = db;
+            _companyService = _companyService;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
             _attendanceEmailService = attendanceEmailService;
@@ -181,9 +184,10 @@ namespace ServiceLayer.Code
             return attendanceSet;
         }
 
-        private DateTime GetOpenDateForAttendance()
+        private async Task<DateTime> GetOpenDateForAttendance()
         {
-            int i = 30;
+            var companySetting = await _companyService.GetCompanySettingByCompanyId(_currentSession.CurrentUserDetail.CompanyId);
+            int i = companySetting.AttendanceSubmissionLimit;
             DateTime todayDate = DateTime.UtcNow.Date;
             while (true)
             {
@@ -223,7 +227,7 @@ namespace ServiceLayer.Code
             var attendanceList = new List<AttendenceDetail>();
 
             // check back date limit to allow attendance
-            DateTime barrierDate = this.GetOpenDateForAttendance();
+            DateTime barrierDate = await this.GetOpenDateForAttendance();
             if (attendenceApplied.AttendanceDay.Subtract(barrierDate).TotalDays < 0)
                 throw new HiringBellException("Ops!!! You are not allow to submit this date attendace. Please raise a request to your direct manager.");
 
