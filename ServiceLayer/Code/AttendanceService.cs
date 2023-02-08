@@ -26,33 +26,37 @@ namespace ServiceLayer.Code
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            ICompanyService _companyService,
+            ICompanyService companyService,
             AttendanceEmailService attendanceEmailService)
         {
             _db = db;
-            _companyService = _companyService;
+            _companyService = companyService;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
             _attendanceEmailService = attendanceEmailService;
         }
 
-        private List<AttendenceDetail> CreateAttendanceTillDate(Attendance attendence, DateTime FromDate, DateTime ToDate, List<Calendar> calendars)
+        private List<AttendenceDetail> CreateAttendanceTillDate(AttendanceDetailBuildModal attendanceModal)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
-            if (!string.IsNullOrEmpty(attendence.AttendanceDetail))
-                attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendence.AttendanceDetail);
+            if (!string.IsNullOrEmpty(attendanceModal.attendance.AttendanceDetail))
+                attendenceDetails = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendanceModal.attendance.AttendanceDetail);
 
-            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(ToDate, _currentSession.TimeZone);
-            var firstDate = _timezoneConverter.ToTimeZoneDateTime(FromDate, _currentSession.TimeZone);
+            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.presentDate, _currentSession.TimeZone);
+            var firstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
 
+            double days = 0;
             while (presentDate.Date.Subtract(firstDate.Date).TotalDays >= 0)
             {
                 var detail = attendenceDetails
                     .Find(x => _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDay, _currentSession.TimeZone).Date
                     .Subtract(firstDate.Date).TotalDays == 0);
-                var isHoliday = CheckIsHoliday(firstDate, calendars);
+
+                var isHoliday = CheckIsHoliday(firstDate, attendanceModal.calendars);
                 var isWeekend = CheckWeekend(firstDate);
-                var totalMinute = 480;
+                var totalMinute = attendanceModal.shiftDetail.Duration;
+
+                days = presentDate.Subtract(firstDate).TotalDays;
                 if (isHoliday || isWeekend)
                     totalMinute = 0;
                 if (detail == null)
@@ -67,7 +71,7 @@ namespace ServiceLayer.Code
                         BillingHours = totalMinute,
                         ClientId = 0,
                         DaysPending = DateTime.DaysInMonth(firstDate.Year, firstDate.Month),
-                        EmployeeUid = attendence.EmployeeId,
+                        EmployeeUid = attendanceModal.attendance.EmployeeId,
                         ForMonth = firstDate.Month,
                         ForYear = firstDate.Year,
                         TotalMinutes = totalMinute,
@@ -77,7 +81,11 @@ namespace ServiceLayer.Code
                         LeaveId = 0,
                         UserComments = string.Empty,
                         UserTypeId = (int)UserType.Employee,
-                        IsOpen = true
+                        IsOpen = days <= attendanceModal.attendanceSubmissionLimit ? true : false,
+                        LogOn = attendanceModal.shiftDetail.OfficeTime,
+                        LogOff = "",
+                        SessionType = attendanceModal.SessionType,
+                        LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
                     });
                 }
 
@@ -113,8 +121,8 @@ namespace ServiceLayer.Code
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             Employee employee = null;
-            Attendance attendance = null;
-            List<Calendar> calendars = null;
+            AttendanceDetailBuildModal attendanceDetailBuildModal = new AttendanceDetailBuildModal();
+
             if (attendenceDetail.ForMonth <= 0)
                 throw new HiringBellException("Invalid month num. passed.", nameof(attendenceDetail.ForMonth), attendenceDetail.ForMonth.ToString());
 
@@ -128,35 +136,43 @@ namespace ServiceLayer.Code
                 CompanyId = attendenceDetail.CompanyId
             });
 
-            if (Result.Tables.Count == 3)
+            if (Result.Tables.Count != 4)
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
+
+            if (Result.Tables[3].Rows.Count != 1)
+                throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
+
+            attendanceDetailBuildModal.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
+
+            if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
+                throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
+
+            employee = Converter.ToType<Employee>(Result.Tables[1]);
+
+            if (ApplicationConstants.ContainSingleRow(Result.Tables[0]) && !string.IsNullOrEmpty(Result.Tables[0].Rows[0]["AttendanceDetail"].ToString()))
             {
-                if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
-                    throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
-
-                employee = Converter.ToType<Employee>(Result.Tables[1]);
-
-                if (ApplicationConstants.ContainSingleRow(Result.Tables[0]) && !string.IsNullOrEmpty(Result.Tables[0].Rows[0]["AttendanceDetail"].ToString()))
+                attendanceDetailBuildModal.attendance = Converter.ToType<Attendance>(Result.Tables[0]);
+            }
+            else
+            {
+                attendanceDetailBuildModal.attendance = new Attendance
                 {
-                    attendance = Converter.ToType<Attendance>(Result.Tables[0]);
-                }
-                else
-                {
-                    attendance = new Attendance
-                    {
-                        AttendanceDetail = "[]",
-                        EmployeeId = attendenceDetail.EmployeeUid,
-                    };
+                    AttendanceDetail = "[]",
+                    EmployeeId = attendenceDetail.EmployeeUid,
+                };
 
-                }
-                calendars = Converter.ToList<Calendar>(Result.Tables[2]);
             }
 
-            DateTime presentDate = (DateTime)attendenceDetail.AttendenceToDay;
-            var firstDate = _timezoneConverter.GetUtcFirstDay(presentDate.Year, presentDate.Month);
-            if (presentDate.Year == employee.CreatedOn.Year && presentDate.Month == employee.CreatedOn.Month)
-                firstDate = employee.CreatedOn;
+            attendanceDetailBuildModal.calendars = Converter.ToList<Calendar>(Result.Tables[2]);
 
-            attendenceDetails = CreateAttendanceTillDate(attendance, firstDate, presentDate, calendars);
+            attendanceDetailBuildModal.attendanceSubmissionLimit = employee.AttendanceSubmissionLimit;
+            attendanceDetailBuildModal.presentDate = (DateTime)attendenceDetail.AttendenceToDay;
+            attendanceDetailBuildModal.firstDate = _timezoneConverter.GetUtcFirstDay(attendanceDetailBuildModal.presentDate.Year, attendanceDetailBuildModal.presentDate.Month);
+            if (attendanceDetailBuildModal.presentDate.Year == employee.CreatedOn.Year
+                && attendanceDetailBuildModal.presentDate.Month == employee.CreatedOn.Month)
+                attendanceDetailBuildModal.firstDate = employee.CreatedOn;
+
+            attendenceDetails = CreateAttendanceTillDate(attendanceDetailBuildModal);
             return new AttendanceWithClientDetail
             {
                 EmployeeDetail = employee,
