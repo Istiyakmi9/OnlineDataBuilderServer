@@ -92,19 +92,19 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get");
         }
 
-        public async Task<RequestModel> ApproveAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> ApproveAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task<RequestModel> RejectAttendanceService(AttendanceDetails attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> RejectAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task UpdateAttendanceDetail(AttendanceDetails attendanceDetail, ItemStatus status)
+        public async Task UpdateAttendanceDetail(AttendenceDetail attendanceDetail, ItemStatus status)
         {
             if (attendanceDetail.AttendanceId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
@@ -115,7 +115,7 @@ namespace ServiceLayer.Code
                     AttendanceId = attendanceDetail.AttendanceId
                 });
 
-                var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetails>>(attendance.AttendanceDetail);
+                var allAttendance = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
                 if (currentAttendance == null)
                     throw new HiringBellException("Unable to update present request. Please contact to admin.");
@@ -146,7 +146,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public List<Attendance> ReAssigneAttendanceService(AttendanceDetails attendanceDetail)
+        public List<Attendance> ReAssigneAttendanceService(AttendenceDetail attendanceDetail)
         {
             return null;
         }
