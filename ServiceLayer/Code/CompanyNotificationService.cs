@@ -30,7 +30,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetDepartmentsAndRolesService()
         {
-            var result = _db.FetchDataSet("sp_department_and_roles_getall", new {CompanyId = _currentSession.CurrentUserDetail.CompanyId});
+            var result = _db.FetchDataSet("sp_department_and_roles_getall", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             return result;
         }
 
@@ -115,11 +115,14 @@ namespace ServiceLayer.Code
                         fileIds.Add(Convert.ToInt32(Result));
                     }
                 }
-                var oldfileid = JsonConvert.DeserializeObject<List<int>>(notification.FileIds);
-                if (oldfileid.Count > 0)
+                if (notification.FileIds != null)
                 {
-                    fileIds = oldfileid.Concat(fileIds).ToList();
-                } 
+                    var oldfileid = JsonConvert.DeserializeObject<List<int>>(notification.FileIds);
+                    if (oldfileid != null && oldfileid.Count > 0)
+                    {
+                        fileIds = oldfileid.Concat(fileIds).ToList();
+                    }
+                }
                 notification.FileIds = JsonConvert.SerializeObject(fileIds);
                 var result = _db.Execute<CompanyNotification>("sp_company_notification_insupd", notification, true);
                 if (string.IsNullOrEmpty(result))

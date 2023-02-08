@@ -149,6 +149,7 @@ namespace ServiceLayer.Code
 
                 if (this.IsRegisteredOnPresentWeek(employee.CreatedOn) == 1)
                 {
+                    employee.CreatedOn = employee.CreatedOn.AddDays(-1);
                     dailyTimesheetDetails = dailyTimesheetDetails.Where(x => employee.CreatedOn.Date.Subtract(x.PresentDate.Date).TotalDays <= 0).ToList();
                 }
             }
@@ -207,13 +208,17 @@ namespace ServiceLayer.Code
 
         private int IsRegisteredOnPresentWeek(DateTime RegistratedOn)
         {
-            var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
-            var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
+            //var weekFirstDate = _timezoneConverter.FirstDayOfWeekIST();
+            //var weekLastDate = _timezoneConverter.LastDayOfWeekIST();
 
-            if (RegistratedOn.Date.Subtract(weekFirstDate.Date).TotalDays >= 0 && RegistratedOn.Date.Subtract(weekLastDate.Date).TotalDays <= 0)
-            {
+            //if (RegistratedOn.Date.Subtract(weekFirstDate.Date).TotalDays >= 0 && RegistratedOn.Date.Subtract(weekLastDate.Date).TotalDays <= 0)
+            //{
+            //    return 1;
+            //}
+            var presentDate = DateTime.Now;
+            var firstDate = _timezoneConverter.GetUtcFirstDay(presentDate.Year, presentDate.Month);
+            if (RegistratedOn.Date.Subtract(firstDate.Date).TotalDays >= 0)
                 return 1;
-            }
 
             return 0;
         }
@@ -536,7 +541,7 @@ namespace ServiceLayer.Code
             while (i < dailyTimesheetDetails.Count)
             {
                 item = dailyTimesheetDetails.ElementAt(i);
-                if (item.TimesheetStatus != ItemStatus.Submitted)
+                if (item.TimesheetStatus != ItemStatus.Approved)
                 {
                     missingDayList.Add(item.PresentDate);
                     dailyTimesheetDetails.RemoveAt(i);
@@ -566,10 +571,10 @@ namespace ServiceLayer.Code
                     i.TimesheetStatus = ItemStatus.NotGenerated;
                 else
                 {
-                    if (i.TimesheetStatus != ItemStatus.Submitted)
+                    if (i.TimesheetStatus != ItemStatus.Approved)
                         i.TimesheetStatus = ItemStatus.Absent;
                     else
-                        i.TimesheetStatus = ItemStatus.Submitted;
+                        i.TimesheetStatus = ItemStatus.Approved;
                 }
             });
         }

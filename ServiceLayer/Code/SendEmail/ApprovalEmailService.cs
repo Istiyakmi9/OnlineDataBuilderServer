@@ -41,6 +41,14 @@ namespace ServiceLayer.Code.SendEmail
         public async Task AttendaceApprovalStatusSendEmail(AttendanceDetails attendanceDetails, ItemStatus status)
         {
             var templateReplaceModal = await GetAttendanceApprovalTemplate(attendanceDetails, status);
+            if (attendanceDetails.Notify.Count > 0)
+            {
+                foreach (var email in attendanceDetails.Notify)
+                {
+                    templateReplaceModal.ToAddress.Add(email);
+                }
+            }
+
             await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal);
             await Task.CompletedTask;
         }

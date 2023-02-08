@@ -211,6 +211,8 @@ namespace ServiceLayer.Code
         public async Task<string> SubmitAttendanceService(AttendenceDetail attendenceApplied)
         {
             string Result = string.Empty;
+            var attendancemonth = _timezoneConverter.ToIstTime(attendenceApplied.AttendanceDay).Month;
+            var attendanceyear = _timezoneConverter.ToIstTime(attendenceApplied.AttendanceDay).Year;
             // this value should come from database as configured by user.
             int dailyWorkingHours = 9;
             DateTime workingDate = (DateTime)attendenceApplied.AttendenceFromDay;
@@ -235,8 +237,8 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = attendenceApplied.EmployeeUid,
                 UserTypeId = attendenceApplied.UserTypeId,
-                ForMonth = attendenceApplied.AttendanceDay.Month,
-                ForYear = attendenceApplied.AttendanceDay.Year
+                ForMonth = attendancemonth,
+                ForYear = attendanceyear
             });
 
             if (result.Tables.Count == 1 && result.Tables[0].Rows.Count == 1)
@@ -299,7 +301,8 @@ namespace ServiceLayer.Code
                                             EmployeeName = _currentSession.CurrentUserDetail.FullName,
                                             Mobile = _currentSession.CurrentUserDetail.Mobile,
                                             ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                                            ManagerName = _currentSession.CurrentUserDetail.ManagerName
+                                            ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                                            Notify = n.Emails
                                         }));
 
 
@@ -313,8 +316,8 @@ namespace ServiceLayer.Code
                 TotalWeekDays = attendance.TotalWeekDays,
                 DaysPending = attendance.DaysPending,
                 TotalBurnedMinutes = attendance.TotalHoursBurend,
-                ForYear = attendance.ForYear,
-                ForMonth = attendance.ForMonth,
+                ForYear = attendanceyear,
+                ForMonth = attendancemonth,
                 UserId = _currentSession.CurrentUserDetail.UserId
             }, true);
 

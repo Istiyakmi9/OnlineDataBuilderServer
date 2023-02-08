@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -17,5 +18,6 @@ namespace ModalLayer.Modal
         public string UserComments {set;get;}
         public DateTime AttendanceDay {set;get;}
         public int AttendenceStatus { set; get; }
+        public List<string> Notify { get; set; }
     }
 }

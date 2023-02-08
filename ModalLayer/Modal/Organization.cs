@@ -27,7 +27,7 @@ namespace ModalLayer.Modal
         public string City { set; get; }
         public string State { set; get; }
         public string Country { set; get; }
-        public string GSTNO { set; get; }
+        public string GSTNo { set; get; }
         public string AccountNo { set; get; }
         public string BankName { set; get; }
         public string BranchName { set; get; }
