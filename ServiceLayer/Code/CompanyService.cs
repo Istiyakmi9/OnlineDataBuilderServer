@@ -189,11 +189,6 @@ namespace ServiceLayer.Code
             return company;
         }
 
-        private void UpdateCompanyCache()
-        {
-
-        }
-
         private async Task UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
             string companyLogo = String.Empty;
@@ -470,6 +465,17 @@ namespace ServiceLayer.Code
                 roles = Converter.ToList<EmployeeRole>(result.Tables[1]);
 
             return await Task.FromResult(new { companySettingDetail, roles });
+        }
+
+        public async Task<CompanySetting> GetCompanySettingByCompanyId(int companyId)
+        {
+            if (companyId <= 0)
+                throw new HiringBellException("Invalid company id supplied.");
+            var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
+            if (companySettingDetail == null)
+                throw new HiringBellException("Fail to get company setting details. Please contact to admin");
+
+            return await Task.FromResult(companySettingDetail);
         }
 
         public async Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection)
