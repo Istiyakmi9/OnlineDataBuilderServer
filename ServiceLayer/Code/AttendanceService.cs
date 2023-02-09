@@ -25,18 +25,21 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly AttendanceEmailService _attendanceEmailService;
         private readonly ICompanyService _companyService;
+        private readonly IEmailService _emailService;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ICompanyService companyService,
-            AttendanceEmailService attendanceEmailService)
+            AttendanceEmailService attendanceEmailService,
+            IEmailService emailService)
         {
             _db = db;
             _companyService = companyService;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
             _attendanceEmailService = attendanceEmailService;
+            _emailService = emailService;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -88,10 +91,12 @@ namespace ServiceLayer.Code
                 var isWeekend = CheckWeekend(firstDate);
                 var totalMinute = attendanceModal.shiftDetail.Duration;
                 var officetime = attendanceModal.shiftDetail.OfficeTime;
-                days = firstDate.Date.Subtract(barrierDate.Date).TotalDays;
+                var logoff = CalculateLogOff(attendanceModal);
+                days = DateTime.Now.Date.Subtract(firstDate.Date).TotalDays;
                 if (isHoliday || isWeekend)
                 {
                     officetime = "00:00";
+                    logoff = "00:00";
                     totalMinute = 0;
                 }
 
@@ -119,7 +124,7 @@ namespace ServiceLayer.Code
                         UserTypeId = (int)UserType.Employee,
                         IsOpen = days >= 0 ? true : false,
                         LogOn = officetime,
-                        LogOff = "00:00",
+                        LogOff = logoff,
                         SessionType = attendanceModal.SessionType,
                         LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
                     });
@@ -130,6 +135,15 @@ namespace ServiceLayer.Code
             }
 
             return attendenceDetails;
+        }
+
+        private string CalculateLogOff(AttendanceDetailBuildModal attendanceModal)
+        {
+            var logontime = attendanceModal.shiftDetail.OfficeTime.Replace(":", ".");
+            decimal logon = decimal.Parse(logontime);
+            var totaltime = 0;
+            totaltime = (int)(logon * 60 - attendanceModal.shiftDetail.LunchDuration);
+            return ConvertToMin(totaltime);
         }
 
         private bool CheckWeekend(DateTime date)
@@ -394,17 +408,16 @@ namespace ServiceLayer.Code
             if (managerDetail == null)
                 throw HiringBellException.ThrowBadRequest("Employee deatil not found. Please contact to admin");
 
-
-            var Result = _db.Execute<CompalintOrRequest>("sp_compalint_or_request_InsUpdate", new
+            var Result = _db.Execute<CompalintOrRequest>("sp_complaint_or_request_InsUpdate", new
             {
-                CompalintOrRequestId = compalintOrRequest.CompalintOrRequestId,
+                CompalintOrRequestId = compalintOrRequest.ComplaintOrRequestId,
                 RequestTypeId = (int)RequestType.Attandance,
                 RequestedId = compalintOrRequest.RequestedId,
                 EmployeeId = compalintOrRequest.EmployeeId,
                 EmployeeName = compalintOrRequest.EmployeeName,
                 Email = compalintOrRequest.Email,
                 Mobile = compalintOrRequest.Mobile,
-                ManageId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                ManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
                 ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
                 ManagerEmail = managerDetail.Email,
                 ManagerMobile = managerDetail.Mobile,
@@ -414,9 +427,10 @@ namespace ServiceLayer.Code
                 RequestForDate = ApplicationConstants.NullValue,
                 AttendanceDate = compalintOrRequest.AttendanceDate,
                 LeaveFromDate = ApplicationConstants.NullValue,
-                LeaveToDate = ApplicationConstants.NullValue
+                LeaveToDate = ApplicationConstants.NullValue,
+                Notify = JsonConvert.SerializeObject(compalintOrRequest.NotifyList)
             }, true);
-
+            await this.AttendaceApprovalStatusSendEmail(compalintOrRequest);
             return await Task.FromResult(Result);
         }
 
@@ -508,17 +522,30 @@ namespace ServiceLayer.Code
             decimal logon = decimal.Parse(logontime);
             var totaltime = 0;
             if (attendenceDetail.SessionType == 1)
+            {
                 totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes);
+                var time = ConvertToMin(totaltime);
+                attendenceDetail.LogOff = time.ToString();
+            }
             else
+            {
                 totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes) / 2;
-            var time = ConvertToMin(totaltime);
-            attendenceDetail.LogOff = time.ToString();
+                var time = ConvertToMin(totaltime);
+                attendenceDetail.LogOn = time.ToString();
+                attendenceDetail.LogOff = time.ToString();
+            }
         }
 
         public String ConvertToMin(int mins)
         {
-            int hours = (mins - mins % 60) / 60;
-            return "" + hours + ":" + (mins - hours * 60);
+            int hours = ((mins - mins % 60) / 60);
+            string min = ((mins - hours * 60)).ToString();
+            string hrs = hours.ToString();
+            if (hrs.Length == 1)
+                hrs = "0" + hrs;
+            if (min.Length == 1)
+                min = min + "0";
+            return "" + hrs + ":" + min;
         }
 
         private async Task IsGivenDateAllowed(DateTime workingDate, DateTime workingDateUserTimezone)
@@ -603,6 +630,42 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Past week's are not allowed.");
                 }
             }
+        }
+
+        private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(CompalintOrRequest compalintOrRequest)
+        {
+            var templateReplaceModal = new TemplateReplaceModal
+            {
+                DeveloperName = compalintOrRequest.EmployeeName,
+                RequestType = ApplicationConstants.WorkFromHome,
+                ToAddress = new List<string> { compalintOrRequest.Email },
+                ActionType = "Requested",
+                FromDate = compalintOrRequest.AttendanceDate,
+                ToDate = compalintOrRequest.AttendanceDate,
+                ManagerName = compalintOrRequest.ManagerName,
+                Message = string.IsNullOrEmpty(compalintOrRequest.ManagerComments)
+                    ? "NA"
+                    : compalintOrRequest.ManagerComments,
+            };
+            if (compalintOrRequest.NotifyList != null && compalintOrRequest.NotifyList.Count > 0)
+            {
+                foreach (var email in compalintOrRequest.NotifyList)
+                {
+                    templateReplaceModal.ToAddress.Add(email.Email);
+                }
+            }
+            return await Task.FromResult(templateReplaceModal);
+        }
+
+        public async Task AttendaceApprovalStatusSendEmail(CompalintOrRequest compalintOrRequest)
+        {
+            var templateReplaceModal = await GetAttendanceApprovalTemplate(compalintOrRequest);
+
+            var result = Task.Run(async () =>
+                await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal)
+            );
+
+            await Task.CompletedTask;
         }
     }
 }
