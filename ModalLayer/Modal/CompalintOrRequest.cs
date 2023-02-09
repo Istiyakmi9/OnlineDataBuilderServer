@@ -33,4 +33,10 @@ namespace ModalLayer.Modal
         public int Id { get; set; }
         public string Email { get; set; }
     }
+
+    public class CompalintOrRequestWithEmail
+    {
+        public string EmailBody { set; get; }
+        public List<CompalintOrRequest> CompalintOrRequestList { set; get; }
+    }
 }

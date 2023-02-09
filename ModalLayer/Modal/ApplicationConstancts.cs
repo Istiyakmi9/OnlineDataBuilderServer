@@ -227,7 +227,8 @@ public enum ItemStatus
     Submitted = 8,
     Approved = 9,
     Present = 10,
-    Absent = 11
+    Absent = 11,
+    MissingAttendanceRequest = 12
 }
 
 public enum LeaveType
@@ -243,7 +244,7 @@ public enum RequestType
     Service = 2,
     Booking = 3,
     Leave = 5,
-    Attandance = 4
+    Attendance = 4
 }
 
 public static class Bot
