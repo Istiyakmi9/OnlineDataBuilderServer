@@ -28,6 +28,8 @@ public class ApplicationConstants
     public static string LogoContentId = "bottomhalf@me.com";
     public static string DeclarationDocumentPath = "declarated_documents";
     public static string ProcessingResult = "_ProcessingResult";
+    public static string NullValue = null;
+    public static int EmptyId = 0;
 
     public const string InserUserFileDetail = "sp_document_filedetail_insupd";
     public const string InserUpdateAttendance = "sp_attendance_insupd";

@@ -10,7 +10,7 @@ namespace ServiceLayer.Interface
         AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
         Task<string> SubmitAttendanceService(AttendenceDetail commentDetails);
-        Task<string> RaiseMissingAttendanceRequestService(AttendenceDetail attendenceApplied);
+        Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequest compalintOrRequest);
         List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId);
         dynamic GetEmployeePerformanceService(AttendenceDetail attendanceDetails);
     }

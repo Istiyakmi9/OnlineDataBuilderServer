@@ -53,9 +53,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("RaiseMissingAttendanceRequest")]
-        public async Task<ApiResponse> RaiseMissingAttendanceRequest(AttendenceDetail commentDetails)
+        public async Task<ApiResponse> RaiseMissingAttendanceRequest(CompalintOrRequest compalintOrRequest)
         {
-            var result = await _attendanceService.RaiseMissingAttendanceRequestService(commentDetails);
+            var result = await _attendanceService.RaiseMissingAttendanceRequestService(compalintOrRequest);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

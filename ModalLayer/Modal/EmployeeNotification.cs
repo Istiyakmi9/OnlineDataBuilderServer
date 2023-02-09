@@ -17,5 +17,6 @@ namespace ModalLayer.Modal
         public long AssigneeId { get; set; }
         public int Status { get; set; }
         public DateTime ActionTakenOn { get; set; }
+        public ItemStatus RequestTypeId { set; get; }
     }
 }
