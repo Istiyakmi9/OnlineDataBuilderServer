@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
 {
     public interface IAttendanceRequestService
     {
-        RequestModel FetchPendingRequestService(long employeeId);
+        RequestModel FetchPendingRequestService(long employeeId, ItemStatus itemStatus = ItemStatus.Pending);
         RequestModel GetManagerAndUnAssignedRequestService(long employeeId);
         Task<RequestModel> ApproveAttendanceService(AttendenceDetail attendanceDetais, int filterId = ApplicationConstants.Only);
         Task<RequestModel> RejectAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only);

@@ -33,9 +33,6 @@ namespace ServiceLayer.Code
             //var result = await _db.BatchInsertUpdateAsync("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
             var rowsAffected = await _db.BulkExecuteAsync("sp_role_accessibility_mapping_InsUpd", permissionMenu);
 
-            if (rowsAffected != rolesAndMenus.Menu.Count)
-                throw new HiringBellException("Fail to insert or update roles permission.");
-
             return ApplicationConstants.Successfull;
         }
 

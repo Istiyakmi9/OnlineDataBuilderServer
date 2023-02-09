@@ -52,6 +52,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
+        [HttpPost("RaiseMissingAttendanceRequest")]
+        public async Task<ApiResponse> RaiseMissingAttendanceRequest(AttendenceDetail commentDetails)
+        {
+            var result = await _attendanceService.RaiseMissingAttendanceRequestService(commentDetails);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
         [HttpPost("EnablePermission")]
         public IResponse<ApiResponse> EnablePermission(AttendenceDetail attendenceDetail)
         {

@@ -18,6 +18,7 @@ namespace ModalLayer.Modal
         public DateTime? SubmittedOn { set; get; }
         public DateTime? UpdatedOn { set; get; }
         public DateTime DOJ { set; get; }
+        public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
         public long? UpdatedBy { set; get; }
     }

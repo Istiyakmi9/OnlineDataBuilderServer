@@ -20,10 +20,10 @@ namespace OnlineDataBuilder.Controllers
             _requestService = requestService;
         }
 
-        [HttpGet("GetManagerRequestedData/{employeeId}")]
-        public IResponse<ApiResponse> FetchPendingRequests(int employeeId)
+        [HttpGet("GetManagerRequestedData/{employeeId}/{itemStatus}")]
+        public IResponse<ApiResponse> FetchPendingRequests(int employeeId, ItemStatus itemStatus)
         {
-            var result = _requestService.FetchPendingRequestService(employeeId);
+            var result = _requestService.FetchPendingRequestService(employeeId, itemStatus);
             return BuildResponse(result);
         }
 
