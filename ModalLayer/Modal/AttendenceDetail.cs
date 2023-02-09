@@ -40,7 +40,8 @@ namespace ModalLayer.Modal
         public bool IsOpen { get; set; }
         public int CompanyId { get; set; }
         public bool IsWeekend { get; set; }
-        public List<string> Emails { get; set; }
+        public string Emails { get; set; }
+        public List<string> EmailList { get; set; }
         public string EmployeeName { set; get; }
         public string Email { set; get; }
         public string Mobile { set; get; }

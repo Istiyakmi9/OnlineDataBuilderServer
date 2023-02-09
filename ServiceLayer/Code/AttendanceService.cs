@@ -55,7 +55,7 @@ namespace ServiceLayer.Code
                 var isWeekend = CheckWeekend(firstDate);
                 var totalMinute = attendanceModal.shiftDetail.Duration;
 
-                days = presentDate.Subtract(firstDate).TotalDays;
+                days = DateTime.Now.Date.Subtract(firstDate.Date).TotalDays;
                 if (isHoliday || isWeekend)
                     totalMinute = 0;
                 if (detail == null)
@@ -316,7 +316,7 @@ namespace ServiceLayer.Code
                                             EmployeeName = _currentSession.CurrentUserDetail.FullName,
                                             Mobile = _currentSession.CurrentUserDetail.Mobile,
                                             ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                                            Emails = n.Emails == null ? "[]" : JsonConvert.SerializeObject(n.Emails),
+                                            Emails = n.EmailList == null ? "[]" : JsonConvert.SerializeObject(n.EmailList),
                                             ManagerName = _currentSession.CurrentUserDetail.ManagerName,
                                             LogOn = n.LogOn,
                                             LogOff = n.LogOff,
@@ -338,15 +338,7 @@ namespace ServiceLayer.Code
                 ForYear = attendance.ForYear,
                 ForMonth = attendance.ForMonth,
                 UserId = _currentSession.CurrentUserDetail.UserId,
-                Email = employee.Email,
-                Mobile = employee.Mobile,
-                FromDate = attendenceApplied.AttendanceDay,
-                ToDate = attendenceApplied.AttendanceDay,
-                ManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                ProjectId = employee.ProjectId,
-                ProjectName = ProjectName,
-                RequestStatusId = (int)RequestType.Attandance,
-                RequestTypeId = _currentSession.CurrentUserDetail.UserTypeId
+                PendingRequestCount = 1
             }, true);
 
             if (string.IsNullOrEmpty(Result))

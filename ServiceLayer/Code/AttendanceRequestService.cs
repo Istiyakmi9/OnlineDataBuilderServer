@@ -37,7 +37,7 @@ namespace ServiceLayer.Code
             _emailService = emailService;
         }
 
-        private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure)
+        private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure, ItemStatus itemStatus = ItemStatus.Pending)
         {
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
@@ -46,7 +46,7 @@ namespace ServiceLayer.Code
             var resultSet = _db.FetchDataSet(procedure, new
             {
                 ManagerId = employeeId,
-                StatusId = 0,
+                StatusId = (int)itemStatus,
                 ForYear = now.Year,
                 ForMonth = now.Month
             });
@@ -87,9 +87,9 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get_by_role");
         }
 
-        public RequestModel FetchPendingRequestService(long employeeId)
+        public RequestModel FetchPendingRequestService(long employeeId, ItemStatus itemStatus = ItemStatus.Pending)
         {
-            return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get");
+            return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get", itemStatus);
         }
 
         public async Task<RequestModel> ApproveAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only)
@@ -115,6 +115,7 @@ namespace ServiceLayer.Code
                     AttendanceId = attendanceDetail.AttendanceId
                 });
 
+                attendance.PendingRequestCount = --attendance.PendingRequestCount;
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
                 if (currentAttendance == null)
@@ -127,11 +128,11 @@ namespace ServiceLayer.Code
                 currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
                 // this call is used for only upadate AttendanceDetail json object
 
-                _logger.LogInformation("Final Attendance: " + JsonConvert.SerializeObject(allAttendance));
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
                     AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
+                    attendance.PendingRequestCount,
                     UserId = _currentSession.CurrentUserDetail.UserId
                 }, true);
 
