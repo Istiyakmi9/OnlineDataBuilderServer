@@ -1,11 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using EAGetMail;
-using Google.Protobuf;
 using ModalLayer;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -13,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -100,6 +96,9 @@ namespace ServiceLayer.Code
                     totalMinute = 0;
                 }
 
+                var appliedFlag = attendanceModal.compalintOrRequests
+                                    .Any(x => x.AttendanceDate.Date.Subtract(firstDate.Date).TotalDays == 0);
+
                 if (detail == null)
                 {
                     attendenceDetails.Add(new AttendenceDetail
@@ -126,7 +125,8 @@ namespace ServiceLayer.Code
                         LogOn = officetime,
                         LogOff = logoff,
                         SessionType = attendanceModal.SessionType,
-                        LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
+                        LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration,
+                        PresentDayStatus = appliedFlag ? (int)ItemStatus.MissingAttendanceRequest : (int)DayStatus.Empty
                     });
                 }
 
@@ -182,16 +182,18 @@ namespace ServiceLayer.Code
                 UserTypeId = attendenceDetail.UserTypeId,
                 ForYear = attendenceDetail.ForYear,
                 ForMonth = attendenceDetail.ForMonth,
-                CompanyId = attendenceDetail.CompanyId
+                CompanyId = attendenceDetail.CompanyId,
+                RequestTypeId = (int)RequestType.Attendance
             });
 
-            if (Result.Tables.Count != 4)
+            if (Result.Tables.Count != 5)
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
 
             if (Result.Tables[3].Rows.Count != 1)
                 throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
 
             attendanceDetailBuildModal.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
+            attendanceDetailBuildModal.compalintOrRequests = Converter.ToList<CompalintOrRequest>(Result.Tables[4]);
 
             if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
                 throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
@@ -389,12 +391,9 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequest compalintOrRequest)
+        private async Task<string> InsertUpdateAttendanceRequest(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
         {
-            if (compalintOrRequest.RequestedId == 0)
-                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
-
-            DateTime workingDate = (DateTime)compalintOrRequest.AttendanceDate;
+            DateTime workingDate = (DateTime)compalintOrRequestWithEmail.CompalintOrRequestList.First().AttendanceDate;
             DateTime workingDateUserTimezone = _timezoneConverter.ToTimeZoneDateTime(workingDate, _currentSession.TimeZone);
 
             (Attendance attendance, Employee managerDetail) = _db.Get<Attendance, Employee>("sp_Attendance_YearMonth", new
@@ -408,30 +407,46 @@ namespace ServiceLayer.Code
             if (managerDetail == null)
                 throw HiringBellException.ThrowBadRequest("Employee deatil not found. Please contact to admin");
 
-            var Result = _db.Execute<CompalintOrRequest>("sp_complaint_or_request_InsUpdate", new
-            {
-                CompalintOrRequestId = compalintOrRequest.ComplaintOrRequestId,
-                RequestTypeId = (int)RequestType.Attandance,
-                RequestedId = compalintOrRequest.RequestedId,
-                EmployeeId = compalintOrRequest.EmployeeId,
-                EmployeeName = compalintOrRequest.EmployeeName,
-                Email = compalintOrRequest.Email,
-                Mobile = compalintOrRequest.Mobile,
-                ManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
-                ManagerEmail = managerDetail.Email,
-                ManagerMobile = managerDetail.Mobile,
-                EmployeeMessage = compalintOrRequest.EmployeeMessage,
-                ManagerComments = string.Empty,
-                CurrentStatus = (int)ItemStatus.Pending,
-                RequestForDate = ApplicationConstants.NullValue,
-                AttendanceDate = compalintOrRequest.AttendanceDate,
-                LeaveFromDate = ApplicationConstants.NullValue,
-                LeaveToDate = ApplicationConstants.NullValue,
-                Notify = JsonConvert.SerializeObject(compalintOrRequest.NotifyList)
-            }, true);
-            await this.AttendaceApprovalStatusSendEmail(compalintOrRequest);
-            return await Task.FromResult(Result);
+            var records = (from n in compalintOrRequestWithEmail.CompalintOrRequestList
+                           select new
+                           {
+                               ComplaintOrRequestId = n.ComplaintOrRequestId,
+                               RequestTypeId = (int)RequestType.Attendance,
+                               RequestedId = n.RequestedId,
+                               EmployeeId = n.EmployeeId,
+                               EmployeeName = n.EmployeeName,
+                               Email = n.Email,
+                               Mobile = n.Mobile,
+                               ManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                               ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
+                               ManagerEmail = managerDetail.Email,
+                               ManagerMobile = managerDetail.Mobile,
+                               EmployeeMessage = n.EmployeeMessage,
+                               ManagerComments = string.Empty,
+                               CurrentStatus = (int)ItemStatus.Pending,
+                               RequestedOn = DateTime.UtcNow,
+                               AttendanceDate = n.AttendanceDate,
+                               LeaveFromDate = DateTime.UtcNow,
+                               LeaveToDate = DateTime.UtcNow,
+                               Notify = JsonConvert.SerializeObject(n.NotifyList),
+                           }).ToList();
+
+            var result = await _db.BulkExecuteAsync("sp_complaint_or_request_InsUpdate", records, true);
+            return result.ToString();
+        }
+
+        public async Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        {
+            if (compalintOrRequestWithEmail == null || compalintOrRequestWithEmail.CompalintOrRequestList.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid request data passed. Please check your form again.");
+
+            var anyRecord = compalintOrRequestWithEmail.CompalintOrRequestList.Any(x => x.RequestedId == 0);
+            if (!anyRecord)
+                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
+
+            var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
+            await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
+            return Result;
         }
 
         public AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail)
@@ -647,6 +662,7 @@ namespace ServiceLayer.Code
                     ? "NA"
                     : compalintOrRequest.ManagerComments,
             };
+
             if (compalintOrRequest.NotifyList != null && compalintOrRequest.NotifyList.Count > 0)
             {
                 foreach (var email in compalintOrRequest.NotifyList)
@@ -657,9 +673,10 @@ namespace ServiceLayer.Code
             return await Task.FromResult(templateReplaceModal);
         }
 
-        public async Task AttendaceApprovalStatusSendEmail(CompalintOrRequest compalintOrRequest)
+        public async Task AttendaceApprovalStatusSendEmail(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
         {
-            var templateReplaceModal = await GetAttendanceApprovalTemplate(compalintOrRequest);
+            var templateReplaceModal =
+                await GetAttendanceApprovalTemplate(compalintOrRequestWithEmail.CompalintOrRequestList.First());
 
             var result = Task.Run(async () =>
                 await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal)

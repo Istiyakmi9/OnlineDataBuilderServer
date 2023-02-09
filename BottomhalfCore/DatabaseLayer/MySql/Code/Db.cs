@@ -670,9 +670,10 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                 throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
                             }
 
+                            command.Parameters.Clear();
                             object userType = Parameters.First();
                             var properties = userType.GetType().GetProperties().ToList();
-                            util.Addarameters(properties, command);
+                            util.Addarameters(properties, command, IsOutParam);
 
                             command.CommandType = CommandType.StoredProcedure;
                             command.CommandText = ProcedureName;
@@ -683,7 +684,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             while (i < Parameters.Count)
                             {
                                 dynamic data = Parameters.ElementAt(i);
-                                util.BindParametersValue(data, properties, command, IsOutParam);
+                                util.BindParametersValue(data, properties, command, false);
                                 var result = command.ExecuteNonQuery();
                                 i++;
                             }
