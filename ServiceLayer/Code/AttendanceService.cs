@@ -92,7 +92,7 @@ namespace ServiceLayer.Code
                 var totalMinute = attendanceModal.shiftDetail.Duration;
                 var officetime = attendanceModal.shiftDetail.OfficeTime;
                 var logoff = CalculateLogOff(attendanceModal);
-                days = DateTime.Now.Date.Subtract(firstDate.Date).TotalDays;
+                days = firstDate.Date.Subtract(barrierDate.Date).TotalDays;
                 if (isHoliday || isWeekend)
                 {
                     officetime = "00:00";
