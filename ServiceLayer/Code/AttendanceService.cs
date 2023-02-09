@@ -54,10 +54,13 @@ namespace ServiceLayer.Code
                 var isHoliday = CheckIsHoliday(firstDate, attendanceModal.calendars);
                 var isWeekend = CheckWeekend(firstDate);
                 var totalMinute = attendanceModal.shiftDetail.Duration;
-
+                var officetime = attendanceModal.shiftDetail.OfficeTime;
                 days = DateTime.Now.Date.Subtract(firstDate.Date).TotalDays;
                 if (isHoliday || isWeekend)
+                {
+                    officetime = "00:00";
                     totalMinute = 0;
+                }
                 if (detail == null)
                 {
                     attendenceDetails.Add(new AttendenceDetail
@@ -80,9 +83,9 @@ namespace ServiceLayer.Code
                         LeaveId = 0,
                         UserComments = string.Empty,
                         UserTypeId = (int)UserType.Employee,
-                        IsOpen = days <= attendanceModal.attendanceSubmissionLimit ? true : false,
-                        LogOn = attendanceModal.shiftDetail.OfficeTime,
-                        LogOff = "",
+                        IsOpen = days < attendanceModal.attendanceSubmissionLimit ? true : false,
+                        LogOn = officetime,
+                        LogOff = "00:00",
                         SessionType = attendanceModal.SessionType,
                         LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
                     });
@@ -297,6 +300,7 @@ namespace ServiceLayer.Code
                 attendance.ForYear = workingDateUserTimezone.Year;
                 attendance.ForMonth = workingDateUserTimezone.Month;
                 attendance.TotalHoursBurend = 0;
+
             }
 
             var AttendaceDetail = JsonConvert
@@ -467,8 +471,27 @@ namespace ServiceLayer.Code
             attendenceDetail.PresentDayStatus = (int)ItemStatus.Pending;
             attendenceDetail.UserTypeId = (int)UserType.Employee;
             attendenceDetail.IsOpen = true;
-
+            CalculateLogOffTime(attendenceDetail);
             await Task.CompletedTask;
+        }
+
+        private void CalculateLogOffTime(AttendenceDetail attendenceDetail)
+        {
+            var logontime = attendenceDetail.LogOn.Replace(":", ".");
+            decimal logon = decimal.Parse(logontime);
+            var totaltime = 0;
+            if (attendenceDetail.SessionType == 1)
+                totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes);
+            else
+                totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes)/2;
+            var time = ConvertToMin(totaltime);
+            attendenceDetail.LogOff = time.ToString();
+        }
+
+        public String ConvertToMin(int mins)
+        {
+            int hours = (mins - mins % 60) / 60;
+            return "" + hours + ":" + (mins - hours * 60);
         }
 
         private async Task IsGivenDateAllowed(DateTime workingDate, DateTime workingDateUserTimezone)
