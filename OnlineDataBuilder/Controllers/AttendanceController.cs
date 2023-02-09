@@ -52,6 +52,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
+        [HttpPost("GetMissingAttendanceRequest")]
+        public async Task<ApiResponse> GetMissingAttendanceRequest(FilterModel filter)
+        {
+            var result = await _attendanceService.GetMissingAttendanceRequestService(filter);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
         [HttpPost("RaiseMissingAttendanceRequest")]
         public async Task<ApiResponse> RaiseMissingAttendanceRequest(CompalintOrRequest compalintOrRequest)
         {

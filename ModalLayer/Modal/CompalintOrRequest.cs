@@ -21,7 +21,7 @@ namespace ModalLayer.Modal
         public int CurrentStatus { set; get; }
         public List<Dictionary<int, string>> NotifyList { set; get; }
         public string Notify { set; get; }
-        public DateTime? RequestForDate { set; get; }
+        public DateTime RequestedOn { set; get; }
         public DateTime? AttendanceDate { set; get; }
         public DateTime? LeaveFromDate { set; get; }
         public DateTime? LeaveToDate { set; get; }

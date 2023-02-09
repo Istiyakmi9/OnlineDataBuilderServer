@@ -5,6 +5,7 @@ using EAGetMail;
 using Google.Protobuf;
 using ModalLayer;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -38,6 +39,33 @@ namespace ServiceLayer.Code
             _attendanceEmailService = attendanceEmailService;
         }
 
+        private DateTime GetBarrierDate(int limit)
+        {
+            int i = limit;
+            DateTime todayDate = DateTime.UtcNow.Date;
+            while (true)
+            {
+                todayDate = todayDate.AddDays(-1);
+                switch (todayDate.DayOfWeek)
+                {
+                    case DayOfWeek.Saturday:
+                    case DayOfWeek.Sunday:
+                        break;
+                    default:
+                        i--;
+                        break;
+                }
+
+                if (i == 0)
+                    break;
+            }
+
+            if (i > 0)
+                todayDate = todayDate.AddDays(-1 * i);
+
+            return todayDate;
+        }
+
         private List<AttendenceDetail> CreateAttendanceTillDate(AttendanceDetailBuildModal attendanceModal)
         {
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
@@ -48,6 +76,8 @@ namespace ServiceLayer.Code
             var firstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
 
             double days = 0;
+            var barrierDate = GetBarrierDate(attendanceModal.attendanceSubmissionLimit);
+
             while (presentDate.Date.Subtract(firstDate.Date).TotalDays >= 0)
             {
                 var detail = attendenceDetails
@@ -58,12 +88,13 @@ namespace ServiceLayer.Code
                 var isWeekend = CheckWeekend(firstDate);
                 var totalMinute = attendanceModal.shiftDetail.Duration;
                 var officetime = attendanceModal.shiftDetail.OfficeTime;
-                days = DateTime.Now.Date.Subtract(firstDate.Date).TotalDays;
+                days = firstDate.Date.Subtract(barrierDate.Date).TotalDays;
                 if (isHoliday || isWeekend)
                 {
                     officetime = "00:00";
                     totalMinute = 0;
                 }
+
                 if (detail == null)
                 {
                     attendenceDetails.Add(new AttendenceDetail
@@ -86,7 +117,7 @@ namespace ServiceLayer.Code
                         LeaveId = 0,
                         UserComments = string.Empty,
                         UserTypeId = (int)UserType.Employee,
-                        IsOpen = days < attendanceModal.attendanceSubmissionLimit ? true : false,
+                        IsOpen = days >= 0 ? true : false,
                         LogOn = officetime,
                         LogOff = "00:00",
                         SessionType = attendanceModal.SessionType,
@@ -205,34 +236,6 @@ namespace ServiceLayer.Code
             return attendanceSet;
         }
 
-        private async Task<DateTime> GetOpenDateForAttendance()
-        {
-            var companySetting = await _companyService.GetCompanySettingByCompanyId(_currentSession.CurrentUserDetail.CompanyId);
-            int i = companySetting.AttendanceSubmissionLimit;
-            DateTime todayDate = DateTime.UtcNow.Date;
-            while (true)
-            {
-                todayDate = todayDate.AddDays(-1);
-                switch (todayDate.DayOfWeek)
-                {
-                    case DayOfWeek.Saturday:
-                    case DayOfWeek.Sunday:
-                        break;
-                    default:
-                        i--;
-                        break;
-                }
-
-                if (i == 0)
-                    break;
-            }
-
-            if (i > 0)
-                todayDate = todayDate.AddDays(-1 * i);
-
-            return todayDate;
-        }
-
         public async Task<string> SubmitAttendanceService(AttendenceDetail attendenceApplied)
         {
             string Result = string.Empty;
@@ -249,7 +252,8 @@ namespace ServiceLayer.Code
             var attendanceList = new List<AttendenceDetail>();
 
             // check back date limit to allow attendance
-            DateTime barrierDate = await this.GetOpenDateForAttendance();
+            var companySetting = await _companyService.GetCompanySettingByCompanyId(_currentSession.CurrentUserDetail.CompanyId);
+            DateTime barrierDate = this.GetBarrierDate(companySetting.AttendanceSubmissionLimit);
             if (attendenceApplied.AttendanceDay.Subtract(barrierDate).TotalDays < 0)
                 throw new HiringBellException("Ops!!! You are not allow to submit this date attendace. Please raise a request to your direct manager.");
 
@@ -355,9 +359,25 @@ namespace ServiceLayer.Code
             return Result;
         }
 
+        public async Task<List<CompalintOrRequest>> GetMissingAttendanceRequestService(FilterModel filter)
+        {
+            if (string.IsNullOrEmpty(filter.SearchString) || filter.EmployeeId > 0)
+                filter.SearchString = $"1=1 and EmployeeId = {filter.EmployeeId}";
+
+            var result = _db.GetList<CompalintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
+            {
+                filter.SearchString,
+                filter.SortBy,
+                filter.PageSize,
+                filter.PageIndex
+            });
+
+            return await Task.FromResult(result);
+        }
+
         public async Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequest compalintOrRequest)
         {
-            if(compalintOrRequest.RequestedId == 0)
+            if (compalintOrRequest.RequestedId == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
 
             DateTime workingDate = (DateTime)compalintOrRequest.AttendanceDate;
@@ -490,7 +510,7 @@ namespace ServiceLayer.Code
             if (attendenceDetail.SessionType == 1)
                 totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes);
             else
-                totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes)/2;
+                totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes) / 2;
             var time = ConvertToMin(totaltime);
             attendenceDetail.LogOff = time.ToString();
         }
