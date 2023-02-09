@@ -1,6 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EAGetMail;
+using Google.Protobuf;
 using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -10,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -68,7 +71,7 @@ namespace ServiceLayer.Code
                         IsActiveDay = false,
                         TotalDays = DateTime.DaysInMonth(presentDate.Year, presentDate.Month),
                         AttendanceDay = firstDate,
-                        AttendanceId = 0,
+                        AttendanceId = attendanceModal.attendance.AttendanceId,
                         AttendenceStatus = (int)DayStatus.WorkFromOffice,
                         BillingHours = totalMinute,
                         ClientId = 0,
@@ -131,7 +134,6 @@ namespace ServiceLayer.Code
             var Result = _db.FetchDataSet("sp_attendance_get", new
             {
                 EmployeeId = attendenceDetail.EmployeeUid,
-                ClientId = attendenceDetail.ClientId,
                 UserTypeId = attendenceDetail.UserTypeId,
                 ForYear = attendenceDetail.ForYear,
                 ForMonth = attendenceDetail.ForMonth,
@@ -160,6 +162,7 @@ namespace ServiceLayer.Code
                 attendanceDetailBuildModal.attendance = new Attendance
                 {
                     AttendanceDetail = "[]",
+                    AttendanceId = 0,
                     EmployeeId = attendenceDetail.EmployeeUid,
                 };
 
@@ -352,42 +355,46 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public async Task<string> RaiseMissingAttendanceRequestService(AttendenceDetail attendenceApplied)
+        public async Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequest compalintOrRequest)
         {
-            DateTime workingDate = (DateTime)attendenceApplied.AttendenceFromDay;
+            if(compalintOrRequest.RequestedId == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
+
+            DateTime workingDate = (DateTime)compalintOrRequest.AttendanceDate;
             DateTime workingDateUserTimezone = _timezoneConverter.ToTimeZoneDateTime(workingDate, _currentSession.TimeZone);
 
-            (Attendance attendance, Employee employee) = _db.Get<Attendance, Employee>("sp_Attendance_YearMonth", new
+            (Attendance attendance, Employee managerDetail) = _db.Get<Attendance, Employee>("sp_Attendance_YearMonth", new
             {
-                EmployeeId = attendenceApplied.EmployeeUid,
-                UserTypeId = attendenceApplied.UserTypeId,
+                EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                UserTypeId = UserType.Employee,
                 ForMonth = workingDateUserTimezone.Month,
                 ForYear = workingDateUserTimezone.Year
             });
 
-            if (employee == null)
+            if (managerDetail == null)
                 throw HiringBellException.ThrowBadRequest("Employee deatil not found. Please contact to admin");
 
-            var Result = _db.Execute<Attendance>("sp_attendance_insupd", new
+
+            var Result = _db.Execute<CompalintOrRequest>("sp_compalint_or_request_InsUpdate", new
             {
-                AttendanceId = attendance.AttendanceId,
-                UserTypeId = (int)UserType.Employee,
-                EmployeeId = attendance.EmployeeId,
-                TotalDays = attendance.TotalDays,
-                TotalWeekDays = attendance.TotalWeekDays,
-                DaysPending = attendance.DaysPending,
-                TotalBurnedMinutes = attendance.TotalHoursBurend,
-                ForYear = attendance.ForYear,
-                ForMonth = attendance.ForMonth,
-                UserId = _currentSession.CurrentUserDetail.UserId,
-                Email = employee.Email,
-                Mobile = employee.Mobile,
-                FromDate = attendenceApplied.AttendanceDay,
-                ToDate = attendenceApplied.AttendanceDay,
-                ManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                ProjectId = employee.ProjectId,
-                RequestStatusId = (int)RequestType.Attandance,
-                RequestTypeId = _currentSession.CurrentUserDetail.UserTypeId
+                CompalintOrRequestId = compalintOrRequest.CompalintOrRequestId,
+                RequestTypeId = (int)RequestType.Attandance,
+                RequestedId = compalintOrRequest.RequestedId,
+                EmployeeId = compalintOrRequest.EmployeeId,
+                EmployeeName = compalintOrRequest.EmployeeName,
+                Email = compalintOrRequest.Email,
+                Mobile = compalintOrRequest.Mobile,
+                ManageId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
+                ManagerEmail = managerDetail.Email,
+                ManagerMobile = managerDetail.Mobile,
+                EmployeeMessage = compalintOrRequest.EmployeeMessage,
+                ManagerComments = string.Empty,
+                CurrentStatus = (int)ItemStatus.Pending,
+                RequestForDate = ApplicationConstants.NullValue,
+                AttendanceDate = compalintOrRequest.AttendanceDate,
+                LeaveFromDate = ApplicationConstants.NullValue,
+                LeaveToDate = ApplicationConstants.NullValue
             }, true);
 
             return await Task.FromResult(Result);
