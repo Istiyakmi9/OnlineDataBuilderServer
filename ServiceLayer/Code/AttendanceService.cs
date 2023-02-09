@@ -425,7 +425,7 @@ namespace ServiceLayer.Code
                                ManagerComments = string.Empty,
                                CurrentStatus = (int)ItemStatus.Pending,
                                RequestedOn = DateTime.UtcNow,
-                               AttendanceDate = n.AttendanceDate,
+                               AttendanceDate = _timezoneConverter.ToTimeZoneDateTime(n.AttendanceDate, _currentSession.TimeZone),
                                LeaveFromDate = DateTime.UtcNow,
                                LeaveToDate = DateTime.UtcNow,
                                Notify = JsonConvert.SerializeObject(n.NotifyList),
@@ -441,7 +441,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid request data passed. Please check your form again.");
 
             var anyRecord = compalintOrRequestWithEmail.CompalintOrRequestList.Any(x => x.RequestedId == 0);
-            if (!anyRecord)
+            if (anyRecord)
                 throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
 
             var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
