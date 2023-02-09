@@ -43,6 +43,9 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid employee id.");
 
             DateTime now = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            if (itemStatus == ItemStatus.NotGenerated)
+                itemStatus = 0;
+
             var resultSet = _db.FetchDataSet(procedure, new
             {
                 ManagerId = employeeId,
