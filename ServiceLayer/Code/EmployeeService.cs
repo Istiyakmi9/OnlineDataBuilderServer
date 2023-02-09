@@ -295,9 +295,21 @@ namespace ServiceLayer.Code
             {
                 if (employee.EmployeeMappedClientsUid <= 0)
                     throw new HiringBellException { UserMessage = "EmployeeMappedClientId is invalid.", FieldName = nameof(employee.EmployeeMappedClientsUid), FieldValue = employee.EmployeeMappedClientsUid.ToString() };
+
+                EmployeeMappedClient employeeMappedClient = _db.Get<EmployeeMappedClient>("sp_employees_getMappedClient", new
+                {
+                    EmployeeMappedClientsUid = employee.EmployeeMappedClientsUid
+                });
+
+                if (employeeMappedClient == null || employee.ClientUid != employeeMappedClient.ClientUid)
+                {
+                    throw HiringBellException.ThrowBadRequest("Trying to update invalid data. Please contact to admin.");
+                }
             }
 
             this.ValidateEmployeeDetails(employee);
+
+
 
             var resultset = _db.GetDataSet("SP_Employees_AddUpdateRemoteClient", new
             {
@@ -468,7 +480,7 @@ namespace ServiceLayer.Code
                 MonthTimesheetApprovalState = employeeCompleteDetailModal.TimesheetDetails.MonthTimesheetApprovalState,
                 ForYear = employeeCompleteDetailModal.TimesheetDetails.ForYear,
                 ForMonth = employeeCompleteDetailModal.TimesheetDetails.ForMonth,
-                EmployeeMappedClientUid = employeeCompleteDetailModal.MappedClient.EmployeeMappedClientUid,
+                EmployeeMappedClientUid = employeeCompleteDetailModal.MappedClient.EmployeeMappedClientsUid,
                 ClientName = employeeCompleteDetailModal.MappedClient.ClientName,
                 BillingHours = employeeCompleteDetailModal.MappedClient.BillingHours,
                 DaysPerWeek = employeeCompleteDetailModal.MappedClient.DaysPerWeek,
@@ -489,7 +501,7 @@ namespace ServiceLayer.Code
                 WorkShiftId = employeeCompleteDetailModal.EmployeeDetail.WorkShiftId,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);;
+            }, true); ;
 
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to active the employee. Please contact to admin");

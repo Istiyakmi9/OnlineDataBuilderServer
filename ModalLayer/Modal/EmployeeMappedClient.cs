@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ModalLayer.Modal
 {
     public class EmployeeMappedClient
     {
-        public long EmployeeMappedClientUid { get; set; }
+        public long EmployeeMappedClientsUid { get; set; }
         public long EmployeeUid { get; set; }
         public int ClientUid { get; set; }
         public string ClientName { get; set; }
