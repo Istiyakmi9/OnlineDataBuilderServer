@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer;
 using ModalLayer.Modal;
+using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -462,10 +463,43 @@ namespace ServiceLayer.Code
 
             var anyRecord = compalintOrRequestWithEmail.CompalintOrRequestList.Any(x => x.RequestedId == 0);
             if (anyRecord)
-                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
+            {
+                var value = InsertEmptyAttendanceFirstTime(compalintOrRequestWithEmail);
+                foreach (var record in compalintOrRequestWithEmail.CompalintOrRequestList)
+                {
+                    record.RequestedId = int.Parse(value);
+                }
+
+            }
+                //throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
 
             var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
             await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
+            return Result;
+        }
+
+        private string InsertEmptyAttendanceFirstTime(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        {
+            var year = compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate.Year;
+            var month = compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate.Month;
+            var Result = _db.Execute<Attendance>("sp_attendance_insupd", new
+            {
+                AttendanceId = 0,
+                AttendanceDetail = "[]",
+                UserTypeId = (int)UserType.Employee,
+                EmployeeId = compalintOrRequestWithEmail.CompalintOrRequestList[0].EmployeeId,
+                TotalDays = 0,
+                TotalWeekDays = 0,
+                DaysPending = DateTime.DaysInMonth(year, month),
+                TotalBurnedMinutes = 0,
+                ForYear = year,
+                ForMonth = month,
+                UserId = _currentSession.CurrentUserDetail.UserId,
+                PendingRequestCount = 0
+            }, true);
+
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable submit the attendace");
             return Result;
         }
 
