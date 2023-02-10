@@ -959,7 +959,7 @@ namespace ServiceLayer.Code
                                 UpdatedOn = n.UpdatedOn
                             }));
 
-                attendance.AttendanceDetail = JsonConvert.SerializeObject(AttendaceDetail);
+                attendance.AttendanceDetail = AttendaceDetail;
             }
 
             return await Task.FromResult(attendance);
