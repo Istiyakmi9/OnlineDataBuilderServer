@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
 using MySqlX.XDevAPI.Common;
@@ -10,7 +11,9 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -23,13 +26,17 @@ namespace ServiceLayer.Code
         private readonly AttendanceEmailService _attendanceEmailService;
         private readonly ICompanyService _companyService;
         private readonly IEmailService _emailService;
+        private readonly IEMailManager _eMailManager;
+        private readonly FileLocationDetail _fileLocationDetail;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ICompanyService companyService,
             AttendanceEmailService attendanceEmailService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IEMailManager eMailManager,
+            FileLocationDetail fileLocationDetail)
         {
             _db = db;
             _companyService = companyService;
@@ -37,6 +44,8 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _attendanceEmailService = attendanceEmailService;
             _emailService = emailService;
+            _eMailManager = eMailManager;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -471,7 +480,7 @@ namespace ServiceLayer.Code
                 }
 
             }
-                //throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
+            //throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
 
             var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
             await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
@@ -729,14 +738,64 @@ namespace ServiceLayer.Code
 
         public async Task AttendaceApprovalStatusSendEmail(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
         {
-            var templateReplaceModal =
-                await GetAttendanceApprovalTemplate(compalintOrRequestWithEmail.CompalintOrRequestList.First());
-
+            var templateReplaceModal = new TemplateReplaceModal();
+            if (compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList != null && compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList.Count > 0)
+            {
+                templateReplaceModal.ToAddress = new List<string>();
+                foreach (var email in compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList)
+                {
+                    templateReplaceModal.ToAddress.Add(email.Email);
+                }
+            }
             var result = Task.Run(async () =>
-                await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal)
+                await SendEmailWithTemplate(compalintOrRequestWithEmail, templateReplaceModal)
             );
 
             await Task.CompletedTask;
+        }
+        private async Task<EmailSenderModal> SendEmailWithTemplate(CompalintOrRequestWithEmail compalintOrRequestWithEmail, TemplateReplaceModal templateReplaceModal)
+        {
+            templateReplaceModal.BodyContent = compalintOrRequestWithEmail.EmailBody;
+            var emailSenderModal = await ReplaceActualData(templateReplaceModal, compalintOrRequestWithEmail);
+
+            await _eMailManager.SendMailAsync(emailSenderModal);
+            return await Task.FromResult(emailSenderModal);
+        }
+        private async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        {
+            EmailSenderModal emailSenderModal = null;
+            var attendance = compalintOrRequestWithEmail.CompalintOrRequestList.First();
+            if (templateReplaceModal != null)
+            {
+                var totalDays = compalintOrRequestWithEmail.CompalintOrRequestList.Count;
+                string subject = $"{totalDays} Days Blocked Attendance Approval Status";
+                string body = compalintOrRequestWithEmail.EmailBody;
+
+                StringBuilder builder = new StringBuilder();
+                builder.Append("<div style=\"border-bottom:1px solid black; margin-top: 14px; margin-bottom:5px\">" + "" + "</div>");
+                builder.AppendLine();
+                builder.AppendLine();
+                builder.Append("<div>" + "Thanks and Regard" + "</div>");
+                builder.Append("<div>" + attendance.EmployeeName + "</div>");
+                builder.Append("<div>" + attendance.Mobile + "</div>");
+
+                var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
+                if (File.Exists(logoPath))
+                {
+                    builder.Append($"<div><img src=\"cid:{ApplicationConstants.LogoContentId}\" style=\"width: 10rem;margin-top: 1rem;\"></div>");
+                }
+
+                emailSenderModal = new EmailSenderModal
+                {
+                    To = templateReplaceModal.ToAddress,
+                    Subject = subject,
+                    Body = string.Concat(body, builder.ToString()),
+                };
+            }
+
+            emailSenderModal.Title = $"{attendance.EmployeeName} requested for approved blocked attendance.";
+
+            return await Task.FromResult(emailSenderModal);
         }
 
         public async Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
