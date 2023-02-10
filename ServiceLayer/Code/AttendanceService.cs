@@ -193,7 +193,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
 
             attendanceDetailBuildModal.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
-            attendanceDetailBuildModal.compalintOrRequests = Converter.ToList<CompalintOrRequest>(Result.Tables[4]);
+            attendanceDetailBuildModal.compalintOrRequests = Converter.ToList<ComplaintOrRequest>(Result.Tables[4]);
 
             if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
                 throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
@@ -375,12 +375,28 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public async Task<List<CompalintOrRequest>> GetMissingAttendanceRequestService(FilterModel filter)
+        public async Task<List<ComplaintOrRequest>> GetMissingAttendanceRequestService(FilterModel filter)
         {
             if (string.IsNullOrEmpty(filter.SearchString) || filter.EmployeeId > 0)
-                filter.SearchString = $"1=1 and EmployeeId = {filter.EmployeeId}";
+                filter.SearchString = $"1=1 and RequestTypeId = {(int)RequestType.Attendance} and EmployeeId = {filter.EmployeeId}";
 
-            var result = _db.GetList<CompalintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
+            var result = _db.GetList<ComplaintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
+            {
+                filter.SearchString,
+                filter.SortBy,
+                filter.PageSize,
+                filter.PageIndex
+            });
+
+            return await Task.FromResult(result);
+        }
+
+        public async Task<List<ComplaintOrRequest>> GetMissingAttendanceApprovalRequestService(FilterModel filter)
+        {
+            if (string.IsNullOrEmpty(filter.SearchString))
+                filter.SearchString = $"1=1 and RequestTypeId = {(int)RequestType.Attendance} and ManagerId = {_currentSession.CurrentUserDetail.UserId}";
+
+            var result = _db.GetList<ComplaintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
             {
                 filter.SearchString,
                 filter.SortBy,
@@ -647,7 +663,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(CompalintOrRequest compalintOrRequest)
+        private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(ComplaintOrRequest compalintOrRequest)
         {
             var templateReplaceModal = new TemplateReplaceModal
             {
@@ -683,6 +699,29 @@ namespace ServiceLayer.Code
             );
 
             await Task.CompletedTask;
+        }
+
+        public async Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
+        {
+            return await UpdateRequestRaised(complaintOrRequests, (int)ItemStatus.Approved);
+        }
+
+        public async Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
+        {
+            return await UpdateRequestRaised(complaintOrRequests, (int)ItemStatus.Rejected);
+        }
+
+        private async Task<List<ComplaintOrRequest>> UpdateRequestRaised(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
+        {
+            if (complaintOrRequests.Any(x => x.ComplaintOrRequestId <= 0))
+                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please login again");
+
+            var result = _db.BulkExecuteAsync("sp_employee_performance_get", complaintOrRequests);
+
+
+            var filter = new FilterModel();
+            filter.SearchString = String.Empty;
+            return await GetMissingAttendanceApprovalRequestService(filter);
         }
     }
 }

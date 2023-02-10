@@ -10,5 +10,6 @@
         public int CompanyId { get; set; }
         public int OffsetIndex { get; set; }
         public long EmployeeId { get; set; }
+        public long Id { get; set; }
     }
 }
