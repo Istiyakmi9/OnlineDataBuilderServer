@@ -25,6 +25,7 @@ namespace ModalLayer.Modal
         public long ExecuterId { set; get; }
         public string ExecuterName { set; get; }
         public string ExecuterEmail { set; get; }
+        public bool IsFullDay { set; get; } = false;
         public DateTime RequestedOn { set; get; }
         public DateTime AttendanceDate { set; get; }
         public DateTime? LeaveFromDate { set; get; }

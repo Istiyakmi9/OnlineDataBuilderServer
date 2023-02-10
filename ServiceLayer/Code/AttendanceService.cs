@@ -3,7 +3,6 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer;
 using ModalLayer.Modal;
-using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -471,7 +470,7 @@ namespace ServiceLayer.Code
                 }
 
             }
-                //throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
+            //throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
 
             var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
             await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
@@ -749,28 +748,181 @@ namespace ServiceLayer.Code
             return await UpdateRequestRaised(complaintOrRequests, (int)ItemStatus.Rejected);
         }
 
-        private async Task<List<ComplaintOrRequest>> UpdateRequestRaised(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
+        private async Task<Attendance> GetCurrentAttendanceRequestData(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
         {
-            if (complaintOrRequests.Any(x => x.ComplaintOrRequestId <= 0))
-                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please login again");
+            bool isManager = false;
+            var first = complaintOrRequests.First();
+            if (first.ManagerId == _currentSession.CurrentUserDetail.UserId)
+                isManager = true;
 
-            if (complaintOrRequests.First().ManagerId != _currentSession.CurrentUserDetail.UserId)
+            var resultSet = _db.GetDataSet("sp_complaint_or_request_get_by_attendanceid", new
             {
-                complaintOrRequests.ForEach(item =>
+                AttendanceId = first.RequestedId,
+                EmployeeId = first.EmployeeId
+            });
+
+            if (resultSet.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
+
+            var attendance = Converter.ToType<Attendance>(resultSet.Tables[0]);
+            if (attendance == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
+
+            var complaintDetail = Converter.ToList<ComplaintOrRequest>(resultSet.Tables[1]);
+            if (complaintDetail == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
+
+            var employee = Converter.ToType<Employee>(resultSet.Tables[2]);
+            if (employee == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
+
+            Parallel.ForEach(complaintDetail, item =>
+            {
+                var current = complaintOrRequests.Find(i => i.ComplaintOrRequestId == item.ComplaintOrRequestId);
+                if (current != null)
                 {
-                    item.ExecutedByManager = false;
-                    item.ExecuterId = _currentSession.CurrentUserDetail.UserId;
-                    item.ExecuterName = _currentSession.CurrentUserDetail.FullName;
-                    item.ExecuterEmail = _currentSession.CurrentUserDetail.Email;
-                });
+                    if (!isManager)
+                    {
+                        current.ExecutedByManager = isManager;
+                        current.ExecuterId = _currentSession.CurrentUserDetail.UserId;
+                        current.ExecuterName = _currentSession.CurrentUserDetail.FullName;
+                        current.ExecuterEmail = _currentSession.CurrentUserDetail.Email;
+                    }
+                    else
+                    {
+                        current.ExecutedByManager = isManager;
+                    }
+                }
+            });
+            var attendanceDetail = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendance.AttendanceDetail);
+            if (attendanceDetail.Count() == 0)
+            {
+                var AttendaceDetail = JsonConvert
+                        .SerializeObject((
+                            from n in complaintOrRequests
+                            select new // AttendenceDetail use dynamic object for minimal json data
+                            {
+                                TotalMinutes = n.IsFullDay ? employee.Duration : employee.Duration / 2,
+                                UserTypeId = employee.UserTypeId,
+                                PresentDayStatus = itemStatus,
+                                EmployeeUid = employee.EmployeeUid,
+                                AttendanceId = n.RequestedId,
+                                UserComments = n.EmployeeMessage,
+                                AttendanceDay = n.AttendanceDate,
+                                AttendenceStatus = (int)ItemStatus.Pending,
+                                Email = employee.Email,
+                                EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                                Mobile = employee.Mobile,
+                                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                                Emails = n.NotifyList == null ? "[]" : JsonConvert.SerializeObject(n.NotifyList),
+                                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                                LogOn = employee.OfficeTime,
+                                LogOff = "00:00",
+                                SessionType = n.IsFullDay ? 1 : 2,
+                                LunchBreanInMinutes = employee.LunchDuration,
+                                ApprovedBy = !isManager ? _currentSession.CurrentUserDetail.UserId : 0,
+                                ApprovedName = !isManager ? _currentSession.CurrentUserDetail.FullName : null,
+                                UpdatedOn = DateTime.UtcNow
+                            }));
+
+                attendance.AttendanceDetail = AttendaceDetail;
             }
             else
             {
+                var newAttendance = new List<AttendenceDetail>();
                 complaintOrRequests.ForEach(item =>
                 {
-                    item.ExecutedByManager = true;
+                    var current = attendanceDetail.Find(x => x.AttendanceDay.Date.Subtract(item.AttendanceDate).TotalDays == 0);
+                    if (current != null)
+                    {
+                        current.PresentDayStatus = itemStatus;
+                        current.ApprovedBy = !isManager ? _currentSession.CurrentUserDetail.UserId : 0;
+                        current.ApprovedName = !isManager ? _currentSession.CurrentUserDetail.FullName : null;
+                        current.UpdatedOn = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        newAttendance.Add(new AttendenceDetail
+                        {
+                            TotalMinutes = item.IsFullDay ? employee.Duration : employee.Duration / 2,
+                            UserTypeId = employee.UserTypeId,
+                            PresentDayStatus = itemStatus,
+                            EmployeeUid = employee.EmployeeUid,
+                            AttendanceId = item.RequestedId,
+                            UserComments = item.EmployeeMessage,
+                            AttendanceDay = item.AttendanceDate,
+                            AttendenceStatus = (int)ItemStatus.Pending,
+                            Email = employee.Email,
+                            EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                            Mobile = employee.Mobile,
+                            ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                            Emails = item.NotifyList == null ? "[]" : JsonConvert.SerializeObject(item.NotifyList),
+                            ManagerName = _currentSession.CurrentUserDetail.FullName,
+                            LogOn = employee.OfficeTime,
+                            LogOff = "00:00",
+                            SessionType = item.IsFullDay ? 1 : 2,
+                            LunchBreanInMinutes = employee.LunchDuration,
+                            ApprovedBy = !isManager ? _currentSession.CurrentUserDetail.UserId : 0,
+                            ApprovedName = !isManager ? _currentSession.CurrentUserDetail.FullName : null,
+                            UpdatedOn = DateTime.UtcNow
+                        });
+                    }
                 });
+
+                if (newAttendance.Count() > 0)
+                    attendanceDetail.AddRange(newAttendance);
+
+                var AttendaceDetail = JsonConvert
+                        .SerializeObject((
+                            from n in attendanceDetail
+                            select new // AttendenceDetail use dynamic object for minimal json data
+                            {
+                                TotalMinutes = n.TotalMinutes,
+                                UserTypeId = n.UserTypeId,
+                                PresentDayStatus = n.PresentDayStatus,
+                                EmployeeUid = n.EmployeeUid,
+                                AttendanceId = n.AttendanceId,
+                                UserComments = n.UserComments,
+                                AttendanceDay = n.AttendanceDay,
+                                AttendenceStatus = n.AttendenceStatus,
+                                Email = n.Email,
+                                EmployeeName = n.EmployeeName,
+                                Mobile = n.Mobile,
+                                ReportingManagerId = n.ReportingManagerId,
+                                Emails = n.Emails,
+                                ManagerName = n.ManagerName,
+                                LogOn = n.LogOn,
+                                LogOff = n.LogOff,
+                                SessionType = n.SessionType,
+                                LunchBreanInMinutes = n.LunchBreanInMinutes,
+                                ApprovedBy = n.ApprovedBy,
+                                ApprovedName = n.ApprovedName,
+                                UpdatedOn = n.UpdatedOn
+                            }));
+
+                attendance.AttendanceDetail = JsonConvert.SerializeObject(AttendaceDetail);
             }
+
+            return await Task.FromResult(attendance);
+        }
+
+        private async Task<List<ComplaintOrRequest>> UpdateRequestRaised(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
+        {
+            if (complaintOrRequests == null || complaintOrRequests.Count() == 0 || complaintOrRequests.Any(x => x.ComplaintOrRequestId <= 0))
+                throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please login again");
+
+            var attendance = await GetCurrentAttendanceRequestData(complaintOrRequests, itemStatus);
+
+            var dbResult = _db.Execute("sp_attendance_update_request", new
+            {
+                AttendanceId = attendance.AttendanceId,
+                AttendanceDetail = attendance.AttendanceDetail,
+                PendingRequestCount = attendance.PendingRequestCount,
+                UserId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (string.IsNullOrEmpty(dbResult.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to update attendance detail. Please contact to admin.");
 
             var items = (from n in complaintOrRequests
                          select new
@@ -780,11 +932,11 @@ namespace ServiceLayer.Code
                              ExecuterId = n.ExecuterId,
                              ExecuterName = n.ExecuterName,
                              ExecuterEmail = n.ExecuterEmail,
+                             ManagerComments = n.ManagerComments,
                              StatusId = itemStatus
-                         }
-                        ).ToList();
+                         }).ToList();
 
-            var result = _db.BulkExecuteAsync("sp_complaint_or_request_update_status", items);
+            var result = await _db.BulkExecuteAsync("sp_complaint_or_request_update_status", items);
 
 
             var filter = new FilterModel();

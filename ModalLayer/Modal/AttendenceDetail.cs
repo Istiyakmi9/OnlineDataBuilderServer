@@ -47,6 +47,8 @@ namespace ModalLayer.Modal
         public string Mobile { set; get; }
         public long ReportingManagerId { set; get; }
         public string ManagerName { set; get; }
+        public long ApprovedBy { set; get; }
+        public string ApprovedName { set; get; }
     }
 
     public class AttendanceWithClientDetail

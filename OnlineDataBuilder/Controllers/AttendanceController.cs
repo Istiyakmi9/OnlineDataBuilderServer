@@ -88,16 +88,16 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("ApproveRaisedAttendanceRequest")]
-        public IResponse<ApiResponse> ApproveRaisedAttendanceRequest(List<ComplaintOrRequest> complaintOrRequests)
+        public async Task<ApiResponse> ApproveRaisedAttendanceRequest(List<ComplaintOrRequest> complaintOrRequests)
         {
-            var result = _attendanceService.ApproveRaisedAttendanceRequestService(complaintOrRequests);
+            var result = await _attendanceService.ApproveRaisedAttendanceRequestService(complaintOrRequests);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [HttpPost("RejectRaisedAttendanceRequest")]
-        public IResponse<ApiResponse> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
+        [HttpPut("RejectRaisedAttendanceRequest")]
+        public async Task<ApiResponse> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
         {
-            var result = _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
+            var result = await _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

@@ -22,6 +22,9 @@ namespace ModalLayer.Modal
         public int Index { set; get; }
         public bool IsActive { set; get; }
         public int Total { set; get; }
+        public int Duration { set; get; }
+        public int LunchDuration { set; get; }
+        public string OfficeTime { set; get; }
         public int RowIndex { set; get; }
         public DateTime DOB { get; set; }
         public DateTime CreatedOn { get; set; }
