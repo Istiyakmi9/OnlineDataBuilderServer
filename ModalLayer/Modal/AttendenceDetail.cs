@@ -65,6 +65,6 @@ namespace ModalLayer.Modal
         public List<Calendar> calendars { set; get; }
         public ShiftDetail shiftDetail { set; get; }
         public LeaveDetail leaveDetail{ set; get; }
-        public List<CompalintOrRequest> compalintOrRequests { set; get; }
+        public List<ComplaintOrRequest> compalintOrRequests { set; get; }
     }
 }

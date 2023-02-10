@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
-    public class CompalintOrRequest
+    public class ComplaintOrRequest
     {
         public int ComplaintOrRequestId { set; get; }
         public int RequestTypeId { set; get; }
@@ -37,6 +37,6 @@ namespace ModalLayer.Modal
     public class CompalintOrRequestWithEmail
     {
         public string EmailBody { set; get; }
-        public List<CompalintOrRequest> CompalintOrRequestList { set; get; }
+        public List<ComplaintOrRequest> CompalintOrRequestList { set; get; }
     }
 }

@@ -59,6 +59,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
+        [HttpPost("GetMissingAttendanceApprovalRequest")]
+        public async Task<ApiResponse> GetMissingAttendanceApprovalRequest(FilterModel filter)
+        {
+            var result = await _attendanceService.GetMissingAttendanceApprovalRequestService(filter);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
         [HttpPost("RaiseMissingAttendanceRequest")]
         public async Task<ApiResponse> RaiseMissingAttendanceRequest(CompalintOrRequestWithEmail compalintOrRequest)
         {
@@ -80,5 +87,18 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
+        [HttpPut("ApproveRaisedAttendanceRequest")]
+        public IResponse<ApiResponse> ApproveRaisedAttendanceRequest(List<ComplaintOrRequest> complaintOrRequests)
+        {
+            var result = _attendanceService.ApproveRaisedAttendanceRequestService(complaintOrRequests);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("RejectRaisedAttendanceRequest")]
+        public IResponse<ApiResponse> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
+        {
+            var result = _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
     }
 }
