@@ -720,7 +720,37 @@ namespace ServiceLayer.Code
             if (complaintOrRequests.Any(x => x.ComplaintOrRequestId <= 0))
                 throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please login again");
 
-            var result = _db.BulkExecuteAsync("sp_employee_performance_get", complaintOrRequests);
+            if (complaintOrRequests.First().ManagerId != _currentSession.CurrentUserDetail.UserId)
+            {
+                complaintOrRequests.ForEach(item =>
+                {
+                    item.ExecutedByManager = false;
+                    item.ExecuterId = _currentSession.CurrentUserDetail.UserId;
+                    item.ExecuterName = _currentSession.CurrentUserDetail.FullName;
+                    item.ExecuterEmail = _currentSession.CurrentUserDetail.Email;
+                });
+            }
+            else
+            {
+                complaintOrRequests.ForEach(item =>
+                {
+                    item.ExecutedByManager = true;
+                });
+            }
+
+            var items = (from n in complaintOrRequests
+                         select new
+                         {
+                             ComplaintOrRequestId = n.ComplaintOrRequestId,
+                             ExecutedByManager = n.ExecutedByManager,
+                             ExecuterId = n.ExecuterId,
+                             ExecuterName = n.ExecuterName,
+                             ExecuterEmail = n.ExecuterEmail,
+                             StatusId = itemStatus
+                         }
+                        ).ToList();
+
+            var result = _db.BulkExecuteAsync("sp_complaint_or_request_update_status", items);
 
 
             var filter = new FilterModel();
