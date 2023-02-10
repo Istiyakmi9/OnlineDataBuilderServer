@@ -445,6 +445,10 @@ namespace ServiceLayer.Code
                                LeaveFromDate = DateTime.UtcNow,
                                LeaveToDate = DateTime.UtcNow,
                                Notify = JsonConvert.SerializeObject(n.NotifyList),
+                               ExecutedByManager = n.ExecutedByManager,
+                               ExecuterId = n.ExecuterId,
+                               ExecuterName = n.ExecuterName,
+                               ExecuterEmail = n.ExecuterEmail
                            }).ToList();
 
             var result = await _db.BulkExecuteAsync("sp_complaint_or_request_InsUpdate", records, true);

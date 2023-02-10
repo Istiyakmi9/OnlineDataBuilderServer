@@ -21,6 +21,10 @@ namespace ModalLayer.Modal
         public int CurrentStatus { set; get; }
         public List<Notify> NotifyList { set; get; } = new List<Notify>();
         public string Notify { set; get; }
+        public bool ExecutedByManager { set; get; }
+        public long ExecuterId { set; get; }
+        public string ExecuterName { set; get; }
+        public string ExecuterEmail { set; get; }
         public DateTime RequestedOn { set; get; }
         public DateTime AttendanceDate { set; get; }
         public DateTime? LeaveFromDate { set; get; }
