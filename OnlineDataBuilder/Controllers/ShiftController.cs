@@ -24,10 +24,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("WorkShiftInsertUpdate")]
-        public IResponse<ApiResponse> WorkShiftInsertUpdate(ShiftDetail shiftDetail)
+        [HttpPost("UpdateWorkShift")]
+        public IResponse<ApiResponse> UpdateWorkShift(ShiftDetail shiftDetail)
         {
-            var result = _shiftService.WorkShiftInsertUpdateService(shiftDetail);
+            var result = _shiftService.UpdateWorkShiftService(shiftDetail);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("CreateWorkShift")]
+        public IResponse<ApiResponse> InsertWorkShift(ShiftDetail shiftDetail)
+        {
+            var result = _shiftService.InsertWorkShiftService(shiftDetail);
             return BuildResponse(result);
         }
     }

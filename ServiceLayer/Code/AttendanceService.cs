@@ -380,6 +380,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable submit the attendace");
 
+            Result = ApplicationConstants.Updated;
             Task task = Task.Run(async () => await _attendanceEmailService.SendSubmitAttendanceEmail(attendenceApplied));
             return Result;
         }
@@ -805,7 +806,7 @@ namespace ServiceLayer.Code
 
         public async Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
         {
-            return await UpdateRequestRaised(complaintOrRequests, (int)ItemStatus.Rejected);
+            return await UpdateRequestRaised(complaintOrRequests, 0);
         }
 
         private async Task<Attendance> GetCurrentAttendanceRequestData(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
