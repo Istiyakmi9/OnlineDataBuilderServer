@@ -28,35 +28,45 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public List<ShiftDetail> WorkShiftInsertUpdateService(ShiftDetail shiftDetail)
+        public List<ShiftDetail> UpdateWorkShiftService(ShiftDetail shiftDetail)
         {
             ValidateWorkShift(shiftDetail);
-            var oldshift = _db.Get<ShiftDetail>("sp_work_shifts_getby_id", new { WorkShiftId = shiftDetail.WorkShiftId });
-            if (oldshift == null)
-                oldshift = shiftDetail;
-            else
-            {
-                oldshift.Department = shiftDetail.Department;
-                oldshift.WorkFlowCode = shiftDetail.WorkFlowCode;
-                oldshift.ShiftTitle = shiftDetail.ShiftTitle;
-                oldshift.Description = shiftDetail.Description;
-                oldshift.IsMon = shiftDetail.IsMon;
-                oldshift.IsTue = shiftDetail.IsTue;
-                oldshift.IsWed = shiftDetail.IsWed;
-                oldshift.IsThu = shiftDetail.IsThu;
-                oldshift.IsFri = shiftDetail.IsFri;
-                oldshift.IsSat = shiftDetail.IsSat;
-                oldshift.IsSun = shiftDetail.IsSun;
-                oldshift.TotalWorkingDays = shiftDetail.TotalWorkingDays;
-                oldshift.StartDate = shiftDetail.StartDate;
-                oldshift.EndDate = shiftDetail.EndDate;
-                oldshift.OfficeTime = shiftDetail.OfficeTime;
-                oldshift.Duration = shiftDetail.Duration;
-                oldshift.Status = shiftDetail.Status;
-                oldshift.LunchDuration = shiftDetail.LunchDuration;
-            }
-            oldshift.AdminId = _session.CurrentUserDetail.UserId;
-            var result = _db.Execute<ShiftDetail>("sp_work_shifts_insupd", oldshift, true);
+            var existingShift = _db.Get<ShiftDetail>("sp_work_shifts_getby_id", new { WorkShiftId = shiftDetail.WorkShiftId });
+            if (existingShift == null)
+                throw HiringBellException.ThrowBadRequest("No record found for the given shift. Please contact to admin.");
+
+            existingShift.Department = shiftDetail.Department;
+            existingShift.WorkFlowCode = shiftDetail.WorkFlowCode;
+            existingShift.ShiftTitle = shiftDetail.ShiftTitle;
+            existingShift.Description = shiftDetail.Description;
+            existingShift.IsMon = shiftDetail.IsMon;
+            existingShift.IsTue = shiftDetail.IsTue;
+            existingShift.IsWed = shiftDetail.IsWed;
+            existingShift.IsThu = shiftDetail.IsThu;
+            existingShift.IsFri = shiftDetail.IsFri;
+            existingShift.IsSat = shiftDetail.IsSat;
+            existingShift.IsSun = shiftDetail.IsSun;
+            existingShift.TotalWorkingDays = shiftDetail.TotalWorkingDays;
+            existingShift.StartDate = shiftDetail.StartDate;
+            existingShift.EndDate = shiftDetail.EndDate;
+            existingShift.OfficeTime = shiftDetail.OfficeTime;
+            existingShift.Duration = shiftDetail.Duration;
+            existingShift.Status = shiftDetail.Status;
+            existingShift.LunchDuration = shiftDetail.LunchDuration;
+         
+            return WorkShiftInsertUpdateService(shiftDetail);
+        }
+
+        public List<ShiftDetail> InsertWorkShiftService(ShiftDetail shiftDetail)
+        {
+            ValidateWorkShift(shiftDetail);
+            return WorkShiftInsertUpdateService(shiftDetail);
+        }
+
+        private List<ShiftDetail> WorkShiftInsertUpdateService(ShiftDetail shiftDetail)
+        {
+            shiftDetail.AdminId = _session.CurrentUserDetail.UserId;
+            var result = _db.Execute<ShiftDetail>("sp_work_shifts_insupd", shiftDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update shift detail");
 
