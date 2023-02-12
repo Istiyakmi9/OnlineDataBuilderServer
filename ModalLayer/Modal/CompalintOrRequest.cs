@@ -31,6 +31,7 @@ namespace ModalLayer.Modal
         public DateTime? LeaveFromDate { set; get; }
         public DateTime? LeaveToDate { set; get; }
         public DateTime UpdatedOn { set; get; }
+        public int Total { get; set; }
     }
 
     public class Notify

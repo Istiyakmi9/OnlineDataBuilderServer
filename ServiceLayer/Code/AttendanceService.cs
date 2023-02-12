@@ -404,6 +404,8 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(filter.SearchString))
                 filter.SearchString = $"1=1 and RequestTypeId = {(int)RequestType.Attendance} and ManagerId = {_currentSession.CurrentUserDetail.UserId}";
+            if (filter.EmployeeId > 0)
+                filter.SearchString += $" and EmployeeId = {filter.EmployeeId}";
 
             var result = _db.GetList<ComplaintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
             {
@@ -479,7 +481,6 @@ namespace ServiceLayer.Code
                 }
 
             }
-            //throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please check your form again.");
 
             var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
             await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
@@ -488,8 +489,8 @@ namespace ServiceLayer.Code
 
         private string InsertEmptyAttendanceFirstTime(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
         {
-            var year = compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate.Year;
-            var month = compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate.Month;
+            var year = _timezoneConverter.ToIstTime(compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate).Year;
+            var month = _timezoneConverter.ToIstTime(compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate).Month;
             var Result = _db.Execute<Attendance>("sp_attendance_insupd", new
             {
                 AttendanceId = 0,
@@ -507,7 +508,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(Result))
-                throw new HiringBellException("Unable submit the attendace");
+                throw new HiringBellException("Unable to create the attendace");
             return Result;
         }
 
