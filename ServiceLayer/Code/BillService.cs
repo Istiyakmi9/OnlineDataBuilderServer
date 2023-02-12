@@ -185,6 +185,21 @@ namespace ServiceLayer.Code
 
         private void FillSenderDetail(Organization organization, PdfModal pdfModal)
         {
+            if (string.IsNullOrEmpty(organization.CompanyName))
+                throw HiringBellException.ThrowBadRequest("Sender company name is null or empty");
+
+            if (string.IsNullOrEmpty(organization.GSTNo))
+                throw HiringBellException.ThrowBadRequest("Sender company gstn number is null or empty");
+
+            if (string.IsNullOrEmpty(organization.FirstAddress))
+                throw HiringBellException.ThrowBadRequest("Sender company first address is null or empty");
+
+            if (string.IsNullOrEmpty(organization.SecondAddress))
+                throw HiringBellException.ThrowBadRequest("Sender company second address is null or empty");
+
+            if (string.IsNullOrEmpty(organization.PrimaryPhoneNo))
+                throw HiringBellException.ThrowBadRequest("Sender company primary phone number is null or empty");
+
             pdfModal.senderCompanyName = organization.CompanyName;
             pdfModal.senderGSTNo = organization.GSTNo;
             pdfModal.senderEmail = organization.Email;
@@ -195,6 +210,21 @@ namespace ServiceLayer.Code
 
         private void FillReceiverDetail(Organization organization, PdfModal pdfModal)
         {
+            if (string.IsNullOrEmpty(organization.ClientName))
+                throw HiringBellException.ThrowBadRequest("CLient name is null or empty");
+
+            if (string.IsNullOrEmpty(organization.GSTNo))
+                throw HiringBellException.ThrowBadRequest("CLient gstn number is null or empty");
+
+            if (string.IsNullOrEmpty(organization.FirstAddress))
+                throw HiringBellException.ThrowBadRequest("CLient first address is null or empty");
+
+            if (string.IsNullOrEmpty(organization.SecondAddress))
+                throw HiringBellException.ThrowBadRequest("CLient second address is null or empty");
+
+            if (string.IsNullOrEmpty(organization.PrimaryPhoneNo))
+                throw HiringBellException.ThrowBadRequest("CLient primary phone number is null or empty");
+
             pdfModal.receiverCompanyId = organization.ClientId;
             pdfModal.receiverCompanyName = organization.ClientName;
             pdfModal.receiverEmail = organization.Email;

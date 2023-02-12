@@ -107,7 +107,9 @@ namespace ServiceLayer.Code.SendEmail
         public async Task TimesheetApprovalStatusSendEmail(DailyTimesheetDetail dailyTimesheetDetail, List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus status)
         {
             var templateReplaceModal = await GetTimesheetApprovalTemplate(dailyTimesheetDetail, dailyTimesheetDetails, status);
-            await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetApprovalStatusEmailTemplate, templateReplaceModal);
+            var result = Task.Run(async () =>
+                await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetApprovalStatusEmailTemplate, templateReplaceModal)
+            );
             await Task.CompletedTask;
         }
 
