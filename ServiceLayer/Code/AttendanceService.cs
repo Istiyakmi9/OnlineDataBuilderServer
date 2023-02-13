@@ -279,7 +279,11 @@ namespace ServiceLayer.Code
             // check back date limit to allow attendance
             var companySetting = await _companyService.GetCompanySettingByCompanyId(_currentSession.CurrentUserDetail.CompanyId);
             DateTime barrierDate = this.GetBarrierDate(companySetting.AttendanceSubmissionLimit);
-            if (attendenceApplied.AttendanceDay.Subtract(barrierDate).TotalDays < 0)
+
+            var zoneBaseDate = _timezoneConverter.ToTimeZoneDateTime(barrierDate, _currentSession.TimeZone);
+            var attendanceDay = _timezoneConverter.ToTimeZoneDateTime(attendenceApplied.AttendanceDay, _currentSession.TimeZone);
+
+            if (attendanceDay.Date.Subtract(zoneBaseDate.Datea).TotalDays < 0)
                 throw new HiringBellException("Ops!!! You are not allow to submit this date attendace. Please raise a request to your direct manager.");
 
             // check for leave, holiday and weekends
