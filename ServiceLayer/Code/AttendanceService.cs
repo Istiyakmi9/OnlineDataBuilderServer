@@ -289,39 +289,55 @@ namespace ServiceLayer.Code
             // check for leave, holiday and weekends
             await this.IsGivenDateAllowed(workingDate, workingDateUserTimezone);
             attendenceApplied.AttendanceDay = workingDate;
-            (Attendance attendance, Employee employee) = _db.Get<Attendance, Employee>("sp_Attendance_YearMonth", new
+            var ResultSet = _db.GetDataSet("sp_Attendance_YearMonth", new
             {
                 EmployeeId = attendenceApplied.EmployeeUid,
-                UserTypeId = attendenceApplied.UserTypeId,
                 ForMonth = attendancemonth,
                 ForYear = attendanceyear
             });
+
+            if (ResultSet.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Fail to get user attendance detail. Please contact to admin.");
+
+            Employee employee = Converter.ToType<Employee>(ResultSet.Tables[0]);
+
             if (employee == null)
                 throw HiringBellException.ThrowBadRequest("Employee deatil not found. Please contact to admin");
+
+            var attendances = Converter.ToList<Attendance>(ResultSet.Tables[0]);
+            if (attendances.Count() > 1)
+                throw HiringBellException.ThrowBadRequest("Got invalid data on uses attendance. Pleace contact to admin.");
+
+            Attendance attendance = null;
+            if (attendances.Count() == 1)
+                attendance = attendances.First();
+            else
+                attendance = new Attendance();
 
             if (attendance != null && !string.IsNullOrEmpty(attendance.AttendanceDetail))
             {
                 attendanceList = JsonConvert
                     .DeserializeObject<List<AttendenceDetail>>(attendance.AttendanceDetail);
-                if (attendanceList.Count != 0)
+            }
+
+            if (attendanceList.Count != 0)
+            {
+                var workingAttendance = attendanceList
+                    .Find(x => x.AttendanceDay.Date.Subtract(workingDate.Date).TotalDays == 0);
+
+                if (workingAttendance == null)
                 {
-                    var workingAttendance = attendanceList
-                        .Find(x => x.AttendanceDay.Date.Subtract(workingDate.Date).TotalDays == 0);
-
-                    if (workingAttendance == null)
-                    {
-                        await this.CreatePresentDayAttendance(attendenceApplied, workingDateUserTimezone);
-                        attendanceList.Add(attendenceApplied);
-                    }
-                    else
-                    {
-                        await this.CheckAndCreateAttendance(workingAttendance);
-                    }
-
-                    int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
-                    attendance.DaysPending = pendingDays;
-                    attendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
+                    await this.CreatePresentDayAttendance(attendenceApplied, workingDateUserTimezone);
+                    attendanceList.Add(attendenceApplied);
                 }
+                else
+                {
+                    await this.CheckAndCreateAttendance(workingAttendance);
+                }
+
+                int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
+                attendance.DaysPending = pendingDays;
+                attendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
             }
             else
             {
@@ -431,7 +447,6 @@ namespace ServiceLayer.Code
             (Attendance attendance, Employee managerDetail) = _db.Get<Attendance, Employee>("sp_Attendance_YearMonth", new
             {
                 EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                UserTypeId = UserType.Employee,
                 ForMonth = workingDateUserTimezone.Month,
                 ForYear = workingDateUserTimezone.Year
             });
