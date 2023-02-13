@@ -490,8 +490,15 @@ namespace ServiceLayer.Code
 
         private string InsertEmptyAttendanceFirstTime(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
         {
-            var year = _timezoneConverter.ToIstTime(compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate).Year;
-            var month = _timezoneConverter.ToIstTime(compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate).Month;
+            var year = _timezoneConverter.ToTimeZoneDateTime(
+                    compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate,
+                    _currentSession.TimeZone
+                ).Year;
+            var month = _timezoneConverter.ToTimeZoneDateTime(
+                    compalintOrRequestWithEmail.CompalintOrRequestList[0].AttendanceDate,
+                    _currentSession.TimeZone
+                ).Month;
+
             var Result = _db.Execute<Attendance>("sp_attendance_insupd", new
             {
                 AttendanceId = 0,

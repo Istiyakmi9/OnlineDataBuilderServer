@@ -45,22 +45,17 @@ namespace ServiceLayer.Code
                 ClientId = ClientId,
                 IsActive = IsActive,
                 UserTypeId = UserTypeId,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             });
 
-            if (resultSet.Tables.Count == 2)
-            {
-                resultSet.Tables[0].TableName = "client";
-                resultSet.Tables[1].TableName = "file";
-            }
-            //if (resultSet.Tables.Count > 0 && resultSet.Tables[0].Rows.Count > 0)
-            //{
-            //    var emps = Converter.ToList<Organization>(resultSet.Tables[0]);
-            //    if (emps != null && emps.Count > 0)
-            //        client = emps[0];
-            //}
-            return resultSet;
+            if (resultSet.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
 
-            //return client;
+            resultSet.Tables[0].TableName = "client";
+            resultSet.Tables[1].TableName = "file";
+            resultSet.Tables[2].TableName = "shifts";
+
+            return resultSet;
         }
 
         public async Task<Organization> RegisterClient(Organization client, IFormFileCollection fileCollection, bool isUpdating)
@@ -103,6 +98,7 @@ namespace ServiceLayer.Code
                     AccountNo = client.AccountNo,
                     BankName = client.BankName,
                     BranchName = client.BranchName,
+                    client.WorkShiftId,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 }, true);
 

@@ -45,5 +45,6 @@ namespace ModalLayer.Modal
         public string FullAddress { get; set; }
         public bool IsPrimaryCompany { get; set; }
         public string OldFileName { get; set; }
+        public int WorkShiftId { get; set; }
     }
 }
