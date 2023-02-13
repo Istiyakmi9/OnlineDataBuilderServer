@@ -70,14 +70,14 @@ namespace ServiceLayer.Code
                 TimesheetId = firstItem.TimesheetId
             });
 
-            var allTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timesheet.TimesheetMonthJson);
+            var allTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timesheet.TimesheetWeeklyJson);
             foreach (var dailyTimesheet in dailyTimesheetDetails)
             {
                 var currentTimesheet = allTimesheet.Find(x => x.PresentDate == dailyTimesheet.PresentDate);
                 if (currentTimesheet != null)
                     currentTimesheet.TimesheetStatus = itemStatus;
             }
-            timesheet.TimesheetMonthJson = JsonConvert.SerializeObject(allTimesheet);
+            timesheet.TimesheetWeeklyJson = JsonConvert.SerializeObject(allTimesheet);
 
             // this call is used for only upadate AttendanceDetail json object
             var Result = _db.Execute<TimesheetDetail>("sp_timesheet_insupd", new
@@ -85,18 +85,16 @@ namespace ServiceLayer.Code
                 timesheet.TimesheetId,
                 timesheet.EmployeeId,
                 timesheet.ClientId,
-                timesheet.UserTypeId,
-                timesheet.TimesheetMonthJson,
-                timesheet.TotalDays,
-                timesheet.DaysAbsent,
+                timesheet.TimesheetWeeklyJson,
                 timesheet.ExpectedBurnedMinutes,
                 timesheet.ActualBurnedMinutes,
                 timesheet.TotalWeekDays,
                 timesheet.TotalWorkingDays,
-                timesheet.TotalHolidays,
-                timesheet.MonthTimesheetApprovalState,
+                timesheet.TimesheetStatus,
+                timesheet.TimesheetStartDate,
+                timesheet.TimesheetEndDate,
+                timesheet.UserComments,
                 timesheet.ForYear,
-                timesheet.ForMonth,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 

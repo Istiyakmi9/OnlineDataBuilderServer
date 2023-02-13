@@ -38,8 +38,8 @@ namespace ServiceLayer.Code.SendEmail
 
         private async Task<TemplateReplaceModal> GetTemplate(TimesheetDetail timesheetDetail)
         {
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)timesheetDetail.TimesheetFromDate, _currentSession.TimeZone);
-            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)timesheetDetail.TimesheetToDate, _currentSession.TimeZone);
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)timesheetDetail.TimesheetStartDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)timesheetDetail.TimesheetEndDate, _currentSession.TimeZone);
             long reportManagerId = 0;
             if (_currentSession.CurrentUserDetail.ReportingManagerId == 0)
                 reportManagerId = 1;
