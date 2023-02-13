@@ -7,7 +7,8 @@ namespace ServiceLayer.Interface
 {
     public interface ITimesheetService
     {
-        dynamic GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
+        List<TimesheetDetail> GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
+        Task<TimesheetDetail> GetWeekTimesheetDataService(TimesheetDetail timesheetDetail);
         Task<List<DailyTimesheetDetail>> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetail);
         List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId);
         dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);

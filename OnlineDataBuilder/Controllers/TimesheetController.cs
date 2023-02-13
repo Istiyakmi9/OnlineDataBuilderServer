@@ -34,6 +34,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
+        [HttpPost("GetWeekTimesheetData")]
+        public async Task<ApiResponse> GetWeekTimesheetData(TimesheetDetail attendenceDetail)
+        {
+            var result = await _timesheetService.GetWeekTimesheetDataService(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
         [HttpPost("InsertUpdateTimesheet")]
         public async Task<ApiResponse> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
