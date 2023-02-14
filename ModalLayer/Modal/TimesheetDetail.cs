@@ -20,6 +20,8 @@ namespace ModalLayer.Modal
         public DateTime? UpdatedOn { get; set; }
         public long SubmittedBy { get; set; }
         public long ExecutedBy { get; set; }
+        public bool IsSaved { get; set; }
+        public bool IsSubmitted { get; set; }
         public List<WeeklyTimesheetDetail> TimesheetWeeklyData { get; set; }
     }
 

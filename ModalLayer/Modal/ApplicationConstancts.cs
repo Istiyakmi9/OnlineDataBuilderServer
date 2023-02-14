@@ -228,7 +228,8 @@ public enum ItemStatus
     Approved = 9,
     Present = 10,
     Absent = 11,
-    MissingAttendanceRequest = 12
+    MissingAttendanceRequest = 12,
+    Saved = 13
 }
 
 public enum LeaveType
