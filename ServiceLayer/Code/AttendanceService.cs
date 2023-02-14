@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
@@ -472,7 +473,7 @@ namespace ServiceLayer.Code
                                ManagerComments = string.Empty,
                                CurrentStatus = (int)ItemStatus.Pending,
                                RequestedOn = DateTime.UtcNow,
-                               AttendanceDate = _timezoneConverter.ToTimeZoneDateTime(n.AttendanceDate, _currentSession.TimeZone),
+                               AttendanceDate = n.AttendanceDate,
                                LeaveFromDate = DateTime.UtcNow,
                                LeaveToDate = DateTime.UtcNow,
                                Notify = JsonConvert.SerializeObject(n.NotifyList),
@@ -490,6 +491,9 @@ namespace ServiceLayer.Code
         {
             if (compalintOrRequestWithEmail == null || compalintOrRequestWithEmail.CompalintOrRequestList.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid request data passed. Please check your form again.");
+            var alreadyApplied = compalintOrRequestWithEmail.CompalintOrRequestList.FindAll(x => x.CurrentStatus == (int)ItemStatus.MissingAttendanceRequest);
+            if (alreadyApplied.Count > 0)
+                throw HiringBellException.ThrowBadRequest("You already raise the request");
 
             var anyRecord = compalintOrRequestWithEmail.CompalintOrRequestList.Any(x => x.RequestedId == 0);
             if (anyRecord)
@@ -499,12 +503,74 @@ namespace ServiceLayer.Code
                 {
                     record.RequestedId = int.Parse(value);
                 }
-
             }
 
             var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
             await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
             return Result;
+        }
+
+        private string GetEmptyAttendanceJson(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        {
+            string jsonObject = "[]";
+            var employee = _db.Get<Employee>("sp_employee_workshift_getby_empid", new { EmployeeId = compalintOrRequestWithEmail.CompalintOrRequestList[0].EmployeeId });
+
+            List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
+            compalintOrRequestWithEmail.CompalintOrRequestList.ForEach(n =>
+            {
+                attendenceDetails.Add(new AttendenceDetail
+                {
+                    TotalMinutes = n.IsFullDay ? employee.Duration : employee.Duration / 2,
+                    UserTypeId = employee.UserTypeId,
+                    PresentDayStatus = (int)ItemStatus.MissingAttendanceRequest,
+                    EmployeeUid = employee.EmployeeUid,
+                    AttendanceId = n.RequestedId,
+                    UserComments = n.EmployeeMessage,
+                    AttendanceDay = n.AttendanceDate,
+                    AttendenceStatus = (int)ItemStatus.Pending,
+                    Email = employee.Email,
+                    EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                    Mobile = employee.Mobile,
+                    ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                    Emails = n.NotifyList == null ? "[]" : JsonConvert.SerializeObject(n.NotifyList),
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    LogOn = employee.OfficeTime,
+                    LogOff = "00:00",
+                    SessionType = n.IsFullDay ? 1 : 2,
+                    LunchBreanInMinutes = employee.LunchDuration,
+                    ApprovedBy = 0,
+                    ApprovedName = String.Empty,
+                    UpdatedOn = DateTime.UtcNow
+                });
+            });
+
+            jsonObject = JsonConvert.SerializeObject((from n in attendenceDetails
+                                                      select new
+                                                      {
+                                                          TotalMinutes = n.TotalMinutes,
+                                                          UserTypeId = n.UserTypeId,
+                                                          PresentDayStatus = n.PresentDayStatus,
+                                                          EmployeeUid = n.EmployeeUid,
+                                                          AttendanceId = n.AttendanceId,
+                                                          UserComments = n.UserComments,
+                                                          AttendanceDay = n.AttendanceDay,
+                                                          AttendenceStatus = n.AttendenceStatus,
+                                                          Email = n.Email,
+                                                          EmployeeName = n.EmployeeName,
+                                                          Mobile = n.Mobile,
+                                                          ReportingManagerId = n.ReportingManagerId,
+                                                          Emails = n.Emails,
+                                                          ManagerName = n.ManagerName,
+                                                          LogOn = n.LogOn,
+                                                          LogOff = n.LogOff,
+                                                          SessionType = n.SessionType,
+                                                          LunchBreanInMinutes = n.LunchBreanInMinutes,
+                                                          ApprovedBy = n.ApprovedBy,
+                                                          ApprovedName = n.ApprovedName,
+                                                          UpdatedOn = n.UpdatedOn
+                                                      }).ToList());
+
+            return jsonObject;
         }
 
         private string InsertEmptyAttendanceFirstTime(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
@@ -518,10 +584,14 @@ namespace ServiceLayer.Code
                     _currentSession.TimeZone
                 ).Month;
 
+            var attendanceDetailJson = GetEmptyAttendanceJson(compalintOrRequestWithEmail);
+            if (string.IsNullOrEmpty(attendanceDetailJson))
+                throw HiringBellException.ThrowBadRequest("Fail to gnerate attendance");
+
             var Result = _db.Execute<Attendance>("sp_attendance_insupd", new
             {
                 AttendanceId = 0,
-                AttendanceDetail = "[]",
+                AttendanceDetail = attendanceDetailJson,
                 UserTypeId = (int)UserType.Employee,
                 EmployeeId = compalintOrRequestWithEmail.CompalintOrRequestList[0].EmployeeId,
                 TotalDays = 0,
@@ -832,7 +902,7 @@ namespace ServiceLayer.Code
 
         public async Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
         {
-            return await UpdateRequestRaised(complaintOrRequests, 0);
+            return await UpdateRequestRaised(complaintOrRequests, (int)ItemStatus.Rejected);
         }
 
         private async Task<Attendance> GetCurrentAttendanceRequestData(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
@@ -919,7 +989,7 @@ namespace ServiceLayer.Code
                 var newAttendance = new List<AttendenceDetail>();
                 complaintOrRequests.ForEach(item =>
                 {
-                    var current = attendanceDetail.Find(x => x.AttendanceDay.Date.Subtract(item.AttendanceDate).TotalDays == 0);
+                    var current = attendanceDetail.Find(x => x.AttendanceDay.Date.Subtract(item.AttendanceDate.Date).TotalDays == 0);
                     if (current != null)
                     {
                         current.PresentDayStatus = itemStatus;
