@@ -119,7 +119,7 @@ namespace ServiceLayer.Code
                         ActualBurnedMinutes = 0,
                         IsHoliday = false,
                         IsWeekEnd = isweekened,
-                        ExpectedBurnedMinutes = shiftDetail.Duration
+                        ExpectedBurnedMinutes = isweekened ? 0 :shiftDetail.Duration
                     });
                 }
                 else
