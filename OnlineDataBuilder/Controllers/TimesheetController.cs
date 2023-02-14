@@ -28,23 +28,23 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("GetTimesheetByFilter")]
-        public IResponse<ApiResponse> GetTimesheetByFilter(FilterModel filterModel)
+        public IResponse<ApiResponse> GetTimesheetByFilter(TimesheetDetail timesheetDetail)
         {
-            var result = _timesheetService.GetTimesheetByFilterService(filterModel);
+            var result = _timesheetService.GetTimesheetByFilterService(timesheetDetail);
             return BuildResponse(result);
-        }
-
-        [HttpPost("GetTimesheetByUserId")]
-        public IResponse<ApiResponse> GetTimesheetByUserId(TimesheetDetail attendenceDetail)
-        {
-            var result = _timesheetService.GetTimesheetByUserIdService(attendenceDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
         }
 
         [HttpPost("GetWeekTimesheetData")]
         public async Task<ApiResponse> GetWeekTimesheetData(TimesheetDetail attendenceDetail)
         {
             var result = await _timesheetService.GetWeekTimesheetDataService(attendenceDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("SaveTimesheet")]
+        public async Task<ApiResponse> SaveTimesheet(TimesheetDetail timesheetDetail)
+        {
+            var result = await _timesheetService.SaveTimesheetService(timesheetDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
