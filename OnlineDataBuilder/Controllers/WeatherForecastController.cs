@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ServiceLayer.Interface;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -29,16 +30,19 @@ namespace OnlineDataBuilder.Controllers
         private readonly IEMailManager _eMailManager;
         //private readonly ILeaveCalculation _leaveCalculation;
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly ITimesheetService _timesheetService;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
-            IDb db
+            IDb db,
+            ITimesheetService timesheetService
             // ,ILeaveCalculation leaveCalculation
             )
         {
             _logger = logger;
             _eMailManager = eMailManager;
             _db = db;
+            _timesheetService = timesheetService;
             // _leaveCalculation = leaveCalculation;
         }
 
@@ -78,6 +82,9 @@ namespace OnlineDataBuilder.Controllers
 
             //(EmailTemplate emailTemplate, EmailSettingDetail emailSetting) =
             //    _db.Get<EmailTemplate, EmailSettingDetail>("sp_email_template_by_id", new { EmailTemplateId = 1 });
+
+            //var date = Convert.ToDateTime("2023-02-13");
+            //_timesheetService.RunWeeklyTimesheetCreation(date);
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

@@ -7,6 +7,7 @@ namespace ModalLayer.Modal
         public long EmployeeMappedClientsUid { get; set; }
         public long EmployeeUid { get; set; }
         public int ClientUid { get; set; }
+        public int RowIndex { get; set; }
         public string ClientName { get; set; }
         public decimal FinalPackage { get; set; }
         public decimal ActualPackage { get; set; }

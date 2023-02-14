@@ -512,8 +512,8 @@ namespace ServiceLayer.Code
             ).ToList<TimesheetModel>();
 
             // UpdateTimesheet
-            _timesheetService.UpdateTimesheetService(billModal.FullTimeSheet,
-                billModal.TimesheetDetail, billModal.Comment);
+            //_timesheetService.UpdateTimesheetService(billModal.FullTimeSheet,
+            //    billModal.TimesheetDetail, billModal.Comment);
 
             var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
             _excelWriter.ToExcel(timeSheetDataSet.Tables[0],
@@ -841,7 +841,7 @@ namespace ServiceLayer.Code
                         ).ToList<TimesheetModel>();
 
                         // UpdateTimesheet
-                        _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
+                        // _timesheetService.UpdateTimesheetService(dailyTimesheetDetails, timesheetDetail, Comment);
 
                         var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
                         _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
