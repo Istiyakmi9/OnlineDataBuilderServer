@@ -437,6 +437,10 @@ namespace ServiceLayer.Code
                 filter.PageIndex
             });
 
+            result.ForEach(i =>
+            {
+                i.AttendanceDate = _timezoneConverter.UpdateToUTCTimeZoneOnly(i.AttendanceDate);
+            });
             return await Task.FromResult(result);
         }
 
