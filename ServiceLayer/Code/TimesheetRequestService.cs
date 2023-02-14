@@ -65,7 +65,7 @@ namespace ServiceLayer.Code
             if (firstItem.TimesheetId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
 
-            var timesheet = _db.Get<TimesheetDetail>("sp_employee_timesheet_getby_id", new
+            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_getby_id", new
             {
                 TimesheetId = firstItem.TimesheetId
             });

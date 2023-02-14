@@ -1,9 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.Math;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
 using ServiceLayer.Caching;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -40,6 +40,23 @@ namespace ServiceLayer.Code
 
         #region NEW CODE
 
+        public async Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate)
+        {
+            try
+            {
+                var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
+                {
+                    TimesheetStartDate = TimesheetStartDate
+                }, true);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            await Task.CompletedTask;
+        }
+
         public List<TimesheetDetail> GetTimesheetByUserIdService(TimesheetDetail timesheetDetail)
         {
             if (timesheetDetail.EmployeeId <= 0 || timesheetDetail.ClientId <= 0)
@@ -59,7 +76,7 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        private async Task CreateTimesheetWeekDays(TimesheetDetail timesheetDetail)
+        private async Task CreateTimesheetWeekDays(TimesheetDetail timesheetDetail, ShiftDetail shiftDetail)
         {
             List<WeeklyTimesheetDetail> weeklyTimesheetDetails = new List<WeeklyTimesheetDetail>();
             DateTime startDate = _timezoneConverter.ToTimeZoneDateTime(timesheetDetail.TimesheetStartDate, _currentSession.TimeZone);
@@ -70,14 +87,39 @@ namespace ServiceLayer.Code
                 var item = timesheetDetail.TimesheetWeeklyData.Find(x => x.WeekDay == startDate.DayOfWeek);
                 if (item == null)
                 {
+                    var isweekened = false;
+                    switch (startDate.DayOfWeek)
+                    {
+                        case DayOfWeek.Sunday:
+                            isweekened = !shiftDetail.IsSun;
+                            break;
+                        case DayOfWeek.Monday:
+                            isweekened = !shiftDetail.IsMon;
+                            break;
+                        case DayOfWeek.Tuesday:
+                            isweekened = !shiftDetail.IsTue;
+                            break;
+                        case DayOfWeek.Wednesday:
+                            isweekened = !shiftDetail.IsWed;
+                            break;
+                        case DayOfWeek.Thursday:
+                            isweekened = !shiftDetail.IsThu;
+                            break;
+                        case DayOfWeek.Friday:
+                            isweekened = !shiftDetail.IsFri;
+                            break;
+                        case DayOfWeek.Saturday:
+                            isweekened = !shiftDetail.IsSat;
+                            break;
+                    }
                     weeklyTimesheetDetails.Add(new WeeklyTimesheetDetail
                     {
                         WeekDay = startDate.DayOfWeek,
                         PresentDate = startDate,
                         ActualBurnedMinutes = 0,
                         IsHoliday = false,
-                        IsWeekEnd = false,
-                        ExpectedBurnedMinutes = 0
+                        IsWeekEnd = isweekened,
+                        ExpectedBurnedMinutes = shiftDetail.Duration
                     });
                 }
                 else
@@ -94,17 +136,16 @@ namespace ServiceLayer.Code
 
         public async Task<TimesheetDetail> GetWeekTimesheetDataService(TimesheetDetail timesheetDetail)
         {
-            if (timesheetDetail.EmployeeId <= 0 || timesheetDetail.ClientId <= 0)
-                throw new HiringBellException("Invalid Employee or Client id passed.");
+            if (timesheetDetail.TimesheetId <= 0)
+                throw new HiringBellException("Invalid Timesheet id passed.");
 
-            var timesheet = _db.Get<TimesheetDetail>("sp_employee_timesheet_get_by_status", new
+            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_getby_id", new
             {
-                EmployeeId = timesheetDetail.EmployeeId,
-                ClientId = timesheetDetail.ClientId,
-                TimesheetStatus = (int)ItemStatus.Pending,
-                timesheetDetail.TimesheetStartDate,
-                ForYear = timesheetDetail.ForYear
+                TimesheetId = timesheetDetail.TimesheetId
             });
+
+            if (shiftDetail == null)
+                throw HiringBellException.ThrowBadRequest("Shift detail not found");
 
             if (timesheet == null)
             {
@@ -122,9 +163,94 @@ namespace ServiceLayer.Code
 
             }
 
-            await CreateTimesheetWeekDays(timesheet);
+            await CreateTimesheetWeekDays(timesheet, shiftDetail);
             return timesheet;
         }
+
+        private string UpdateOrInsertTimesheetDetail(TimesheetDetail timeSheetDetail, ShiftDetail shiftDetail)
+        {
+            int ExpectedBurnedMinutes = 0;
+            int ActualBurnedMinutes = 0;
+            timeSheetDetail.TimesheetWeeklyJson = JsonConvert.SerializeObject(timeSheetDetail.TimesheetWeeklyData);
+            timeSheetDetail.TimesheetWeeklyData.ForEach(i =>
+            {
+                ExpectedBurnedMinutes += shiftDetail.Duration;
+                ActualBurnedMinutes += i.ActualBurnedMinutes;
+            });
+
+            var result = _db.Execute<TimesheetDetail>(ApplicationConstants.InsertUpdateTimesheet, new
+            {
+                timeSheetDetail.TimesheetId,
+                timeSheetDetail.EmployeeId,
+                timeSheetDetail.ClientId,
+                timeSheetDetail.TimesheetWeeklyJson,
+                ExpectedBurnedMinutes = ExpectedBurnedMinutes,
+                ActualBurnedMinutes = ActualBurnedMinutes,
+                TotalWeekDays = shiftDetail.TotalWorkingDays,
+                TotalWorkingDays = timeSheetDetail.TimesheetWeeklyData.Count(i => i.ActualBurnedMinutes > 0),
+                timeSheetDetail.TimesheetStatus,
+                timeSheetDetail.TimesheetStartDate,
+                timeSheetDetail.TimesheetEndDate,
+                timeSheetDetail.UserComments,
+                timeSheetDetail.ForYear,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                return null;
+            return result;
+        }
+
+        public async Task<TimesheetDetail> SubmitTimesheetService(TimesheetDetail timesheetDetail)
+        {
+            if (timesheetDetail == null || timesheetDetail.TimesheetWeeklyData == null || timesheetDetail.TimesheetWeeklyData.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid data submitted. Please check you detail.");
+
+            if (timesheetDetail.ClientId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
+
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+
+            timesheetDetail.TimesheetStatus = (int)ItemStatus.Submitted;
+            var result = this.UpdateOrInsertTimesheetDetail(timesheetDetail, shiftDetail);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
+
+            _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
+            return await Task.FromResult(timesheetDetail);
+        }
+
+        public async Task<string> ExecuteActionOnTimesheetService(TimesheetDetail timesheetDetail)
+        {
+            if (timesheetDetail == null || timesheetDetail.TimesheetWeeklyData == null || timesheetDetail.TimesheetWeeklyData.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid data submitted. Please check you detail.");
+
+            if (timesheetDetail.ClientId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
+
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+
+            timesheetDetail.TimesheetStatus = (int)ItemStatus.Submitted;
+            var result = this.UpdateOrInsertTimesheetDetail(timesheetDetail, shiftDetail);
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
+
+            _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
+            return await Task.FromResult("successfull");
+        }
+
+        public List<TimesheetDetail> GetTimesheetByFilterService(FilterModel filterModel)
+        {
+            var result = _db.GetList<TimesheetDetail>("SP_employee_timesheet_filter", new
+            {
+                filterModel.SearchString,
+                filterModel.PageIndex,
+                filterModel.PageSize,
+                filterModel.SortBy
+            });
+            return result;
+        }
+
 
         #endregion
 
@@ -250,176 +376,6 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Future date attendance not allowed.");
         }
 
-        private string UpdateOrInsertTimesheetDetail(List<DailyTimesheetDetail> finalDailyTimesheetDetails, TimesheetDetail currentTimesheet)
-        {
-            currentTimesheet.TimesheetWeeklyJson = JsonConvert.SerializeObject(finalDailyTimesheetDetails);
-            var result = _db.Execute<TimesheetDetail>(ApplicationConstants.InsertUpdateTimesheet, new
-            {
-                currentTimesheet.TimesheetId,
-                currentTimesheet.EmployeeId,
-                currentTimesheet.ClientId,
-                currentTimesheet.TimesheetWeeklyJson,
-                currentTimesheet.ExpectedBurnedMinutes,
-                currentTimesheet.ActualBurnedMinutes,
-                currentTimesheet.TotalWeekDays,
-                currentTimesheet.TotalWorkingDays,
-                currentTimesheet.TimesheetStatus,
-                currentTimesheet.TimesheetStartDate,
-                currentTimesheet.TimesheetEndDate,
-                currentTimesheet.UserComments,
-                currentTimesheet.ForYear,
-                AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);
-
-            if (string.IsNullOrEmpty(result))
-                return null;
-            return result;
-        }
-
-        public async Task<List<DailyTimesheetDetail>> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
-        {
-            string result = string.Empty;
-            var firstItem = dailyTimesheetDetails.FirstOrDefault();
-            if (firstItem == null)
-                throw new HiringBellException("Invalid TimesheetDetail submitted.");
-
-            var invalidAttendaceData = dailyTimesheetDetails.FindAll(x => x.EmployeeId <= 0 || x.ClientId <= 0);
-            if (invalidAttendaceData.Count > 0)
-                throw new HiringBellException("Invalid Employee/Client Id passed.");
-            DateTime firstDate = firstItem.PresentDate;
-            DateTime lastDate = firstItem.PresentDate;
-
-            TimeZoneInfo timeZoneInfo = _currentSession.TimeZone;
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime(firstItem.PresentDate, timeZoneInfo);
-            int j = 0;
-            while (j < dailyTimesheetDetails.Count)
-            {
-                var x = dailyTimesheetDetails.ElementAt(j);
-                if (x.PresentDate.Subtract(firstDate).TotalDays <= 0)
-                    firstDate = x.PresentDate;
-
-                if (x.PresentDate.Subtract(lastDate).TotalDays >= 0)
-                    lastDate = x.PresentDate;
-
-                j++;
-            }
-
-            var Result = _db.FetchDataSet("sp_employee_timesheet_get", new
-            {
-                firstItem.EmployeeId,
-                firstItem.ClientId,
-                firstItem.UserTypeId,
-                ForYear = fromDate.Year,
-                ForMonth = fromDate.Month
-            });
-
-            if (Result.Tables.Count != 2 && Result.Tables[0].Rows.Count == 0)
-            {
-                throw new HiringBellException("Timesheet detail is invalid.");
-            }
-
-            List<DailyTimesheetDetail> otherMonthTimesheetDetail = new List<DailyTimesheetDetail>();
-            List<DailyTimesheetDetail> finalTimesheetSet = new List<DailyTimesheetDetail>();
-
-            Employee employee = new Employee();
-            if (Result.Tables[1].Rows.Count > 0)
-                employee = Converter.ToType<Employee>(Result.Tables[1]);
-            else
-                throw new HiringBellException("User detail not found.");
-
-            TimesheetDetail currentTimesheetDetail = null;
-            if (Result.Tables[0].Rows.Count > 0)
-            {
-                currentTimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[0]);
-                if (!string.IsNullOrEmpty(currentTimesheetDetail.TimesheetWeeklyJson))
-                    finalTimesheetSet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetWeeklyJson);
-
-                this.IsGivenDateAllowed(firstDate, lastDate);
-            }
-            else
-            {
-                var currentMonthDateTime = _timezoneConverter.ToIstTime(firstItem.PresentDate);
-                int totalDays = DateTime.DaysInMonth(currentMonthDateTime.Year, currentMonthDateTime.Month);
-                currentTimesheetDetail = new TimesheetDetail
-                {
-                    EmployeeId = firstItem.EmployeeId,
-                    TimesheetId = 0,
-                    ForYear = currentMonthDateTime.Year,
-                    TimesheetWeeklyJson = "[]",
-                    TimesheetStartDate = firstDate,
-                    TimesheetEndDate = lastDate,
-                    ClientId = firstItem.ClientId,
-                    ExpectedBurnedMinutes = 0,
-                    ActualBurnedMinutes = 0,
-                    TotalWeekDays = 0,
-                    TotalWorkingDays = 0,
-                    TimesheetStatus = (int)ItemStatus.Pending
-                };
-
-                //finalTimesheetSet = this.GenerateWeekAttendaceData(currentTimesheetDetail);
-                finalTimesheetSet = this.BuildTimesheetTillDate(currentTimesheetDetail, employee);
-            }
-
-            if (finalTimesheetSet == null)
-                throw new HiringBellException("Unable to get record. Please contact to admin.");
-
-            int i = 0;
-            DateTime clientKindDateTime = DateTime.Now;
-            while (i < dailyTimesheetDetails.Count)
-            {
-                var x = dailyTimesheetDetails.ElementAt(i);
-                var item = finalTimesheetSet.Find(i => i.PresentDate.Subtract(x.PresentDate).TotalDays == 0);
-                if (item != null)
-                {
-                    clientKindDateTime = _timezoneConverter.ToIstTime(x.PresentDate);
-                    item.TotalMinutes = x.TotalMinutes;
-                    item.UserTypeId = x.UserTypeId;
-                    item.EmployeeId = x.EmployeeId;
-                    item.TimesheetId = firstItem.TimesheetId;
-                    item.UserComments = x.UserComments;
-                    item.TimesheetStatus = ItemStatus.Pending;
-                    item.ClientId = x.ClientId;
-                    item.Email = employee.Email;
-                    item.EmployeeName = string.Concat(employee.FirstName,
-                                    " ",
-                                    employee.LastName).Trim();
-                    item.Mobile = employee.Mobile;
-                    item.ReportingManagerId = employee.ReportingManagerId;
-                    item.ManagerName = "NA";
-                }
-                else
-                {
-                    finalTimesheetSet.Add(new DailyTimesheetDetail
-                    {
-                        TotalMinutes = x.TotalMinutes,
-                        UserTypeId = x.UserTypeId,
-                        EmployeeId = x.EmployeeId,
-                        TimesheetId = firstItem.TimesheetId,
-                        UserComments = x.UserComments,
-                        PresentDate = x.PresentDate,
-                        TimesheetStatus = ItemStatus.Pending,
-                        ClientId = x.ClientId,
-                        Email = employee.Email,
-                        EmployeeName = string.Concat(employee.FirstName,
-                                        " ",
-                                        employee.LastName).Trim(),
-                        Mobile = employee.Mobile,
-                        ReportingManagerId = employee.ReportingManagerId,
-                        ManagerName = "NA"
-                    });
-                }
-
-                i++;
-            }
-
-            result = this.UpdateOrInsertTimesheetDetail(finalTimesheetSet, currentTimesheetDetail);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
-
-            _timesheetEmailService.SendSubmitTimesheetEmail(currentTimesheetDetail);
-
-            return await Task.FromResult(finalTimesheetSet);
-        }
 
         public List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId)
         {
@@ -481,58 +437,6 @@ namespace ServiceLayer.Code
             return (dailyTimesheetDetails, missingDayList);
         }
 
-        public void UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment)
-        {
-            List<DateTime> missingDayList = new List<DateTime>();
-            if (dailyTimesheetDetails == null || dailyTimesheetDetails.Count == 0 || timesheetDetail == null)
-                throw new HiringBellException("Incorrect data passed. Please verify your input.");
-
-            var firstDate = dailyTimesheetDetails.First().PresentDate;
-            firstDate = _timezoneConverter.ToTimeZoneDateTime(firstDate, _currentSession.TimeZone);
-            int days = DateTime.DaysInMonth(firstDate.Year, firstDate.Month);
-
-            if (dailyTimesheetDetails.Count > days)
-                throw new HiringBellException("Incorrect data passed. Please verify your input.");
-
-            (TimesheetDetail currentTimesheetDetail, Employee employee) =
-                _db.GetMulti<TimesheetDetail, Employee>("sp_employee_timesheet_getby_empid", new
-                {
-                    timesheetDetail.EmployeeId,
-                    timesheetDetail.ForYear,
-                    timesheetDetail.ClientId
-                });
-
-            if (employee == null)
-                throw new HiringBellException("Employee detail not found. Please contact to admin.");
-
-            var utcJoiningDate = _timezoneConverter.ToTimeZoneDateTime(employee.CreatedOn, _currentSession.TimeZone);
-            if (currentTimesheetDetail == null)
-                currentTimesheetDetail = timesheetDetail;
-
-            UpdateTimesheetList(dailyTimesheetDetails, utcJoiningDate);
-
-            int i = 0;
-            DailyTimesheetDetail item = default(DailyTimesheetDetail);
-            while (i < dailyTimesheetDetails.Count)
-            {
-                item = dailyTimesheetDetails.ElementAt(i);
-                if (item.TimesheetStatus != ItemStatus.Approved)
-                {
-                    missingDayList.Add(item.PresentDate);
-                    dailyTimesheetDetails.RemoveAt(i);
-                }
-                else
-                    i++;
-
-            }
-
-            currentTimesheetDetail.TimesheetWeeklyJson = JsonConvert.SerializeObject(dailyTimesheetDetails);
-            var result = this.UpdateOrInsertTimesheetDetail(dailyTimesheetDetails, currentTimesheetDetail);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
-
-            //return new { TimesheetDetails = dailyTimesheetDetails, MissingDate = missingDayList };
-        }
 
         private void UpdateTimesheetList(List<DailyTimesheetDetail> dailyTimesheetDetails, DateTime utcJoiningDate)
         {

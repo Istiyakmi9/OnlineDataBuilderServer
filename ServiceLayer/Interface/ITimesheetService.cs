@@ -9,11 +9,13 @@ namespace ServiceLayer.Interface
     {
         List<TimesheetDetail> GetTimesheetByUserIdService(TimesheetDetail timesheetDetail);
         Task<TimesheetDetail> GetWeekTimesheetDataService(TimesheetDetail timesheetDetail);
-        Task<List<DailyTimesheetDetail>> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetail);
+        Task<TimesheetDetail> SubmitTimesheetService(TimesheetDetail timesheetDetail);
+        Task<string> ExecuteActionOnTimesheetService(TimesheetDetail timesheetDetail);
         List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId);
         dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);
-        void UpdateTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, TimesheetDetail timesheetDetail, string comment);
         (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail);
         BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
+        Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate);
+        List<TimesheetDetail> GetTimesheetByFilterService(FilterModel filterModel);
     }
 }

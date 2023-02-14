@@ -27,6 +27,13 @@ namespace OnlineDataBuilder.Controllers
             _httpContext = httpContext.HttpContext;
         }
 
+        [HttpPost("GetTimesheetByFilter")]
+        public IResponse<ApiResponse> GetTimesheetByFilter(FilterModel filterModel)
+        {
+            var result = _timesheetService.GetTimesheetByFilterService(filterModel);
+            return BuildResponse(result);
+        }
+
         [HttpPost("GetTimesheetByUserId")]
         public IResponse<ApiResponse> GetTimesheetByUserId(TimesheetDetail attendenceDetail)
         {
@@ -41,10 +48,18 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [HttpPost("InsertUpdateTimesheet")]
-        public async Task<ApiResponse> InsertUpdateTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        [HttpPost("SubmitTimesheet")]
+        public async Task<ApiResponse> SubmitTimesheet(TimesheetDetail timesheetDetail)
         {
-            var result = await _timesheetService.InsertUpdateTimesheet(dailyTimesheetDetails);
+            var result = await _timesheetService.SubmitTimesheetService(timesheetDetail);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ExecuteActionOnTimesheet")]
+        public async Task<ApiResponse> ExecuteActionOnTimesheet(TimesheetDetail timesheetDetail)
+        {
+            var result = await _timesheetService.ExecuteActionOnTimesheetService(timesheetDetail);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
