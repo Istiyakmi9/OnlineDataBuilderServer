@@ -324,7 +324,7 @@ namespace ServiceLayer.Code
         {
             string Result = string.Empty;
 
-            if(attendance.AttendanceId == 0)
+            if (attendance.AttendanceId == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
 
             if (attendance.AttendanceDay == null)
@@ -435,31 +435,66 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        private async Task<string> InsertUpdateAttendanceRequest(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        private async Task<string> InsertUpdateAttendanceRequest(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, int attendanceId)
         {
-            DateTime workingDate = (DateTime)compalintOrRequestWithEmail.CompalintOrRequestList.First().AttendanceDate;
-            DateTime workingDateUserTimezone = _timezoneConverter.ToTimeZoneDateTime(workingDate, _currentSession.TimeZone);
+            Attendance attendance = null;
+            Employee managerDetail = null;
+            List<ComplaintOrRequest> complaintOrRequests = new List<ComplaintOrRequest>();
 
-            (Attendance attendance, Employee managerDetail) = _db.Get<Attendance, Employee>("sp_Attendance_YearMonth", new
+            var resultSet = _db.GetDataSet("sp_attendance_employee_detail_id", new
             {
                 EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                ForMonth = workingDateUserTimezone.Month,
-                ForYear = workingDateUserTimezone.Year
+                AttendanceId = attendanceId
             });
 
+            if (resultSet.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
+
+            attendance = Converter.ToType<Attendance>(resultSet.Tables[0]);
+            if (attendance == null)
+                throw HiringBellException.ThrowBadRequest("Inlvalid attendance detail found. Please apply with proper data.");
+
+            managerDetail = Converter.ToType<Employee>(resultSet.Tables[1]);
             if (managerDetail == null)
                 throw HiringBellException.ThrowBadRequest("Employee deatil not found. Please contact to admin");
 
+            complaintOrRequests = Converter.ToList<ComplaintOrRequest>(resultSet.Tables[2]);
+            if (complaintOrRequests == null)
+                throw HiringBellException.ThrowBadRequest("Inlvalid attendance detail found. Please apply with proper data.");
+
+            if (string.IsNullOrEmpty(attendance.AttendanceDetail) || attendance.AttendanceDetail == "[]")
+                throw HiringBellException.ThrowBadRequest("Inlvalid attendance detail found. Please contact to admin.");
+
+            List<AttendanceDetailJson> attrDetails = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
+            compalintOrRequestWithEmail.CompalintOrRequestList.ForEach(x =>
+            {
+                var item = attrDetails.Find(i => i.AttendenceDetailId == x.TargetOffset);
+                if (item == null)
+                    throw HiringBellException.ThrowBadRequest("Found invalid data. Please contact to admin.");
+
+                var target = complaintOrRequests.Find(i => i.TargetOffset == x.TargetOffset);
+                if(target != null)
+                {
+                    x.ComplaintOrRequestId = target.ComplaintOrRequestId;
+                }
+
+                item.PresentDayStatus = (int)ItemStatus.MissingAttendanceRequest;
+            });
+
+            var attrDetailJson = JsonConvert.SerializeObject(attrDetails);
             var records = (from n in compalintOrRequestWithEmail.CompalintOrRequestList
                            select new
                            {
+                               AttendanceId = attendanceId,
+                               AttendanceDetail = attrDetailJson,
                                ComplaintOrRequestId = n.ComplaintOrRequestId,
                                RequestTypeId = (int)RequestType.Attendance,
-                               RequestedId = n.RequestedId,
-                               EmployeeId = n.EmployeeId,
-                               EmployeeName = n.EmployeeName,
-                               Email = n.Email,
-                               Mobile = n.Mobile,
+                               TargetId = attendanceId,
+                               TargetOffset = n.TargetOffset,
+                               EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                               EmployeeName = _currentSession.CurrentUserDetail.FullName,
+                               Email = _currentSession.CurrentUserDetail.Email,
+                               Mobile = _currentSession.CurrentUserDetail.Mobile,
                                ManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
                                ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
                                ManagerEmail = managerDetail.Email,
@@ -482,25 +517,26 @@ namespace ServiceLayer.Code
             return result.ToString();
         }
 
-        public async Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        public async Task<string> RaiseMissingAttendanceRequestService(ComplaintOrRequestWithEmail complaintOrRequestWithEmail)
         {
-            if (compalintOrRequestWithEmail == null || compalintOrRequestWithEmail.CompalintOrRequestList.Count == 0)
+            if (complaintOrRequestWithEmail == null || complaintOrRequestWithEmail.CompalintOrRequestList.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid request data passed. Please check your form again.");
-            var alreadyApplied = compalintOrRequestWithEmail.CompalintOrRequestList.FindAll(x => x.CurrentStatus == (int)ItemStatus.MissingAttendanceRequest);
+
+            if (complaintOrRequestWithEmail.AttendanceId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid request data passed. Please check your form again.");
+
+            var alreadyApplied = complaintOrRequestWithEmail.CompalintOrRequestList
+                .FindAll(x => x.CurrentStatus == (int)ItemStatus.MissingAttendanceRequest);
+
             if (alreadyApplied.Count > 0)
                 throw HiringBellException.ThrowBadRequest("You already raise the request");
 
-            var anyRecord = compalintOrRequestWithEmail.CompalintOrRequestList.Any(x => x.RequestedId == 0);
+            var anyRecord = complaintOrRequestWithEmail.CompalintOrRequestList.Any(x => x.TargetOffset == 0);
             if (anyRecord)
-            {
-                foreach (var record in compalintOrRequestWithEmail.CompalintOrRequestList)
-                {
-                    record.RequestedId = 0;
-                }
-            }
+                throw HiringBellException.ThrowBadRequest("Invalid data passed. Please contact to admin.");
 
-            var Result = await InsertUpdateAttendanceRequest(compalintOrRequestWithEmail);
-            await this.AttendaceApprovalStatusSendEmail(compalintOrRequestWithEmail);
+            var Result = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
+            await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
             return Result;
         }
 
@@ -724,7 +760,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(templateReplaceModal);
         }
 
-        public async Task AttendaceApprovalStatusSendEmail(CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        public async Task AttendaceApprovalStatusSendEmail(ComplaintOrRequestWithEmail compalintOrRequestWithEmail)
         {
             var templateReplaceModal = new TemplateReplaceModal();
             if (compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList != null && compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList.Count > 0)
@@ -741,7 +777,7 @@ namespace ServiceLayer.Code
 
             await Task.CompletedTask;
         }
-        private async Task<EmailSenderModal> SendEmailWithTemplate(CompalintOrRequestWithEmail compalintOrRequestWithEmail, TemplateReplaceModal templateReplaceModal)
+        private async Task<EmailSenderModal> SendEmailWithTemplate(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, TemplateReplaceModal templateReplaceModal)
         {
             templateReplaceModal.BodyContent = compalintOrRequestWithEmail.EmailBody;
             var emailSenderModal = await ReplaceActualData(templateReplaceModal, compalintOrRequestWithEmail);
@@ -749,7 +785,7 @@ namespace ServiceLayer.Code
             await _eMailManager.SendMailAsync(emailSenderModal);
             return await Task.FromResult(emailSenderModal);
         }
-        private async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, CompalintOrRequestWithEmail compalintOrRequestWithEmail)
+        private async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, ComplaintOrRequestWithEmail compalintOrRequestWithEmail)
         {
             EmailSenderModal emailSenderModal = null;
             var attendance = compalintOrRequestWithEmail.CompalintOrRequestList.First();
@@ -798,33 +834,31 @@ namespace ServiceLayer.Code
 
         private async Task<Attendance> GetCurrentAttendanceRequestData(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
         {
-            bool isManager = false;
             var first = complaintOrRequests.First();
-            if (first.ManagerId == _currentSession.CurrentUserDetail.UserId)
-                isManager = true;
-
-            var resultSet = _db.GetDataSet("sp_complaint_or_request_get_by_attendanceid", new
+            var resultSet = _db.GetDataSet("sp_attendance_get_byid", new
             {
-                AttendanceId = first.RequestedId,
-                EmployeeId = first.EmployeeId
+                AttendanceId = first.TargetId
             });
 
-            if (resultSet.Tables.Count != 3)
+            if (resultSet.Tables.Count != 1)
                 throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
 
             var attendance = Converter.ToType<Attendance>(resultSet.Tables[0]);
             if (attendance == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
 
-            var complaintDetail = Converter.ToList<ComplaintOrRequest>(resultSet.Tables[1]);
-            if (complaintDetail == null)
-                throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
+            if (string.IsNullOrEmpty(attendance.AttendanceDetail) || attendance.AttendanceDetail == "[]")
+                throw HiringBellException.ThrowBadRequest("Invalid attendance detail found. Please contact to admin.");
 
-            var employee = Converter.ToType<Employee>(resultSet.Tables[2]);
-            if (employee == null)
-                throw HiringBellException.ThrowBadRequest("Fail to get current attendance detail.");
+            var attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
+            var currentAttr = attendanceDetail.Find(x => x.AttendenceDetailId == first.TargetOffset);
+            if (currentAttr == null)
+                throw HiringBellException.ThrowBadRequest("Invalid attendance detail found. Please contact to admin.");
 
-
+            currentAttr.PresentDayStatus = itemStatus;
+            currentAttr.ApprovedName = _currentSession.CurrentUserDetail.FullName;
+            currentAttr.ApprovedBy = _currentSession.CurrentUserDetail.UserId;
+            attendance.AttendanceDetail = JsonConvert.SerializeObject(attendanceDetail);
 
             return await Task.FromResult(attendance);
         }
@@ -834,29 +868,31 @@ namespace ServiceLayer.Code
             if (complaintOrRequests == null || complaintOrRequests.Count() == 0 || complaintOrRequests.Any(x => x.ComplaintOrRequestId <= 0))
                 throw HiringBellException.ThrowBadRequest("Invalid attendance selected. Please login again");
 
+            complaintOrRequests.ForEach(i =>
+            {
+                if (i.TargetId == 0 || i.TargetOffset == 0 || i.EmployeeId == 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid attendance detail found. Please contact to admin.");
+            });
+
             var attendance = await GetCurrentAttendanceRequestData(complaintOrRequests, itemStatus);
 
-            var dbResult = _db.Execute("sp_attendance_update_request", new
-            {
-                AttendanceId = attendance.AttendanceId,
-                AttendanceDetail = attendance.AttendanceDetail,
-                PendingRequestCount = attendance.PendingRequestCount,
-                UserId = _currentSession.CurrentUserDetail.UserId
-            }, true);
-
-            if (string.IsNullOrEmpty(dbResult.statusMessage))
-                throw HiringBellException.ThrowBadRequest("Fail to update attendance detail. Please contact to admin.");
+            bool isManager = false;
+            if (_currentSession.CurrentUserDetail.UserId == attendance.ReportingManagerId)
+                isManager = true;
 
             var items = (from n in complaintOrRequests
                          select new
                          {
                              ComplaintOrRequestId = n.ComplaintOrRequestId,
-                             ExecutedByManager = n.ExecutedByManager,
-                             ExecuterId = n.ExecuterId,
-                             ExecuterName = n.ExecuterName,
-                             ExecuterEmail = n.ExecuterEmail,
+                             ExecutedByManager = isManager,
+                             ExecuterId = _currentSession.CurrentUserDetail.UserId,
+                             ExecuterName = _currentSession.CurrentUserDetail.FullName,
+                             ExecuterEmail = _currentSession.CurrentUserDetail.Email,
                              ManagerComments = n.ManagerComments,
-                             StatusId = itemStatus
+                             StatusId = itemStatus,
+                             AttendanceId = attendance.AttendanceId,
+                             AttendanceDetail = attendance.AttendanceDetail,
+                             UserId = _currentSession.CurrentUserDetail.UserId
                          }).ToList();
 
             var result = await _db.BulkExecuteAsync("sp_complaint_or_request_update_status", items);

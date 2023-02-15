@@ -7,7 +7,8 @@ namespace ModalLayer.Modal
     {
         public int ComplaintOrRequestId { set; get; }
         public int RequestTypeId { set; get; }
-        public int RequestedId { set; get; }
+        public int TargetId { set; get; }
+        public int TargetOffset { set; get; }
         public long EmployeeId { set; get; }
         public string EmployeeName { set; get; }
         public string Email { set; get; }
@@ -40,9 +41,10 @@ namespace ModalLayer.Modal
         public string Email { get; set; }
     }
 
-    public class CompalintOrRequestWithEmail
+    public class ComplaintOrRequestWithEmail
     {
         public string EmailBody { set; get; }
+        public int AttendanceId { set; get; }
         public List<ComplaintOrRequest> CompalintOrRequestList { set; get; }
     }
 }
