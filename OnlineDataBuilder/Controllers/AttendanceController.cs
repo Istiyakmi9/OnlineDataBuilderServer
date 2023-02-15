@@ -26,9 +26,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("GetAttendanceByUserId")]
-        public IResponse<ApiResponse> GetAttendanceByUserId(AttendenceDetail attendenceDetail)
+        public async Task<ApiResponse> GetAttendanceByUserId(Attendance attendance)
         {
-            var result = _attendanceService.GetAttendanceByUserId(attendenceDetail);
+            var result = await _attendanceService.GetAttendanceByUserId(attendance);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
@@ -46,9 +46,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("SubmitAttendance")]
-        public async Task<ApiResponse> SubmitAttendance(AttendenceDetail commentDetails)
+        public async Task<ApiResponse> SubmitAttendance(Attendance attendance)
         {
-            var result = await _attendanceService.SubmitAttendanceService(commentDetails);
+            var result = await _attendanceService.SubmitAttendanceService(attendance);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

@@ -27,16 +27,16 @@ namespace ServiceLayer.Code.SendEmail
             _emailService = emailService;
         }
 
-        public async Task SendSubmitAttendanceEmail(AttendenceDetail attendenceApplied)
+        public async Task SendSubmitAttendanceEmail(Attendance attendance)
         {
-            var emailRequestModal = await GetTemplate(attendenceApplied);
+            var emailRequestModal = await GetTemplate(attendance);
             await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceSubmittedEmailTemplate, emailRequestModal);
         }
 
-        private async Task<TemplateReplaceModal> GetTemplate(AttendenceDetail attendenceApplied)
+        private async Task<TemplateReplaceModal> GetTemplate(Attendance attendance)
         {
-            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceFromDay, _currentSession.TimeZone);
-            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceApplied.AttendenceToDay, _currentSession.TimeZone);
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendance.AttendanceDay, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendance.AttendanceDay, _currentSession.TimeZone);
             long reportManagerId = 0;
             if (_currentSession.CurrentUserDetail.ReportingManagerId == 0)
                 reportManagerId = 1;
@@ -66,9 +66,9 @@ namespace ServiceLayer.Code.SendEmail
                 ToDate = toDate,
                 DayCount = Convert.ToInt32(numOfDays),
                 ActionType = nameof(ItemStatus.Submitted),
-                Message = string.IsNullOrEmpty(attendenceApplied.UserComments)
+                Message = string.IsNullOrEmpty(attendance.UserComments)
                                     ? "NA"
-                                    : attendenceApplied.UserComments
+                                    : attendance.UserComments
             };
 
             return await Task.FromResult(emailRequestModal);
