@@ -96,72 +96,50 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get", itemStatus);
         }
 
-        public async Task<RequestModel> ApproveAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> ApproveAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task<RequestModel> RejectAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task<RequestModel> UpdateAttendanceDetail(AttendenceDetail attendanceDetail, ItemStatus status)
+        public async Task<RequestModel> UpdateAttendanceDetail(Attendance attendanceDetail, ItemStatus status)
         {
-            RequestModel requestModel = null;
-            if (attendanceDetail.AttendanceId <= 0)
-                throw new HiringBellException("Invalid attendance day selected");
             try
             {
+                RequestModel requestModel = null;
+                if (attendanceDetail.AttendanceId <= 0)
+                    throw new HiringBellException("Invalid attendance day selected");
+
+                if (attendanceDetail.AttendenceDetailId <= 0)
+                    throw new HiringBellException("Invalid attendance day selected");
+
                 var attendance = _db.Get<Attendance>("sp_attendance_get_byid", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId
                 });
 
+                if (attendance == null)
+                    throw new HiringBellException("Invalid attendance day selected");
+
                 attendance.PendingRequestCount = --attendance.PendingRequestCount;
-                var allAttendance = JsonConvert.DeserializeObject<List<AttendenceDetail>>(attendance.AttendanceDetail);
-                var currentAttendance = allAttendance.Find(x => x.AttendanceDay == attendanceDetail.AttendanceDay);
+                var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
+                var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)
                     throw new HiringBellException("Unable to update present request. Please contact to admin.");
 
                 _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
 
                 currentAttendance.PresentDayStatus = (int)status;
-                currentAttendance.AttendanceId = attendanceDetail.AttendanceId;
-                currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
-                // this call is used for only upadate AttendanceDetail json object
-
-                var AttendaceDetail = JsonConvert
-                        .SerializeObject((
-                            from n in allAttendance
-                            select new // AttendenceDetail use dynamic object for minimal json data
-                            {
-                                TotalMinutes = n.TotalMinutes,
-                                UserTypeId = n.UserTypeId,
-                                PresentDayStatus = n.PresentDayStatus,
-                                EmployeeUid = n.EmployeeUid,
-                                AttendanceId = n.AttendanceId,
-                                UserComments = n.UserComments,
-                                AttendanceDay = n.AttendanceDay,
-                                AttendenceStatus = n.AttendenceStatus,
-                                Email = _currentSession.CurrentUserDetail.Email,
-                                EmployeeName = _currentSession.CurrentUserDetail.FullName,
-                                Mobile = _currentSession.CurrentUserDetail.Mobile,
-                                ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                                Emails = n.EmailList == null ? "[]" : JsonConvert.SerializeObject(n.EmailList),
-                                ManagerName = _currentSession.CurrentUserDetail.ManagerName,
-                                LogOn = n.LogOn,
-                                LogOff = n.LogOff,
-                                SessionType = n.SessionType,
-                                LunchBreanInMinutes = n.LunchBreanInMinutes
-                            }));
-
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
-                    AttendanceDetail = AttendaceDetail,
+                    AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
                     attendance.PendingRequestCount,
                     UserId = _currentSession.CurrentUserDetail.UserId
                 }, true);
@@ -170,7 +148,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update attendance status");
                 else
                     requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
-                await _approvalEmailService.AttendaceApprovalStatusSendEmail(currentAttendance, status);
+                await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status);
                 return requestModel;
             }
             catch (Exception)

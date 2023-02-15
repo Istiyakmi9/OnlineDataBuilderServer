@@ -211,6 +211,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public MySqlCommand AddCommandParameter(MySqlCommand cmd, DbParam[] param)
         {
+            var date = DateTime.Now;
+            var defaultDate = Convert.ToDateTime("1976-01-01");
             cmd.Parameters.Clear();
             if (param != null)
             {
@@ -242,10 +244,16 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                 cmd.Parameters.Add(p.ParamName, MySqlDbType.Bit).Value = Convert.ToSingle(p.Value);
                             else if (p.Type == typeof(System.DateTime))
                             {
-                                if (Convert.ToDateTime(p.Value).Year == 1)
-                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = DateTimeOffset.Parse("1/1/1976").UtcDateTime;
+                                if (p.Value != null && Convert.ToDateTime(p.Value).Year != 1)
+                                {
+                                    date = Convert.ToDateTime(p.Value);
+                                    date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = date;
+                                }
                                 else
-                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = DateTimeOffset.Parse(p.Value).UtcDateTime;
+                                {
+                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = defaultDate;
+                                }
                             }
                         }
                         else
@@ -271,6 +279,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         private List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader) where T : new()
         {
             string TypeName = string.Empty;
+            DateTime date = DateTime.Now;
+            DateTime defaultDate = Convert.ToDateTime("1976-01-01");
             List<T> items = new List<T>();
             try
             {
@@ -309,7 +319,16 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                                 x.SetValue(t, Convert.ToDecimal(dataReader[x.Name]));
                                                 break;
                                             case nameof(DateTime):
-                                                x.SetValue(t, DateTimeOffset.Parse(dataReader[x.Name].ToString()).UtcDateTime);
+                                                if (dataReader[x.Name].ToString() != null)
+                                                {
+                                                    date = Convert.ToDateTime(dataReader[x.Name].ToString());
+                                                    date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                                                    x.SetValue(t, date);
+                                                }
+                                                else
+                                                {
+                                                    x.SetValue(t, defaultDate);
+                                                }
                                                 break;
                                             default:
                                                 x.SetValue(t, dataReader[x.Name]);
@@ -318,7 +337,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                     }
                                     catch (Exception ex)
                                     {
-                                        HandleSqlException(ex);
                                         throw ex;
                                     }
                                 }
@@ -331,12 +349,10 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
             catch (MySqlException ex)
             {
-                HandleSqlException(ex);
                 throw ex;
             }
             catch (Exception ex)
             {
-                HandleSqlException(ex);
                 throw ex;
             }
 

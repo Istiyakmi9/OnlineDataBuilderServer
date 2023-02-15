@@ -9,8 +9,8 @@ namespace ServiceLayer.Interface
     {
         RequestModel FetchPendingRequestService(long employeeId, ItemStatus itemStatus = ItemStatus.Pending);
         RequestModel GetManagerAndUnAssignedRequestService(long employeeId);
-        Task<RequestModel> ApproveAttendanceService(AttendenceDetail attendanceDetais, int filterId = ApplicationConstants.Only);
-        Task<RequestModel> RejectAttendanceService(AttendenceDetail attendanceDetail, int filterId = ApplicationConstants.Only);
+        Task<RequestModel> ApproveAttendanceService(Attendance attendanceDetais, int filterId = ApplicationConstants.Only);
+        Task<RequestModel> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only);
         RequestModel GetRequestPageData(long employeeId, int filterId);
         List<Attendance> ReAssigneAttendanceService(AttendenceDetail attendanceDetail);
     }

@@ -7,9 +7,9 @@ namespace ServiceLayer.Interface
 {
     public interface IAttendanceService
     {
-        AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail);
+        Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
-        Task<string> SubmitAttendanceService(AttendenceDetail commentDetails);
+        Task<string> SubmitAttendanceService(Attendance attendance);
         Task<string> RaiseMissingAttendanceRequestService(CompalintOrRequestWithEmail compalintOrRequest);
         Task<List<ComplaintOrRequest>> GetMissingAttendanceRequestService(FilterModel filter);
         Task<List<ComplaintOrRequest>> GetMissingAttendanceApprovalRequestService(FilterModel filter);

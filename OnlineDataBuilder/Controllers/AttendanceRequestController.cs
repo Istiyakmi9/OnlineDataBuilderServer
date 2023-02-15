@@ -36,14 +36,14 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("ApprovalAction")]
-        public async Task<ApiResponse> ApprovalAction(AttendenceDetail attendanceDetail)
+        public async Task<ApiResponse> ApprovalAction(Attendance attendanceDetail)
         {
             var result = await _requestService.ApproveAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction")]
-        public async Task<ApiResponse> RejectAction([FromBody] AttendenceDetail attendanceDetail)
+        public async Task<ApiResponse> RejectAction([FromBody] Attendance attendanceDetail)
         {
             var result = await _requestService.RejectAttendanceService(attendanceDetail);
             return BuildResponse(result);
@@ -51,7 +51,7 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("ApproveAttendanceRequest/{filterId}")]
-        public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] AttendenceDetail attendanceDetail)
+        public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
             var result = await _requestService.ApproveAttendanceService(attendanceDetail, filterId);
             return BuildResponse(result);
@@ -59,7 +59,7 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("RejectAttendanceRequest/{filterId}")]
-        public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] AttendenceDetail attendanceDetail)
+        public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
             var result = await _requestService.RejectAttendanceService(attendanceDetail, filterId);
             return BuildResponse(result);
