@@ -97,7 +97,7 @@ namespace ServiceLayer.Code
                 var isWeekend = CheckWeekend(firstDate);
                 var totalMinute = attendanceModal.shiftDetail.Duration;
                 var officetime = attendanceModal.shiftDetail.OfficeTime;
-                var logoff = CalculateLogOff(attendanceModal);
+                var logoff = CalculateLogOff(attendanceModal.shiftDetail.OfficeTime, attendanceModal.shiftDetail.LunchDuration);
                 days = firstDate.Date.Subtract(barrierDate.Date).TotalDays;
                 if (isHoliday || isWeekend)
                 {
@@ -147,12 +147,12 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
-        private string CalculateLogOff(AttendanceDetailBuildModal attendanceModal)
+        private string CalculateLogOff(string OfficeTime, int LunchDuration)
         {
-            var logontime = attendanceModal.shiftDetail.OfficeTime.Replace(":", ".");
+            var logontime = OfficeTime.Replace(":", ".");
             decimal logon = decimal.Parse(logontime);
             var totaltime = 0;
-            totaltime = (int)(logon * 60 - attendanceModal.shiftDetail.LunchDuration);
+            totaltime = (int)(logon * 60 - LunchDuration);
             return ConvertToMin(totaltime);
         }
 
@@ -522,6 +522,7 @@ namespace ServiceLayer.Code
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             compalintOrRequestWithEmail.CompalintOrRequestList.ForEach(n =>
             {
+                var logOff = CalculateLogOff(employee.OfficeTime, employee.LunchDuration);
                 attendenceDetails.Add(new AttendenceDetail
                 {
                     TotalMinutes = n.IsFullDay ? employee.Duration : employee.Duration / 2,
@@ -539,7 +540,7 @@ namespace ServiceLayer.Code
                     Emails = n.NotifyList == null ? "[]" : JsonConvert.SerializeObject(n.NotifyList),
                     ManagerName = _currentSession.CurrentUserDetail.FullName,
                     LogOn = employee.OfficeTime,
-                    LogOff = "00:00",
+                    LogOff = logOff,
                     SessionType = n.IsFullDay ? 1 : 2,
                     LunchBreanInMinutes = employee.LunchDuration,
                     ApprovedBy = 0,
