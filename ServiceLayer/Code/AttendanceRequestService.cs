@@ -9,6 +9,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -107,8 +108,9 @@ namespace ServiceLayer.Code
             return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task UpdateAttendanceDetail(AttendenceDetail attendanceDetail, ItemStatus status)
+        public async Task<RequestModel> UpdateAttendanceDetail(AttendenceDetail attendanceDetail, ItemStatus status)
         {
+            RequestModel requestModel = null;
             if (attendanceDetail.AttendanceId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
             try
@@ -131,18 +133,45 @@ namespace ServiceLayer.Code
                 currentAttendance.AttendenceStatus = (int)DayStatus.WorkFromHome;
                 // this call is used for only upadate AttendanceDetail json object
 
+                var AttendaceDetail = JsonConvert
+                        .SerializeObject((
+                            from n in allAttendance
+                            select new // AttendenceDetail use dynamic object for minimal json data
+                            {
+                                TotalMinutes = n.TotalMinutes,
+                                UserTypeId = n.UserTypeId,
+                                PresentDayStatus = n.PresentDayStatus,
+                                EmployeeUid = n.EmployeeUid,
+                                AttendanceId = n.AttendanceId,
+                                UserComments = n.UserComments,
+                                AttendanceDay = n.AttendanceDay,
+                                AttendenceStatus = n.AttendenceStatus,
+                                Email = _currentSession.CurrentUserDetail.Email,
+                                EmployeeName = _currentSession.CurrentUserDetail.FullName,
+                                Mobile = _currentSession.CurrentUserDetail.Mobile,
+                                ReportingManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
+                                Emails = n.EmailList == null ? "[]" : JsonConvert.SerializeObject(n.EmailList),
+                                ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                                LogOn = n.LogOn,
+                                LogOff = n.LogOff,
+                                SessionType = n.SessionType,
+                                LunchBreanInMinutes = n.LunchBreanInMinutes
+                            }));
+
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
-                    AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
+                    AttendanceDetail = AttendaceDetail,
                     attendance.PendingRequestCount,
                     UserId = _currentSession.CurrentUserDetail.UserId
                 }, true);
 
                 if (string.IsNullOrEmpty(Result))
                     throw new HiringBellException("Unable to update attendance status");
-
+                else
+                    requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
                 await _approvalEmailService.AttendaceApprovalStatusSendEmail(currentAttendance, status);
+                return requestModel;
             }
             catch (Exception)
             {

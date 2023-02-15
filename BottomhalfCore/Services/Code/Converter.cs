@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace BottomhalfCore.Services.Code
 {
@@ -72,7 +71,6 @@ namespace BottomhalfCore.Services.Code
         private static T CreateItemFromRow<T>(DataRow row, IList<PropertyInfo> properties) where T : new()
         {
             T item = new T();
-            DateTime? now = null;
             foreach (var property in properties)
             {
                 try
@@ -100,7 +98,7 @@ namespace BottomhalfCore.Services.Code
                                     property.SetValue(item, Guid.Parse(row[property.Name].ToString()), null);
                                     break;
                                 case "System.DateTime":
-                                    property.SetValue(item, Convert.ToDateTime(row[property.Name].ToString()), null);
+                                    property.SetValue(item, DateTimeOffset.Parse(row[property.Name].ToString()).UtcDateTime, null);
                                     break;
                                 case "System.Int32":
                                     property.SetValue(item, Convert.ToInt32(row[property.Name].ToString()), null);
