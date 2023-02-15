@@ -107,7 +107,7 @@ namespace ServiceLayer.Code
                 }
 
                 var appliedFlag = attendanceModal.compalintOrRequests
-                                    .Any(x => x.AttendanceDate.Date.Subtract(firstDate.Date).TotalDays == 0);
+                                    .Any(x => x.AttendanceDate.Date.Subtract(attendanceModal.firstDate.Date).TotalDays == 0);
 
                 if (detail == null)
                 {
@@ -115,7 +115,7 @@ namespace ServiceLayer.Code
                     {
                         IsActiveDay = false,
                         TotalDays = DateTime.DaysInMonth(presentDate.Year, presentDate.Month),
-                        AttendanceDay = firstDate,
+                        AttendanceDay = attendanceModal.firstDate,
                         AttendanceId = attendanceModal.attendance.AttendanceId,
                         AttendenceStatus = (int)DayStatus.WorkFromOffice,
                         BillingHours = totalMinute,
@@ -140,7 +140,7 @@ namespace ServiceLayer.Code
                     });
                 }
 
-
+                attendanceModal.firstDate = attendanceModal.firstDate.AddDays(1);
                 firstDate = firstDate.AddDays(1);
             }
 
@@ -179,6 +179,10 @@ namespace ServiceLayer.Code
 
         public AttendanceWithClientDetail GetAttendanceByUserId(AttendenceDetail attendenceDetail)
         {
+            var now = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
+            if (now.Day != 1)
+                throw HiringBellException.ThrowBadRequest("Invalid from date submitted.");
+
             List<AttendenceDetail> attendenceDetails = new List<AttendenceDetail>();
             Employee employee = null;
             AttendanceDetailBuildModal attendanceDetailBuildModal = new AttendanceDetailBuildModal();
@@ -189,7 +193,7 @@ namespace ServiceLayer.Code
             var Result = _db.FetchDataSet("sp_attendance_get", new
             {
                 EmployeeId = attendenceDetail.EmployeeUid,
-                UserTypeId = attendenceDetail.UserTypeId,
+                StartDate = attendenceDetail.AttendenceFromDay,
                 ForYear = attendenceDetail.ForYear,
                 ForMonth = attendenceDetail.ForMonth,
                 CompanyId = attendenceDetail.CompanyId,
@@ -229,7 +233,7 @@ namespace ServiceLayer.Code
 
             attendanceDetailBuildModal.attendanceSubmissionLimit = employee.AttendanceSubmissionLimit;
             attendanceDetailBuildModal.presentDate = (DateTime)attendenceDetail.AttendenceToDay;
-            attendanceDetailBuildModal.firstDate = _timezoneConverter.GetUtcFirstDay(attendanceDetailBuildModal.presentDate.Year, attendanceDetailBuildModal.presentDate.Month);
+            attendanceDetailBuildModal.firstDate = (DateTime)attendenceDetail.AttendenceFromDay;
             if (attendanceDetailBuildModal.presentDate.Year == employee.CreatedOn.Year
                 && attendanceDetailBuildModal.presentDate.Month == employee.CreatedOn.Month)
                 attendanceDetailBuildModal.firstDate = employee.CreatedOn;

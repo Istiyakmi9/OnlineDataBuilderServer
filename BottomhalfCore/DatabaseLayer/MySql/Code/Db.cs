@@ -243,9 +243,9 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             else if (p.Type == typeof(System.DateTime))
                             {
                                 if (Convert.ToDateTime(p.Value).Year == 1)
-                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = Convert.ToDateTime("1/1/1976");
+                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = DateTimeOffset.Parse("1/1/1976").UtcDateTime;
                                 else
-                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = Convert.ToDateTime(p.Value);
+                                    cmd.Parameters.Add(p.ParamName, MySqlDbType.DateTime).Value = DateTimeOffset.Parse(p.Value).UtcDateTime;
                             }
                         }
                         else
@@ -270,6 +270,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         private List<T> ReadAndConvertToType<T>(MySqlDataReader dataReader) where T : new()
         {
+            string TypeName = string.Empty;
             List<T> items = new List<T>();
             try
             {
@@ -289,46 +290,30 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                     try
                                     {
                                         if (x.PropertyType.IsGenericType)
-                                        {
-                                            switch (x.PropertyType.GenericTypeArguments.First().Name)
-                                            {
-                                                case nameof(Boolean):
-                                                    x.SetValue(t, Convert.ToBoolean(dataReader[x.Name]));
-                                                    break;
-                                                case nameof(Int32):
-                                                    x.SetValue(t, Convert.ToInt32(dataReader[x.Name]));
-                                                    break;
-                                                case nameof(Int64):
-                                                    x.SetValue(t, Convert.ToInt64(dataReader[x.Name]));
-                                                    break;
-                                                case nameof(Decimal):
-                                                    x.SetValue(t, Convert.ToDecimal(dataReader[x.Name]));
-                                                    break;
-                                                default:
-                                                    x.SetValue(t, dataReader[x.Name]);
-                                                    break;
-                                            }
-                                        }
+                                            TypeName = x.PropertyType.GenericTypeArguments.First().Name;
                                         else
+                                            TypeName = x.PropertyType.Name;
+
+                                        switch (TypeName)
                                         {
-                                            switch (x.PropertyType.Name)
-                                            {
-                                                case nameof(Boolean):
-                                                    x.SetValue(t, Convert.ToBoolean(dataReader[x.Name]));
-                                                    break;
-                                                case nameof(Int32):
-                                                    x.SetValue(t, Convert.ToInt32(dataReader[x.Name]));
-                                                    break;
-                                                case nameof(Int64):
-                                                    x.SetValue(t, Convert.ToInt64(dataReader[x.Name]));
-                                                    break;
-                                                case nameof(Decimal):
-                                                    x.SetValue(t, Convert.ToDecimal(dataReader[x.Name]));
-                                                    break;
-                                                default:
-                                                    x.SetValue(t, dataReader[x.Name]);
-                                                    break;
-                                            }
+                                            case nameof(Boolean):
+                                                x.SetValue(t, Convert.ToBoolean(dataReader[x.Name]));
+                                                break;
+                                            case nameof(Int32):
+                                                x.SetValue(t, Convert.ToInt32(dataReader[x.Name]));
+                                                break;
+                                            case nameof(Int64):
+                                                x.SetValue(t, Convert.ToInt64(dataReader[x.Name]));
+                                                break;
+                                            case nameof(Decimal):
+                                                x.SetValue(t, Convert.ToDecimal(dataReader[x.Name]));
+                                                break;
+                                            case nameof(DateTime):
+                                                x.SetValue(t, DateTimeOffset.Parse(dataReader[x.Name].ToString()).UtcDateTime);
+                                                break;
+                                            default:
+                                                x.SetValue(t, dataReader[x.Name]);
+                                                break;
                                         }
                                     }
                                     catch (Exception ex)
@@ -411,7 +396,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         public DataSet FetchDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
         {
-            return GetDataSet(ProcedureName, Parameters, OutParam) ;
+            return GetDataSet(ProcedureName, Parameters, OutParam);
         }
 
         public (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
@@ -496,7 +481,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return genericReaderData;
         }
 
-       
+
         public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
             List<T> result = this.NativeGetList<T>(ProcedureName, Parameters, OutParam);
@@ -508,7 +493,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         private List<T> NativeGetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {
-            List<T> result = null;            
+            List<T> result = null;
             try
             {
                 lock (_lock)
