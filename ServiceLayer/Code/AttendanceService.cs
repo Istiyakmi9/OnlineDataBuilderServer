@@ -477,7 +477,7 @@ namespace ServiceLayer.Code
                     throw HiringBellException.ThrowBadRequest("Found invalid data. Please contact to admin.");
 
                 var target = complaintOrRequests.Find(i => i.TargetOffset == x.TargetOffset);
-                if(target != null)
+                if (target != null)
                 {
                     x.ComplaintOrRequestId = target.ComplaintOrRequestId;
                 }
@@ -601,18 +601,30 @@ namespace ServiceLayer.Code
 
         private async Task CheckHalfdayAndFullday(AttendanceDetailJson workingAttendance, Attendance attendance)
         {
-            if (attendance.SessionType > 1)
+            if (attendance.SessionType > 1 && workingAttendance.SessionType == 1)
             {
                 var logoff = workingAttendance.LogOff;
                 var logofftime = logoff.Replace(":", ".");
                 decimal time = decimal.Parse(logofftime);
-                var totaltime = 0;
-                totaltime = (int)((time * 60) /2);
+                var totaltime = (int)((time * 60) / 2);
                 logoff = ConvertToMin(totaltime);
                 workingAttendance.LogOff = logoff;
                 workingAttendance.LogOn = logoff;
                 workingAttendance.SessionType = attendance.SessionType;
+                workingAttendance.TotalMinutes = workingAttendance.TotalMinutes / 2;
             }
+            else if (attendance.SessionType == 1 && workingAttendance.SessionType > 1)
+            {
+                var logoff = workingAttendance.LogOff;
+                var logofftime = logoff.Replace(":", ".");
+                decimal time = decimal.Parse(logofftime);
+                var totaltime = (int)((time * 60) * 2);
+                workingAttendance.LogOff = ConvertToMin(totaltime);
+                workingAttendance.LogOn = ConvertToMin(totaltime + 60);
+                workingAttendance.SessionType = attendance.SessionType;
+                workingAttendance.TotalMinutes = workingAttendance.TotalMinutes * 2;
+            }
+            await Task.CompletedTask;
         }
 
         private async Task CreatePresentDayAttendance(AttendenceDetail attendenceDetail, DateTime workingTimezoneDate)
