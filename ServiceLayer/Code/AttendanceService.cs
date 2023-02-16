@@ -295,7 +295,7 @@ namespace ServiceLayer.Code
                 AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
                 AttendacneDetails = attendenceDetails
                                     .TakeWhile(x => DateTime.Now.Date
-                                                    .Subtract(x.AttendanceDay.Date).TotalDays >= 0
+                                                    .Subtract(x.AttendanceDay.Date).TotalDays > 0
                                               ).ToList()
             };
         }
@@ -320,7 +320,7 @@ namespace ServiceLayer.Code
             return attendanceSet;
         }
 
-        public async Task<string> SubmitAttendanceService(Attendance attendance)
+        public async Task<AttendanceDetailJson> SubmitAttendanceService(Attendance attendance)
         {
             string Result = string.Empty;
 
@@ -342,6 +342,7 @@ namespace ServiceLayer.Code
 
             // check for leave, holiday and weekends
             await this.IsGivenDateAllowed(attendance.AttendanceDay);
+
             var presentAttendance = _db.Get<Attendance>("sp_attendance_get_byid", new { AttendanceId = attendance.AttendanceId });
 
             if (presentAttendance == null || string.IsNullOrEmpty(presentAttendance.AttendanceDetail))
@@ -356,6 +357,9 @@ namespace ServiceLayer.Code
             int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
             presentAttendance.DaysPending = pendingDays;
             presentAttendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
+
+            // check for halfday or fullday.
+            await this.CheckHalfdayAndFullday(workingattendance, attendance);
 
             string ProjectName = string.Empty;
             Result = _db.Execute<Attendance>("sp_attendance_insupd", new
@@ -384,7 +388,7 @@ namespace ServiceLayer.Code
 
             Result = ApplicationConstants.Updated;
             Task task = Task.Run(async () => await _attendanceEmailService.SendSubmitAttendanceEmail(presentAttendance));
-            return Result;
+            return workingattendance;
         }
 
         private async Task AttendanceBackdayLimit(DateTime AttendanceDay)
@@ -593,6 +597,22 @@ namespace ServiceLayer.Code
 
             workingAttendance.PresentDayStatus = (int)ItemStatus.Pending;
             await Task.CompletedTask;
+        }
+
+        private async Task CheckHalfdayAndFullday(AttendanceDetailJson workingAttendance, Attendance attendance)
+        {
+            if (attendance.SessionType > 1)
+            {
+                var logoff = workingAttendance.LogOff;
+                var logofftime = logoff.Replace(":", ".");
+                decimal time = decimal.Parse(logofftime);
+                var totaltime = 0;
+                totaltime = (int)((time * 60) /2);
+                logoff = ConvertToMin(totaltime);
+                workingAttendance.LogOff = logoff;
+                workingAttendance.LogOn = logoff;
+                workingAttendance.SessionType = attendance.SessionType;
+            }
         }
 
         private async Task CreatePresentDayAttendance(AttendenceDetail attendenceDetail, DateTime workingTimezoneDate)
