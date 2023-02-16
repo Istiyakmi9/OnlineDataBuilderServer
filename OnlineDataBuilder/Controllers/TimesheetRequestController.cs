@@ -20,17 +20,17 @@ namespace OnlineDataBuilder.Controllers
             _requestService = requestService;
         }
 
-        [HttpPut("ApproveTimesheet")]
-        public async Task<ApiResponse> ApproveTimesheet(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        [HttpPut("ApproveTimesheet/{TimesheetId}")]
+        public async Task<ApiResponse> ApproveTimesheet(int timesheetId)
         {
-            var result = await _requestService.ApprovalTimesheetService(dailyTimesheetDetails);
+            var result = await _requestService.ApprovalTimesheetService(timesheetId);
             return BuildResponse(result);
         }
 
-        [HttpPut("RejectAction")]
-        public async Task<ApiResponse> RejectAction(List<DailyTimesheetDetail> dailyTimesheetDetails)
+        [HttpPut("RejectAction/{TimesheetId}")]
+        public async Task<ApiResponse> RejectAction(int timesheetId)
         {
-            var result = await _requestService.RejectTimesheetService(dailyTimesheetDetails);
+            var result = await _requestService.RejectTimesheetService(timesheetId);
             return BuildResponse(result);
         }
 
@@ -42,18 +42,18 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpPut("ApproveTimesheetRequest/{filterId}")]
-        public async Task<ApiResponse> ApproveTimesheetRequest([FromRoute]int filterId, [FromBody]List<DailyTimesheetDetail> dailyTimesheetDetails)
+        [HttpPut("ApproveTimesheetRequest/{TimesheetId}/{filterId}")]
+        public async Task<ApiResponse> ApproveTimesheetRequest([FromRoute] int timesheetId, [FromRoute]int filterId)
         {
-            var result = await _requestService.ApprovalTimesheetService(dailyTimesheetDetails, filterId);
+            var result = await _requestService.ApprovalTimesheetService(timesheetId, filterId);
             return BuildResponse(result);
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpPut("RejectTimesheetRequest/{filterId}")]
-        public async Task<ApiResponse> RejectTimesheetRequest([FromRoute] int filterId, [FromBody] List<DailyTimesheetDetail> dailyTimesheetDetails)
+        [HttpPut("RejectTimesheetRequest/{TimesheetId}/{filterId}")]
+        public async Task<ApiResponse> RejectTimesheetRequest([FromRoute] int timesheetId, [FromRoute] int filterId)
         {
-            var result = await _requestService.RejectTimesheetService(dailyTimesheetDetails, filterId);
+            var result = await _requestService.RejectTimesheetService(timesheetId, filterId);
             return BuildResponse(result);
         }
 

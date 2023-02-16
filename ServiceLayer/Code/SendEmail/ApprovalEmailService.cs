@@ -84,30 +84,30 @@ namespace ServiceLayer.Code.SendEmail
 
         #region TIMESHEET APPROVAL
 
-        private async Task<TemplateReplaceModal> GetTimesheetApprovalTemplate(DailyTimesheetDetail dailyTimesheetDetail, List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus status)
+        private async Task<TemplateReplaceModal> GetTimesheetApprovalTemplate(TimesheetDetail timesheet, List<TimesheetDetail> timesheets, ItemStatus status)
         {
-            var sortedTimesheetByDate = dailyTimesheetDetails.OrderByDescending(x => x.PresentDate);
+            var sortedTimesheetByDate = timesheets.OrderByDescending(x => x.PresentDate);
             var templateReplaceModal = new TemplateReplaceModal
             {
-                DeveloperName = dailyTimesheetDetail.EmployeeName,
+                DeveloperName = timesheet.FirstName + " " + timesheet.LastName,
                 RequestType = ApplicationConstants.Timesheet,
-                ToAddress = new List<string> { dailyTimesheetDetail.Email },
+                ToAddress = new List<string> { timesheet.Email },
                 ActionType = status.ToString(),
                 FromDate = sortedTimesheetByDate.First().PresentDate,
                 ToDate = sortedTimesheetByDate.Last().PresentDate,
                 LeaveType = null,
                 ManagerName = _currentSession.CurrentUserDetail.FullName,
-                Message = string.IsNullOrEmpty(dailyTimesheetDetail.UserComments)
+                Message = string.IsNullOrEmpty(timesheet.UserComments)
                             ? "NA"
-                            : dailyTimesheetDetail.UserComments,
+                            : timesheet.UserComments,
             };
 
             return await Task.FromResult(templateReplaceModal);
         }
 
-        public async Task TimesheetApprovalStatusSendEmail(DailyTimesheetDetail dailyTimesheetDetail, List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus status)
+        public async Task TimesheetApprovalStatusSendEmail(TimesheetDetail timesheet, List<TimesheetDetail> timesheets, ItemStatus status)
         {
-            var templateReplaceModal = await GetTimesheetApprovalTemplate(dailyTimesheetDetail, dailyTimesheetDetails, status);
+            var templateReplaceModal = await GetTimesheetApprovalTemplate(timesheet, timesheets, status);
             var result = Task.Run(async () =>
                 await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetApprovalStatusEmailTemplate, templateReplaceModal)
             );

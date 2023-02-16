@@ -291,7 +291,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     while (dataReader.Read())
                     {
                         T t = new T();
-                        Parallel.ForEach(props, x =>
+                        props.ForEach(x =>
                         {
                             if (fieldNames.Contains(x.Name))
                             {
