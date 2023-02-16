@@ -22,10 +22,13 @@ namespace ModalLayer.Modal
         public long ExecutedBy { get; set; }
         public bool IsSaved { get; set; }
         public bool IsSubmitted { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
         public List<WeeklyTimesheetDetail> TimesheetWeeklyData { get; set; }
     }
 
-    public class WeeklyTimesheetDetail 
+    public class WeeklyTimesheetDetail
     {
         public DayOfWeek WeekDay { get; set; }
         public DateTime PresentDate { get; set; }

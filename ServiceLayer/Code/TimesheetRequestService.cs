@@ -41,68 +41,46 @@ namespace ServiceLayer.Code
             _approvalEmailService = approvalEmailService;
         }
 
-        public async Task<RequestModel> RejectTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> RejectTimesheetService(int timesheetId, int filterId = ApplicationConstants.Only)
         {
-            if (dailyTimesheetDetails == null)
-                throw new HiringBellException("Invalid operation. Please contact to admin.");
-
-            await UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Rejected);
+            await UpdateTimesheetRequest(timesheetId, ItemStatus.Rejected);
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task<RequestModel> ApprovalTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
+        public async Task<RequestModel> ApprovalTimesheetService(int timesheetId, int filterId = ApplicationConstants.Only)
         {
-            if (dailyTimesheetDetails == null)
-                throw new HiringBellException("Invalid operation. Please contact to admin.");
-
-            await UpdateTimesheetRequest(dailyTimesheetDetails, ItemStatus.Approved);
+            await UpdateTimesheetRequest(timesheetId, ItemStatus.Approved);
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task<RequestModel> UpdateTimesheetRequest(List<DailyTimesheetDetail> dailyTimesheetDetails, ItemStatus itemStatus)
+        public async Task<RequestModel> UpdateTimesheetRequest(int timesheetId, ItemStatus itemStatus)
         {
-            var firstItem = dailyTimesheetDetails.FirstOrDefault();
-            if (firstItem.TimesheetId <= 0)
+            if (timesheetId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
 
-            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_getby_id", new
+            TimesheetDetail timesheet = _db.Get<TimesheetDetail>("sp_employee_timesheet_getby_timesheetid", new
             {
-                TimesheetId = firstItem.TimesheetId
+                TimesheetId = timesheetId
             });
 
-            var allTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timesheet.TimesheetWeeklyJson);
-            foreach (var dailyTimesheet in dailyTimesheetDetails)
-            {
-                var currentTimesheet = allTimesheet.Find(x => x.PresentDate == dailyTimesheet.PresentDate);
-                if (currentTimesheet != null)
-                    currentTimesheet.TimesheetStatus = itemStatus;
-            }
-            timesheet.TimesheetWeeklyJson = JsonConvert.SerializeObject(allTimesheet);
+            if (timesheet == null)
+                throw HiringBellException.ThrowBadRequest("Invalid timesheet found. Please contact admin.");
 
             // this call is used for only upadate AttendanceDetail json object
-            var Result = _db.Execute<TimesheetDetail>("sp_timesheet_insupd", new
+            var Result = _db.Execute<TimesheetDetail>("sp_timesheet_upd_by_id", new
             {
                 timesheet.TimesheetId,
-                timesheet.EmployeeId,
-                timesheet.ClientId,
-                timesheet.TimesheetWeeklyJson,
-                timesheet.ExpectedBurnedMinutes,
-                timesheet.ActualBurnedMinutes,
-                timesheet.TotalWeekDays,
-                timesheet.TotalWorkingDays,
-                timesheet.TimesheetStatus,
-                timesheet.TimesheetStartDate,
-                timesheet.TimesheetEndDate,
+                TimesheetStatus = (int)itemStatus,
                 timesheet.UserComments,
-                timesheet.ForYear,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            await _approvalEmailService.TimesheetApprovalStatusSendEmail(firstItem, dailyTimesheetDetails, itemStatus);
-            return _attendanceRequestService.FetchPendingRequestService(firstItem.ReportingManagerId);
+            var timesheetDetails = JsonConvert.DeserializeObject<List<TimesheetDetail>>(timesheet.TimesheetWeeklyJson);
+            await _approvalEmailService.TimesheetApprovalStatusSendEmail(timesheet, timesheetDetails, itemStatus);
+            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.ReportingManagerId);
         }
 
         public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
