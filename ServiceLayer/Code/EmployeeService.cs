@@ -235,13 +235,14 @@ namespace ServiceLayer.Code
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
         {
-            DataSet finalResultSet = new DataSet();
-            var resultset = _db.GetDataSet("SP_ManageEmployeeDetail_Get", new
+            var resultset = _db.GetDataSet("sp_manage_employee_detail_get", new
             {
-                employeeId = EmployeeId
+                EmployeeId,
+                _currentSession.CurrentUserDetail.CompanyId,
+                _currentSession.CurrentUserDetail.OrganizationId,
             });
 
-            if (resultset.Tables.Count == 6)
+            if (resultset.Tables.Count == 9)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
@@ -249,24 +250,12 @@ namespace ServiceLayer.Code
                 resultset.Tables[3].TableName = "SalaryDetail";
                 resultset.Tables[4].TableName = "Clients";
                 resultset.Tables[5].TableName = "EmployeesList";
-
-                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.AccessLevel).Copy());
-                finalResultSet.Tables[0].TableName = "Roles";
-
-                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.LeavePlan).Copy());
-                finalResultSet.Tables[1].TableName = "LeavePlans";
-
-                finalResultSet.Tables.Add(_cacheManager.Get(CacheTable.Company).Copy());
-                finalResultSet.Tables[2].TableName = "Companies";
-
-                finalResultSet.Tables.Add(resultset.Tables[0].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[1].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[2].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[3].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[4].Copy());
-                finalResultSet.Tables.Add(resultset.Tables[5].Copy());
+                resultset.Tables[6].TableName = "Roles";
+                resultset.Tables[7].TableName = "LeavePlans";
+                resultset.Tables[8].TableName = "Companies";
             }
-            return finalResultSet;
+
+            return resultset;
         }
 
         public DataSet GetManageClientService(long EmployeeId)

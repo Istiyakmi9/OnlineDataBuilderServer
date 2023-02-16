@@ -1,5 +1,3 @@
-using MySqlX.XDevAPI.Common;
-using System;
 using System.Collections.Concurrent;
 using System.Data;
 
