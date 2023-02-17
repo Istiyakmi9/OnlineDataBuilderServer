@@ -686,7 +686,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             {
                                 dynamic data = Parameters.ElementAt(i);
                                 util.BindParametersValue(data, properties, command, false);
-                                var result = command.ExecuteNonQuery();
+                                rowsAffected += command.ExecuteNonQuery();
                                 i++;
                             }
                         }

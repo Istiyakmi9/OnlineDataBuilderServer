@@ -28,19 +28,16 @@ namespace ServiceLayer.Code
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
         private readonly Quota _quota;
-        private readonly LeaveFromManagement _leaveFromManagement;
         private readonly Accrual _accrual;
         private readonly Apply _apply;
         private readonly Restriction _restriction;
         private readonly IHolidaysAndWeekoffs _holidaysAndWeekoffs;
         private readonly Approval _approval;
-        private readonly YearEndCalculation _yearEndCalculation;
 
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             Quota quota,
-            LeaveFromManagement leaveFromManagement,
             Accrual accrual,
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
@@ -51,7 +48,6 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _quota = quota;
-            _leaveFromManagement = leaveFromManagement;
             _accrual = accrual;
             _apply = apply;
             _restriction = restriction;
