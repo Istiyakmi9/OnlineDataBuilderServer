@@ -239,7 +239,7 @@ namespace ServiceLayer.Code
                                  }).ToList();
 
             // var result = await _db.BatchInsertUpdateAsync("sp_employee_leave_payroll_and_otherdetail_insupd", table, true);
-            var rowsAffected = await _db.BulkExecuteAsync("sp_employee_leave_payroll_and_otherdetail_insupd", tableJsonData, true);
+            var rowsAffected = await _db.BulkExecuteAsync("sp_employee_leave_payroll_and_otherdetail_insupd", tableJsonData, false);
             if (rowsAffected != detail.Count)
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
         }

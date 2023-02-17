@@ -7,8 +7,8 @@ namespace ServiceLayer.Interface
 {
     public interface IProductService
     {
-        List<Product> ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection);
-        List<Product> GetAllProductsService(FilterModel filterModel);
+        dynamic ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection);
+        dynamic GetAllProductsService(FilterModel filterModel);
         DataSet GetProductImagesService(string FileIds);
         List<ProductCatagory> AddUpdateProductCatagoryService(ProductCatagory productCatagory);
         List<ProductCatagory> GetProductCatagoryService(FilterModel filterModel);
