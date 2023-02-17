@@ -4,7 +4,7 @@ namespace ModalLayer.Modal
 {
     public class Employee : EmployeePersonalDetail
     {
-        public long EmployeeLoginId { set; get; }        
+        public long EmployeeLoginId { set; get; }
         public int OrganizationId { set; get; }
         public string FirstName { set; get; }
         public string LastName { set; get; }
@@ -46,6 +46,8 @@ namespace ModalLayer.Modal
         public string OldFileName { get; set; }
         public int AttendanceSubmissionLimit { get; set; }
         public int WorkShiftId { get; set; }
+
+        public DateTime AssigneDate { set; get; }
     }
 
     public class EmployeeEmailMobileCheck

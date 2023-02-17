@@ -3,7 +3,6 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
 using ServiceLayer.Caching;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -275,8 +274,6 @@ namespace ServiceLayer.Code
 
         #endregion
 
-
-
         public List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId)
         {
             List<TimesheetDetail> timesheetDetail = new List<TimesheetDetail>();
@@ -335,27 +332,6 @@ namespace ServiceLayer.Code
             }
 
             return (dailyTimesheetDetails, missingDayList);
-        }
-
-
-        private void UpdateTimesheetList(List<DailyTimesheetDetail> dailyTimesheetDetails, DateTime utcJoiningDate)
-        {
-            var now = DateTime.UtcNow;
-            Parallel.ForEach(dailyTimesheetDetails, i =>
-            {
-                if (utcJoiningDate.Date.
-                    Subtract(_timezoneConverter.ToTimeZoneDateTime(i.PresentDate, _currentSession.TimeZone)).TotalDays > 0 ||
-                    now.Date
-                    .Subtract(_timezoneConverter.ToTimeZoneDateTime(i.PresentDate, _currentSession.TimeZone)).TotalDays < 0)
-                    i.TimesheetStatus = ItemStatus.NotGenerated;
-                else
-                {
-                    if (i.TimesheetStatus != ItemStatus.Approved)
-                        i.TimesheetStatus = ItemStatus.Absent;
-                    else
-                        i.TimesheetStatus = ItemStatus.Approved;
-                }
-            });
         }
 
         public BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
