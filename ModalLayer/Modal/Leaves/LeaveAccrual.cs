@@ -9,12 +9,12 @@ namespace ModalLayer.Modal.Leaves
         public List<AccrualProrate> AccrualProrateDetail { set; get; }
         public int LeaveAccrualId { get; set; }
         public int LeavePlanTypeId { get; set; }
-        public bool CanApplyEntireLeave { get; set; }
+        public bool CanApplyEntireLeave { get; set; } = true;
         public bool IsLeaveAccruedPatternAvail { get; set; }
         public string LeaveDistributionSequence { get; set; }
         public decimal LeaveDistributionAppliedFrom { get; set; }
         public bool IsLeavesProratedForJoinigMonth { get; set; } = true;
-        public bool IsLeavesProratedOnNotice { get; set; }
+        public bool IsLeavesProratedOnNotice { get; set; } = true;
         public bool IsNotAllowProratedOnNotice { get; set; }
         public bool IsNoLeaveOnNoticePeriod { get; set; }
         public bool IsVaryOnProbationOrExprience { get; set; }
@@ -33,7 +33,7 @@ namespace ModalLayer.Modal.Leaves
         public bool IsAccrueIfHavingLeaveBalance { get; set; }
         public bool IsAccrueIfOnOtherLeave { get; set; }
         public decimal NotAllowIfAlreadyOnLeaveMoreThan { get; set; }
-        public bool RoundOffLeaveBalance { get; set; }
+        public bool RoundOffLeaveBalance { get; set; } = true;
         public bool ToNearestHalfDay { get; set; }
         public bool ToNearestFullDay { get; set; }
         public bool ToNextAvailableHalfDay { get; set; }

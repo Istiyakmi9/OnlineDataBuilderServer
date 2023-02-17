@@ -72,6 +72,7 @@ namespace ServiceLayer.Code
                 timesheet.TimesheetId,
                 TimesheetStatus = (int)itemStatus,
                 timesheet.UserComments,
+                IsSubmitted = itemStatus == ItemStatus.Approved ? true : false,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 

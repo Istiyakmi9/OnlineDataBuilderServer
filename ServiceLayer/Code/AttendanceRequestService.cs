@@ -136,6 +136,7 @@ namespace ServiceLayer.Code
                 _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
 
                 currentAttendance.PresentDayStatus = (int)status;
+                ChnageSessionType(currentAttendance);
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
@@ -155,6 +156,30 @@ namespace ServiceLayer.Code
             {
                 throw new HiringBellException("Encounter error while sending email notification.", System.Net.HttpStatusCode.NotFound);
             }
+        }
+
+        private void ChnageSessionType(AttendanceDetailJson currentAttr)
+        {
+            var logoff = currentAttr.LogOff;
+            var logofftime = logoff.Replace(":", ".");
+            decimal time = decimal.Parse(logofftime);
+            var totaltime = (int)((time * 60) * 2);
+            currentAttr.LogOff = ConvertToMin(totaltime);
+            currentAttr.LogOn = ConvertToMin(totaltime + 60);
+            currentAttr.SessionType = 1;
+            currentAttr.TotalMinutes = currentAttr.TotalMinutes * 2;
+        }
+
+        private String ConvertToMin(int mins)
+        {
+            int hours = ((mins - mins % 60) / 60);
+            string min = ((mins - hours * 60)).ToString();
+            string hrs = hours.ToString();
+            if (hrs.Length == 1)
+                hrs = "0" + hrs;
+            if (min.Length == 1)
+                min = min + "0";
+            return "" + hrs + ":" + min;
         }
 
         public List<Attendance> ReAssigneAttendanceService(AttendenceDetail attendanceDetail)

@@ -26,16 +26,16 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public List<Product> GetAllProductsService(FilterModel filterModel)
+        public dynamic GetAllProductsService(FilterModel filterModel)
         {
-            var result = _db.GetList<Product>("SP_product_getby_filter", new
+            (List<Product> product, List<ProductCatagory> productCatagory) = _db.GetList<Product, ProductCatagory>("SP_product_getby_filter", new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
                 filterModel.PageSize,
                 filterModel.SortBy
             });
-            return result;
+            return new {product, productCatagory };
         }
 
         public DataSet GetProductImagesService(string FileIds)
@@ -44,7 +44,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public List<Product> ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection)
+        public dynamic ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection)
         {
             validateProduct(product);
             var oldproduct = _db.Get<Product>("sp_prdoduct_getby_id", new { ProductId = product.ProductId });
