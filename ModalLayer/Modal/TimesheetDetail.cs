@@ -36,6 +36,7 @@ namespace ModalLayer.Modal
         public int ActualBurnedMinutes { get; set; }
         public bool IsHoliday { get; set; }
         public bool IsWeekEnd { get; set; }
+        public bool IsOpen { get; set; }
     }
 
     public class DailyTimesheetDetail

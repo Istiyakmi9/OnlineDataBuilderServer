@@ -11,7 +11,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Internal.Execution;
 using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
@@ -27,13 +26,10 @@ namespace ServiceLayer.Code
     public class EmployeeService : IEmployeeService
     {
         private readonly IDb _db;
-        private readonly CommonFilterService _commonFilterService;
-        private readonly ICommonService _commonService;
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
-        private readonly ICacheManager _cacheManager;
         private readonly IAuthenticationService _authenticationService;
         private readonly ILoginService _loginService;
         private readonly IDeclarationService _declarationService;
@@ -43,13 +39,11 @@ namespace ServiceLayer.Code
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IEMailManager _eMailManager;
         private readonly ILeaveCalculation _leaveCalculation;
+        private readonly ITimesheetService _timesheetService;
 
         public EmployeeService(IDb db,
-            CommonFilterService commonFilterService,
             CurrentSession currentSession,
-            ICacheManager cacheManager,
             IFileService fileService,
-            ICommonService commonService,
             IConfiguration configuration,
             ILoginService loginService,
             IDeclarationService declarationService,
@@ -60,25 +54,24 @@ namespace ServiceLayer.Code
             HtmlToPdfConverter htmlToPdfConverter,
             IHostingEnvironment hostingEnvironment,
             ILeaveCalculation leaveCalculation,
-            IEMailManager eMailManager)
+            IEMailManager eMailManager,
+            ITimesheetService timesheetService)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
-            _cacheManager = cacheManager;
             _loginService = loginService;
             _authenticationService = authenticationService;
             _configuration = configuration;
-            _commonFilterService = commonFilterService;
             _currentSession = currentSession;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
-            _commonService = commonService;
             _declarationService = declarationService;
             _timezoneConverter = timezoneConverter;
             _logger = logger;
             _htmlToPdfConverter = htmlToPdfConverter;
             _hostingEnvironment = hostingEnvironment;
             _eMailManager = eMailManager;
+            _timesheetService = timesheetService;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -274,33 +267,29 @@ namespace ServiceLayer.Code
 
         public DataSet UpdateEmployeeMappedClientDetailService(Employee employee, bool IsUpdating)
         {
+            if (employee.AssigneDate == null || employee.AssigneDate.Year <= 1900)
+                throw HiringBellException.ThrowBadRequest("Assign date is a required field");
+
             if (employee.EmployeeUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
 
             if (employee.ClientUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employee.ClientUid), FieldValue = employee.ClientUid.ToString() };
 
-            if (IsUpdating == true)
+            var records = _db.GetList<EmployeeMappedClient>("sp_employees_mappedClient_get_by_employee_id", new
             {
-                if (employee.EmployeeMappedClientsUid <= 0)
-                    throw new HiringBellException { UserMessage = "EmployeeMappedClientId is invalid.", FieldName = nameof(employee.EmployeeMappedClientsUid), FieldValue = employee.EmployeeMappedClientsUid.ToString() };
+                EmployeeId = employee.EmployeeUid
+            });
 
-                EmployeeMappedClient employeeMappedClient = _db.Get<EmployeeMappedClient>("sp_employees_getMappedClient", new
-                {
-                    EmployeeMappedClientsUid = employee.EmployeeMappedClientsUid
-                });
-
-                if (employeeMappedClient == null || employee.ClientUid != employeeMappedClient.ClientUid)
-                {
-                    throw HiringBellException.ThrowBadRequest("Trying to update invalid data. Please contact to admin.");
-                }
+            var first = records.Find(i => i.ClientUid == employee.ClientUid);
+            if (first != null)
+            {
+                employee.EmployeeMappedClientsUid = first.EmployeeMappedClientsUid;
             }
 
             this.ValidateEmployeeDetails(employee);
 
-
-
-            var resultset = _db.GetDataSet("SP_Employees_AddUpdateRemoteClient", new
+            var resultset = _db.GetDataSet("sp_employees_addupdate_remote_client", new
             {
                 employeeMappedClientsUid = employee.EmployeeMappedClientsUid,
                 employeeUid = employee.EmployeeUid,
@@ -312,7 +301,14 @@ namespace ServiceLayer.Code
                 BillingHours = employee.BillingHours,
                 DaysPerWeek = employee.WorkingDaysPerWeek,
                 DateOfLeaving = employee.DateOfLeaving,
+                AssigneDate = employee.AssigneDate
             });
+
+            if (!ApplicationConstants.ContainSingleRow(resultset))
+                throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Please contact to admin.");
+
+            var weekFirstDay = _timezoneConverter.FirstDayOfWeekUTC(DateTime.UtcNow);
+            _timesheetService.RunWeeklyTimesheetCreation(weekFirstDay.AddDays(1));
 
             return resultset;
         }
