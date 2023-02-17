@@ -91,7 +91,7 @@ namespace ServiceLayer.Code
             while (i < totalNumOfDaysInPresentMonth)
             {
                 var isHoliday = CheckIsHoliday(timezoneFirstDate, attendanceModal.calendars);
-                var isWeekend = CheckWeekend(attendanceModal.shiftDetail, attendanceModal.firstDate.AddDays(i));
+                var isWeekend = CheckWeekend(attendanceModal.shiftDetail, timezoneFirstDate.AddDays(i));
                 var officetime = attendanceModal.shiftDetail.OfficeTime;
                 var logoff = CalculateLogOff(attendanceModal.shiftDetail.OfficeTime, attendanceModal.shiftDetail.LunchDuration);
                 days = barrierDate.Date.Subtract(timezoneFirstDate.Date).TotalDays;
@@ -105,7 +105,8 @@ namespace ServiceLayer.Code
                 }
 
                 var appliedFlag = attendanceModal.compalintOrRequests
-                                    .Any(x => x.AttendanceDate.Date.Subtract(attendanceModal.firstDate.Date).TotalDays == 0);
+                                    .Any(x => x.AttendanceDate.Date.Subtract(attendanceModal.firstDate.AddDays(i).Date)
+                                    .TotalDays == 0);
                 if (isHoliday)
                     presentDayStatus = (int)DayStatus.Holiday;
                 else if (isWeekend)
@@ -119,7 +120,7 @@ namespace ServiceLayer.Code
                     IsHoliday = isHoliday,
                     IsOnLeave = false,
                     IsWeekend = isWeekend,
-                    AttendanceDay = attendanceModal.firstDate.AddDays(i),
+                    AttendanceDay = timezoneFirstDate.AddDays(i),
                     LogOn = officetime,
                     LogOff = logoff,
                     PresentDayStatus = presentDayStatus,
