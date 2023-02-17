@@ -44,6 +44,12 @@ namespace ServiceLayer.Code
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
         {
             List<LeavePlan> leavePlans = null;
+            if (string.IsNullOrEmpty(leavePlan.PlanName))
+                throw HiringBellException.ThrowBadRequest("Leave plan name is null or empty");
+
+            if (leavePlan.PlanStartCalendarDate == null)
+                throw HiringBellException.ThrowBadRequest("Leave plan start calendar date is null or empty");
+
             if (leavePlan.LeavePlanId > 0)
             {
                 leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
@@ -80,6 +86,7 @@ namespace ServiceLayer.Code
         {
             List<LeavePlanType> leavePlanTypes = default(List<LeavePlanType>);
             BuildConfigurationDetailObject(leavePlanType);
+            LeavePlanTypeValidation(leavePlanType);
 
             string result = _db.Execute<LeavePlanType>("sp_leave_plans_type_insupd", new
             {
@@ -102,9 +109,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (ApplicationConstants.IsExecuted(result))
-            {
                 leavePlanTypes = _db.GetList<LeavePlanType>("sp_leave_plans_type_get");
-            }
 
             return leavePlanTypes;
         }
@@ -170,6 +175,7 @@ namespace ServiceLayer.Code
             if (leavePlanType.LeavePlanTypeId <= 0)
                 throw new HiringBellException("Leave plan type id not found. Please add one plan first.");
 
+            LeavePlanTypeValidation(leavePlanType);
             LeavePlanType record = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
 
             if (record == null || record.LeavePlanTypeId != leavePlanTypeId)
@@ -189,6 +195,39 @@ namespace ServiceLayer.Code
             record.PlanDescription = leavePlanType.PlanDescription;
 
             return this.AddLeavePlanTypeService(record);
+        }
+
+        private void LeavePlanTypeValidation(LeavePlanType leavePlanType)
+        {
+            if (string.IsNullOrEmpty(leavePlanType.PlanDescription))
+                throw HiringBellException.ThrowBadRequest("Leave plan type description is null or empty");
+
+            if (string.IsNullOrEmpty(leavePlanType.PlanName))
+                throw HiringBellException.ThrowBadRequest("Leave plan type name is null or empty");
+
+            if (string.IsNullOrEmpty(leavePlanType.LeavePlanCode))
+                throw HiringBellException.ThrowBadRequest("Leave plan type code is null or empty");
+
+            if (!leavePlanType.IsPaidLeave)
+            {
+                if (leavePlanType.IsSickLeave)
+                    throw HiringBellException.ThrowBadRequest("Sick leave must be disable");
+
+                if (leavePlanType.IsStatutoryLeave)
+                    throw HiringBellException.ThrowBadRequest("Statutory leave must be disable");
+            }
+
+            if (leavePlanType.IsRestrictOnGender)
+            {
+                if (leavePlanType.IsMale == null)
+                    throw HiringBellException.ThrowBadRequest("Please select gender first");
+            }
+
+            if (leavePlanType.IsRestrictOnMaritalStatus)
+            {
+                if (leavePlanType.IsMarried == null)
+                    throw HiringBellException.ThrowBadRequest("Please select restrict to employees");
+            }
         }
 
         public string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail)
