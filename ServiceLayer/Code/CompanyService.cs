@@ -55,7 +55,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert company group.");
 
             var companies = this.GetAllCompany();
-            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companies));
+            // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companies));
             return companies;
         }
 
@@ -79,7 +79,7 @@ namespace ServiceLayer.Code
 
                 throw new HiringBellException("Fail to insert company group.");
             companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
-            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
+            // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
             return companyGrp;
         }
 
@@ -185,7 +185,7 @@ namespace ServiceLayer.Code
                 await UpdateOrganizationLogo(companyInfo, fileCollection);
             }
             List<OrganizationDetail> organizationDetails = this.GetAllCompany();
-            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
+            // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
             return company;
         }
 

@@ -476,9 +476,13 @@ namespace ServiceLayer.Code
                 RegimeDescId = empCal.employeeDeclaration.EmployeeCurrentRegime,
                 empCal.EmployeeId
             });
+
+            if (taxRegimeSlabs == null || taxRegimeSlabs.Count == 0)
+                throw new Exception("Tax regime slabs are not found. Please configure tax regime for the current employee.");
+
             var surchargeSlabs = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
             if (surchargeSlabs == null || surchargeSlabs.Count == 0)
-                throw new Exception("Surcharge slabs are not found. Please add surcharge slsb first");
+                throw new Exception("Surcharge slabs are not found. Please add surcharge slab first");
 
             _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, surchargeSlabs);
 
