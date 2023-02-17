@@ -276,22 +276,6 @@ namespace ServiceLayer.Code
             if (employee.ClientUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employee.ClientUid), FieldValue = employee.ClientUid.ToString() };
 
-            if (IsUpdating == true)
-            {
-                if (employee.EmployeeMappedClientsUid <= 0)
-                    throw new HiringBellException { UserMessage = "EmployeeMappedClientId is invalid.", FieldName = nameof(employee.EmployeeMappedClientsUid), FieldValue = employee.EmployeeMappedClientsUid.ToString() };
-
-                EmployeeMappedClient employeeMappedClient = _db.Get<EmployeeMappedClient>("sp_employees_getMappedClient", new
-                {
-                    EmployeeMappedClientsUid = employee.EmployeeMappedClientsUid
-                });
-
-                if (employeeMappedClient == null || employee.ClientUid != employeeMappedClient.ClientUid)
-                {
-                    throw HiringBellException.ThrowBadRequest("Trying to update invalid data. Please contact to admin.");
-                }
-            }
-
             var records = _db.GetList<EmployeeMappedClient>("sp_employees_mappedClient_get_by_employee_id", new
             {
                 EmployeeId = employee.EmployeeUid
@@ -323,7 +307,9 @@ namespace ServiceLayer.Code
             if (!ApplicationConstants.ContainSingleRow(resultset))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Please contact to admin.");
 
-            _timesheetService.RunWeeklyTimesheetCreation(employee.AssigneDate);
+            var weekFirstDay = _timezoneConverter.FirstDayOfWeekUTC(DateTime.UtcNow);
+            _timesheetService.RunWeeklyTimesheetCreation(weekFirstDay.AddDays(1));
+
             return resultset;
         }
 

@@ -41,10 +41,18 @@ namespace ServiceLayer.Code
         {
             try
             {
-                var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
+                var timesheets = _db.GetList<TimesheetDetail>("sp_employee_timesheet_get_bydate", new
                 {
-                    TimesheetStartDate = TimesheetStartDate
-                }, true);
+                    TimesheetEndDate = TimesheetStartDate
+                });
+
+                if (timesheets.Count == 0)
+                {
+                    var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
+                    {
+                        TimesheetStartDate = TimesheetStartDate
+                    }, true);
+                }
             }
             catch (Exception ex)
             {
@@ -129,7 +137,8 @@ namespace ServiceLayer.Code
                         ActualBurnedMinutes = isweekened ? 0 : shiftDetail.Duration,
                         IsHoliday = false,
                         IsWeekEnd = isweekened,
-                        ExpectedBurnedMinutes = isweekened ? 0 : shiftDetail.Duration
+                        ExpectedBurnedMinutes = isweekened ? 0 : shiftDetail.Duration,
+                        IsOpen = true
                     });
                 }
                 else
