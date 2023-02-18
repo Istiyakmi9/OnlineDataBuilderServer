@@ -11,7 +11,7 @@ namespace ModalLayer.Modal.Leaves
         public DateTime timeZoneFromDate { set; get; }
         public DateTime timeZoneToDate { set; get; }
         public DateTime utcPresentDate { set; get; }
-        public DateTime timeZonepresentDate { set; get; }
+        public DateTime timeZonePresentDate { set; get; }
         public DateTime probationEndDate { set; get; }
         public DateTime noticePeriodEndDate { set; get; }
         public Employee employee { set; get; }
@@ -29,6 +29,7 @@ namespace ModalLayer.Modal.Leaves
         public long AssigneId { get; set; }
         public bool IsEmailNotificationPasued { get; set; }
         public bool IsLeaveAutoApproval { get; set; }
+        public bool DocumentProffAttached { get; set; }
         public decimal numberOfLeaveApplyring { set; get; }
         public CompleteLeaveDetail lastApprovedLeaveDetail { set; get; }
     }

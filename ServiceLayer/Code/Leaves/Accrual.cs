@@ -101,7 +101,7 @@ namespace ServiceLayer.Code.Leaves
         {
             _leaveCalculationModal = leaveCalculationModal;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
-            now = leaveCalculationModal.timeZonepresentDate;
+            now = leaveCalculationModal.timeZonePresentDate;
 
             if (!await CanApplyEntireLeave(leavePlanType))
             {
