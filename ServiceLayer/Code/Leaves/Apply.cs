@@ -1,7 +1,6 @@
 ﻿using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
-using System;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.Leaves
@@ -30,7 +29,9 @@ namespace ServiceLayer.Code.Leaves
 
             LeaveEligibilityCheck(leaveCalculationModal);
 
-            // await RequiredDocumentForExtending(leaveCalculationModal);
+            DoesLeaveRequiredComments(leaveCalculationModal);
+
+            RequiredDocumentForExtending(leaveCalculationModal);
 
             await Task.CompletedTask;
         }
@@ -57,18 +58,18 @@ namespace ServiceLayer.Code.Leaves
         private void LeaveEligibilityCheck(LeaveCalculationModal leaveCalculationModal)
         {
             // if future date then > 0 else < 0
-            var calculationDate = leaveCalculationModal.timeZonepresentDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate);
+            var calculationDate = leaveCalculationModal.timeZonePresentDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate);
 
             // step - 4  future date
-            if (leaveCalculationModal.fromDate.Date.Subtract(calculationDate.Date).TotalDays < 0)
+            if (leaveCalculationModal.timeZoneFromDate.Date.Subtract(calculationDate.Date).TotalDays < 0)
             {
-                throw new HiringBellException($"Only applycable atleast, before " +
+                throw HiringBellException.ThrowBadRequest($"Only applycable atleast, before " +
                     $"{_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} calendar days.");
             }
 
 
             // step - 3 past date
-            calculationDate = leaveCalculationModal.timeZonepresentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
+            calculationDate = leaveCalculationModal.timeZonePresentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
 
             if (calculationDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
             {
@@ -77,28 +78,28 @@ namespace ServiceLayer.Code.Leaves
             }
         }
 
-
         // step - 5
         public void DoesLeaveRequiredComments(LeaveCalculationModal leaveCalculationModal)
         {
-            if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments && string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
+            if (_leavePlanConfiguration.leaveApplyDetail.CurrentLeaveRequiredComments &&
+                string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.Reason))
             {
                 throw HiringBellException.ThrowBadRequest("Comment is required for this leave type");
             }
         }
 
         // step - 6
-        public async Task<bool> RequiredDocumentForExtending(LeaveCalculationModal leaveCalculationModal)
+        public void RequiredDocumentForExtending(LeaveCalculationModal leaveCalculationModal)
         {
-            bool flag = false;
             if (_leavePlanConfiguration.leaveApplyDetail.ProofRequiredIfDaysExceeds)
             {
                 var leaveDay = leaveCalculationModal.fromDate.Date.Subtract(leaveCalculationModal.toDate.Date).TotalDays;
-                if (leaveDay > _leavePlanConfiguration.leaveApplyDetail.NoOfDaysExceeded)
-                    flag = true;
+                if (leaveDay > _leavePlanConfiguration.leaveApplyDetail.NoOfDaysExceeded && !leaveCalculationModal.DocumentProffAttached)
+                {
+                    throw HiringBellException.ThrowBadRequest($"Your leave is exceeding by " +
+                        $"{_leavePlanConfiguration.leaveApplyDetail.NoOfDaysExceeded - leaveDay}, to apply this, required document proof.");
+                }
             }
-
-            return await Task.FromResult(flag);
         }
     }
 }

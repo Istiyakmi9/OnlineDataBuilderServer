@@ -13,24 +13,25 @@ namespace ServiceLayer.Code.Leaves
         private LeavePlanConfiguration _leavePlanConfiguration;
         private LeavePlanType _leavePlanType;
 
-        public async Task CheckRestrictionForLeave(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
+        public void CheckRestrictionForLeave(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
             _leavePlanType = leavePlanType;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
 
             // step - 1
             // check employee type and apply restriction 
-            await NewJoineeIsEligibleForThisLeave(leaveCalculationModal);
+            if (leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod)
+                NewJoineeIsEligibleForThisLeave(leaveCalculationModal);
 
             // step 2
-            await CheckAvailAllBalanceLeaveInAMonth(leaveCalculationModal);
+            CheckAvailAllBalanceLeaveInAMonth(leaveCalculationModal);
 
             // step 3
             // call if manage tries of overrite and apply leave for you.
             // await ManagerOverrideAndApplyLeave(leaveCalculationModal);
 
             // step - 4
-            await LeaveGapRestriction(leaveCalculationModal);
+            LeaveGapRestriction(leaveCalculationModal);
         }
 
         public async Task<bool> ManagerOverrideAndApplyLeave(LeaveCalculationModal leaveCalculationModal)
@@ -95,7 +96,7 @@ namespace ServiceLayer.Code.Leaves
                 throw HiringBellException.ThrowBadRequest($"Calendar year leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear} days.");
 
             // check total leave applied and restrict for current month
-            int count = completeLeaveDetail.Count(x => x.LeaveFromDay.Date.Month == leaveCalculationModal.timeZonepresentDate.Date.Month);
+            int count = completeLeaveDetail.Count(x => x.LeaveFromDay.Date.Month == leaveCalculationModal.timeZonePresentDate.Date.Month);
             if (count > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth)
                 throw HiringBellException.ThrowBadRequest($"Calendar month leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth} days.");
 
@@ -124,7 +125,7 @@ namespace ServiceLayer.Code.Leaves
                     leaveCalculationModal.companySetting.ProbationPeriodInDays +
                     Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation));
 
-                if (dateFromApplyLeave.Date.Subtract(leaveCalculationModal.timeZonepresentDate.Date).TotalDays > 0)
+                if (dateFromApplyLeave.Date.Subtract(leaveCalculationModal.timeZonePresentDate.Date).TotalDays > 0)
                     throw new HiringBellException("Days restriction after Probation period is not completed to apply this leave.");
             }
             else if (leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod)

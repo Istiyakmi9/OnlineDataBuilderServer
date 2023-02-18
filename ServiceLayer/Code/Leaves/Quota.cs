@@ -43,7 +43,7 @@ namespace ServiceLayer.Code.Leaves
             LeavePlanConfiguration leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
             if (leavePlanConfiguration.leaveDetail.IsNoLeaveAfterDate)
             {
-                if (leaveCalculationModal.probationEndDate.Subtract(leaveCalculationModal.timeZonepresentDate).TotalDays >= 0)
+                if (leaveCalculationModal.probationEndDate.Subtract(leaveCalculationModal.timeZonePresentDate).TotalDays >= 0)
                 {
                     _leavePlanType.AvailableLeave = 0;
                 }

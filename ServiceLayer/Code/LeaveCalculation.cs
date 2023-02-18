@@ -243,7 +243,7 @@ namespace ServiceLayer.Code
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
         {
             var leaveCalculationModal = new LeaveCalculationModal();
-            leaveCalculationModal.timeZonepresentDate = DateTime.UtcNow;
+            leaveCalculationModal.timeZonePresentDate = DateTime.UtcNow;
 
             var ds = _db.GetDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
@@ -307,21 +307,25 @@ namespace ServiceLayer.Code
 
         public async Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal)
         {
+
             //LeavePlanType leavePlanType = default;
             var leaveCalculationModal = await LoadPrepareRequiredData(leaveRequestModal);
 
+            // check is applying for conflicting day or already applied on the same day
             await SameDayRequestValidationCheck(leaveCalculationModal);
 
+            // call apply leave
+            await _apply.CheckLeaveApplyRules(leaveCalculationModal, _leavePlanType);
+
+            // check and remove holiday and weekoffs
             await _holidaysAndWeekoffs.CheckHolidayWeekOffRules(leaveCalculationModal);
 
             // call leave quote
             // await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
 
-            // call apply leave
-            await _apply.CheckLeaveApplyRules(leaveCalculationModal, _leavePlanType);
 
             // call leave restriction
-            await _restriction.CheckRestrictionForLeave(leaveCalculationModal, _leavePlanType);
+            _restriction.CheckRestrictionForLeave(leaveCalculationModal, _leavePlanType);
 
             // call leave approval
             await _approval.CheckLeaveApproval(leaveCalculationModal);
@@ -365,7 +369,7 @@ namespace ServiceLayer.Code
             await _apply.CheckLeaveApplyRules(leaveCalculationModal, leavePlanType);
 
             // call leave restriction
-            await _restriction.CheckRestrictionForLeave(leaveCalculationModal, leavePlanType);
+            _restriction.CheckRestrictionForLeave(leaveCalculationModal, leavePlanType);
 
             // call holiday and weekoff
             // call leave approval
@@ -548,7 +552,7 @@ namespace ServiceLayer.Code
             leaveCalculationModal.toDate = ToDate;
             leaveCalculationModal.timeZoneFromDate = _timezoneConverter.ToTimeZoneDateTime(FromDate, _currentSession.TimeZone);
             leaveCalculationModal.timeZoneToDate = _timezoneConverter.ToTimeZoneDateTime(ToDate, _currentSession.TimeZone);
-            leaveCalculationModal.timeZonepresentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            leaveCalculationModal.timeZonePresentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             leaveCalculationModal.utcPresentDate = DateTime.UtcNow;
             leaveCalculationModal.numberOfLeaveApplyring = Convert.ToDecimal(ToDate.Date.Subtract(FromDate.Date).TotalDays + 1);
 
