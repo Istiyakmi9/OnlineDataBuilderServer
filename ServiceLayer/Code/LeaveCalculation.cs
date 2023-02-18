@@ -582,7 +582,7 @@ namespace ServiceLayer.Code
                         .FindAll(x => x.LeaveTypeId == leavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected)
                         .Sum(x => x.NumOfDays);
 
-                    leaveCalculationModal.lastApprovedLeaveDetail = completeLeaveDetails
+                    leaveCalculationModal.lastAppliedLeave = completeLeaveDetails
                         .Where(x => x.LeaveStatus != (int)ItemStatus.Rejected)
                         .OrderByDescending(x => x.LeaveToDay).FirstOrDefault();
                 }
