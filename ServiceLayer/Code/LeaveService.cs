@@ -428,7 +428,8 @@ namespace ServiceLayer.Code
                     LeaveType = leaveRequestModal.LeaveTypeId,
                     LeaveRequestNotificationId = 0
                 };
-                _leaveRequestService.ApprovalLeaveService(leaveRequestDetail);
+
+                await _leaveRequestService.ApprovalLeaveService(leaveRequestDetail);
             }
 
             return new

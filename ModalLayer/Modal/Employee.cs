@@ -48,6 +48,7 @@ namespace ModalLayer.Modal
         public int WorkShiftId { get; set; }
 
         public DateTime AssigneDate { set; get; }
+        public string LeaveTypeBriefJson { set; get; }
     }
 
     public class EmployeeEmailMobileCheck
