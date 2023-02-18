@@ -57,7 +57,7 @@ namespace ServiceLayer.Code.Leaves
         private void LeaveEligibilityCheck(LeaveCalculationModal leaveCalculationModal)
         {
             // if future date then > 0 else < 0
-            var calculationDate = leaveCalculationModal.presentDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate);
+            var calculationDate = leaveCalculationModal.timeZonepresentDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate);
 
             // step - 4  future date
             if (leaveCalculationModal.fromDate.Date.Subtract(calculationDate.Date).TotalDays < 0)
@@ -68,7 +68,7 @@ namespace ServiceLayer.Code.Leaves
 
 
             // step - 3 past date
-            calculationDate = leaveCalculationModal.presentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
+            calculationDate = leaveCalculationModal.timeZonepresentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
 
             if (calculationDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
             {

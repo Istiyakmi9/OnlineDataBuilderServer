@@ -243,7 +243,7 @@ namespace ServiceLayer.Code
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
         {
             var leaveCalculationModal = new LeaveCalculationModal();
-            leaveCalculationModal.presentDate = DateTime.UtcNow;
+            leaveCalculationModal.timeZonepresentDate = DateTime.UtcNow;
 
             var ds = _db.GetDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
@@ -292,6 +292,7 @@ namespace ServiceLayer.Code
                 leaveRequestModal.LeaveFromDay,
                 leaveRequestModal.LeaveToDay);
 
+            leaveCalculationModal.LeaveTypeId = leaveRequestModal.LeaveTypeId;
             _leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
             if (_leavePlanType == null)
@@ -491,13 +492,21 @@ namespace ServiceLayer.Code
                 Year = now.Year
             }, false);
 
-            if (ds != null && ds.Tables.Count == 5)
+            if (ds != null && ds.Tables.Count == 6)
             {
                 //if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
                     throw new HiringBellException("Fail to get employee related details. Please contact to admin.");
 
                 leaveCalculationModal.employee = Converter.ToType<Employee>(ds.Tables[0]);
+                if (string.IsNullOrEmpty(leaveCalculationModal.employee.LeaveTypeBriefJson))
+                    throw HiringBellException.ThrowBadRequest("Unable to get employee leave detail. Please contact to admin.");
+
+                leaveCalculationModal.leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.employee.LeaveTypeBriefJson);
+                if (leaveCalculationModal.leaveTypeBriefs.Count == 0)
+                    throw HiringBellException.ThrowBadRequest("Unable to get employee leave detail. Please contact to admin.");
+
+                leaveCalculationModal.shiftDetail = Converter.ToType<ShiftDetail>(ds.Tables[5]);
                 leaveCalculationModal.leavePlanTypes = Converter.ToList<LeavePlanType>(ds.Tables[1]);
                 leaveCalculationModal.leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(ds.Tables[2]);
 
@@ -535,18 +544,13 @@ namespace ServiceLayer.Code
         private async Task<LeaveCalculationModal> GetCalculationModal(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
             var leaveCalculationModal = new LeaveCalculationModal();
-            leaveCalculationModal.fromDate = _timezoneConverter.ToTimeZoneDateTime(
-                    FromDate.ToUniversalTime(),
-                    _currentSession.TimeZone);
-            leaveCalculationModal.toDate = _timezoneConverter.ToTimeZoneDateTime(
-                    ToDate.ToUniversalTime(),
-                    _currentSession.TimeZone);
-
-
-            leaveCalculationModal.utcFromDate = FromDate;
-            leaveCalculationModal.utcToDate = ToDate;
-            leaveCalculationModal.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            leaveCalculationModal.fromDate = FromDate;
+            leaveCalculationModal.toDate = ToDate;
+            leaveCalculationModal.timeZoneFromDate = _timezoneConverter.ToTimeZoneDateTime(FromDate, _currentSession.TimeZone);
+            leaveCalculationModal.timeZoneToDate = _timezoneConverter.ToTimeZoneDateTime(ToDate, _currentSession.TimeZone);
+            leaveCalculationModal.timeZonepresentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             leaveCalculationModal.utcPresentDate = DateTime.UtcNow;
+            leaveCalculationModal.numberOfLeaveApplyring = Convert.ToDecimal(ToDate.Date.Subtract(FromDate.Date).TotalDays + 1);
 
             // get employee detail and store it in class level variable
             LoadCalculationData(EmployeeId, leaveCalculationModal);

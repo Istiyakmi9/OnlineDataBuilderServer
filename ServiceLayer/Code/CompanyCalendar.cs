@@ -37,11 +37,28 @@ namespace ServiceLayer
         {
             bool flag = false;
 
-            var records = _calendars.FirstOrDefault(x => x.StartDate.Date >= date.Date && x.EndDate.Date <= date.Date);
+            var records = _calendars.FirstOrDefault(x => x.StartDate.Date.Subtract(date.Date).TotalDays <= 0
+                            && x.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
             if (records != null)
                 flag = true;
 
             return await Task.FromResult(flag);
+        }
+
+        public int CountHolidaysBeforDate(DateTime date)
+        {
+            var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays > 0)
+                            .Count(i => date.Date.Subtract(i.StartDate.Date).TotalDays >= 0);
+
+            return records;
+        }
+
+        public int CountHolidaysAfterDate(DateTime date)
+        {
+            var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays > 0)
+                            .Count(i => i.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
+
+            return records;
         }
 
         public async Task<bool> IsHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
@@ -55,10 +72,10 @@ namespace ServiceLayer
             return await Task.FromResult(flag);
         }
 
-        public async Task<List<Calendar>> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
+        public async Task<int> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
         {
-            var holidays = _calendars.Where(x => (fromDate.Date >= x.StartDate.Date && fromDate.Date <= x.EndDate.Date)
-                           || (toDate.Date <= x.EndDate.Date && toDate.Date >= x.StartDate.Date)).ToList<Calendar>();
+            var holidays = _calendars.Count(x => (fromDate.Date >= x.StartDate.Date && fromDate.Date <= x.EndDate.Date)
+                           || (toDate.Date <= x.EndDate.Date && toDate.Date >= x.StartDate.Date));
 
             return await Task.FromResult(holidays);
         }
