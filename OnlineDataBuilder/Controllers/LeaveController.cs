@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -13,9 +17,11 @@ namespace OnlineDataBuilder.Controllers
     public class LeaveController : BaseController
     {
         private readonly ILeaveService _leaveService;
-        public LeaveController(ILeaveService leaveService)
+        private readonly HttpContext _httpContext;
+        public LeaveController(ILeaveService leaveService, IHttpContextAccessor httpContext)
         {
             _leaveService = leaveService;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpPost("GetLeavePlans")]
@@ -89,10 +95,20 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("ApplyLeave")]
-        public async Task<ApiResponse> ApplyLeave(LeaveRequestModal leaveRequestModal)
+        public async Task<ApiResponse> ApplyLeave()
         {
-            var result = await _leaveService.ApplyLeaveService(leaveRequestModal);
-            return BuildResponse(result);
+            StringValues leave = default(string);
+            _httpContext.Request.Form.TryGetValue("leave", out leave);
+            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+            if (leave.Count > 0)
+            {
+                var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
+                List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
+                var result = await _leaveService.ApplyLeaveService(leaveRequestModal, fileDetail, files);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            return BuildResponse("No files found", HttpStatusCode.OK);
         }
 
         [HttpPost("GetAllLeavesByEmpId")]
