@@ -139,17 +139,18 @@ namespace ServiceLayer.Code.Leaves
             {
                 var dateAfterProbation = leaveCalculationModal.employee.CreatedOn.AddDays(
                     Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterJoining));
-                if (leaveCalculationModal.fromDate.Subtract(dateAfterProbation).TotalDays < 0)
+                if (leaveCalculationModal.fromDate.Date.Subtract(dateAfterProbation.Date).TotalDays < 0)
                     throw new HiringBellException("Days restriction after Joining period is not completed to apply this leave.");
+
+                if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation &&
+                    leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod)
+                {
+                    if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation)
+                        throw new HiringBellException($"In probation period you can take upto " +
+                            $"{leaveCalculationModal.numberOfLeaveApplyring} no. of days only.");
+                }
             }
 
-            if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation &&
-                leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod)
-            {
-                if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation)
-                    throw new HiringBellException($"In probation period you can take upto " +
-                        $"{leaveCalculationModal.numberOfLeaveApplyring} no. of days only.");
-            }
         }
     }
 }

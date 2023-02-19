@@ -96,7 +96,7 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost("ApplyLeave")]
         public async Task<ApiResponse> ApplyLeave()
-        {
+         {
             StringValues leave = default(string);
             _httpContext.Request.Form.TryGetValue("leave", out leave);
             _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);

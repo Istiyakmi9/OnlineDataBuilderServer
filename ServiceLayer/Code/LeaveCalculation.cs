@@ -293,6 +293,10 @@ namespace ServiceLayer.Code
                 leaveRequestModal.LeaveToDay);
 
             leaveCalculationModal.LeaveTypeId = leaveRequestModal.LeaveTypeId;
+            leaveCalculationModal.leaveRequestDetail.Reason = leaveRequestModal.Reason;
+            if (leaveRequestModal.Session == "halfday")
+                leaveCalculationModal.isApplyingForHalfDay = true;
+
             _leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
             if (_leavePlanType == null)
