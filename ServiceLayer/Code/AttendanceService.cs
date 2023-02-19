@@ -163,7 +163,7 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
-
+            attendanceModal.attendance.AttendanceId = Convert.ToInt64(result.statusMessage);
             return attendenceDetails;
         }
 

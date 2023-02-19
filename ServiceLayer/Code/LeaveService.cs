@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using Microsoft.AspNetCore.Http;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -406,7 +407,7 @@ namespace ServiceLayer.Code
 
         }
 
-        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal)
+        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection FileCollection, List<Files> fileDetail)
         {
             this.ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal);
