@@ -47,7 +47,8 @@ namespace ServiceLayer
 
         public int CountHolidaysBeforDate(DateTime date)
         {
-            var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays > 0)
+            date = date.AddDays(1);
+            var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays >= 0)
                             .Count(i => date.Date.Subtract(i.StartDate.Date).TotalDays >= 0);
 
             return records;
@@ -55,6 +56,7 @@ namespace ServiceLayer
 
         public int CountHolidaysAfterDate(DateTime date)
         {
+            date = date.AddDays(-1);
             var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays > 0)
                             .Count(i => i.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
 

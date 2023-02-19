@@ -59,23 +59,27 @@ namespace ServiceLayer.Code.Leaves
         {
             // if future date then > 0 else < 0
             var calculationDate = leaveCalculationModal.timeZonePresentDate.AddDays(_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate);
-
-            // step - 4  future date
-            if (leaveCalculationModal.timeZoneFromDate.Date.Subtract(calculationDate.Date).TotalDays < 0)
+            if (leaveCalculationModal.timeZoneFromDate.Date.Subtract(leaveCalculationModal.timeZonePresentDate.Date).TotalDays >= 0)
             {
-                throw HiringBellException.ThrowBadRequest($"Only applycable atleast, before " +
-                    $"{_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} calendar days.");
+                // step - 4  future date
+                if (leaveCalculationModal.timeZoneFromDate.Date.Subtract(calculationDate.Date).TotalDays < 0)
+                {
+                    throw HiringBellException.ThrowBadRequest($"Only applycable atleast, before " +
+                        $"{_leavePlanConfiguration.leaveApplyDetail.ApplyPriorBeforeLeaveDate} calendar days.");
+                }
+            }
+            else
+            {
+                // step - 3 past date
+                calculationDate = leaveCalculationModal.timeZonePresentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
+
+                if (calculationDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
+                {
+                    throw HiringBellException.ThrowBadRequest($"Can't apply back date leave beyond then " +
+                        $"{_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} calendar days.");
+                }
             }
 
-
-            // step - 3 past date
-            calculationDate = leaveCalculationModal.timeZonePresentDate.AddDays(-_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays);
-
-            if (calculationDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
-            {
-                throw HiringBellException.ThrowBadRequest($"Can't apply back date leave beyond then " +
-                    $"{_leavePlanConfiguration.leaveApplyDetail.BackDateLeaveApplyNotBeyondDays} calendar days.");
-            }
         }
 
         // step - 5
@@ -93,7 +97,7 @@ namespace ServiceLayer.Code.Leaves
         {
             if (_leavePlanConfiguration.leaveApplyDetail.ProofRequiredIfDaysExceeds)
             {
-                var leaveDay = leaveCalculationModal.fromDate.Date.Subtract(leaveCalculationModal.toDate.Date).TotalDays;
+                var leaveDay = leaveCalculationModal.numberOfLeaveApplyring;
                 if (leaveDay > _leavePlanConfiguration.leaveApplyDetail.NoOfDaysExceeded && !leaveCalculationModal.DocumentProffAttached)
                 {
                     throw HiringBellException.ThrowBadRequest($"Your leave is exceeding by " +

@@ -54,8 +54,8 @@ namespace ServiceLayer.Code.Leaves
             {
                 if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leaveHolidaysAndWeekoff.ConsiderLeaveIfIncludeDays)
                 {
-                    DateTime fromDate = leaveCalculationModal.timeZoneFromDate;
-                    DateTime toDate = leaveCalculationModal.timeZoneToDate;
+                    DateTime fromDate = leaveCalculationModal.fromDate;
+                    DateTime toDate = leaveCalculationModal.toDate;
                     // Yes
                     var totalDays = toDate.Date.Subtract(fromDate.Date).TotalDays + 1;
                     if (totalDays >= (double)_leavePlanConfiguration.leaveHolidaysAndWeekoff.ConsiderLeaveIfNumOfDays)
@@ -63,24 +63,24 @@ namespace ServiceLayer.Code.Leaves
                         // for below condition in case of true consider all days as leave
                         if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfLeaveLieBetweenTwoHolidays)
                         {
-                            holidays = await _companyCalendar.GetHolidayBetweenTwoDates(fromDate, toDate.AddDays(1));
+                            holidays = await _companyCalendar.GetHolidayBetweenTwoDates(fromDate, toDate);
                         }
 
                         if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforLeave)
                         {
-                            holidays = _companyCalendar.CountHolidaysBeforDate(fromDate.AddDays(-1));
+                            holidays = _companyCalendar.CountHolidaysBeforDate(toDate);
                         }
 
                         else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightAfterLeave)
                         {
-                            holidays = _companyCalendar.CountHolidaysAfterDate(fromDate.AddDays(1));
+                            holidays = _companyCalendar.CountHolidaysAfterDate(fromDate);
                         }
 
                         else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforeAfterOrInBetween)
                         {
-                            holidays = await _companyCalendar.GetHolidayBetweenTwoDates(fromDate, toDate.AddDays(1));
-                            holidays += _companyCalendar.CountHolidaysBeforDate(fromDate.AddDays(-1));
-                            holidays += _companyCalendar.CountHolidaysAfterDate(fromDate.AddDays(1));
+                            holidays = await _companyCalendar.GetHolidayBetweenTwoDates(fromDate, toDate);
+                            holidays += _companyCalendar.CountHolidaysBeforDate(toDate);
+                            holidays += _companyCalendar.CountHolidaysAfterDate(fromDate);
                         }
                     }
                 }
@@ -155,14 +155,14 @@ namespace ServiceLayer.Code.Leaves
 
         private int WeekOffCountBeforeLeaveStartDate(LeaveCalculationModal leaveCalculationModal)
         {
-            DateTime startDate = leaveCalculationModal.fromDate;
-            return CalculateWeekOffs(leaveCalculationModal, startDate, -1);
+            DateTime startDate = leaveCalculationModal.toDate;
+            return CalculateWeekOffs(leaveCalculationModal, startDate, 1);
         }
 
         private int WeekOffCountAfterLeaveStartDate(LeaveCalculationModal leaveCalculationModal)
         {
-            DateTime startDate = leaveCalculationModal.toDate;
-            return CalculateWeekOffs(leaveCalculationModal, startDate, 1);
+            DateTime startDate = leaveCalculationModal.fromDate;
+            return CalculateWeekOffs(leaveCalculationModal, startDate, -1);
         }
 
         private int CalculateWeekOffs(LeaveCalculationModal leaveCalculationModal, DateTime startDate, int sign)
