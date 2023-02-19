@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Interface;
 using ModalLayer;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -17,8 +18,12 @@ namespace ServiceLayer
         private readonly IDb _db;
         private readonly CurrentSession _session;
         private readonly ITimezoneConverter _timezoneConverter;
-
-        public CompanyCalendar(IDb db, CurrentSession session, CurrentSession currentSession, ITimezoneConverter timezoneConverter)
+        private ShiftDetail _shiftDetail;
+        public CompanyCalendar(IDb db,
+            CurrentSession session,
+            CurrentSession currentSession,
+            ITimezoneConverter timezoneConverter,
+            IShiftService shiftService)
         {
             _db = db;
             _session = session;
@@ -45,22 +50,93 @@ namespace ServiceLayer
             return await Task.FromResult(flag);
         }
 
-        public int CountHolidaysBeforDate(DateTime date)
+        private bool CheckIsWeekend(DateTime date)
         {
-            date = date.AddDays(1);
-            var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays >= 0)
-                            .Count(i => date.Date.Subtract(i.StartDate.Date).TotalDays >= 0);
-
-            return records;
+            var flag = false;
+            var zoneDate = _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone);
+            switch (zoneDate.DayOfWeek)
+            {
+                case DayOfWeek.Sunday:
+                    if (!_shiftDetail.IsSun)
+                        flag = true;
+                    break;
+                case DayOfWeek.Monday:
+                    if (!_shiftDetail.IsMon)
+                        flag = true;
+                    break;
+                case DayOfWeek.Tuesday:
+                    if (!_shiftDetail.IsTue)
+                        flag = true;
+                    break;
+                case DayOfWeek.Wednesday:
+                    if (!_shiftDetail.IsWed)
+                        flag = true;
+                    break;
+                case DayOfWeek.Thursday:
+                    if (!_shiftDetail.IsThu)
+                        flag = true;
+                    break;
+                case DayOfWeek.Friday:
+                    if (!_shiftDetail.IsFri)
+                        flag = true;
+                    break;
+                case DayOfWeek.Saturday:
+                    if (!_shiftDetail.IsSat)
+                        flag = true;
+                    break;
+            }
+            return flag;
         }
 
-        public int CountHolidaysAfterDate(DateTime date)
+        public int CountHolidaysBeforDate(DateTime date, ShiftDetail shiftDetail)
         {
+            _shiftDetail = shiftDetail;
+            int totalDays = 0;
             date = date.AddDays(-1);
-            var records = _calendars.Where(x => x.EndDate.Date.Subtract(date.Date).TotalDays > 0)
-                            .Count(i => i.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
 
-            return records;
+            var holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
+            while (holiday != null)
+            {
+                while (date.Date.Subtract(holiday.StartDate.Date).TotalDays >= 0)
+                {
+                    // check date is weekoff or not
+                    // if yes do nothing
+                    // else increament
+                    if (!CheckIsWeekend(date))
+                        totalDays++;
+
+                    date = date.AddDays(-1);
+                }
+
+                holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
+            }
+            return totalDays;
+        }
+
+        public int CountHolidaysAfterDate(DateTime date, ShiftDetail shiftDetail)
+        {
+            _shiftDetail = shiftDetail;
+            int totalDays = 0;
+            date = date.AddDays(1);
+
+            var holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
+            while (holiday != null)
+            {
+                while (date.Date.Subtract(holiday.EndDate.Date).TotalDays <= 0)
+                {
+                    // check date is weekoff or not
+                    // if yes do nothing
+                    // else increament
+                    if (!CheckIsWeekend(date))
+                        totalDays++;
+
+                    date = date.AddDays(1);
+                }
+
+                holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
+            }
+
+            return totalDays;
         }
 
         public async Task<bool> IsHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)

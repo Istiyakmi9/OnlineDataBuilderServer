@@ -9,8 +9,8 @@ namespace ServiceLayer.Interface
     public interface ICompanyCalendar
     {
         Task<bool> IsHoliday(DateTime date);
-        int CountHolidaysBeforDate(DateTime date);
-        int CountHolidaysAfterDate(DateTime date);
+        int CountHolidaysBeforDate(DateTime date, ShiftDetail shiftDetail);
+        int CountHolidaysAfterDate(DateTime date, ShiftDetail shiftDetail);
         Task<bool> IsHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate);
         Task<int> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate);
         Task<bool> IsWeekOff(DateTime date);

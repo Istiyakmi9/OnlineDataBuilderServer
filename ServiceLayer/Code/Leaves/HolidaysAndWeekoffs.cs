@@ -68,19 +68,19 @@ namespace ServiceLayer.Code.Leaves
 
                         if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforLeave)
                         {
-                            holidays = _companyCalendar.CountHolidaysBeforDate(toDate);
+                            holidays = _companyCalendar.CountHolidaysAfterDate(toDate, leaveCalculationModal.shiftDetail);
                         }
 
                         else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightAfterLeave)
                         {
-                            holidays = _companyCalendar.CountHolidaysAfterDate(fromDate);
+                            holidays = _companyCalendar.CountHolidaysBeforDate(fromDate, leaveCalculationModal.shiftDetail);
                         }
 
                         else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforeAfterOrInBetween)
                         {
                             holidays = await _companyCalendar.GetHolidayBetweenTwoDates(fromDate, toDate);
-                            holidays += _companyCalendar.CountHolidaysBeforDate(toDate);
-                            holidays += _companyCalendar.CountHolidaysAfterDate(fromDate);
+                            holidays += _companyCalendar.CountHolidaysBeforDate(fromDate, leaveCalculationModal.shiftDetail);
+                            holidays += _companyCalendar.CountHolidaysAfterDate(toDate, leaveCalculationModal.shiftDetail);
                         }
                     }
                 }
@@ -121,11 +121,11 @@ namespace ServiceLayer.Code.Leaves
 
                     if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforLeave)
                     {
-                        totalWeekends = WeekOffCountBeforeLeaveStartDate(leaveCalculationModal);
+                        totalWeekends = WeekOffCountAfterLeaveStartDate(leaveCalculationModal);
                     }
                     else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfWeekOffIsRightAfterLeave)
                     {
-                        totalWeekends = WeekOffCountAfterLeaveStartDate(leaveCalculationModal);
+                        totalWeekends = WeekOffCountBeforeLeaveStartDate(leaveCalculationModal);
                     }
                     else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfWeekOffIsRightBeforeAfterOrInBetween)
                     {
@@ -155,14 +155,14 @@ namespace ServiceLayer.Code.Leaves
 
         private int WeekOffCountBeforeLeaveStartDate(LeaveCalculationModal leaveCalculationModal)
         {
-            DateTime startDate = leaveCalculationModal.toDate;
-            return CalculateWeekOffs(leaveCalculationModal, startDate, 1);
+            DateTime startDate = leaveCalculationModal.fromDate;
+            return CalculateWeekOffs(leaveCalculationModal, startDate, -1);
         }
 
         private int WeekOffCountAfterLeaveStartDate(LeaveCalculationModal leaveCalculationModal)
         {
-            DateTime startDate = leaveCalculationModal.fromDate;
-            return CalculateWeekOffs(leaveCalculationModal, startDate, -1);
+            DateTime startDate = leaveCalculationModal.toDate;
+            return CalculateWeekOffs(leaveCalculationModal, startDate, 1);
         }
 
         private int CalculateWeekOffs(LeaveCalculationModal leaveCalculationModal, DateTime startDate, int sign)
