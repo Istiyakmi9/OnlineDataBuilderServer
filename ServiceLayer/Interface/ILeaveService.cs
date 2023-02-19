@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace ServiceLayer.Interface
         List<LeavePlanType> GetLeaveTypeFilterService();
         List<LeavePlan> SetDefaultPlanService(int leavePlanId, LeavePlan leavePlan);
         string LeaveRquestManagerActionService(LeaveRequestNotification approvalRequest, ItemStatus status);
-        Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal);
+        Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection FileCollection, List<Files> fileDetail);
         Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal);
         Task RunAccrualByEmployeeService(long EmployeeId);
     }
