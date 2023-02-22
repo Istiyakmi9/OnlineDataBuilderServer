@@ -377,23 +377,6 @@ namespace ServiceLayer.Code
             return message;
         }
 
-        private void UpdateLeavePlanDetail(LeaveCalculationModal leaveCalculationModal)
-        {
-            var leaves = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(
-                leaveCalculationModal.leaveRequestDetail.LeaveDetail);
-            if (leaves != null)
-            {
-                Parallel.ForEach(leaveCalculationModal.leavePlanTypes, i =>
-                {
-                    var consumed = leaves
-                    .Where(x => x.LeaveTypeId == i.LeavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected)
-                    .Sum(x => x.NumOfDays);
-
-                    i.ConsumedLeave = consumed;
-                });
-            }
-        }
-
         private void ValidateRequestModal(LeaveRequestModal leaveRequestModal)
         {
             if (leaveRequestModal == null)
@@ -411,9 +394,6 @@ namespace ServiceLayer.Code
         {
             this.ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal);
-
-            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
-                this.UpdateLeavePlanDetail(leaveCalculationModal);
 
             if (!leaveCalculationModal.IsEmailNotificationPasued)
             {
@@ -439,7 +419,7 @@ namespace ServiceLayer.Code
 
             return new
             {
-                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
+                LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee
             };

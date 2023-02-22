@@ -33,5 +33,6 @@ namespace ModalLayer.Modal.Leaves
         public bool DocumentProffAttached { get; set; }
         public decimal numberOfLeaveApplyring { set; get; }
         public CompleteLeaveDetail lastAppliedLeave { set; get; }
+        public bool runTillMonthOfPresnetYear { set; get; }
     }
 }
