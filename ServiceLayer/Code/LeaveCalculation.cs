@@ -659,7 +659,7 @@ namespace ServiceLayer.Code
             leaveDetails.Add(newLeaveDeatil);
 
             leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(
-                leaveCalculationModal.leavePlanTypes.Select(x => new EmployeeLeaveQuota
+            availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - leaveCalculationModal.numberOfLeaveApplyring;
                 {
                     LeavePlanTypeId = x.LeavePlanTypeId,
                     AvailableLeave = x.AvailableLeave
