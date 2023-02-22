@@ -416,7 +416,11 @@ namespace ServiceLayer.Code
                 this.UpdateLeavePlanDetail(leaveCalculationModal);
 
             if (!leaveCalculationModal.IsEmailNotificationPasued)
-                await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason);
+            {
+                leaveCalculationModal.AssigneId = leaveRequestModal.AssigneId;
+                leaveCalculationModal.AssigneeEmail = leaveRequestModal.AssigneeEmail;
+                Task task = Task.Run(async () => await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason));
+            }
 
             if (leaveCalculationModal.IsLeaveAutoApproval)
             {
@@ -471,7 +475,8 @@ namespace ServiceLayer.Code
                 LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee,
-                CompanyHoliday = companyHoliday
+                CompanyHoliday = companyHoliday,
+                ShiftDetail = leaveCalculationModal.shiftDetail
             };
         }
     }

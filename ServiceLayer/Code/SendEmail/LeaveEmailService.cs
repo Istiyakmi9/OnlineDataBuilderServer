@@ -23,7 +23,7 @@ namespace ServiceLayer.Code.SendEmail
             {
                 DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
                 RequestType = ApplicationConstants.LeaveRequest,
-                ToAddress = new List<string> { leaveCalculationModal.employee.ManagerEmail },
+                ToAddress = new List<string> { leaveCalculationModal.AssigneeEmail },
                 ActionType = ItemStatus.Pending.ToString(),
                 FromDate = leaveCalculationModal.fromDate,
                 ToDate = leaveCalculationModal.toDate,
