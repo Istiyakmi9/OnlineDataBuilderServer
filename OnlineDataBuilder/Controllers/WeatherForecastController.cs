@@ -1,6 +1,4 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.DatabaseLayer.MsSql.Code;
-using BottomhalfCore.DatabaseLayer.MySql.Code;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -9,10 +7,8 @@ using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -28,22 +24,25 @@ namespace OnlineDataBuilder.Controllers
 
         private readonly IDb _db;
         private readonly IEMailManager _eMailManager;
-        //private readonly ILeaveCalculation _leaveCalculation;
+        private readonly ILeaveCalculation _leaveCalculation;
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly ITimesheetService _timesheetService;
+        private readonly CurrentSession _currentSession;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
-            ITimesheetService timesheetService
-            // ,ILeaveCalculation leaveCalculation
+            ITimesheetService timesheetService,
+            ILeaveCalculation leaveCalculation,
+            CurrentSession currentSession
             )
         {
             _logger = logger;
             _eMailManager = eMailManager;
             _db = db;
             _timesheetService = timesheetService;
-            // _leaveCalculation = leaveCalculation;
+            _leaveCalculation = leaveCalculation;
+            _currentSession = currentSession;
         }
 
         [HttpGet]
@@ -85,6 +84,9 @@ namespace OnlineDataBuilder.Controllers
 
             //var date = Convert.ToDateTime("2023-02-13");
             //_timesheetService.RunWeeklyTimesheetCreation(date);
+
+            //_currentSession.CurrentUserDetail.CompanyId = 1;
+            //_leaveCalculation.RunAccrualCycle();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

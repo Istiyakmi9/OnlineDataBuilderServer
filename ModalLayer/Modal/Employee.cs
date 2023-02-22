@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -49,6 +50,14 @@ namespace ModalLayer.Modal
 
         public DateTime AssigneDate { set; get; }
         public string LeaveTypeBriefJson { set; get; }
+    }
+
+    public class EmployeeAccrualData
+    {
+        public long EmployeeUid { set; get; }
+        public int LeaveRequestId { set; get; }
+        public int LeavePlanId { set; get; }
+        public List<LeaveTypeBrief> LeaveTypeBrief { set; get; }
     }
 
     public class EmployeeEmailMobileCheck

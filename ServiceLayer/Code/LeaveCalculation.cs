@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Wordprocessing;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -55,31 +56,61 @@ namespace ServiceLayer.Code
             _approval = approval;
         }
 
+        private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
+        {
+            List<LeaveTypeBrief> leaveTypeBriefs = new List<LeaveTypeBrief>();
+            Parallel.ForEach(leaveTypeBrief, x =>
+            {
+                var planType = leavePlanTypes.Find(i => i.LeavePlanTypeId == x.LeavePlanTypeId);
+                if (planType != null)
+                {
+                    var config = JsonConvert.DeserializeObject<LeavePlanConfiguration>(planType.PlanConfigurationDetail);
+                    if (config.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
+                    {
+                        if (config.leaveApplyDetail.CurrentLeaveRequiredComments)
+                            x.IsCommentsRequired = true;
+                        leaveTypeBriefs.Add(x);
+                    }
+                }
+            });
+
+            return await Task.FromResult(leaveTypeBriefs);
+        }
+
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
         {
             var result = _db.FetchDataSet("sp_leave_type_detail_get_by_employeeId", new { EmployeeId });
-            if (!ApplicationConstants.IsValidDataSet(result, 2))
+            if (!ApplicationConstants.IsValidDataSet(result, 3))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
 
-            EmployeeLeavePayrollAndOtherDetail employeeLeavePayrollAndOtherDetail = Converter.ToType<EmployeeLeavePayrollAndOtherDetail>(result.Tables[1]);
-            if (employeeLeavePayrollAndOtherDetail == null)
+            if (!ApplicationConstants.IsSingleRow(result.Tables[0]))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
 
-            List<LeaveTypeBrief> leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(
-                    employeeLeavePayrollAndOtherDetail.LeaveTypeBriefJson);
+            var leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(result.Tables[0]);
+            if (leaveRequestDetail == null || string.IsNullOrEmpty(leaveRequestDetail.LeaveQuotaDetail))
+                throw HiringBellException.ThrowBadRequest($"Leave quota detail not found for employee id: {EmployeeId}");
+
+            var leaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveRequestDetail.LeaveQuotaDetail);
+
+            var leavePlanTypes = Converter.ToList<LeavePlanType>(result.Tables[1]);
+            if (leavePlanTypes.Count == 0)
+                throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
+
+            // LeavePlanConfiguration leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
+
+            List<LeaveTypeBrief> leaveTypeBriefs = await PrepareLeaveType(leaveTypeBrief, leavePlanTypes);
+
+            var shiftDetail = Converter.ToType<ShiftDetail>(result.Tables[2]);
+            if (shiftDetail == null)
+                throw HiringBellException.ThrowBadRequest($"Shift detail not found for employee id: {EmployeeId}");
 
             LeaveCalculationModal leaveCalculationModal = new LeaveCalculationModal
             {
                 leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(result.Tables[0]),
-                leavePlanTypes = (from n in leaveTypeBriefs
-                                  select new LeavePlanType
-                                  {
-                                      PlanName = n.LeavePlanTypeName,
-                                      AvailableLeave = n.AvailableLeaves,
-                                      LeavePlanTypeId = n.LeavePlanTypeId
-                                  }).ToList()
-
+                shiftDetail = shiftDetail,
+                leaveTypeBriefs = leaveTypeBriefs
             };
+
             return await Task.FromResult(leaveCalculationModal);
         }
 
@@ -92,25 +123,25 @@ namespace ServiceLayer.Code
             if (runDay == DateTime.Now.Day)
             {
                 var offsetindex = 0;
-                List<EmployeeLeavePayrollAndOtherDetail> detail = new List<EmployeeLeavePayrollAndOtherDetail>();
                 while (true)
                 {
                     try
                     {
-                        var employees = _db.GetList<Employee>("sp_leave_accrual_cycle_data_by_employee", new
+                        var employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
                         {
                             OffsetIndex = offsetindex,
-                            PageSize = 50
+                            PageSize = 500
                         }, false);
 
-                        if (employees == null || employees.Count == 0)
+                        if (employeeAccrualData == null || employeeAccrualData.Count == 0)
                             break;
 
-                        foreach (Employee emp in employees)
+                        foreach (EmployeeAccrualData emp in employeeAccrualData)
                         {
                             leavePlan = leaveCalculationModal.leavePlans
                                 .FirstOrDefault(x => x.LeavePlanId == emp.LeavePlanId || x.IsDefaultPlan == true);
 
+                            emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
                             if (leavePlan != null)
                             {
                                 leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
@@ -121,17 +152,16 @@ namespace ServiceLayer.Code
                                     var type = leaveCalculationModal.leavePlanTypes
                                         .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
                                     if (type != null)
-                                        await RunAccrualCycle(leaveCalculationModal, type);
+                                        await RunAccrualCycleAsync(leaveCalculationModal, type);
 
-                                    await BuildLeavePayrollDetail(type, emp, detail, runDay);
-
+                                    emp.LeaveTypeBrief.Add(BuildLeaveTypeBrief(type));
                                     i++;
                                 }
                             }
                         }
 
-                        await UpdateEmployeesRecord(detail);
-                        offsetindex += 50;
+                        await UpdateEmployeesRecord(employeeAccrualData);
+                        offsetindex += 500;
                     }
                     catch (Exception)
                     {
@@ -149,16 +179,16 @@ namespace ServiceLayer.Code
             List<LeavePlanType> leavePlanTypes = default;
             var leaveCalculationModal = await LoadLeaveMasterData();
             int runDay = leaveCalculationModal.companySetting.PayrollCycleMonthlyRunDay;
-            List<EmployeeLeavePayrollAndOtherDetail> detail = new List<EmployeeLeavePayrollAndOtherDetail>();
             try
             {
-                Employee employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = true });
+                EmployeeAccrualData employeeAccrual = _db.Get<EmployeeAccrualData>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = true });
 
-                if (employee == null)
+                if (employeeAccrual == null)
                     throw HiringBellException.ThrowBadRequest("Employee detail not found. Please contact to admin.");
 
+                employeeAccrual.LeaveTypeBrief = new List<LeaveTypeBrief>();
                 leavePlan = leaveCalculationModal.leavePlans
-                    .FirstOrDefault(x => x.LeavePlanId == employee.LeavePlanId || x.IsDefaultPlan == true);
+                    .FirstOrDefault(x => x.LeavePlanId == employeeAccrual.LeavePlanId || x.IsDefaultPlan == true);
 
                 if (leavePlan != null)
                 {
@@ -170,15 +200,14 @@ namespace ServiceLayer.Code
                         var type = leaveCalculationModal.leavePlanTypes
                             .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
                         if (type != null)
-                            await RunAccrualCycle(leaveCalculationModal, type);
+                            await RunAccrualCycleAsync(leaveCalculationModal, type);
 
-                        await BuildLeavePayrollDetail(type, employee, detail, runDay);
-
+                        employeeAccrual.LeaveTypeBrief.Add(BuildLeaveTypeBrief(type));
                         i++;
                     }
                 }
 
-                await UpdateEmployeesRecord(detail);
+                await UpdateEmployeesRecord(new List<EmployeeAccrualData> { employeeAccrual });
             }
             catch (Exception)
             {
@@ -188,55 +217,31 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task BuildLeavePayrollDetail(LeavePlanType type, Employee emp, List<EmployeeLeavePayrollAndOtherDetail> detail, int runDay)
+        private LeaveTypeBrief BuildLeaveTypeBrief(LeavePlanType type)
         {
-            var leaveDetail = detail.FirstOrDefault(x => x.EmployeeId == emp.EmployeeUid);
-            if (leaveDetail == null)
+            var leaveBriefs = new LeaveTypeBrief
             {
-                detail.Add(new EmployeeLeavePayrollAndOtherDetail
-                {
-                    EmployeeId = emp.EmployeeUid,
-                    LeaveTypeBrief = new List<LeaveTypeBrief>{
-                                                new LeaveTypeBrief
-                                                {
-                                                    LeavePlanTypeId = type.LeavePlanTypeId,
-                                                    LeavePlanTypeName = type.PlanName,
-                                                    AvailableLeaves = type.AvailableLeave,
-                                                    TotalLeaveQuota = type.MaxLeaveLimit,
-                                                }
-                                            },
-                    AccrualRunDay = runDay,
-                    NextAccrualRunDate = DateTime.Now.AddMonths(1)
-                });
-            }
-            else
-            {
-                leaveDetail.LeaveTypeBrief.Add(new LeaveTypeBrief
-                {
-                    LeavePlanTypeId = type.LeavePlanTypeId,
-                    LeavePlanTypeName = type.PlanName,
-                    AvailableLeaves = type.AvailableLeave,
-                    TotalLeaveQuota = type.MaxLeaveLimit,
-                });
-            }
+                LeavePlanTypeId = type.LeavePlanTypeId,
+                LeavePlanTypeName = type.PlanName,
+                AvailableLeaves = type.AvailableLeave,
+                TotalLeaveQuota = type.MaxLeaveLimit,
+            };
 
-            await Task.CompletedTask;
+            return leaveBriefs;
         }
 
-        private async Task UpdateEmployeesRecord(List<EmployeeLeavePayrollAndOtherDetail> detail)
+        private async Task UpdateEmployeesRecord(List<EmployeeAccrualData> employeeAccrualData)
         {
-            var tableJsonData = (from r in detail
+            var tableJsonData = (from r in employeeAccrualData
                                  select new
                                  {
-                                     EmployeeId = r.EmployeeId,
-                                     LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief),
-                                     AccrualRunDay = r.AccrualRunDay,
-                                     NextAccrualRunDate = r.NextAccrualRunDate
+                                     EmployeeId = r.EmployeeUid,
+                                     LeaveRequestId = r.LeaveRequestId,
+                                     LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
 
-            // var result = await _db.BatchInsertUpdateAsync("sp_employee_leave_payroll_and_otherdetail_insupd", table, true);
-            var rowsAffected = await _db.BulkExecuteAsync("sp_employee_leave_payroll_and_otherdetail_insupd", tableJsonData, false);
-            if (rowsAffected != detail.Count)
+            var rowsAffected = await _db.BulkExecuteAsync("sp_employee_leave_request_update_accrual_detail", tableJsonData, false);
+            if (rowsAffected != employeeAccrualData.Count)
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
         }
 
@@ -336,7 +341,7 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
-        private async Task RunAccrualCycle(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
+        private async Task RunAccrualCycleAsync(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
             // get current leave plan configuration and check if its valid one.
             ValidateAndGetLeavePlanConfiguration(leavePlanType);
