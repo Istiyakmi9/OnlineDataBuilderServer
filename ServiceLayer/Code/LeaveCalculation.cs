@@ -59,7 +59,7 @@ namespace ServiceLayer.Code
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
         {
             List<LeaveTypeBrief> leaveTypeBriefs = new List<LeaveTypeBrief>();
-            leaveTypeBrief.ForEach( x =>
+            leaveTypeBrief.ForEach(x =>
             {
                 var planType = leavePlanTypes.Find(i => i.LeavePlanTypeId == x.LeavePlanTypeId);
                 if (planType != null)
@@ -116,11 +116,12 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
-        public async Task RunAccrualCycle()
+        public async Task RunAccrualCycle(bool runTillMonthOfPresnetYear = false)
         {
             LeavePlan leavePlan = default;
             List<LeavePlanType> leavePlanTypes = default;
-            var leaveCalculationModal = await LoadLeaveMasterData();
+            LeaveCalculationModal leaveCalculationModal = await LoadLeaveMasterData();
+            leaveCalculationModal.runTillMonthOfPresnetYear = runTillMonthOfPresnetYear;
             int runDay = leaveCalculationModal.companySetting.PayrollCycleMonthlyRunDay;
             if (runDay == DateTime.Now.Day)
             {
@@ -140,10 +141,14 @@ namespace ServiceLayer.Code
 
                         foreach (EmployeeAccrualData emp in employeeAccrualData)
                         {
+                            leaveCalculationModal.employee = new Employee { CreatedOn = emp.CreatedOn };
                             leavePlan = leaveCalculationModal.leavePlans
                                 .FirstOrDefault(x => x.LeavePlanId == emp.LeavePlanId || x.IsDefaultPlan == true);
 
-                            emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+                            emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
+                            if (emp.LeaveTypeBrief == null)
+                                emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+
                             if (leavePlan != null)
                             {
                                 leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
@@ -154,9 +159,14 @@ namespace ServiceLayer.Code
                                     var type = leaveCalculationModal.leavePlanTypes
                                         .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
                                     if (type != null)
-                                        await RunAccrualCycleAsync(leaveCalculationModal, type);
+                                    {
+                                        var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
+                                        if (runTillMonthOfPresnetYear)
+                                            replaceLeaveTypeBriefCompletely(availableLeaves, emp.LeaveTypeBrief, type);
+                                        else
+                                            updateLeaveTypeBrief(availableLeaves, emp.LeaveTypeBrief, type);
+                                    }
 
-                                    emp.LeaveTypeBrief.Add(BuildLeaveTypeBrief(type));
                                     i++;
                                 }
                             }
@@ -173,6 +183,28 @@ namespace ServiceLayer.Code
             }
 
             await Task.CompletedTask;
+        }
+
+        private void replaceLeaveTypeBriefCompletely(decimal availableLeaves, List<LeaveTypeBrief> brief, LeavePlanType planType)
+        {
+            brief.Add(new LeaveTypeBrief
+            {
+                LeavePlanTypeId = planType.LeavePlanTypeId,
+                AvailableLeaves = availableLeaves,
+                IsCommentsRequired = false,
+                IsHalfDay = false,
+                LeavePlanTypeName = planType.PlanName,
+                TotalLeaveQuota = planType.MaxLeaveLimit
+            });
+        }
+
+        public void updateLeaveTypeBrief(decimal availableLeaves, List<LeaveTypeBrief> brief, LeavePlanType planType)
+        {
+            var planBrief = brief.Find(x => x.LeavePlanTypeId == planType.LeavePlanTypeId);
+            if (planBrief == null)
+                throw HiringBellException.ThrowBadRequest($"Fail to run employee accrual.");
+
+            planBrief.AvailableLeaves += availableLeaves;
         }
 
         public async Task RunAccrualCycleByEmployee(long EmployeeId)
@@ -202,7 +234,9 @@ namespace ServiceLayer.Code
                         var type = leaveCalculationModal.leavePlanTypes
                             .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
                         if (type != null)
-                            await RunAccrualCycleAsync(leaveCalculationModal, type);
+                        {
+                            var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
+                        }
 
                         employeeAccrual.LeaveTypeBrief.Add(BuildLeaveTypeBrief(type));
                         i++;
@@ -343,21 +377,27 @@ namespace ServiceLayer.Code
             return leaveCalculationModal;
         }
 
-        private async Task RunAccrualCycleAsync(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
+        private async Task<decimal> RunAccrualCycleAsync(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
+            decimal availableLeaves = 0;
+
             // get current leave plan configuration and check if its valid one.
             ValidateAndGetLeavePlanConfiguration(leavePlanType);
             leaveCalculationModal.leavePlanConfiguration = _leavePlanConfiguration;
 
-            // await ComputeApplyingLeaveDays(leaveCalculationModal);
+            // check if your is in probation period
+            CheckForProbationPeriod(leaveCalculationModal);
 
-            // call leave quote
-            // await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
+            // check if your is in probation period
+            CheckForNoticePeriod(leaveCalculationModal);
 
             // call leave accrual
-            await _accrual.CalculateLeaveAccrual(leaveCalculationModal, leavePlanType);
+            if (leaveCalculationModal.runTillMonthOfPresnetYear)
+                availableLeaves = await _accrual.CalculateLeaveAccrualTillMonth(leaveCalculationModal, leavePlanType);
+            else
+                availableLeaves = await _accrual.CalculateLeaveAccrual(leaveCalculationModal, leavePlanType);
 
-            await Task.CompletedTask;
+            return await Task.FromResult(availableLeaves);
         }
 
         private async Task ProcessLeaveSections(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
@@ -617,7 +657,6 @@ namespace ServiceLayer.Code
 
 
                 var appliedDetail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal);
-                leavePlanType.AvailableLeave -= leaveCalculationModal.numberOfLeaveApplyring;
                 return leaveCalculationModal;
             }
             catch
@@ -659,9 +698,10 @@ namespace ServiceLayer.Code
             };
 
             leaveDetails.Add(newLeaveDeatil);
-            var leavequota = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
-            var availableLeave = leavequota.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
+            var leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
+            var availableLeave = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - leaveCalculationModal.numberOfLeaveApplyring;
+            leaveCalculationModal.leaveTypeBriefs = leaveTypeBriefs;
 
             leaveCalculationModal.leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
             result = _db.Execute<LeaveRequestDetail>("sp_leave_notification_and_request_InsUpdate", new
@@ -680,7 +720,7 @@ namespace ServiceLayer.Code
                 TotalLeaveApplied = 0,
                 TotalApprovedLeave = 0,
                 TotalLeaveQuota = totalAllocatedLeave,
-                LeaveQuotaDetail = JsonConvert.SerializeObject(leavequota),
+                LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs),
                 NumOfDays = leaveCalculationModal.numberOfLeaveApplyring,
                 LeaveRequestNotificationId = 0
             }, true);

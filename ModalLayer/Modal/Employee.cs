@@ -57,6 +57,8 @@ namespace ModalLayer.Modal
         public long EmployeeUid { set; get; }
         public int LeaveRequestId { set; get; }
         public int LeavePlanId { set; get; }
+        public DateTime CreatedOn { set; get; }
+        public string LeaveQuotaDetail { set; get; }
         public List<LeaveTypeBrief> LeaveTypeBrief { set; get; }
     }
 
