@@ -27,6 +27,7 @@ namespace ModalLayer.Modal.Leaves
         public int employeeType { set; get; }
         public bool isApplyingForHalfDay { set; get; }
         public long AssigneId { get; set; }
+        public string AssigneeEmail { get; set; }
         public bool IsEmailNotificationPasued { get; set; }
         public bool IsLeaveAutoApproval { get; set; }
         public bool DocumentProffAttached { get; set; }

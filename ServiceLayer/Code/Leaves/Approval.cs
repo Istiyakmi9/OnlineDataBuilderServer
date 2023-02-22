@@ -17,7 +17,7 @@ namespace ServiceLayer.Code.Leaves
         public async Task CheckLeaveApproval(LeaveCalculationModal leaveCalculationModal)
         {
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
-            await CheckLeaveRequiredForApproval(leaveCalculationModal);
+            //await CheckLeaveRequiredForApproval(leaveCalculationModal);
 
             if (_leavePlanConfiguration.leaveApproval.IsPauseForApprovalNotification)
                 leaveCalculationModal.IsEmailNotificationPasued = true;
@@ -27,22 +27,22 @@ namespace ServiceLayer.Code.Leaves
             await Task.CompletedTask;
         }
 
-        private async Task CheckLeaveRequiredForApproval(LeaveCalculationModal leaveCalculationModal)
-        {
-            if (_leavePlanConfiguration.leaveApproval.IsLeaveRequiredApproval)
-            {
-                var ApprovalRoleTypeId = _leavePlanConfiguration.leaveApproval.ApprovalChain[0].ApprovalRoleTypeId;
-                if (ApprovalRoleTypeId == ApplicationConstants.ReportingManager)
-                    leaveCalculationModal.AssigneId = _currentSession.CurrentUserDetail.ReportingManagerId;
-                else if (ApprovalRoleTypeId == ApplicationConstants.SeniorHRManager)
-                    leaveCalculationModal.AssigneId = 12;
-                else
-                {
-                    if (_leavePlanConfiguration.leaveApproval.IsRequiredAllLevelApproval)
-                        leaveCalculationModal.IsLeaveAutoApproval = true;
-                }
-            }
-            await Task.CompletedTask;
-        }
+        //private async Task CheckLeaveRequiredForApproval(LeaveCalculationModal leaveCalculationModal)
+        //{
+        //    if (_leavePlanConfiguration.leaveApproval.IsLeaveRequiredApproval)
+        //    {
+        //        var ApprovalRoleTypeId = _leavePlanConfiguration.leaveApproval.ApprovalChain[0].ApprovalRoleTypeId;
+        //        if (ApprovalRoleTypeId == ApplicationConstants.ReportingManager)
+        //            leaveCalculationModal.AssigneId = _currentSession.CurrentUserDetail.ReportingManagerId;
+        //        else if (ApprovalRoleTypeId == ApplicationConstants.SeniorHRManager)
+        //            leaveCalculationModal.AssigneId = 12;
+        //        else
+        //        {
+        //            if (_leavePlanConfiguration.leaveApproval.IsRequiredAllLevelApproval)
+        //                leaveCalculationModal.IsLeaveAutoApproval = true;
+        //        }
+        //    }
+        //    await Task.CompletedTask;
+        //}
     }
 }

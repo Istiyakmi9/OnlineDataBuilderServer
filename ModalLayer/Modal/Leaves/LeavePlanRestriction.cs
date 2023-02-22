@@ -4,7 +4,7 @@
     {
         public decimal LeavePlanRestrictionId { set; get; }
         public decimal LeavePlanId { set; get; }
-        public bool CanApplyAfterProbation { set; get; }
+        public bool CanApplyAfterProbation { set; get; } = true;
         public bool CanApplyAfterJoining { set; get; }
         public decimal DaysAfterProbation { set; get; }
         public decimal DaysAfterJoining { set; get; }
