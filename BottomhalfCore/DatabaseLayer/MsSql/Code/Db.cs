@@ -700,6 +700,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public int BatchInset(string ProcedureName, DataTable table)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }
