@@ -15,6 +15,7 @@ namespace ServiceLayer.Code.Leaves
         private LeavePlanConfiguration _leavePlanConfiguration = default;
         private LeaveCalculationModal _leaveCalculationModal;
         private DateTime now;
+        public DateTime workingDate { set; get; }
 
         public Accrual(ITimezoneConverter timezoneConverter,
             CurrentSession currentSession)
@@ -97,8 +98,9 @@ namespace ServiceLayer.Code.Leaves
         #endregion
 
 
-        public async Task CalculateLeaveAccrual(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
+        public async Task<decimal> CalculateLeaveAccrual(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
+            decimal availableLeaves = 0;
             _leaveCalculationModal = leaveCalculationModal;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
             now = leaveCalculationModal.timeZonePresentDate;
@@ -111,13 +113,59 @@ namespace ServiceLayer.Code.Leaves
                     // check leave expiry
                     if (!await DoesLeaveExpired())
                     {
+                        workingDate = now;
                         // start leave accrual calculation for present month
-                        leavePlanType.AvailableLeave = await ExecuteLeaveAccrualDetail();
+                        availableLeaves = await ExecuteLeaveAccrualDetail();
                     }
                 }
             }
 
-            await Task.CompletedTask;
+            return await Task.FromResult(availableLeaves);
+        }
+
+        public async Task<decimal> CalculateLeaveAccrualTillMonth(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
+        {
+            decimal availableLeaves = 0;
+            _leaveCalculationModal = leaveCalculationModal;
+            _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
+            now = leaveCalculationModal.timeZonePresentDate;
+
+            if (!await CanApplyEntireLeave(leavePlanType))
+            {
+                var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+                if (leaveLimit > 0)
+                {
+                    // check leave expiry
+                    if (!await DoesLeaveExpired())
+                    {
+                        var date = Convert.ToDateTime($"{now.Year}-01-01");
+                        var joiningDate = _leaveCalculationModal.employee.CreatedOn;
+                        while (date.Month <= now.Month)
+                        {
+                            // start leave accrual calculation for present month
+                            if (joiningDate.Year == now.Year)
+                            {
+                                if (joiningDate.Month != now.Month && date.Month != now.Month)
+                                    workingDate = Convert.ToDateTime($"{now.Year}-{date.Month}-{DateTime.DaysInMonth(date.Year, date.Month)}");
+                                else
+                                    workingDate = now;
+                            }
+                            else
+                            {
+                                if (date.Month != now.Month)
+                                    workingDate = Convert.ToDateTime($"{now.Year}-{date.Month}-{DateTime.DaysInMonth(date.Year, date.Month)}");
+                                else
+                                    workingDate = now;
+                            }
+
+                            availableLeaves += await ExecuteLeaveAccrualDetail();
+                            date = date.AddMonths(1);
+                        }
+                    }
+                }
+            }
+
+            return await Task.FromResult(availableLeaves);
         }
 
         // step - 1
@@ -141,16 +189,11 @@ namespace ServiceLayer.Code.Leaves
             switch (leaveDistributedSeq)
             {
                 default:
+                    leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
                     if (_leavePlanConfiguration.leaveAccrual.IsLeaveAccruedPatternAvail)
-                    {
-                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
                         availableLeaveLimit = await MonthlyAccrualCalculation(leaveFrequencyForDefinedPeriod);
-                    }
                     else
-                    {
-                        leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 12.0m;
-                        availableLeaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                    }
+                        availableLeaveLimit = leaveFrequencyForDefinedPeriod;
                     break;
                 case "2":
                     leaveFrequencyForDefinedPeriod = _leavePlanConfiguration.leaveDetail.LeaveLimit / 4.0m;
@@ -173,16 +216,16 @@ namespace ServiceLayer.Code.Leaves
             if (_leavePlanConfiguration.leaveAccrual.IsAccrualStartsAfterJoining)
             {
                 var daysAfterJoining = _leavePlanConfiguration.leaveAccrual.AccrualDaysAfterJoining;
-                accrualStartDate.AddDays((double)daysAfterJoining);
+                accrualStartDate = accrualStartDate.AddDays((double)daysAfterJoining);
             }
             else if (_leavePlanConfiguration.leaveAccrual.IsAccrualStartsAfterProbationEnds)
             {
                 var daysProbationEnds = _leavePlanConfiguration.leaveAccrual.AccrualDaysAfterProbationEnds;
                 daysProbationEnds += _leaveCalculationModal.companySetting.ProbationPeriodInDays;
-                accrualStartDate.AddDays((double)daysProbationEnds);
+                accrualStartDate = accrualStartDate.AddDays((double)daysProbationEnds);
             }
 
-            if (accrualStartDate.Date.Subtract(now).TotalDays >= 0)
+            if (now.Date.Subtract(accrualStartDate.Date).TotalDays >= 0)
                 flag = true;
 
             return await Task.FromResult(flag);
@@ -312,13 +355,7 @@ namespace ServiceLayer.Code.Leaves
         private decimal MonthlyAccrualInProbation()
         {
             decimal accrualedLeaves = 0;
-            int joiningDay = 31;
             var joiningDate = _leaveCalculationModal.employee.CreatedOn;
-
-            // joined in present month then calculate based on the joining day
-            if (joiningDate.Month == now.Month)
-                joiningDay = joiningDate.Day;
-
             // use define leavedistribution and calcualte leave accrued
             //_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth
             if (!_leavePlanConfiguration.leaveAccrual.IsLeavesProratedForJoinigMonth &&
@@ -330,8 +367,17 @@ namespace ServiceLayer.Code.Leaves
                 {
                     allocateTimeBreakup = _leavePlanConfiguration.leaveAccrual
                                             .JoiningMonthLeaveDistribution.ElementAt(i);
-                    if (joiningDay >= allocateTimeBreakup.ToDate)
-                        accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+
+                    if (workingDate.Month == joiningDate.Month)
+                    {
+                        if (joiningDate.Date.Day <= allocateTimeBreakup.ToDate && workingDate.Date.Day >= allocateTimeBreakup.FromDate)
+                            accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    }
+                    else
+                    {
+                        if (workingDate.Date.Day >= allocateTimeBreakup.FromDate)
+                            accrualedLeaves += allocateTimeBreakup.AllocatedLeave;
+                    }
                     i++;
                 }
             }
