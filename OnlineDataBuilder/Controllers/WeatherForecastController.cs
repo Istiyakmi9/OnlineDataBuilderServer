@@ -85,8 +85,8 @@ namespace OnlineDataBuilder.Controllers
             //var date = Convert.ToDateTime("2023-02-13");
             //_timesheetService.RunWeeklyTimesheetCreation(date);
 
-            _currentSession.CurrentUserDetail.CompanyId = 1;
-            _leaveCalculation.RunAccrualCycle();
+            //_currentSession.CurrentUserDetail.CompanyId = 1;
+            //_leaveCalculation.RunAccrualCycle();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

@@ -1,8 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Wordprocessing;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -547,7 +545,7 @@ namespace ServiceLayer.Code
                 Year = now.Year
             }, false);
 
-            if (ds != null && ds.Tables.Count == 6)
+            if (ds != null && ds.Tables.Count == 7)
             {
                 //if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
@@ -564,6 +562,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.shiftDetail = Converter.ToType<ShiftDetail>(ds.Tables[5]);
                 leaveCalculationModal.leavePlanTypes = Converter.ToList<LeavePlanType>(ds.Tables[1]);
                 leaveCalculationModal.leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(ds.Tables[2]);
+                leaveCalculationModal.lastAppliedLeave = Converter.ToList<LeaveRequestNotification>(ds.Tables[6]);
 
                 if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail))
                     leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail = JsonConvert
@@ -618,30 +617,6 @@ namespace ServiceLayer.Code
 
 
             return await Task.FromResult(leaveCalculationModal);
-        }
-
-        private decimal LeaveLimitForCurrentType(int leavePlanTypeId, decimal availableLeaves, LeaveCalculationModal leaveCalculationModal)
-        {
-            decimal alreadyAppliedLeave = 0;
-
-            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
-            {
-                List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
-                if (completeLeaveDetails.Count > 0)
-                {
-                    alreadyAppliedLeave = completeLeaveDetails
-                        .FindAll(x => x.LeaveTypeId == leavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected)
-                        .Sum(x => x.NumOfDays);
-
-                    leaveCalculationModal.lastAppliedLeave = completeLeaveDetails
-                        .Where(x => x.LeaveStatus != (int)ItemStatus.Rejected)
-                        .OrderByDescending(x => x.LeaveToDay).FirstOrDefault();
-                }
-
-            }
-
-            alreadyAppliedLeave = availableLeaves - alreadyAppliedLeave;
-            return alreadyAppliedLeave;
         }
 
         #region APPLY FOR LEAVE
