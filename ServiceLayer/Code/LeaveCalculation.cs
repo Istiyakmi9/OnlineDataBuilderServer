@@ -59,7 +59,7 @@ namespace ServiceLayer.Code
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
         {
             List<LeaveTypeBrief> leaveTypeBriefs = new List<LeaveTypeBrief>();
-            Parallel.ForEach(leaveTypeBrief, x =>
+            leaveTypeBrief.ForEach( x =>
             {
                 var planType = leavePlanTypes.Find(i => i.LeavePlanTypeId == x.LeavePlanTypeId);
                 if (planType != null)
@@ -69,6 +69,8 @@ namespace ServiceLayer.Code
                     {
                         if (config.leaveApplyDetail.CurrentLeaveRequiredComments)
                             x.IsCommentsRequired = true;
+
+                        x.IsHalfDay = config.leaveApplyDetail.IsAllowForHalfDay;
                         leaveTypeBriefs.Add(x);
                     }
                 }
@@ -657,13 +659,9 @@ namespace ServiceLayer.Code
             };
 
             leaveDetails.Add(newLeaveDeatil);
-
-            leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(
+            var leavequota = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
+            var availableLeave = leavequota.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - leaveCalculationModal.numberOfLeaveApplyring;
-                {
-                    LeavePlanTypeId = x.LeavePlanTypeId,
-                    AvailableLeave = x.AvailableLeave
-                }));
 
             leaveCalculationModal.leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
             result = _db.Execute<LeaveRequestDetail>("sp_leave_notification_and_request_InsUpdate", new
@@ -682,7 +680,7 @@ namespace ServiceLayer.Code
                 TotalLeaveApplied = 0,
                 TotalApprovedLeave = 0,
                 TotalLeaveQuota = totalAllocatedLeave,
-                leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail,
+                LeaveQuotaDetail = JsonConvert.SerializeObject(leavequota),
                 NumOfDays = leaveCalculationModal.numberOfLeaveApplyring,
                 LeaveRequestNotificationId = 0
             }, true);
