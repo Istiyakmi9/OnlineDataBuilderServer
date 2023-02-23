@@ -172,7 +172,6 @@ namespace ServiceLayer.Code
                 leaveAccrual.IsAccrualStartsAfterProbationEnds,
                 leaveAccrual.AccrualDaysAfterJoining,
                 leaveAccrual.AccrualDaysAfterProbationEnds,
-                AccrualProrateDetail = JsonConvert.SerializeObject(leaveAccrual.AccrualProrateDetail),
                 leaveAccrual.IsImpactedOnWorkDaysEveryMonth,
                 leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen,
                 leaveAccrual.HolidayAsAbsentIfAttendaceLessThen,
@@ -226,7 +225,6 @@ namespace ServiceLayer.Code
                 leaveAccrual.AccrualDaysAfterJoining = 0;
                 leaveAccrual.IsAccrualStartsAfterProbationEnds = false;
                 leaveAccrual.AccrualDaysAfterProbationEnds = 0;
-                leaveAccrual.AccrualProrateDetail = new List<AccrualProrate>();
             }
 
             if (leaveAccrual.IsAccrualStartsAfterJoining == true)

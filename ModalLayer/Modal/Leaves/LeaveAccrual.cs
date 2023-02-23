@@ -6,7 +6,6 @@ namespace ModalLayer.Modal.Leaves
     {
         public List<AllocateTimeBreakup> ExitMonthLeaveDistribution { set; get; }
         public List<AllocateTimeBreakup> JoiningMonthLeaveDistribution { set; get; }
-        public List<AccrualProrate> AccrualProrateDetail { set; get; }
         public int LeaveAccrualId { get; set; }
         public int LeavePlanTypeId { get; set; }
         public bool CanApplyEntireLeave { get; set; } = true;
@@ -41,13 +40,5 @@ namespace ModalLayer.Modal.Leaves
         public bool ToPreviousHalfDay { get; set; }
         public bool DoesLeaveExpireAfterSomeTime { get; set; }
         public decimal AfterHowManyDays { get; set; }
-    }
-
-    public class AccrualProrate
-    {
-        public string PeriodType { set; get; }
-        public int YearsAfterJoining { set; get; }
-        public int DaysMonthly { set; get; }
-        public int DaysYearly { set; get; }
     }
 }

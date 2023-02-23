@@ -452,7 +452,7 @@ namespace ServiceLayer.Code
             var companyHoliday = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             return new
             {
-                leaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
+                LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee,
                 CompanyHoliday = companyHoliday,
