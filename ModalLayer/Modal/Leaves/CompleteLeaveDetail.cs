@@ -4,6 +4,7 @@ namespace ModalLayer.Modal.Leaves
 {
     public class CompleteLeaveDetail
     {
+        public long RecordId { set; get; }
         public long EmployeeId { set; get; }
         public string EmployeeName { get; set; }
         public long ProjectId { set; get; }

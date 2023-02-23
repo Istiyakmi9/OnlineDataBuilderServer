@@ -704,8 +704,10 @@ namespace ServiceLayer.Code
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
+            long RecordId = DateTime.Now.Ticks;
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
+                RecordId = RecordId,
                 EmployeeId = leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
                 AssignTo = leaveCalculationModal.AssigneId,
@@ -745,7 +747,8 @@ namespace ServiceLayer.Code
                 TotalLeaveQuota = totalAllocatedLeave,
                 LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs),
                 NumOfDays = leaveCalculationModal.numberOfLeaveApplyring,
-                LeaveRequestNotificationId = 0
+                LeaveRequestNotificationId = 0,
+                RecordId
             }, true);
 
             if (string.IsNullOrEmpty(result))
