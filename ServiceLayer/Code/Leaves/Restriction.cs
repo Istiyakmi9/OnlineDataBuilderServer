@@ -154,7 +154,11 @@ namespace ServiceLayer.Code.Leaves
                 if (leaveCalculationModal.fromDate.Date.Subtract(dateAfterProbation.Date).TotalDays < 0)
                     throw new HiringBellException("Days restriction after Joining period is not completed to apply this leave.");
 
-                if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation)
+                var probationEndDate = leaveCalculationModal.employee.CreatedOn.AddDays(
+                    leaveCalculationModal.companySetting.ProbationPeriodInDays );
+
+                if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation && 
+                    probationEndDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
                 {
                     if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation)
                         throw new HiringBellException($"In probation period you can take upto " +

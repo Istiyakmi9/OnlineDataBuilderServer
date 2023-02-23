@@ -34,5 +34,6 @@ namespace ModalLayer.Modal.Leaves
         public decimal numberOfLeaveApplyring { set; get; }
         public List<LeaveRequestNotification> lastAppliedLeave { set; get; }
         public bool runTillMonthOfPresnetYear { set; get; }
+        public decimal ProjectedFutureLeave { get; set; }
     }
 }

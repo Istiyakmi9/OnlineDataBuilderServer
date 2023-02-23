@@ -46,10 +46,10 @@ namespace ServiceLayer.Code.Leaves
         {
             decimal leaves = 0;
             int futureProjectedMonths = 0;
-            if (leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom <= now.Day)
+            if (leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom >= DateTime.UtcNow.Day)
                 futureProjectedMonths++;
 
-            futureProjectedMonths += leaveFromDate.Month - now.Month;
+            futureProjectedMonths += leaveFromDate.Month - DateTime.UtcNow.Month;
 
             int i = 0;
             while (i <= futureProjectedMonths)
@@ -446,28 +446,24 @@ namespace ServiceLayer.Code.Leaves
                         else
                             availableLeaves = (decimal)integralValue + 1;
                     }
-
-                    if (_leavePlanConfiguration.leaveAccrual.ToNearestFullDay)
+                    else if (_leavePlanConfiguration.leaveAccrual.ToNearestFullDay)
                     {
                         if (fractionValue >= 0.5m)
                             availableLeaves = (decimal)integralValue + 1;
                     }
-
-                    if (_leavePlanConfiguration.leaveAccrual.ToNextAvailableHalfDay)
+                    else if (_leavePlanConfiguration.leaveAccrual.ToNextAvailableHalfDay)
                     {
                         if (fractionValue >= 0.1m && fractionValue < 0.5m)
                             availableLeaves = (decimal)integralValue + 0.5m;
                         else
                             availableLeaves = (decimal)integralValue + 1;
                     }
-
-                    if (_leavePlanConfiguration.leaveAccrual.ToNextAvailableFullDay)
+                    else if (_leavePlanConfiguration.leaveAccrual.ToNextAvailableFullDay)
                     {
                         if (fractionValue >= 0.1m)
                             availableLeaves = (decimal)integralValue++;
                     }
-
-                    if (_leavePlanConfiguration.leaveAccrual.ToPreviousHalfDay)
+                    else if (_leavePlanConfiguration.leaveAccrual.ToPreviousHalfDay)
                     {
                         if (fractionValue < 0.5m)
                             availableLeaves = (decimal)integralValue;
