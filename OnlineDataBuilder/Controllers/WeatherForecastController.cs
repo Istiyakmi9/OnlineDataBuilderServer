@@ -86,7 +86,7 @@ namespace OnlineDataBuilder.Controllers
             //_timesheetService.RunWeeklyTimesheetCreation(date);
 
             _currentSession.CurrentUserDetail.CompanyId = 1;
-            _leaveCalculation.RunAccrualCycle();
+            //_leaveCalculation.RunAccrualCycle(true);
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
