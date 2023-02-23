@@ -69,6 +69,10 @@ namespace ServiceLayer.Code
                             x.IsCommentsRequired = true;
 
                         x.IsHalfDay = config.leaveApplyDetail.IsAllowForHalfDay;
+
+                        if (x.AvailableLeaves % 10 > 0)
+                            x.AvailableLeaves = _accrual.RoundUpTheLeaves(x.AvailableLeaves);
+
                         leaveTypeBriefs.Add(x);
                     }
                 }

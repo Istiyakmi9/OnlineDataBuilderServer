@@ -143,7 +143,7 @@ namespace ServiceLayer.Code.Leaves
                     leaveCalculationModal.companySetting.ProbationPeriodInDays +
                     Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation));
 
-                if (dateFromApplyLeave.Date.Subtract(leaveCalculationModal.utcPresentDate.Date).TotalDays > 0)
+                if (dateFromApplyLeave.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
                     throw new HiringBellException("Days restriction after Probation period is not completed to apply this leave.");
             }
             else if (leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod &&
