@@ -11,7 +11,7 @@ namespace ModalLayer.Modal.Leaves
         public int LeaveTypeId { get; set; }
         public string LeaveTypeName { get; set; }
         public decimal NumOfDays { get; set; }
-        public string Session { get; set; }
+        public int Session { get; set; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
         public int LeaveStatus { set; get; }

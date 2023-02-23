@@ -152,8 +152,7 @@ namespace ServiceLayer
 
         public async Task<int> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
         {
-            var holidays = _calendars.Count(x => (fromDate.Date >= x.StartDate.Date && fromDate.Date <= x.EndDate.Date)
-                           || (toDate.Date <= x.EndDate.Date && toDate.Date >= x.StartDate.Date));
+            var holidays = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date));
 
             return await Task.FromResult(holidays);
         }
