@@ -247,6 +247,14 @@ public enum RequestType
     Attendance = 4
 }
 
+public enum CommonFlags
+{
+    FullDay = 1,
+    FirstHalf = 2,
+    SecondHalf = 3,
+    HalfDay = 4
+}
+
 public static class Bot
 {
     public static bool IsSuccess(string Result)

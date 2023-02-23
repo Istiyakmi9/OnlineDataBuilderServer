@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.VariantTypes;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -63,6 +64,10 @@ namespace ServiceLayer.Code
                 if (planType != null)
                 {
                     var config = JsonConvert.DeserializeObject<LeavePlanConfiguration>(planType.PlanConfigurationDetail);
+                    if (config == null)
+                        throw HiringBellException.ThrowBadRequest($"[{nameof(PrepareLeaveType)}]: Fail to get leave configuration detail.");
+
+
                     if (config.leaveApplyDetail.EmployeeCanSeeAndApplyCurrentPlanLeave)
                     {
                         if (config.leaveApplyDetail.CurrentLeaveRequiredComments)
@@ -70,9 +75,10 @@ namespace ServiceLayer.Code
 
                         x.IsHalfDay = config.leaveApplyDetail.IsAllowForHalfDay;
 
-                        if (x.AvailableLeaves % 10 > 0)
-                            x.AvailableLeaves = _accrual.RoundUpTheLeaves(x.AvailableLeaves);
+                        if (x.AvailableLeaves % 1.0m > 0)
+                            x.AvailableLeaves = _accrual.RoundUpTheLeaves(x.AvailableLeaves, config);
 
+                        x.IsFutureDateAllowed = config.leaveAccrual.CanApplyForFutureDate;
                         leaveTypeBriefs.Add(x);
                     }
                 }
@@ -337,8 +343,11 @@ namespace ServiceLayer.Code
 
             leaveCalculationModal.LeaveTypeId = leaveRequestModal.LeaveTypeId;
             leaveCalculationModal.leaveRequestDetail.Reason = leaveRequestModal.Reason;
-            if (leaveRequestModal.Session == "halfday")
+            if (leaveRequestModal.Session == (int)CommonFlags.HalfDay)
+            {
                 leaveCalculationModal.isApplyingForHalfDay = true;
+                leaveCalculationModal.numberOfLeaveApplyring = 0.5m;
+            }
 
             _leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
@@ -352,11 +361,46 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
+        private void CheckProjectedFutureLeaves(LeaveRequestModal leaveRequestModal, LeaveCalculationModal leaveCalculationModal)
+        {
+            // check future proejcted date
+            if (leaveRequestModal.IsProjectedFutureDateAllowed)
+            {
+                decimal leavePerMonth = 0;
+                var planType = leaveCalculationModal.leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
+                string seq = leaveCalculationModal.leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
+                switch (seq)
+                {
+                    case "1":
+                        leavePerMonth = planType.TotalLeaveQuota / 12m;
+                        break;
+                    case "2":
+                        leavePerMonth = planType.TotalLeaveQuota / 4m;
+                        break;
+                    case "3":
+                        leavePerMonth = planType.TotalLeaveQuota / 6m;
+                        break;
+                }
+
+
+                leavePerMonth = _accrual.ProjectedFutureLeaveAccrualedBalance(
+                    leaveRequestModal.LeaveFromDay,
+                    leavePerMonth,
+                    leaveCalculationModal.leavePlanConfiguration);
+
+                if ((planType.AvailableLeaves + leavePerMonth) > leaveCalculationModal.numberOfLeaveApplyring)
+                    throw HiringBellException.ThrowBadRequest("Total leave applying is exceeding from available (with projected) leaves");
+            }
+        }
+
         public async Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal)
         {
 
             //LeavePlanType leavePlanType = default;
             var leaveCalculationModal = await LoadPrepareRequiredData(leaveRequestModal);
+
+            // check future proejcted date
+            CheckProjectedFutureLeaves(leaveRequestModal, leaveCalculationModal);
 
             // check is applying for conflicting day or already applied on the same day
             await SameDayRequestValidationCheck(leaveCalculationModal);

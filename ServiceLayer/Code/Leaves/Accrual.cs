@@ -30,23 +30,23 @@ namespace ServiceLayer.Code.Leaves
         public async Task ConditionaLeaveAccruals(DateTime leaveFromDate, decimal leavePerDay, decimal extraLeave, decimal availableLeaveBalance, decimal onLeaveFromDays, LeavePlanType leavePlanType)
         {
             // check for projected furute accruals
-            await ProjectedFutureLeaveAccrualedBalance(leaveFromDate, leavePerDay);
+            // await ProjectedFutureLeaveAccrualedBalance(leaveFromDate, leavePerDay);
 
             // check can apply beyond accrual leaves
             bool flag = await CanApplyBeyondAccrualBalance(extraLeave, availableLeaveBalance, onLeaveFromDays);
 
             // step - 8
             // round up decimal value of available as per rule defined
-            leavePlanType.AvailableLeave = RoundUpTheLeaves(leavePlanType.AvailableLeave);
+            // leavePlanType.AvailableLeave = RoundUpTheLeaves(leavePlanType.AvailableLeave);
         }
 
         // step 6
         // projected leave if applied for future date.
-        private async Task ProjectedFutureLeaveAccrualedBalance(DateTime leaveFromDate, decimal leavePerDay)
+        public decimal ProjectedFutureLeaveAccrualedBalance(DateTime leaveFromDate, decimal leavePerMonth, LeavePlanConfiguration leavePlanConfiguration)
         {
             decimal leaves = 0;
             int futureProjectedMonths = 0;
-            if (_leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom <= now.Day)
+            if (leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom <= now.Day)
                 futureProjectedMonths++;
 
             futureProjectedMonths += leaveFromDate.Month - now.Month;
@@ -54,12 +54,11 @@ namespace ServiceLayer.Code.Leaves
             int i = 0;
             while (i <= futureProjectedMonths)
             {
-                leaves += MonthlyAccrual(leavePerDay);
+                leaves += MonthlyAccrual(leavePerMonth);
                 i++;
             }
 
-
-            await Task.CompletedTask;
+            return leaves;
         }
 
         // step 7
@@ -426,7 +425,7 @@ namespace ServiceLayer.Code.Leaves
             return totalWeekEnds;
         }
 
-        public decimal RoundUpTheLeaves(decimal availableLeaves)
+        public decimal RoundUpTheLeaves(decimal availableLeaves, LeavePlanConfiguration _leavePlanConfiguration)
         {
             decimal fractionValue = 0;
             int integralValue = 0;
