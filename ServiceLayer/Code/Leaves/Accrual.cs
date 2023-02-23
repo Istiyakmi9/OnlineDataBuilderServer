@@ -426,7 +426,7 @@ namespace ServiceLayer.Code.Leaves
             return totalWeekEnds;
         }
 
-        private decimal RoundUpTheLeaves(decimal availableLeaves)
+        public decimal RoundUpTheLeaves(decimal availableLeaves)
         {
             decimal fractionValue = 0;
             int integralValue = 0;
