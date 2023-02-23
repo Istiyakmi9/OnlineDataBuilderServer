@@ -21,5 +21,6 @@ namespace ModalLayer.Modal
         public bool IsCommentsRequired { set; get; } = false;
         public bool IsFutureDateAllowed { set; get; } = false;
         public bool IsHalfDay { get; set; } = false;
+        public decimal AccruedSoFar { get; set; }
     }
 }

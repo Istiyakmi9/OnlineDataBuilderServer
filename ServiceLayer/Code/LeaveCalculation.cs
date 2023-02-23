@@ -74,7 +74,6 @@ namespace ServiceLayer.Code
                             x.IsCommentsRequired = true;
 
                         x.IsHalfDay = config.leaveApplyDetail.IsAllowForHalfDay;
-
                         if (x.AvailableLeaves % 1.0m > 0)
                             x.AvailableLeaves = _accrual.RoundUpTheLeaves(x.AvailableLeaves, config);
 
@@ -199,6 +198,7 @@ namespace ServiceLayer.Code
             {
                 LeavePlanTypeId = planType.LeavePlanTypeId,
                 AvailableLeaves = availableLeaves,
+                AccruedSoFar = availableLeaves,
                 IsCommentsRequired = false,
                 IsHalfDay = false,
                 LeavePlanTypeName = planType.PlanName,
@@ -388,7 +388,8 @@ namespace ServiceLayer.Code
                     leavePerMonth,
                     leaveCalculationModal.leavePlanConfiguration);
 
-                if ((planType.AvailableLeaves + leavePerMonth) > leaveCalculationModal.numberOfLeaveApplyring)
+                leaveCalculationModal.ProjectedFutureLeave = leavePerMonth;
+                if ((planType.AvailableLeaves + leavePerMonth) < leaveCalculationModal.numberOfLeaveApplyring)
                     throw HiringBellException.ThrowBadRequest("Total leave applying is exceeding from available (with projected) leaves");
             }
         }
