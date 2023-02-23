@@ -67,30 +67,41 @@ namespace ServiceLayer.Code.Leaves
             }
         }
 
+        private void CheckForExistingLeave(LeaveCalculationModal leaveCalculationModal, DateTime fromDate, DateTime toDate)
+        {
+            var item = leaveCalculationModal.lastAppliedLeave
+                        .Find(x => leaveCalculationModal.fromDate >= x.FromDate && leaveCalculationModal.toDate <= x.ToDate);
+            if (item != null)
+                throw HiringBellException.ThrowBadRequest($"Minimumn " +
+                      $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required between any two leaves.");
+        }
+
         private void LeaveGapRestriction(LeaveCalculationModal leaveCalculationModal)
         {
-            decimal availableLeaveLimit = _leavePlanType.AvailableLeave;
+
+            var currentPlanType = leaveCalculationModal.leaveTypeBriefs.Find(x => x.LeavePlanTypeId == _leavePlanType.LeavePlanTypeId);
+            if (currentPlanType == null)
+                throw HiringBellException.ThrowBadRequest("Leave plan type not found");
+
+            decimal availableLeaveLimit = currentPlanType.AvailableLeaves;
 
             // check leave gap between two consucutive leaves
-            if (leaveCalculationModal.lastAppliedLeave != null)
+            if (leaveCalculationModal.lastAppliedLeave != null && leaveCalculationModal.lastAppliedLeave.Count > 0)
             {
+                var lastApplied = leaveCalculationModal.lastAppliedLeave.OrderByDescending(i => i.FromDate).First();
+
                 // date after last applied todate.
-                var dayDiff = leaveCalculationModal.toDate.Subtract(leaveCalculationModal.lastAppliedLeave.LeaveFromDay).TotalDays;
+                var dayDiff = leaveCalculationModal.fromDate.Date.Subtract(lastApplied.ToDate.Date).TotalDays;
 
-                if (dayDiff < 0) // < 0 means applying before lastLeave applied
-                {
-                    if ((dayDiff * -1) >= (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
-                        throw HiringBellException.ThrowBadRequest($"Minimumn " +
-                            $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
-                }
+                var toDate = leaveCalculationModal.toDate;
+                var fromDate = leaveCalculationModal.fromDate
+                                .AddDays(-1 * (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates);
+                CheckForExistingLeave(leaveCalculationModal, fromDate, toDate);
 
-                dayDiff = leaveCalculationModal.fromDate.Subtract(leaveCalculationModal.lastAppliedLeave.LeaveToDay).TotalDays;
-                if (dayDiff > 0) // > 0 applying after lastLeave applied
-                {
-                    if ((dayDiff * -1) >= (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
-                        throw HiringBellException.ThrowBadRequest($"Minimumn " +
-                            $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
-                }
+                fromDate = leaveCalculationModal.fromDate;
+                toDate = leaveCalculationModal.toDate
+                                .AddDays((double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates);
+                CheckForExistingLeave(leaveCalculationModal, fromDate, toDate);
             }
 
             List<CompleteLeaveDetail> completeLeaveDetail = new List<CompleteLeaveDetail>();
