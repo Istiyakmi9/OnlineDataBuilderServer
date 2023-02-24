@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.BC;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
@@ -50,12 +51,26 @@ namespace ServiceLayer.Code
             return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
         }
 
-        public async Task UpdateLeaveDetail(LeaveRequestDetail leaveDeatil, ItemStatus status)
+        private void updateLeaveCountOnRejected(LeaveRequestDetail LeaveRequestDetail, int leaveTypeId, decimal leaveCount)
+        {
+            if (!string.IsNullOrEmpty(LeaveRequestDetail.LeaveQuotaDetail))
+            {
+                var records = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(LeaveRequestDetail.LeaveQuotaDetail);
+                if (records.Count > 0)
+                {
+                    var item = records.Find(x => x.LeavePlanTypeId == leaveTypeId);
+                    item.AvailableLeaves += leaveCount;
+                    LeaveRequestDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(records);
+                }
+            }
+        }
+
+        public async Task UpdateLeaveDetail(LeaveRequestDetail leaveDetail, ItemStatus status)
         {
             string message = string.Empty;
             var leaveRequestDetail = _db.Get<LeaveRequestDetail>("sp_employee_leave_request_GetById", new
             {
-                EmployeeId = leaveDeatil.EmployeeId,
+                EmployeeId = leaveDetail.EmployeeId,
                 Year = DateTime.Now.Year
             });
 
@@ -65,9 +80,15 @@ namespace ServiceLayer.Code
             List<CompleteLeaveDetail> completeLeaveDetail = JsonConvert
               .DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
 
+            if (ItemStatus.Rejected == status)
+            {
+                var totalLeaves = (decimal)leaveDetail.LeaveToDay.Date.Subtract(leaveDetail.LeaveFromDay.Date).TotalDays;
+                updateLeaveCountOnRejected(leaveRequestDetail, leaveDetail.LeaveTypeId, totalLeaves);
+            }
+
             if (completeLeaveDetail != null)
             {
-                var singleLeaveDetail = completeLeaveDetail.Find(x => x.RecordId == leaveDeatil.RecordId);
+                var singleLeaveDetail = completeLeaveDetail.Find(x => x.RecordId == leaveDetail.RecordId);
 
                 if (singleLeaveDetail != null)
                 {
@@ -107,18 +128,20 @@ namespace ServiceLayer.Code
                     leaveRequestDetail.TotalLeaveQuota,
                     leaveRequestDetail.LeaveQuotaDetail,
                     NumOfDays = 0,
-                    leaveDeatil.LeaveRequestNotificationId,
-                    RecordId = leaveDeatil.RecordId
+                    leaveDetail.LeaveRequestNotificationId,
+                    RecordId = leaveDetail.RecordId
                 }, true);
                 if (string.IsNullOrEmpty(message))
                     throw new HiringBellException("Unable to update leave status. Please contact to admin");
             }
 
-            leaveRequestDetail.LeaveFromDay = leaveDeatil.LeaveFromDay;
-            leaveRequestDetail.LeaveToDay = leaveDeatil.LeaveToDay;
-            leaveRequestDetail.Reason = leaveDeatil.Reason;
-            leaveRequestDetail.LeaveType = leaveDeatil.LeaveType;
-            Task task = Task.Run(async() => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+            leaveRequestDetail.LeaveFromDay = leaveDetail.LeaveFromDay;
+            leaveRequestDetail.LeaveToDay = leaveDetail.LeaveToDay;
+            leaveRequestDetail.Reason = leaveDetail.Reason;
+            leaveRequestDetail.LeaveType = leaveDetail.LeaveType;
+            Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+
+            await Task.CompletedTask;
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)

@@ -567,6 +567,7 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             {
                 List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+                completeLeaveDetails = completeLeaveDetails.Where(x => x.LeaveStatus != (int)ItemStatus.Rejected).ToList();
                 if (completeLeaveDetails.Count > 0)
                 {
                     CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
@@ -612,6 +613,8 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leavePlanTypes = Converter.ToList<LeavePlanType>(ds.Tables[1]);
                 leaveCalculationModal.leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(ds.Tables[2]);
                 leaveCalculationModal.lastAppliedLeave = Converter.ToList<LeaveRequestNotification>(ds.Tables[6]);
+                if (leaveCalculationModal.lastAppliedLeave.Count > 0)
+                    leaveCalculationModal.lastAppliedLeave = leaveCalculationModal.lastAppliedLeave.Where(x => x.RequestStatusId != (int)ItemStatus.Rejected).ToList();
 
                 if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail))
                     leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail = JsonConvert
