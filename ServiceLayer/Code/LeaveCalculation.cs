@@ -709,7 +709,7 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                AssignTo = leaveCalculationModal.AssigneId,
+                AssignTo = leaveCalculationModal.employee.ReportingManagerId,
                 Session = leaveRequestModal.Session,
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
                 LeaveTypeId = leaveRequestModal.LeaveTypeId,
@@ -734,7 +734,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 leaveCalculationModal.leaveRequestDetail.LeaveDetail,
                 leaveCalculationModal.leaveRequestDetail.Reason,
-                AssignTo = leaveCalculationModal.AssigneId,
+                AssignTo = leaveCalculationModal.employee.ReportingManagerId,
                 Year = leaveRequestModal.LeaveToDay.Year,
                 leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
                 leaveCalculationModal.leaveRequestDetail.LeaveToDay,
