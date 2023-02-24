@@ -705,7 +705,7 @@ namespace ServiceLayer.Code
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
-            long RecordId = DateTime.Now.Ticks;
+            int RecordId = new Random(1).Next(1, 999999999);
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
                 RecordId = RecordId,

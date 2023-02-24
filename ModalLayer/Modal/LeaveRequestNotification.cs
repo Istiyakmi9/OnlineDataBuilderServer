@@ -19,5 +19,7 @@ namespace ModalLayer.Modal
         public string FeedBackMessage { set; get; }
         public DateTime? LastReactedOn { set; get; }
         public string LeaveDetail { set; get; }
+        public string RecordIdStr { set; get; }
+        public int RecordId { set; get; }
     }
 }
