@@ -17,7 +17,7 @@ namespace ServiceLayer.Interface
         LeavePlanConfiguration UpdateHolidayNWeekOffPlanService(int leavePlanTypeId, int leavePlanId, LeaveHolidaysAndWeekoff leaveHolidaysAndWeekoff);        
         LeavePlanConfiguration UpdateYearEndProcessingService(int leavePlanTypeId, int leavePlanId, LeaveEndYearProcessing leaveEndYearProcessing);
         LeavePlanConfiguration UpdateLeaveApprovalService(int leavePlanTypeId, int leavePlanId, LeaveApproval leaveApproval);        
-        LeavePlanConfiguration GetLeaveConfigurationDetail(int leavePlanTypeId);
+        dynamic GetLeaveConfigurationDetail(int leavePlanTypeId);
         Task<string> AddUpdateEmpLeavePlanService(int leavePlanId, List<Employee> employees);
         List<EmpLeavePlanMapping> GetEmpMappingByLeavePlanIdService(int leavePlanId);
         LeavePlanConfiguration UpdateLeaveFromManagement(int leavePlanTypeId, int leavePlanId, ManagementLeave managementLeave);

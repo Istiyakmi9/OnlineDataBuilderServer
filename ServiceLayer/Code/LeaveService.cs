@@ -377,23 +377,6 @@ namespace ServiceLayer.Code
             return message;
         }
 
-        private void UpdateLeavePlanDetail(LeaveCalculationModal leaveCalculationModal)
-        {
-            var leaves = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(
-                leaveCalculationModal.leaveRequestDetail.LeaveDetail);
-            if (leaves != null)
-            {
-                Parallel.ForEach(leaveCalculationModal.leavePlanTypes, i =>
-                {
-                    var consumed = leaves
-                    .Where(x => x.LeaveTypeId == i.LeavePlanTypeId && x.LeaveStatus != (int)ItemStatus.Rejected)
-                    .Sum(x => x.NumOfDays);
-
-                    i.ConsumedLeave = consumed;
-                });
-            }
-        }
-
         private void ValidateRequestModal(LeaveRequestModal leaveRequestModal)
         {
             if (leaveRequestModal == null)
@@ -412,11 +395,12 @@ namespace ServiceLayer.Code
             this.ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal);
 
-            if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
-                this.UpdateLeavePlanDetail(leaveCalculationModal);
-
             if (!leaveCalculationModal.IsEmailNotificationPasued)
-                await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason);
+            {
+                leaveCalculationModal.AssigneId = leaveRequestModal.AssigneId;
+                leaveCalculationModal.AssigneeEmail = leaveRequestModal.AssigneeEmail;
+                Task task = Task.Run(async () => await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason));
+            }
 
             if (leaveCalculationModal.IsLeaveAutoApproval)
             {
@@ -435,7 +419,7 @@ namespace ServiceLayer.Code
 
             return new
             {
-                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
+                LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee
             };
@@ -468,10 +452,11 @@ namespace ServiceLayer.Code
             var companyHoliday = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             return new
             {
-                LeavePlanTypes = leaveCalculationModal.leavePlanTypes,
+                LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee,
-                CompanyHoliday = companyHoliday
+                CompanyHoliday = companyHoliday,
+                ShiftDetail = leaveCalculationModal.shiftDetail
             };
         }
     }

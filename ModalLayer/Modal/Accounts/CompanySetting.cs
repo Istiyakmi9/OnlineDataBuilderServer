@@ -21,7 +21,7 @@ namespace ModalLayer.Modal.Accounts
         public int CompanyId { set; get; }
         public int ProbationPeriodInDays { set; get; }
         public int NoticePeriodInDays { set; get; }
-        public int PayrollCycleMonthlyRunDay { set; get; } = 20;
+        public int PayrollCycleMonthlyRunDay { set; get; } = DateTime.Now.Day;
         public int FinancialYear { set; get; }
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }

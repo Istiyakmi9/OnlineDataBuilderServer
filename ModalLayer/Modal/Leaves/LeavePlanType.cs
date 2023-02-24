@@ -19,7 +19,7 @@
         public bool IsRestrictOnMaritalStatus { set; get; }
         public bool? IsMarried { set; get; }
         public string Reasons { set; get; }
-        public string PlanConfigurationDetail { set; get; }
+        public string PlanConfigurationDetail { set; get; } // After json deserialize class type would be [LeavePlanConfiguration]
         public bool IsApplicable { set; get; }
         public string Reason { set; get; }
     }

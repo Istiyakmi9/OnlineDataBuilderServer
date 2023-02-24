@@ -6,6 +6,7 @@ namespace ModalLayer.Modal.Leaves
     public class LeaveRequestDetail : EmployeeCommonFields
     {
         public int UserTypeId { get; set; }
+        public int RecordId { set; get; }
         public long LeaveId { set; get; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
@@ -24,7 +25,7 @@ namespace ModalLayer.Modal.Leaves
         public decimal AvailableLeaves { set; get; }
         public decimal TotalLeaveApplied { set; get; }
         public decimal TotalApprovedLeave { set; get; }
-        public string LeaveQuotaDetail { set; get; }
+        public string LeaveQuotaDetail { set; get; } // class type: LeaveTypeBrief
         public decimal TotalLeaveQuota { set; get; }
         public int RequestStatusId { get; set; }
         public int LeaveRequestNotificationId { get; set; }

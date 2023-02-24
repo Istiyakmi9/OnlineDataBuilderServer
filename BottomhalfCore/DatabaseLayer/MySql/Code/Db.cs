@@ -497,6 +497,46 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return genericReaderData;
         }
 
+        public int BatchInset(string ProcedureName, DataTable table)
+        {
+            try
+            {
+                int Count = 0;
+                lock (_lock)
+                {
+                    using (var connection = new MySqlConnection(_connectionString))
+                    {
+                        using (MySqlTransaction transaction = connection.BeginTransaction())
+                        {
+                            using (MySqlCommand command = new MySqlCommand())
+                            {
+                                command.Connection = con;
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.CommandText = ProcedureName;
+                                command.UpdatedRowSource = UpdateRowSource.None;
+
+                                using (var da = new MySqlDataAdapter())
+                                {
+                                    da.InsertCommand = cmd;
+                                    da.UpdateBatchSize = 100;
+                                    con.Open();
+                                    Count += da.Update(table);
+                                }
+                            }
+
+                            transaction.Commit();
+                        }
+                    }
+                }
+
+                return Count;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
 
         public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()
         {

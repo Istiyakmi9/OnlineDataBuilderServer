@@ -121,7 +121,7 @@ public class ApplicationConstants
 
         DataTable table = null;
         int i = 0;
-        while(i < dataSet.Tables.Count)
+        while (i < dataSet.Tables.Count)
         {
             table = dataSet.Tables[i];
             if (table.Rows.Count == 0)
@@ -139,20 +139,20 @@ public class ApplicationConstants
     public static bool ContainSingleRow(DataSet dataSet)
     {
         bool flag = true;
-        if (dataSet == null || dataSet.Tables.Count == 0)
+        if (dataSet == null || dataSet.Tables.Count != 1)
             flag = false;
 
-        int i = 0;
-        while (i < dataSet.Tables.Count)
-        {
-            if (dataSet.Tables[i].Rows.Count == 0)
-            {
-                flag = false;
-                break;
-            }
-            i++;
-        }
+        if (dataSet.Tables[0].Rows.Count == 0)
+            flag = false;
 
+        return flag;
+    }
+
+    public static bool IsSingleRow(DataTable table)
+    {
+        bool flag = true;
+        if (table == null || table.Rows.Count != 1)
+            flag = false;
         return flag;
     }
 
@@ -245,6 +245,14 @@ public enum RequestType
     Booking = 3,
     Leave = 5,
     Attendance = 4
+}
+
+public enum CommonFlags
+{
+    FullDay = 1,
+    FirstHalf = 2,
+    SecondHalf = 3,
+    HalfDay = 4
 }
 
 public static class Bot

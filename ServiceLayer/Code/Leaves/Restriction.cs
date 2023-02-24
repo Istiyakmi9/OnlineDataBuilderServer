@@ -67,30 +67,41 @@ namespace ServiceLayer.Code.Leaves
             }
         }
 
+        private void CheckForExistingLeave(LeaveCalculationModal leaveCalculationModal, DateTime fromDate, DateTime toDate)
+        {
+            var item = leaveCalculationModal.lastAppliedLeave
+                        .Find(x => leaveCalculationModal.fromDate >= x.FromDate && leaveCalculationModal.toDate <= x.ToDate);
+            if (item != null)
+                throw HiringBellException.ThrowBadRequest($"Minimumn " +
+                      $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required between any two leaves.");
+        }
+
         private void LeaveGapRestriction(LeaveCalculationModal leaveCalculationModal)
         {
-            decimal availableLeaveLimit = _leavePlanType.AvailableLeave;
+
+            var currentPlanType = leaveCalculationModal.leaveTypeBriefs.Find(x => x.LeavePlanTypeId == _leavePlanType.LeavePlanTypeId);
+            if (currentPlanType == null)
+                throw HiringBellException.ThrowBadRequest("Leave plan type not found");
+
+            decimal availableLeaveLimit = currentPlanType.AvailableLeaves;
 
             // check leave gap between two consucutive leaves
-            if (leaveCalculationModal.lastAppliedLeave != null)
+            if (leaveCalculationModal.lastAppliedLeave != null && leaveCalculationModal.lastAppliedLeave.Count > 0)
             {
+                var lastApplied = leaveCalculationModal.lastAppliedLeave.OrderByDescending(i => i.FromDate).First();
+
                 // date after last applied todate.
-                var dayDiff = leaveCalculationModal.toDate.Subtract(leaveCalculationModal.lastAppliedLeave.LeaveFromDay).TotalDays;
+                var dayDiff = leaveCalculationModal.fromDate.Date.Subtract(lastApplied.ToDate.Date).TotalDays;
 
-                if (dayDiff < 0) // < 0 means applying before lastLeave applied
-                {
-                    if ((dayDiff * -1) >= (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
-                        throw HiringBellException.ThrowBadRequest($"Minimumn " +
-                            $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
-                }
+                var toDate = leaveCalculationModal.toDate;
+                var fromDate = leaveCalculationModal.fromDate
+                                .AddDays(-1 * (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates);
+                CheckForExistingLeave(leaveCalculationModal, fromDate, toDate);
 
-                dayDiff = leaveCalculationModal.fromDate.Subtract(leaveCalculationModal.lastAppliedLeave.LeaveToDay).TotalDays;
-                if (dayDiff > 0) // > 0 applying after lastLeave applied
-                {
-                    if ((dayDiff * -1) >= (double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates)
-                        throw HiringBellException.ThrowBadRequest($"Minimumn " +
-                            $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required to apply this leave");
-                }
+                fromDate = leaveCalculationModal.fromDate;
+                toDate = leaveCalculationModal.toDate
+                                .AddDays((double)_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates);
+                CheckForExistingLeave(leaveCalculationModal, fromDate, toDate);
             }
 
             List<CompleteLeaveDetail> completeLeaveDetail = new List<CompleteLeaveDetail>();
@@ -103,9 +114,10 @@ namespace ServiceLayer.Code.Leaves
                 throw HiringBellException.ThrowBadRequest($"Calendar year leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarYear} days.");
 
             // check total leave applied and restrict for current month
-            int count = completeLeaveDetail
-                .Count(x => _timezoneConverter.ToTimeZoneDateTime(x.LeaveFromDay, _currentSession.TimeZone).Date.Month ==
-                leaveCalculationModal.timeZoneFromDate.Date.Month);
+            decimal count = completeLeaveDetail
+                .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.LeaveFromDay, _currentSession.TimeZone).Date.Month ==
+                leaveCalculationModal.timeZoneFromDate.Date.Month)
+                .Sum(i => i.NumOfDays);
             if ((count + leaveCalculationModal.numberOfLeaveApplyring) > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth)
                 throw HiringBellException.ThrowBadRequest($"Calendar month leave limit is only {_leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth} days.");
 
@@ -125,29 +137,32 @@ namespace ServiceLayer.Code.Leaves
 
         private void NewEmployeeWhenCanAvailThisLeave(LeaveCalculationModal leaveCalculationModal)
         {
-            if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation
-                && leaveCalculationModal.employeeType == ApplicationConstants.Regular)
+            if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation)
             {
                 var dateFromApplyLeave = leaveCalculationModal.employee.CreatedOn.AddDays(
                     leaveCalculationModal.companySetting.ProbationPeriodInDays +
                     Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterProbation));
 
-                if (dateFromApplyLeave.Date.Subtract(leaveCalculationModal.utcPresentDate.Date).TotalDays > 0)
+                if (dateFromApplyLeave.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
                     throw new HiringBellException("Days restriction after Probation period is not completed to apply this leave.");
             }
-            else if (leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod)
+            else if (leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod &&
+                _leavePlanConfiguration.leavePlanRestriction.CanApplyAfterJoining)
             {
                 var dateAfterProbation = leaveCalculationModal.employee.CreatedOn.AddDays(
                     Convert.ToDouble(_leavePlanConfiguration.leavePlanRestriction.DaysAfterJoining));
                 if (leaveCalculationModal.fromDate.Date.Subtract(dateAfterProbation.Date).TotalDays < 0)
                     throw new HiringBellException("Days restriction after Joining period is not completed to apply this leave.");
 
-                if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation &&
-                    leaveCalculationModal.employeeType == ApplicationConstants.InProbationPeriod)
+                var probationEndDate = leaveCalculationModal.employee.CreatedOn.AddDays(
+                    leaveCalculationModal.companySetting.ProbationPeriodInDays );
+
+                if (_leavePlanConfiguration.leavePlanRestriction.IsAvailRestrictedLeavesInProbation && 
+                    probationEndDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
                 {
                     if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation)
                         throw new HiringBellException($"In probation period you can take upto " +
-                            $"{leaveCalculationModal.numberOfLeaveApplyring} no. of days only.");
+                            $"{_leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation} no. of days only.");
                 }
             }
 

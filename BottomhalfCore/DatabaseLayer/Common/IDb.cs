@@ -44,6 +44,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         Task<DataSet> GetDataSetAsync(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
         DataSet GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
 
+        int BatchInset(string ProcedureName, DataTable table);
 
         // --------------------new -----------------------------
 

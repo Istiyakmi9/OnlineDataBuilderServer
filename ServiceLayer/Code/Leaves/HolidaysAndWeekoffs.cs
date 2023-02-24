@@ -3,11 +3,13 @@ using DocumentFormat.OpenXml.VariantTypes;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace ServiceLayer.Code.Leaves
 {
@@ -17,15 +19,18 @@ namespace ServiceLayer.Code.Leaves
         private readonly CurrentSession _currentSession;
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly ICompanyCalendar _companyCalendar;
+        private readonly Accrual _accrual;
 
         public HolidaysAndWeekoffs(
             ITimezoneConverter timezoneConverter,
             ICompanyCalendar companyCalendar,
-            CurrentSession currentSession)
+            CurrentSession currentSession,
+            Accrual accrual)
         {
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _companyCalendar = companyCalendar;
+            _accrual = accrual;
         }
 
         public async Task CheckHolidayWeekOffRules(LeaveCalculationModal leaveCalculationModal)
@@ -37,8 +42,10 @@ namespace ServiceLayer.Code.Leaves
             await CheckAdjoiningWeekOffOnLeave(leaveCalculationModal);
 
             var planType = leaveCalculationModal.leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveCalculationModal.LeaveTypeId);
+            decimal totalAvailableLeave = planType.AvailableLeaves + leaveCalculationModal.ProjectedFutureLeave;
+            totalAvailableLeave = _accrual.RoundUpTheLeaves(totalAvailableLeave, _leavePlanConfiguration);
 
-            if (planType.AvailableLeaves < leaveCalculationModal.numberOfLeaveApplyring)
+            if (totalAvailableLeave < leaveCalculationModal.numberOfLeaveApplyring)
                 throw HiringBellException.ThrowBadRequest($"You don't have enough leave in your bucket to apply this leave. " +
                     $"{leaveCalculationModal.numberOfLeaveApplyring - planType.AvailableLeaves} days extra required due to weekoff policy.");
 

@@ -27,15 +27,19 @@ namespace ServiceLayer.Code
             return this.GetLeaveConfigurationDetail(leavePlanTypeId);
         }
 
-        public LeavePlanConfiguration GetLeaveConfigurationDetail(int leavePlanTypeId)
+        public dynamic GetLeaveConfigurationDetail(int leavePlanTypeId)
         {
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
-            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+            var resultSet = _db.FetchDataSet("sp_leave_plans_type_and_workflow_byId", new { LeavePlanTypeId = leavePlanTypeId });
+            if (resultSet == null || resultSet.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Fail to get leave plan type details");
 
+            LeavePlanType leavePlanType = Converter.ToType<LeavePlanType>(resultSet.Tables[0]);
+            List<ApprovalWorkFlowChainFilter> approvalWorkFlowChain = Converter.ToList<ApprovalWorkFlowChainFilter>(resultSet.Tables[1]);
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
 
-            return leavePlanConfiguration;
+            return new { leavePlanConfiguration, approvalWorkFlowChain };
         }
 
         public LeavePlanConfiguration UpdateLeaveDetail(int leavePlanTypeId, int leavePlanId, LeaveDetail leaveDetail)
@@ -168,7 +172,6 @@ namespace ServiceLayer.Code
                 leaveAccrual.IsAccrualStartsAfterProbationEnds,
                 leaveAccrual.AccrualDaysAfterJoining,
                 leaveAccrual.AccrualDaysAfterProbationEnds,
-                AccrualProrateDetail = JsonConvert.SerializeObject(leaveAccrual.AccrualProrateDetail),
                 leaveAccrual.IsImpactedOnWorkDaysEveryMonth,
                 leaveAccrual.WeekOffAsAbsentIfAttendaceLessThen,
                 leaveAccrual.HolidayAsAbsentIfAttendaceLessThen,
@@ -222,7 +225,6 @@ namespace ServiceLayer.Code
                 leaveAccrual.AccrualDaysAfterJoining = 0;
                 leaveAccrual.IsAccrualStartsAfterProbationEnds = false;
                 leaveAccrual.AccrualDaysAfterProbationEnds = 0;
-                leaveAccrual.AccrualProrateDetail = new List<AccrualProrate>();
             }
 
             if (leaveAccrual.IsAccrualStartsAfterJoining == true)
@@ -489,9 +491,6 @@ namespace ServiceLayer.Code
             if (leavePlanType == null)
                 throw new HiringBellException("Invalid plan type id. No record found.");
 
-            if (leaveApproval.IsLeaveRequiredApproval == false)
-                leaveApproval.ApprovalChain = new List<ApprovalRoleDetail>();
-
             leaveApproval.LeavePlanTypeId = leavePlanTypeId;
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
@@ -502,7 +501,7 @@ namespace ServiceLayer.Code
                 leaveApproval.LeavePlanTypeId,
                 leaveApproval.IsLeaveRequiredApproval,
                 leaveApproval.ApprovalLevels,
-                ApprovalChain = JsonConvert.SerializeObject(leaveApproval.ApprovalChain),
+                leaveApproval.ApprovalWorkFlowId,
                 leaveApproval.IsRequiredAllLevelApproval,
                 leaveApproval.CanHigherRankPersonsIsAvailForAction,
                 leaveApproval.IsPauseForApprovalNotification,

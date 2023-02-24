@@ -149,7 +149,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update attendance status");
                 else
                     requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
-                await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status);
+                Task task = Task.Run(async() => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
                 return requestModel;
             }
             catch (Exception)

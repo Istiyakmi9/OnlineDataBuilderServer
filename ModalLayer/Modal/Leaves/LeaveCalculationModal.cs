@@ -27,10 +27,13 @@ namespace ModalLayer.Modal.Leaves
         public int employeeType { set; get; }
         public bool isApplyingForHalfDay { set; get; }
         public long AssigneId { get; set; }
+        public string AssigneeEmail { get; set; }
         public bool IsEmailNotificationPasued { get; set; }
         public bool IsLeaveAutoApproval { get; set; }
         public bool DocumentProffAttached { get; set; }
         public decimal numberOfLeaveApplyring { set; get; }
-        public CompleteLeaveDetail lastAppliedLeave { set; get; }
+        public List<LeaveRequestNotification> lastAppliedLeave { set; get; }
+        public bool runTillMonthOfPresnetYear { set; get; }
+        public decimal ProjectedFutureLeave { get; set; }
     }
 }
