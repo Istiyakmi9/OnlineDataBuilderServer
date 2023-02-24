@@ -67,10 +67,7 @@ namespace ServiceLayer.Code
 
             if (completeLeaveDetail != null)
             {
-                var singleLeaveDetail = completeLeaveDetail.Find(x =>
-                    leaveDeatil.LeaveFromDay.Date.Subtract(x.LeaveFromDay.Date).TotalDays == 0 &&
-                    leaveDeatil.LeaveToDay.Date.Subtract(x.LeaveToDay.Date).TotalDays == 0
-                );
+                var singleLeaveDetail = completeLeaveDetail.Find(x => x.RecordId == leaveDeatil.RecordId);
 
                 if (singleLeaveDetail != null)
                 {
@@ -81,12 +78,12 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    throw new HiringBellException("Error");
+                    throw new HiringBellException("Unable to find applied leave. Please contact to admin");
                 }
             }
             else
             {
-                throw new HiringBellException("Error");
+                throw new HiringBellException("Unable to find applied leave detail. Please contact to admin");
             }
 
             if (leaveRequestDetail != null)
@@ -110,7 +107,8 @@ namespace ServiceLayer.Code
                     leaveRequestDetail.TotalLeaveQuota,
                     leaveRequestDetail.LeaveQuotaDetail,
                     NumOfDays = 0,
-                    leaveDeatil.LeaveRequestNotificationId
+                    leaveDeatil.LeaveRequestNotificationId,
+                    RecordId = leaveDeatil.RecordId
                 }, true);
                 if (string.IsNullOrEmpty(message))
                     throw new HiringBellException("Unable to update leave status. Please contact to admin");
@@ -120,7 +118,7 @@ namespace ServiceLayer.Code
             leaveRequestDetail.LeaveToDay = leaveDeatil.LeaveToDay;
             leaveRequestDetail.Reason = leaveDeatil.Reason;
             leaveRequestDetail.LeaveType = leaveDeatil.LeaveType;
-            await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status);
+            Task task = Task.Run(async() => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
         }
 
         public List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification leaveRequestNotification, int filterId = ApplicationConstants.Only)

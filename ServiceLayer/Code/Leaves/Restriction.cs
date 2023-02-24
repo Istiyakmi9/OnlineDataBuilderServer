@@ -162,7 +162,7 @@ namespace ServiceLayer.Code.Leaves
                 {
                     if (leaveCalculationModal.numberOfLeaveApplyring > _leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation)
                         throw new HiringBellException($"In probation period you can take upto " +
-                            $"{leaveCalculationModal.numberOfLeaveApplyring} no. of days only.");
+                            $"{_leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation} no. of days only.");
                 }
             }
 

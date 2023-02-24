@@ -705,13 +705,13 @@ namespace ServiceLayer.Code
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
-            long RecordId = DateTime.Now.Ticks;
+            int RecordId = new Random(1).Next(1, 999999999);
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
                 RecordId = RecordId,
                 EmployeeId = leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 EmployeeName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
-                AssignTo = leaveCalculationModal.AssigneId,
+                AssignTo = leaveCalculationModal.employee.ReportingManagerId,
                 Session = leaveRequestModal.Session,
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
                 LeaveTypeId = leaveRequestModal.LeaveTypeId,
@@ -736,7 +736,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 leaveCalculationModal.leaveRequestDetail.LeaveDetail,
                 leaveCalculationModal.leaveRequestDetail.Reason,
-                AssignTo = leaveCalculationModal.AssigneId,
+                AssignTo = leaveCalculationModal.employee.ReportingManagerId,
                 Year = leaveRequestModal.LeaveToDay.Year,
                 leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
                 leaveCalculationModal.leaveRequestDetail.LeaveToDay,
