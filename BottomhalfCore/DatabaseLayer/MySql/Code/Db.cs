@@ -1,4 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
+using Google.Protobuf.WellKnownTypes;
+using Microsoft.VisualBasic;
 using ModalLayer;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
@@ -7,7 +10,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
+using static ApplicationConstants;
 
 namespace BottomhalfCore.DatabaseLayer.MySql.Code
 {
@@ -495,6 +500,166 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
 
             return genericReaderData;
+        }
+
+        private string PrepareQuery(List<object> rows, string affectedValue, string tableName, long lastKey)
+        {
+            int i = 0;
+            var first = rows.First();
+            var properties = first.GetType().GetProperties().ToList();
+            StringBuilder query = new StringBuilder();
+            query.AppendLine($"insert into {tableName} values ");
+            string delimiter = string.Empty;
+
+            var update = CreateUpdateQuery(first, properties);
+
+            rows.ForEach(x =>
+            {
+                if (i != 0)
+                    delimiter = ",";
+
+                query.AppendLine(CreateQueryRow(affectedValue, x, properties, delimiter, $"{lastKey + (i + 1)}"));
+                i++;
+            });
+
+            return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
+        }
+
+        private string CreateUpdateQuery(object row, List<PropertyInfo> properties)
+        {
+            int i = 0;
+            string delimiter = "";
+            StringBuilder update = new StringBuilder();
+            while (i < properties.Count())
+            {
+                if (i != 0)
+                {
+                    if (i > 1)
+                        delimiter = ",";
+
+                    update.Append($"{delimiter} {properties[i].Name} = values({properties[i].Name})");
+                }
+
+                i++;
+            }
+
+            return update.ToString();
+        }
+
+        private string CreateQueryRow(string affectedValue, object x, List<PropertyInfo> properties, string rowDelimiter, string autoIncrementValue)
+        {
+            string delimiter = "";
+            object value = null;
+            StringBuilder builder = new StringBuilder();
+
+            builder.Append($"{rowDelimiter}(");
+
+            int i = 0;
+            PropertyInfo prop = null;
+            while (i < properties.Count)
+            {
+                if (i != 0)
+                {
+                    delimiter = ",";
+                }
+                else
+                {
+                    builder.Append(autoIncrementValue);
+                    i++;
+                    continue;
+                }
+
+                prop = x.GetType().GetProperty(properties[i].Name);
+                value = prop.GetValue(x, null);
+                if (value.ToString() == ApplicationConstants.LastInsertedKey)
+                {
+                    value = Convert.ChangeType(affectedValue, prop.PropertyType);
+                    builder.Append($"{delimiter} '{value}'");
+                }
+                else if (value.ToString() == ApplicationConstants.LastInsertedNumericKey)
+                {
+                    value = Convert.ChangeType(affectedValue, prop.PropertyType);
+                    builder.Append(delimiter + value);
+                }
+                else
+                {
+                    if (prop.PropertyType == typeof(string) || prop.PropertyType == typeof(DateTime))
+                        builder.Append($"{delimiter} '{value}'");
+                    else
+                        builder.Append(delimiter + value);
+                }
+
+                i++;
+            }
+
+            builder.Append(")");
+            return builder.ToString();
+        }
+
+        public async Task<string> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        {
+            try
+            {
+                string status = string.Empty;
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (MySqlTransaction transaction = connection.BeginTransaction())
+                    {
+                        using (MySqlCommand command = new MySqlCommand())
+                        {
+                            Utility util = new Utility();
+
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = firstProcedure;
+                            command.Connection = connection;
+
+                            object userType = parameters;
+                            var properties = userType.GetType().GetProperties().ToList();
+                            util.BindParametersWithValue(parameters, properties, command, true);
+                            int rowsAffected = await command.ExecuteNonQueryAsync();
+                            if (rowsAffected > 0)
+                            {
+                                var statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                                if (statusMessage != "0" && statusMessage != "")
+                                {
+                                    string pKey = DbProcedure.getKey(secondProcedure);
+                                    command.Parameters.Clear();
+                                    command.CommandType = CommandType.Text;
+                                    command.CommandText = $"select {pKey} from {secondProcedure} order by {pKey} desc limit 1;";
+                                    var lastKey = await command.ExecuteScalarAsync();
+                                    long lastValue = 0;
+                                    if (lastKey == null)
+                                        lastValue = 0;
+                                    else
+                                        lastValue = Convert.ToInt64(lastKey);
+
+                                    var query = PrepareQuery(secondQuery, statusMessage, secondProcedure, lastValue);
+                                    command.Parameters.Clear();
+                                    command.CommandType = CommandType.Text;
+                                    command.CommandText = query;
+
+                                    rowsAffected = await command.ExecuteNonQueryAsync();
+                                    if (rowsAffected > 0)
+                                        await transaction.CommitAsync();
+                                    else
+                                        await transaction.RollbackAsync();
+                                }
+                                else
+                                {
+                                    await transaction.RollbackAsync();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return status;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public int BatchInset(string ProcedureName, DataTable table)
