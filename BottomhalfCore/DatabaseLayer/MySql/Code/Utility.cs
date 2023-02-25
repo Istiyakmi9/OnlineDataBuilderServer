@@ -133,5 +133,32 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 cmd.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
             }
         }
+
+        public void MultiRowParametersWithValue(object instance, List<PropertyInfo> properties, MySqlCommand cmd, string affectedValue)
+        {
+            foreach (PropertyInfo p in properties)
+            {
+                var param = _helperService.GetDataType(p.PropertyType);
+                var prop = instance.GetType().GetProperty(p.Name);
+                if (prop != null && param != null)
+                {
+                    var type = Type.GetType(param.TypeQualifiedName);
+                    var value = prop.GetValue(instance, null);
+                    if (value != null)
+                    {
+                        if (value.ToString() == ApplicationConstants.LastInsertedKey)
+                            cmd.Parameters.Add($"_{p.Name}", param.DbType).Value = Convert.ChangeType(affectedValue, type);
+                        else
+                            cmd.Parameters.Add($"_{p.Name}", param.DbType).Value = Convert.ChangeType(value, type);
+                    }
+                    else
+                        cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
+                }
+            }
+        }
     }
 }
