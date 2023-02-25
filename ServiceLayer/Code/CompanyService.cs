@@ -61,8 +61,7 @@ namespace ServiceLayer.Code
 
         public List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup)
         {
-            if (companyGroup.OrganizationId == 0)
-                throw new HiringBellException("Invalid organization id.");
+            ValidateCompanyGroup(companyGroup);
 
             List<OrganizationDetail> companyGrp = null;
             companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
@@ -76,11 +75,29 @@ namespace ServiceLayer.Code
 
             var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
             if (string.IsNullOrEmpty(value))
-
                 throw new HiringBellException("Fail to insert company group.");
+
             companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
             // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
             return companyGrp;
+        }
+
+        private void ValidateCompanyGroup(OrganizationDetail companyGroup)
+        {
+            if (companyGroup.OrganizationId == 0)
+                throw new HiringBellException("Invalid organization id.");
+
+            if (string.IsNullOrEmpty(companyGroup.CompanyName))
+                throw HiringBellException.ThrowBadRequest("Company name is null or empty");
+
+            if (string.IsNullOrEmpty(companyGroup.CompanyDetail))
+                throw HiringBellException.ThrowBadRequest("Company detail is null or empty");
+
+            if (companyGroup.InCorporationDate == null)
+                throw HiringBellException.ThrowBadRequest("Company incorporation date is null");
+
+            if (string.IsNullOrEmpty(companyGroup.Email))
+                throw HiringBellException.ThrowBadRequest("Email is null or empty");
         }
 
         public dynamic GetCompanyById(int CompanyId)

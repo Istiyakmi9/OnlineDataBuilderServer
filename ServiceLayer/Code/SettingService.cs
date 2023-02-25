@@ -101,8 +101,7 @@ namespace ServiceLayer.Code
 
         public string InsertUpdatePayrollSetting(Payroll payroll)
         {
-            if (payroll.CompanyId <= 0)
-                throw new HiringBellException("Compnay is mandatory. Please selecte your company first.");
+            ValidatePayrollSetting(payroll);
 
             var status = _db.Execute<Payroll>("sp_payroll_cycle_setting_intupd",
                 new
@@ -127,6 +126,24 @@ namespace ServiceLayer.Code
             }
 
             return status;
+        }
+
+        private void ValidatePayrollSetting(Payroll payroll)
+        {
+            if (payroll.CompanyId <= 0)
+                throw new HiringBellException("Compnay is mandatory. Please selecte your company first.");
+
+            if (payroll.PayCycleMonth == null || payroll.PayCycleMonth < 0)
+                throw HiringBellException.ThrowBadRequest("Please select payroll month first");
+
+            if (string.IsNullOrEmpty(payroll.PayFrequency))
+                throw HiringBellException.ThrowBadRequest("Please select pay frequency first");
+
+            if (payroll.PayCycleDayOfMonth == null || payroll.PayCycleDayOfMonth < 0)
+                throw HiringBellException.ThrowBadRequest("Please select pay cycle day of month first");
+
+            if (payroll.PayCalculationId == null || payroll.PayCalculationId < 0)
+                throw HiringBellException.ThrowBadRequest("Please select payment type first");
         }
 
         public string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)
@@ -255,7 +272,7 @@ namespace ServiceLayer.Code
                                             AdminId = _currentSession.CurrentUserDetail.UserId
                                         }).ToList();
 
-                int statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
+                var statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
 
                 if (statue <= 0)
                     throw new HiringBellException("Unable to update detail");
@@ -318,7 +335,7 @@ namespace ServiceLayer.Code
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
 
-                status = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
                 if (status <= 0)
                     throw new HiringBellException("Unable to update detail");
             }

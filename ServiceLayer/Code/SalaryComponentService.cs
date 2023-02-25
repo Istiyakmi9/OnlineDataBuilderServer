@@ -211,8 +211,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
         {
-            if (salaryGroup.CompanyId <= 0)
-                throw new HiringBellException("Invalid data selected to create group. Please contact to admin.");
+            ValidateSalaryGroup(salaryGroup);
 
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_get_if_exists", new
             {
@@ -250,6 +249,24 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
             List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
+        }
+
+        private void ValidateSalaryGroup(SalaryGroup salaryGroup)
+        {
+            if (salaryGroup.CompanyId <= 0)
+                throw new HiringBellException("Invalid data selected to create group. Please contact to admin.");
+
+            if (string.IsNullOrEmpty(salaryGroup.GroupName))
+                throw HiringBellException.ThrowBadRequest("Salary group name is null or empty");
+
+            if (string.IsNullOrEmpty(salaryGroup.GroupDescription))
+                throw HiringBellException.ThrowBadRequest("Salary group description is null or empty");
+
+            if (salaryGroup.MinAmount < 0)
+                throw HiringBellException.ThrowBadRequest("Salary group minimum amount is invalid");
+
+            if (salaryGroup.MaxAmount < 0)
+                throw HiringBellException.ThrowBadRequest("Salary group maximum amount is invalid");
         }
 
         public async Task<List<SalaryComponents>> AddUpdateRecurringComponents(SalaryStructure recurringComponent)
@@ -434,12 +451,13 @@ namespace ServiceLayer.Code
         public List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup)
         {
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            salaryGroups = salaryGroups.Where(x => x.SalaryGroupId != salaryGroup.SalaryGroupId).ToList();
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
             {
                 if ((salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
                     throw new HiringBellException("Salary group limit already exist");
             }
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
             if (salaryGrp == null)
                 throw new HiringBellException("Salary Group already exist.");
             else
