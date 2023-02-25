@@ -9,6 +9,8 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using static ApplicationConstants;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -87,6 +89,23 @@ namespace OnlineDataBuilder.Controllers
 
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
+
+            //var items = (from n in Enumerable.Range(1, 10)
+            //             select new
+            //             {
+            //                 Id = n,
+            //                 ParentId = ApplicationConstants.LastInsertedNumericKey,
+            //                 Name = $"test_0{n}"
+            //             }).ToList<object>();
+
+            //Task.Run(async () =>
+            //{
+            //    await _db.ConsicutiveBatchInset(
+            //        "sp_parent_test_ins_upd", 
+            //        new { ParentId = 1, Name = "test123" }, 
+            //        DbProcedure.Test,
+            //        items);
+            //});
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

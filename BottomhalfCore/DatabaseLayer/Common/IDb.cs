@@ -51,5 +51,7 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
             where T : new()
             where Q : new();
+
+        Task<string> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
     }
 }
