@@ -92,7 +92,7 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            await BatchInsertPerformanceTest();
+            // await BatchInsertPerformanceTest();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
