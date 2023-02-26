@@ -8,7 +8,9 @@ using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static ApplicationConstants;
 
@@ -49,7 +51,7 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IEnumerable<WeatherForecast> Get()
+        public async Task<IEnumerable<WeatherForecast>> Get()
         {
             // _eMailManager.ReadMails(null);
             // _leaveCalculation.RunLeaveCalculationCycle();
@@ -90,22 +92,7 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            //var items = (from n in Enumerable.Range(1, 10)
-            //             select new
-            //             {
-            //                 Id = n,
-            //                 ParentId = ApplicationConstants.LastInsertedNumericKey,
-            //                 Name = $"test_0{n}"
-            //             }).ToList<object>();
-
-            //Task.Run(async () =>
-            //{
-            //    await _db.ConsicutiveBatchInset(
-            //        "sp_parent_test_ins_upd", 
-            //        new { ParentId = 1, Name = "test123" }, 
-            //        DbProcedure.Test,
-            //        items);
-            //});
+            // await BatchInsertPerformanceTest();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -115,6 +102,49 @@ namespace OnlineDataBuilder.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        private async Task BatchInsertPerformanceTest()
+        {
+            var items = (from n in Enumerable.Range(1, 500)
+                         select new
+                         {
+                             Id = n,
+                             ParentId = ApplicationConstants.LastInsertedNumericKey,
+                             Name = $"test_0{n}"
+                         }).ToList<object>();
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            stopwatch.Start();
+
+            await _db.BatchInsetUpdate(
+                "sp_parent_test_ins_upd",
+                new { ParentId = -1, Name = "test_1" },
+                DbProcedure.Test,
+                items);
+
+            await _db.ConsicutiveBatchInset(
+                "sp_parent_test_ins_upd",
+                new { ParentId = -1, Name = "test_1" },
+                DbProcedure.Test,
+                items);
+
+            await _db.BatchInsetUpdate(
+                DbProcedure.Test,
+                items);
+
+            //var ms1 = stopwatch.ElapsedMilliseconds;
+            //stopwatch.Stop();
+            //stopwatch.Restart();
+
+            //await _db.ConsicutiveBatchInset(
+            //    "sp_parent_test_ins_upd",
+            //    new { ParentId = -1, Name = "test_2" },
+            //    DbProcedure.Test,
+            //    items);
+
+            stopwatch.Stop();
+            var ms2 = stopwatch.ElapsedMilliseconds;
         }
     }
 }

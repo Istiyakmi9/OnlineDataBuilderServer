@@ -710,6 +710,26 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<int> IDb.ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<int> IDb.BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> BatchInsetUpdate(string procedureName, List<object> queryData)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }

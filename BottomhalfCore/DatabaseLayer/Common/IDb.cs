@@ -44,14 +44,14 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
         Task<DataSet> GetDataSetAsync(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
         DataSet GetDataSet(string ProcedureName, dynamic Parameters = null, bool OutParam = false);
 
-        int BatchInset(string ProcedureName, DataTable table);
-
         // --------------------new -----------------------------
 
         (T, Q) Get<T, Q>(string ProcedureName, dynamic Parameters = null, bool OutParam = false)
             where T : new()
             where Q : new();
 
-        Task<string> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
+        Task<int> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
+        Task<int> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
+        Task<int> BatchInsetUpdate(string procedureName, List<object> queryData);
     }
 }

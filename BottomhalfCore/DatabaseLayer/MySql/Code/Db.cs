@@ -1,7 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using Google.Protobuf.WellKnownTypes;
-using Microsoft.VisualBasic;
 using ModalLayer;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
@@ -20,12 +18,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
     {
         private MySqlConnection con = null;
         private MySqlCommand cmd = null;
-        private MySqlDataAdapter da = null;
-        private MySqlCommandBuilder builder = null;
         private MySqlTransaction transaction = null;
-        private MySqlDataReader reader = null;
         private bool IsTransactionStarted = false;
-        private DataSet ds = null;
         private readonly string _connectionString;
         private static readonly object _lock = new object();
 
@@ -502,29 +496,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return genericReaderData;
         }
 
-        private string PrepareQuery(List<object> rows, string affectedValue, string tableName, long lastKey)
-        {
-            int i = 0;
-            var first = rows.First();
-            var properties = first.GetType().GetProperties().ToList();
-            StringBuilder query = new StringBuilder();
-            query.AppendLine($"insert into {tableName} values ");
-            string delimiter = string.Empty;
-
-            var update = CreateUpdateQuery(first, properties);
-
-            rows.ForEach(x =>
-            {
-                if (i != 0)
-                    delimiter = ",";
-
-                query.AppendLine(CreateQueryRow(affectedValue, x, properties, delimiter, $"{lastKey + (i + 1)}"));
-                i++;
-            });
-
-            return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
-        }
-
         private string CreateUpdateQuery(object row, List<PropertyInfo> properties)
         {
             int i = 0;
@@ -544,6 +515,40 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
 
             return update.ToString();
+        }
+
+
+        #region MULTI TABLE INSERT UPDATE
+
+        private string PrepareQuery(List<object> rows, string affectedValue, string tableName = null, long lastKey = -1)
+        {
+            int i = 0;
+            var first = rows.First();
+            var properties = first.GetType().GetProperties().ToList();
+            StringBuilder query = new StringBuilder();
+            if (tableName != null)
+                query.AppendLine($"insert into {tableName} values ");
+
+            string primaryKey = string.Empty;
+            if (lastKey == -1)
+                primaryKey = "@id + ";
+            else
+                primaryKey = $"{lastKey.ToString()} + ";
+
+            string delimiter = string.Empty;
+
+            var update = CreateUpdateQuery(first, properties);
+
+            rows.ForEach(x =>
+            {
+                if (i != 0)
+                    delimiter = ",";
+
+                query.AppendLine(CreateQueryRow(affectedValue, x, properties, delimiter, $"{primaryKey} {(i + 1)}"));
+                i++;
+            });
+
+            return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
         }
 
         private string CreateQueryRow(string affectedValue, object x, List<PropertyInfo> properties, string rowDelimiter, string autoIncrementValue)
@@ -596,11 +601,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return builder.ToString();
         }
 
-        public async Task<string> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        public async Task<int> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
         {
             try
             {
-                string status = string.Empty;
+                int rowsAffected = 0;
                 using (var connection = new MySqlConnection(_connectionString))
                 {
                     connection.Open();
@@ -617,8 +622,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             object userType = parameters;
                             var properties = userType.GetType().GetProperties().ToList();
                             util.BindParametersWithValue(parameters, properties, command, true);
-                            int rowsAffected = await command.ExecuteNonQueryAsync();
-                            if (rowsAffected > 0)
+                            int pRowAffected = await command.ExecuteNonQueryAsync();
+                            if (pRowAffected > 0)
                             {
                                 var statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
                                 if (statusMessage != "0" && statusMessage != "")
@@ -634,10 +639,10 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                     else
                                         lastValue = Convert.ToInt64(lastKey);
 
-                                    var query = PrepareQuery(secondQuery, statusMessage, secondProcedure, lastValue);
+                                    var rows = PrepareQuery(secondQuery, statusMessage, secondProcedure, lastValue);
                                     command.Parameters.Clear();
                                     command.CommandType = CommandType.Text;
-                                    command.CommandText = query;
+                                    command.CommandText = rows;
 
                                     rowsAffected = await command.ExecuteNonQueryAsync();
                                     if (rowsAffected > 0)
@@ -654,7 +659,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     }
                 }
 
-                return status;
+                return rowsAffected;
             }
             catch (Exception ex)
             {
@@ -662,45 +667,186 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
-        public int BatchInset(string ProcedureName, DataTable table)
+        public async Task<int> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        {
+            return await NativeBatchInsetUpdateMulti(firstProcedure, parameters, secondProcedure, secondQuery);
+        }
+
+        private async Task<int> NativeBatchInsetUpdateMulti(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
         {
             try
             {
-                int Count = 0;
-                lock (_lock)
+                int rowsAffected = 0;
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    connection.Open();
+                    using (MySqlTransaction transaction = connection.BeginTransaction())
                     {
-                        using (MySqlTransaction transaction = connection.BeginTransaction())
+                        using (MySqlCommand command = new MySqlCommand())
                         {
-                            using (MySqlCommand command = new MySqlCommand())
-                            {
-                                command.Connection = con;
-                                command.CommandType = CommandType.StoredProcedure;
-                                command.CommandText = ProcedureName;
-                                command.UpdatedRowSource = UpdateRowSource.None;
+                            Utility util = new Utility();
 
-                                using (var da = new MySqlDataAdapter())
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = firstProcedure;
+                            command.Connection = connection;
+
+                            object userType = parameters;
+                            var properties = userType.GetType().GetProperties().ToList();
+                            util.BindParametersWithValue(parameters, properties, command, true);
+                            int pRowsAffected = await command.ExecuteNonQueryAsync();
+                            if (pRowsAffected > 0)
+                            {
+                                var statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                                if (statusMessage != "0" && statusMessage != "")
                                 {
-                                    da.InsertCommand = cmd;
-                                    da.UpdateBatchSize = 100;
-                                    con.Open();
-                                    Count += da.Update(table);
+                                    string pKey = DbProcedure.getKey(secondProcedure);
+                                    var rows = PrepareQuery(secondQuery, statusMessage);
+                                    command.Parameters.Clear();
+                                    command.CommandType = CommandType.StoredProcedure;
+                                    command.CommandText = "sp_dynamic_query_ins_upd";
+
+                                    command.Parameters.AddWithValue("_TableName", secondProcedure);
+                                    command.Parameters.AddWithValue("_PrimaryKey", pKey);
+                                    command.Parameters.AddWithValue("_Rows", rows);
+
+                                    rowsAffected = await command.ExecuteNonQueryAsync();
+                                    if (rowsAffected > 0)
+                                        await transaction.CommitAsync();
+                                    else
+                                        await transaction.RollbackAsync();
+                                }
+                                else
+                                {
+                                    await transaction.RollbackAsync();
                                 }
                             }
-
-                            transaction.Commit();
                         }
                     }
                 }
 
-                return Count;
+                return rowsAffected;
             }
             catch (Exception ex)
             {
                 throw ex;
             }
         }
+
+        #endregion
+
+
+        #region BULK INSERT UPDATE SIGLE TABLE
+
+        private string PrepareQuerySingle(List<object> rows, string tableName)
+        {
+            int i = 0;
+            var first = rows.First();
+            var properties = first.GetType().GetProperties().ToList();
+            StringBuilder query = new StringBuilder();
+            if (tableName != null)
+                query.AppendLine($"insert into {tableName} values ");
+
+            string primaryKey = "@id + ";
+            string delimiter = string.Empty;
+
+            var update = CreateUpdateQuery(first, properties);
+
+            rows.ForEach(x =>
+            {
+                if (i != 0)
+                    delimiter = ",";
+
+                query.AppendLine(CreateQuerySingleTableRows(x, properties, delimiter, $"{primaryKey} {(i + 1)}"));
+                i++;
+            });
+
+            return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
+        }
+
+        private string CreateQuerySingleTableRows(object x, List<PropertyInfo> properties, string rowDelimiter, string autoIncrementValue)
+        {
+            string delimiter = "";
+            object value = null;
+            StringBuilder builder = new StringBuilder();
+
+            builder.Append($"{rowDelimiter}(");
+
+            int i = 0;
+            PropertyInfo prop = null;
+            while (i < properties.Count)
+            {
+                if (i != 0)
+                {
+                    delimiter = ",";
+                }
+                else
+                {
+                    builder.Append(autoIncrementValue);
+                    i++;
+                    continue;
+                }
+
+                prop = x.GetType().GetProperty(properties[i].Name);
+                value = prop.GetValue(x, null);
+                if (prop.PropertyType == typeof(string) || prop.PropertyType == typeof(DateTime))
+                    builder.Append($"{delimiter} '{value}'");
+                else
+                    builder.Append(delimiter + value);
+
+                i++;
+            }
+
+            builder.Append(")");
+            return builder.ToString();
+        }
+
+        public async Task<int> BatchInsetUpdate(string procedureName, List<object> data)
+        {
+            return await NativeBatchInsetUpdate(procedureName, data);
+        }
+
+        public async Task<int> NativeBatchInsetUpdate(string procedureName, List<object> secondQuery)
+        {
+            int rowsAffected = 0;
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (MySqlTransaction transaction = connection.BeginTransaction())
+                {
+                    using (MySqlCommand command = new MySqlCommand())
+                    {
+                        try
+                        {
+                            Utility util = new Utility();
+                            string pKey = DbProcedure.getKey(procedureName);
+                            var rows = PrepareQuerySingle(secondQuery, procedureName);
+                            command.Parameters.Clear();
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = "sp_dynamic_query_ins_upd";
+                            command.Connection = connection;
+
+                            command.Parameters.AddWithValue("_TableName", procedureName);
+                            command.Parameters.AddWithValue("_PrimaryKey", pKey);
+                            command.Parameters.AddWithValue("_Rows", rows);
+
+                            rowsAffected = await command.ExecuteNonQueryAsync();
+                            if (rowsAffected > 0)
+                                await transaction.CommitAsync();
+                            else
+                                await transaction.RollbackAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            throw ex;
+                        }
+                    }
+                }
+
+                return rowsAffected;
+            }
+        }
+
+        #endregion
 
 
         public List<T> GetList<T>(string ProcedureName, dynamic Parameters = null, bool OutParam = false) where T : new()

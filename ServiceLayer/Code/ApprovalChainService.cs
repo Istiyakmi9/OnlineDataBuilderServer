@@ -127,13 +127,13 @@ namespace ServiceLayer.Code
                             select new
                             {
                                 ApprovalChainDetailId = ApplicationConstants.LastInsertedNumericKey,
-                                ApprovalWorkFlowId = approvalWorkFlowId,
+                                ApprovalWorkFlowId = DbProcedure.getParentKey(approvalWorkFlowId),
                                 AssignieId = n.AssignieId,
                                 IsRequired = n.IsRequired,
                                 IsForwardEnabled = n.IsForwardEnabled,
                                 ForwardWhen = n.ForwardWhen,
                                 ForwardAfterDays = n.ForwardAfterDays,
-                                LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff"),
+                                LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
                                 ApprovalStatus = n.ApprovalStatus
                             }
                     ).ToList<object>();
