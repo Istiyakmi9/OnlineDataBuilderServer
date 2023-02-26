@@ -92,17 +92,17 @@ public class ApplicationConstants
 
     public class DbProcedure
     {
-        public const string Test = "test";
-        public const string ParentTest = "parent_test";
+        public const string Test = "approval_chain_detail";
+        public const string ParentTest = "approval_work_flow";
 
         public static string getKey(string table)
         {
             switch (table)
             {
                 case DbProcedure.Test:
-                    return "Id";
+                    return "ApprovalChainDetailId";
                 case DbProcedure.ParentTest:
-                    return "ParentId";
+                    return "ApprovalWorkFlowId";
             }
             return null;
         }
