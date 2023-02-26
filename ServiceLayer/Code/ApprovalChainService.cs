@@ -216,52 +216,56 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<ApprovalWorkFlowChain> GetApprovalChainData(int ApprovalWorkFlowId)
+        public async Task<dynamic> GetApprovalChainData(int ApprovalWorkFlowId)
         {
             string searchString = string.Empty;
-            if (ApprovalWorkFlowId == 0)
-                throw HiringBellException.ThrowBadRequest("Invalid approval chain detail id passed");
+            ApprovalWorkFlowChain approvalWorkFlowChain = null;
 
-            var result = _db.GetList<ApprovalWorkFlowChainFilter>("sp_approval_chain_detail_by_id", new
+            (List<ApprovalWorkFlowChainFilter> approvalWorkFlow, List<EmployeeRole> employeeRole) = _db.GetList<ApprovalWorkFlowChainFilter, EmployeeRole>("sp_approval_chain_detail_by_id", new
             {
                 ApprovalWorkFlowId
             });
 
-            if (result.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Fail to get record.");
+            if (employeeRole.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Fail to get employee role.");
 
-            var firstRecord = result.First();
-            ApprovalWorkFlowChain approvalWorkFlowChain = new ApprovalWorkFlowChain
+            if (approvalWorkFlow.Count > 0)
             {
-                ApprovalChainDetailId = firstRecord.ApprovalChainDetailId,
-                ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId,
-                Title = firstRecord.Title,
-                TitleDescription = firstRecord.TitleDescription,
-                Status = firstRecord.Status,
-                IsAutoExpiredEnabled = firstRecord.IsAutoExpiredEnabled,
-                AutoExpireAfterDays = firstRecord.AutoExpireAfterDays,
-                IsSilentListner = firstRecord.IsSilentListner,
-                ListnerDetail = firstRecord.ListnerDetail,
-                ApprovalChainDetails = new List<ApprovalChainDetail>()
-            };
-
-            approvalWorkFlowChain.ApprovalChainDetails = (
-                from n in result
-                select new ApprovalChainDetail
+                var firstRecord = approvalWorkFlow.First();
+                approvalWorkFlowChain = new ApprovalWorkFlowChain
                 {
-                    ApprovalChainDetailId = n.ApprovalChainDetailId,
-                    ApprovalWorkFlowId = n.ApprovalWorkFlowId,
-                    AssignieId = n.AssignieId,
-                    IsRequired = n.IsRequired,
-                    IsForwardEnabled = n.IsForwardEnabled,
-                    ForwardWhen = n.ForwardWhen,
-                    ForwardAfterDays = n.ForwardAfterDays,
-                    LastUpdatedOn = n.LastUpdatedOn,
-                    ApprovalStatus = n.ApprovalStatus
-                }
-             ).ToList<ApprovalChainDetail>();
+                    ApprovalChainDetailId = firstRecord.ApprovalChainDetailId,
+                    ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId,
+                    Title = firstRecord.Title,
+                    TitleDescription = firstRecord.TitleDescription,
+                    Status = firstRecord.Status,
+                    IsAutoExpiredEnabled = firstRecord.IsAutoExpiredEnabled,
+                    AutoExpireAfterDays = firstRecord.AutoExpireAfterDays,
+                    IsSilentListner = firstRecord.IsSilentListner,
+                    ListnerDetail = firstRecord.ListnerDetail,
+                    ApprovalChainDetails = new List<ApprovalChainDetail>()
+                };
 
-            return await Task.FromResult(approvalWorkFlowChain);
+                approvalWorkFlowChain.ApprovalChainDetails = (
+                    from n in approvalWorkFlow
+                    select new ApprovalChainDetail
+                    {
+                        ApprovalChainDetailId = n.ApprovalChainDetailId,
+                        ApprovalWorkFlowId = n.ApprovalWorkFlowId,
+                        AssignieId = n.AssignieId,
+                        IsRequired = n.IsRequired,
+                        IsForwardEnabled = n.IsForwardEnabled,
+                        ForwardWhen = n.ForwardWhen,
+                        ForwardAfterDays = n.ForwardAfterDays,
+                        LastUpdatedOn = n.LastUpdatedOn,
+                        ApprovalStatus = n.ApprovalStatus
+                    }
+                 ).ToList<ApprovalChainDetail>();
+            }
+
+            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 11 || x.RoleId == 12 || x.RoleId == 13 || x.RoleId == 16);
+
+            return await Task.FromResult(new { approvalWorkFlowChain, employeeRole });
         }
 
     }

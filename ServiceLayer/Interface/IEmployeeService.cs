@@ -20,6 +20,6 @@ namespace ServiceLayer.Interface
         Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
         Task<DataSet> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
-        string GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
+        Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
     }
 }
