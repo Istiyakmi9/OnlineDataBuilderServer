@@ -904,7 +904,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
         }
 
-        public string GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter)
+        public async Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter)
         {
             ValidateEmpOfferLetter(employeeOfferLetter);
 

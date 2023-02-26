@@ -31,7 +31,7 @@ namespace ServiceLayer.Code
         {
             LeavePlanConfiguration leavePlanConfiguration = new LeavePlanConfiguration();
             var resultSet = _db.FetchDataSet("sp_leave_plans_type_and_workflow_byId", new { LeavePlanTypeId = leavePlanTypeId });
-            if (resultSet == null || resultSet.Tables.Count != 2)
+            if (resultSet == null || resultSet.Tables.Count != 3)
                 throw HiringBellException.ThrowBadRequest("Fail to get leave plan type details");
 
             LeavePlanType leavePlanType = Converter.ToType<LeavePlanType>(resultSet.Tables[0]);
@@ -39,7 +39,9 @@ namespace ServiceLayer.Code
             if (leavePlanType != null && !string.IsNullOrEmpty(leavePlanType.PlanConfigurationDetail))
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
 
-            return new { leavePlanConfiguration, approvalWorkFlowChain };
+            List<EmployeeRole> employeeRole = Converter.ToList<EmployeeRole>(resultSet.Tables[2]);
+            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 11 || x.RoleId == 12 || x.RoleId == 13 || x.RoleId == 16);
+            return new { leavePlanConfiguration, approvalWorkFlowChain, employeeRole };
         }
 
         public LeavePlanConfiguration UpdateLeaveDetail(int leavePlanTypeId, int leavePlanId, LeaveDetail leaveDetail)

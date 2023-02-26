@@ -154,7 +154,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GenerateOfferLetter")]
         public async Task<ApiResponse> GenerateOfferLetter(EmployeeOfferLetter employeeOfferLetter)
         {
-            var result = _employeeService.GenerateOfferLetterService(employeeOfferLetter);
+            var result = await _employeeService.GenerateOfferLetterService(employeeOfferLetter);
             return BuildResponse(result);
         }
     }
