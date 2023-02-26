@@ -266,6 +266,14 @@ namespace ServiceLayer.Code
                 if (i.CompanyId <= 0)
                     throw new HiringBellException("Invalid company. Please select a valid company.");
 
+                if (i.MinIncome < 0 || i.MinIncome == null)
+                    throw new HiringBellException("Invalid minimum income. Please enter a valid company.");
+
+                if (i.MaxIncome < 0 || i.MaxIncome == null)
+                    throw new HiringBellException("Invalid minimum income. Please enter a valid company.");
+
+                if (i.TaxAmount < 0 || i.TaxAmount == null)
+                    throw new HiringBellException("Invalid minimum income. Please enter a valid company.");
             });
         }
 
