@@ -710,6 +710,11 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
+        public Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
     }
