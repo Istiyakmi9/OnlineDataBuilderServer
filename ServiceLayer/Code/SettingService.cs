@@ -133,16 +133,16 @@ namespace ServiceLayer.Code
             if (payroll.CompanyId <= 0)
                 throw new HiringBellException("Compnay is mandatory. Please selecte your company first.");
 
-            if (payroll.PayCycleMonth == null || payroll.PayCycleMonth < 0)
+            if (payroll.PayCycleMonth < 0)
                 throw HiringBellException.ThrowBadRequest("Please select payroll month first");
 
             if (string.IsNullOrEmpty(payroll.PayFrequency))
                 throw HiringBellException.ThrowBadRequest("Please select pay frequency first");
 
-            if (payroll.PayCycleDayOfMonth == null || payroll.PayCycleDayOfMonth < 0)
+            if (payroll.PayCycleDayOfMonth < 0)
                 throw HiringBellException.ThrowBadRequest("Please select pay cycle day of month first");
 
-            if (payroll.PayCalculationId == null || payroll.PayCalculationId < 0)
+            if (payroll.PayCalculationId < 0)
                 throw HiringBellException.ThrowBadRequest("Please select payment type first");
         }
 

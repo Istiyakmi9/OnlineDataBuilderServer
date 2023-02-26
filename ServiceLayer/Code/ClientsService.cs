@@ -127,6 +127,7 @@ namespace ServiceLayer.Code
                                         UserTypeId = (int)UserType.Client,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
+                    
 
                     var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }

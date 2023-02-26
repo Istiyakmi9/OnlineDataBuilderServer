@@ -1,15 +1,15 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json;
 using System.Data;
-using BottomhalfCore.Services.Code;
-using BottomhalfCore.Services.Interface;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -193,7 +193,6 @@ namespace ServiceLayer.Code
                             else
                                 finalResult.Add(newComponents);
                         }
-
                     }
                     else
                     {

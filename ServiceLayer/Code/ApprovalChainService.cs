@@ -9,6 +9,7 @@ using ModalLayer;
 using System.Text;
 using System.Collections.Generic;
 using DocumentFormat.OpenXml.Drawing.ChartDrawing;
+using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -80,48 +81,78 @@ namespace ServiceLayer.Code
                     });
                 }
 
-                _db.StartTransaction(System.Data.IsolationLevel.ReadUncommitted);
+                //_db.StartTransaction(System.Data.IsolationLevel.ReadUncommitted);
 
-                result = await _db.ExecuteAsync("sp_approval_work_flow_insupd", new
-                {
-                    approvalWorkFlowModal.ApprovalWorkFlowId,
-                    approvalWorkFlowModal.Title,
-                    approvalWorkFlowModal.TitleDescription,
-                    approvalWorkFlowModal.Status,
-                    approvalWorkFlowModal.IsAutoExpiredEnabled,
-                    approvalWorkFlowModal.AutoExpireAfterDays,
-                    approvalWorkFlowModal.IsSilentListner,
-                    approvalWorkFlowModal.ListnerDetail,
-                    AdminId = _currentSession.CurrentUserDetail.UserId
-                }, true);
+                //result = await _db.ExecuteAsync("sp_approval_work_flow_insupd", new
+                //{
+                //    approvalWorkFlowModal.ApprovalWorkFlowId,
+                //    approvalWorkFlowModal.Title,
+                //    approvalWorkFlowModal.TitleDescription,
+                //    approvalWorkFlowModal.Status,
+                //    approvalWorkFlowModal.IsAutoExpiredEnabled,
+                //    approvalWorkFlowModal.AutoExpireAfterDays,
+                //    approvalWorkFlowModal.IsSilentListner,
+                //    approvalWorkFlowModal.ListnerDetail,
+                //    AdminId = _currentSession.CurrentUserDetail.UserId
+                //}, true);
 
-                if (!string.IsNullOrEmpty(result.statusMessage))
-                {
-                    approvalWorkFlowId = Convert.ToInt32(result.statusMessage);
-                    var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
-                                select new ApprovalChainDetail
-                                {
-                                    ApprovalChainDetailId = n.ApprovalChainDetailId,
-                                    ApprovalWorkFlowId = approvalWorkFlowId,
-                                    AssignieId = n.AssignieId,
-                                    IsRequired = n.IsRequired,
-                                    IsForwardEnabled = n.IsForwardEnabled,
-                                    ForwardWhen = n.ForwardWhen,
-                                    ForwardAfterDays = n.ForwardAfterDays,
-                                    ApprovalStatus = n.ApprovalStatus
-                                }
-                    ).ToList<ApprovalChainDetail>();
+                //if (!string.IsNullOrEmpty(result.statusMessage))
+                //{
+                //    approvalWorkFlowId = Convert.ToInt32(result.statusMessage);
+                //    var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
+                //                select new ApprovalChainDetail
+                //                {
+                //                    ApprovalChainDetailId = n.ApprovalChainDetailId,
+                //                    ApprovalWorkFlowId = approvalWorkFlowId,
+                //                    AssignieId = n.AssignieId,
+                //                    IsRequired = n.IsRequired,
+                //                    IsForwardEnabled = n.IsForwardEnabled,
+                //                    ForwardWhen = n.ForwardWhen,
+                //                    ForwardAfterDays = n.ForwardAfterDays,
+                //                    ApprovalStatus = n.ApprovalStatus
+                //                }
+                //    ).ToList<ApprovalChainDetail>();
 
-                    var rowsEffected = await _db.BulkExecuteAsync("sp_approval_chain_detail_insupd", data, true);
-                    if (rowsEffected == 0)
-                        throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
+                //    var rowsEffected = await _db.BulkExecuteAsync("sp_approval_chain_detail_insupd", data, true);
+                //    if (rowsEffected == 0)
+                //        throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
 
-                    _db.Commit();
-                }
-                else
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-                }
+                //    _db.Commit();
+                //}
+                //else
+                //{
+                //    throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
+                //}
+                var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
+                            select new
+                            {
+                                ApprovalChainDetailId = ApplicationConstants.LastInsertedNumericKey,
+                                ApprovalWorkFlowId = approvalWorkFlowId,
+                                AssignieId = n.AssignieId,
+                                IsRequired = n.IsRequired,
+                                IsForwardEnabled = n.IsForwardEnabled,
+                                ForwardWhen = n.ForwardWhen,
+                                ForwardAfterDays = n.ForwardAfterDays,
+                                LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff"),
+                                ApprovalStatus = n.ApprovalStatus
+                            }
+                    ).ToList<object>();
+
+                await _db.ConsicutiveBatchInset("sp_approval_work_flow_insupd",
+                    new
+                    {
+                        approvalWorkFlowModal.ApprovalWorkFlowId,
+                        approvalWorkFlowModal.Title,
+                        approvalWorkFlowModal.TitleDescription,
+                        approvalWorkFlowModal.Status,
+                        approvalWorkFlowModal.IsAutoExpiredEnabled,
+                        approvalWorkFlowModal.AutoExpireAfterDays,
+                        approvalWorkFlowModal.IsSilentListner,
+                        approvalWorkFlowModal.ListnerDetail,
+                        AdminId = _currentSession.CurrentUserDetail.UserId
+                    },
+                    DbProcedure.Test,
+                    data);
             }
             catch (Exception)
             {
