@@ -53,6 +53,10 @@ namespace ServiceLayer.Code
 
         private void updateLeaveCountOnRejected(LeaveRequestDetail LeaveRequestDetail, int leaveTypeId, decimal leaveCount)
         {
+            if (leaveTypeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid leave type id");
+
+
             if (!string.IsNullOrEmpty(LeaveRequestDetail.LeaveQuotaDetail))
             {
                 var records = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(LeaveRequestDetail.LeaveQuotaDetail);
@@ -82,7 +86,7 @@ namespace ServiceLayer.Code
 
             if (ItemStatus.Rejected == status)
             {
-                var totalLeaves = (decimal)leaveDetail.LeaveToDay.Date.Subtract(leaveDetail.LeaveFromDay.Date).TotalDays;
+                var totalLeaves = (decimal)leaveDetail.LeaveToDay.Date.Subtract(leaveDetail.LeaveFromDay.Date).TotalDays + 1;
                 updateLeaveCountOnRejected(leaveRequestDetail, leaveDetail.LeaveTypeId, totalLeaves);
             }
 

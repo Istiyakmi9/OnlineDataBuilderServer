@@ -750,7 +750,7 @@ namespace ServiceLayer.Code
                 TotalApprovedLeave = 0,
                 TotalLeaveQuota = totalAllocatedLeave,
                 LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs),
-                NumOfDays = leaveCalculationModal.numberOfLeaveApplyring,
+                NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
                 LeaveRequestNotificationId = 0,
                 RecordId
             }, true);

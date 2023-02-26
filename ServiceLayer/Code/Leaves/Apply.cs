@@ -23,8 +23,8 @@ namespace ServiceLayer.Code.Leaves
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
 
             if (leaveCalculationModal.isApplyingForHalfDay)
-                CheckForHalfDayRestriction();
-
+                CheckForHalfDayRestriction(leaveCalculationModal);
+            
             // IsAllowedToSeeAndApply();
 
             LeaveEligibilityCheck(leaveCalculationModal);
@@ -37,12 +37,13 @@ namespace ServiceLayer.Code.Leaves
         }
 
         // step - 1
-        public void CheckForHalfDayRestriction()
+        public void CheckForHalfDayRestriction(LeaveCalculationModal leaveCalculationModal)
         {
             if (!_leavePlanConfiguration.leaveApplyDetail.IsAllowForHalfDay)
-            {
                 throw HiringBellException.ThrowBadRequest("Half day leave not allow under current leave type.");
-            }
+
+            if (leaveCalculationModal.toDate.Date.Subtract(leaveCalculationModal.fromDate.Date).TotalDays > 0)
+                throw HiringBellException.ThrowBadRequest("You can't be apply more than one day as halfday");
         }
 
         // step - 2
