@@ -146,14 +146,10 @@ namespace ServiceLayer.Code
         {
             string result = string.Empty;
             if (Int32.Parse(UserId) <= 0)
-            {
                 throw new HiringBellException("Invalid UserId");
-            }
 
             if (UserTypeId <= 0)
-            {
                 throw new HiringBellException("Invalid UserTypeId");
-            }
 
             // Files file = new Files();
             if (FileCollection.Count > 0)

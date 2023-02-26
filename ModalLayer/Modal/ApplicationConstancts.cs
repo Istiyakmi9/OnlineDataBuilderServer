@@ -1,5 +1,6 @@
 using ModalLayer;
 using System.Data;
+using System.Dynamic;
 
 public class ApplicationConstants
 {
@@ -14,6 +15,8 @@ public class ApplicationConstants
     public const int InNoticePeriod = 1;
     public const int InProbationPeriod = 2;
 
+    public static string LastInsertedKey = "__PLACEHOLDER__";
+    public static string LastInsertedNumericKey = "-999";
     public static string OrganizationId = "OrganizationId";
     public static string CompanyId = "CompanyId";
     public static string ManagerName = "ManagerName";
@@ -86,6 +89,24 @@ public class ApplicationConstants
 
     public const int ReportingManager = 1;
     public const int SeniorHRManager = 2;
+
+    public class DbProcedure
+    {
+        public const string Test = "approval_chain_detail";
+        public const string ParentTest = "approval_work_flow";
+
+        public static string getKey(string table)
+        {
+            switch (table)
+            {
+                case DbProcedure.Test:
+                    return "ApprovalChainDetailId";
+                case DbProcedure.ParentTest:
+                    return "ApprovalWorkFlowId";
+            }
+            return null;
+        }
+    }
 
 
     public const string ApplicationJson = @"application/json";

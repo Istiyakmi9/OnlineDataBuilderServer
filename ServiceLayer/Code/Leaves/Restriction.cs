@@ -132,7 +132,7 @@ namespace ServiceLayer.Code.Leaves
 
             // restrict leave date every month
             if (leaveCalculationModal.timeZoneFromDate.Day <= _leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth)
-                throw new HiringBellException($"Apply this leave before {_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth} day of any month.");
+                throw new HiringBellException($"Apply this leave after {_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth} day of any month.");
         }
 
         private void NewEmployeeWhenCanAvailThisLeave(LeaveCalculationModal leaveCalculationModal)
