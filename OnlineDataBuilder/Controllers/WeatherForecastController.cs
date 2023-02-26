@@ -92,7 +92,7 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            // await BatchInsertPerformanceTest();
+            await BatchInsertPerformanceTest();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -123,15 +123,25 @@ namespace OnlineDataBuilder.Controllers
                 DbProcedure.Test,
                 items);
 
-            var ms1 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Stop();
-            stopwatch.Restart();
-
             await _db.ConsicutiveBatchInset(
                 "sp_parent_test_ins_upd",
-                new { ParentId = -1, Name = "test_2" },
+                new { ParentId = -1, Name = "test_1" },
                 DbProcedure.Test,
                 items);
+
+            await _db.BatchInsetUpdate(
+                DbProcedure.Test,
+                items);
+
+            //var ms1 = stopwatch.ElapsedMilliseconds;
+            //stopwatch.Stop();
+            //stopwatch.Restart();
+
+            //await _db.ConsicutiveBatchInset(
+            //    "sp_parent_test_ins_upd",
+            //    new { ParentId = -1, Name = "test_2" },
+            //    DbProcedure.Test,
+            //    items);
 
             stopwatch.Stop();
             var ms2 = stopwatch.ElapsedMilliseconds;
