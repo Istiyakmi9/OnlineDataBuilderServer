@@ -83,7 +83,8 @@ namespace ServiceLayer.Code
                 leaveDetail.IsNoLeaveAfterDate,
                 leaveDetail.LeaveNotAllocatedIfJoinAfter,
                 leaveDetail.CanCompoffAllocatedAutomatically,
-                leaveDetail.CanCompoffCreditedByManager
+                leaveDetail.CanCompoffCreditedByManager,
+                leaveDetail.LeavePlanId
             }, true);
 
             if (string.IsNullOrEmpty(result))
@@ -117,11 +118,12 @@ namespace ServiceLayer.Code
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             }
 
-            var result = _db.Execute<LeaveDetail>("sp_leave_from_management_insupd", new
+            var result = _db.Execute<ManagementLeave>("sp_leave_from_management_insupd", new
             {
                 managementLeave.LeaveManagementId,
                 managementLeave.LeavePlanTypeId,
-                managementLeave.CanManagerAwardCausalLeave
+                managementLeave.CanManagerAwardCausalLeave,
+                managementLeave.LeavePlanId
             }, true);
 
             if (string.IsNullOrEmpty(result))
@@ -192,7 +194,8 @@ namespace ServiceLayer.Code
                 leaveAccrual.ToNextAvailableFullDay,
                 leaveAccrual.ToPreviousHalfDay,
                 leaveAccrual.DoesLeaveExpireAfterSomeTime,
-                leaveAccrual.AfterHowManyDays
+                leaveAccrual.AfterHowManyDays,
+                leaveAccrual.LeavePlanId
             }, true);
 
             if (string.IsNullOrEmpty(result))
@@ -368,6 +371,7 @@ namespace ServiceLayer.Code
                 leaveApplyDetail.CurrentLeaveRequiredComments,
                 leaveApplyDetail.ProofRequiredIfDaysExceeds,
                 leaveApplyDetail.NoOfDaysExceeded,
+                leaveApplyDetail.LeavePlanId,
                 RuleForLeaveInNotice = JsonConvert.SerializeObject(leaveApplyDetail.RuleForLeaveInNotice)
             }, true);
 
@@ -415,7 +419,7 @@ namespace ServiceLayer.Code
             if (leavePlanRestriction.IsCheckOtherPlanTypeBalance == false)
                 leavePlanRestriction.DependentPlanTypeId = 0;
 
-            var result = _db.Execute<LeaveApplyDetail>("sp_leave_plan_restriction_insupd", leavePlanRestriction, true);
+            var result = _db.Execute<LeavePlanConfiguration>("sp_leave_plan_restriction_insupd", leavePlanRestriction, true);
 
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update apply for leave detail.");
@@ -507,7 +511,8 @@ namespace ServiceLayer.Code
                 leaveApproval.IsRequiredAllLevelApproval,
                 leaveApproval.CanHigherRankPersonsIsAvailForAction,
                 leaveApproval.IsPauseForApprovalNotification,
-                leaveApproval.IsReportingManageIsDefaultForAction
+                leaveApproval.IsReportingManageIsDefaultForAction,
+                leaveApproval.LeavePlanId
             }, true);
 
             if (string.IsNullOrEmpty(result))
@@ -570,7 +575,8 @@ namespace ServiceLayer.Code
                 leaveEndYearProcessing.DoesExpiryLeaveRemainUnchange,
                 leaveEndYearProcessing.DeductFromSalaryOnYearChange,
                 leaveEndYearProcessing.ResetBalanceToZero,
-                leaveEndYearProcessing.CarryForwardToNextYear
+                leaveEndYearProcessing.CarryForwardToNextYear,
+                leaveEndYearProcessing.LeavePlanId
             }, true);
 
             if (string.IsNullOrEmpty(result))

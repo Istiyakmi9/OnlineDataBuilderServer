@@ -16,5 +16,6 @@
         public bool IfWeekOffIsRightBeforLeave { get; set; }
         public bool IfWeekOffIsRightAfterLeave { get; set; }
         public bool IfWeekOffIsRightBeforeAfterOrInBetween { get; set; }
+        public int LeavePlanId { get; set; }
     }
 }
