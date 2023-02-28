@@ -6,5 +6,6 @@
         public string RoleName {get; set;}
         public string Description {get; set;}
         public int AccessCode { get; set; }
+        public int DepartmentId { get; set; }
     }
 }

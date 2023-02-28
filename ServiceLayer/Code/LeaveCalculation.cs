@@ -6,6 +6,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
@@ -694,6 +695,11 @@ namespace ServiceLayer.Code
 
         private async Task<string> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeaveRequestModal leaveRequestModal)
         {
+            var leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
+            if (leavePlanType == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get leave plan type detai. Please contact to admin.");
+
+            ValidateAndGetLeavePlanConfiguration(leavePlanType);
             decimal totalAllocatedLeave = leaveCalculationModal.leavePlanTypes.Sum(x => x.MaxLeaveLimit);
 
             string result = string.Empty;
@@ -708,7 +714,8 @@ namespace ServiceLayer.Code
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
-            int RecordId = new Random(1).Next(1, 999999999);
+            //var span = DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            var RecordId = DateTime.UtcNow.Ticks.ToString();
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
                 RecordId = RecordId,
@@ -723,6 +730,7 @@ namespace ServiceLayer.Code
                 NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
                 LeaveStatus = (int)ItemStatus.Pending,
                 Reason = leaveRequestModal.Reason,
+                RequestChain = BindApprovalChainDetail(),
                 RequestedOn = DateTime.UtcNow
             };
 
@@ -740,6 +748,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.LeaveDetail,
                 leaveCalculationModal.leaveRequestDetail.Reason,
                 AssignTo = leaveCalculationModal.employee.ReportingManagerId,
+                ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
                 Year = leaveRequestModal.LeaveToDay.Year,
                 leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
                 leaveCalculationModal.leaveRequestDetail.LeaveToDay,
@@ -759,6 +768,31 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("fail to insert or update");
 
             return await Task.FromResult(result);
+        }
+
+        private List<RequestChainModal> BindApprovalChainDetail()
+        {
+            List<RequestChainModal> requestStatuses = new List<RequestChainModal>();
+
+            (List<ApprovalChainDetail> approvalChainDetail, List<EmployeeRole> RolesAndMenu)= _db.GetList<ApprovalChainDetail, EmployeeRole>("sp_approval_chain_detail_by_id", new
+            {
+                _leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId
+            });
+
+            if (approvalChainDetail.Count > 0)
+            {
+                requestStatuses = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
+                                   select new RequestChainModal
+                                   {
+                                       ExecuterId = n.AssignieId,
+                                       FeedBack = String.Empty,
+                                       Level = (n.ApprovalChainDetailId - n.ApprovalChainDetailId) + 1,
+                                       ReactedOn = DateTime.Now,
+                                       Status = (int)ItemStatus.Pending
+                                   }).ToList();
+            }
+
+            return requestStatuses;
         }
 
         #endregion

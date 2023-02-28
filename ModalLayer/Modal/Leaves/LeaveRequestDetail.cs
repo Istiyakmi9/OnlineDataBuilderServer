@@ -6,15 +6,16 @@ namespace ModalLayer.Modal.Leaves
     public class LeaveRequestDetail : EmployeeCommonFields
     {
         public int UserTypeId { get; set; }
-        public int RecordId { set; get; }
+        public string RecordId { set; get; }
         public long LeaveId { set; get; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
         public string Session { get; set; }
         public string Reason { get; set; }
         public string Notify { get; set; }
-        public long AssignTo { get; set; }
+        public long AssigneeId { get; set; }
         public int LeaveTypeId { get; set; }
+        public int LeavePlanId { get; set; }
         public int LeaveType { get; set; }
         public string LeavePlanName { get; set; }
         public int RequestType { get; set; }

@@ -9,6 +9,7 @@ namespace ModalLayer.Modal
         public string UserMessage { set; get; }
         public long EmployeeId { set; get; }
         public long AssigneeId { set; get; }
+        public long ReportingManagerId { set; get; }
         public long ProjectId { set; get; }
         public string ProjectName { set; get; }
         public DateTime FromDate { set; get; }
@@ -20,6 +21,6 @@ namespace ModalLayer.Modal
         public DateTime? LastReactedOn { set; get; }
         public string LeaveDetail { set; get; }
         public string RecordIdStr { set; get; }
-        public int RecordId { set; get; }
+        public string RecordId { set; get; }
     }
 }
