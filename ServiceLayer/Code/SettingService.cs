@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -270,11 +271,11 @@ namespace ServiceLayer.Code
                                             n.IsOpted,
                                             n.IsActive,
                                             AdminId = _currentSession.CurrentUserDetail.UserId
-                                        }).ToList();
+                                        }).ToList<object>();
 
-                var statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
-
-                if (statue <= 0)
+                //var statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
+                var status = await _db.BatchInsetUpdate(DbProcedure.SalaryComponents, updateComponents);
+                if (status <= 0)
                     throw new HiringBellException("Unable to update detail");
                 else
                     await AddRemoveSalaryComponents(components, salaryGroups);
@@ -311,8 +312,12 @@ namespace ServiceLayer.Code
                     });
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
-               
-                var statue = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+
+                //var status = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                var status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, salaryGroups.ToList<object>());
+                if (status <= 0)
+                    throw HiringBellException.ThrowBadRequest("Fail to update salary group");
+
                 await Task.CompletedTask;
             }
         }
@@ -335,7 +340,8 @@ namespace ServiceLayer.Code
                     salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
 
-                var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                //var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, salaryGroups.ToList<object>());
                 if (status <= 0)
                     throw new HiringBellException("Unable to update detail");
             }

@@ -15,6 +15,7 @@ namespace ModalLayer.Modal.Leaves
         public bool CurrentLeaveRequiredComments { get; set; }
         public bool ProofRequiredIfDaysExceeds { get; set; }
         public int NoOfDaysExceeded { get; set; }
+        public int LeavePlanId { get; set; }
     }
 
     public class LeaveRuleInNotice

@@ -12,5 +12,6 @@
         public int LeaveNotAllocatedIfJoinAfter { set; get; }
         public bool CanCompoffAllocatedAutomatically { set; get; }
         public bool CanCompoffCreditedByManager { set; get; }
+        public int LeavePlanId { get; set; }
     }
 }

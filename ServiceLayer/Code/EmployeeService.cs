@@ -539,8 +539,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
             var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
-            if (employeeCalculation.EmployeeId > 0)
-                await _leaveCalculation.GetLeaveDetailService(employeeCalculation.EmployeeId);
+            //if (employeeCalculation.EmployeeId > 0)
+            //    await _leaveCalculation.GetLeaveDetailService(employeeCalculation.EmployeeId);
             return result;
         }
 
@@ -861,6 +861,18 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(employee.Email))
                 throw new HiringBellException { UserMessage = "Email id is a mandatory field.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
+
+            if (string.IsNullOrEmpty(employee.AccountNumber))
+                throw new HiringBellException { UserMessage = "Account number is a mandatory field.", FieldName = nameof(employee.AccountNumber), FieldValue = employee.AccountNumber.ToString() };
+
+            if (string.IsNullOrEmpty(employee.BankName))
+                throw new HiringBellException { UserMessage = "Bank name is a mandatory field.", FieldName = nameof(employee.BankName), FieldValue = employee.BankName.ToString() };
+
+            if (string.IsNullOrEmpty(employee.IFSCCode))
+                throw new HiringBellException { UserMessage = "IFSC code is a mandatory field.", FieldName = nameof(employee.IFSCCode), FieldValue = employee.IFSCCode.ToString() };
+
+            if (string.IsNullOrEmpty(employee.PANNo))
+                throw new HiringBellException { UserMessage = "Pan No is a mandatory field.", FieldName = nameof(employee.PANNo), FieldValue = employee.PANNo.ToString() };
 
             if (string.IsNullOrEmpty(employee.FirstName))
                 throw new HiringBellException { UserMessage = "First Name is a mandatory field.", FieldName = nameof(employee.FirstName), FieldValue = employee.FirstName.ToString() };
