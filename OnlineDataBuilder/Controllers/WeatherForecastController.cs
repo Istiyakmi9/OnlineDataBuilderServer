@@ -106,28 +106,28 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task BatchInsertPerformanceTest()
         {
-            var items = (from n in Enumerable.Range(1, 500)
+            var items = (from n in Enumerable.Range(1, 10)
                          select new
                          {
                              Id = n,
                              ParentId = ApplicationConstants.LastInsertedNumericKey,
-                             Name = $"test_0{n}"
+                             Name = $"test_00{n}"
                          }).ToList<object>();
 
             Stopwatch stopwatch = Stopwatch.StartNew();
             stopwatch.Start();
 
-            await _db.BatchInsetUpdate(
-                "sp_parent_test_ins_upd",
-                new { ParentId = -1, Name = "test_1" },
-                DbProcedure.Test,
-                items);
+            //await _db.BatchInsetUpdate(
+            //    "sp_parent_test_ins_upd",
+            //    new { ParentId = -1, Name = "test_1" },
+            //    DbProcedure.Test,
+            //    items);
 
-            await _db.ConsicutiveBatchInset(
-                "sp_parent_test_ins_upd",
-                new { ParentId = -1, Name = "test_1" },
-                DbProcedure.Test,
-                items);
+            //await _db.ConsicutiveBatchInset(
+            //    "sp_parent_test_ins_upd",
+            //    new { ParentId = -1, Name = "test_1" },
+            //    DbProcedure.Test,
+            //    items);
 
             await _db.BatchInsetUpdate(
                 DbProcedure.Test,

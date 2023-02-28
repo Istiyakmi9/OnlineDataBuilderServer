@@ -341,7 +341,7 @@ namespace ServiceLayer.Code
                 //var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
                 //var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
                 var result = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, salaryGroups.ToList<object>());
-                if (result <= 0)
+                if (string.IsNullOrEmpty(result))
                     throw HiringBellException.ThrowBadRequest("Fail to update salary group. Please contact to admin");
 
                 await Task.CompletedTask;

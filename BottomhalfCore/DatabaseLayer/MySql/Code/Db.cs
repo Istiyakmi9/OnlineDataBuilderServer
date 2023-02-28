@@ -211,7 +211,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         public MySqlCommand AddCommandParameter(MySqlCommand cmd, DbParam[] param)
         {
             var date = DateTime.Now;
-            var defaultDate = Convert.ToDateTime("1976-01-01");
+            var defaultDate = Convert.ToDateTime("1970-01-01");
             cmd.Parameters.Clear();
             if (param != null)
             {
@@ -667,16 +667,16 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
-        public async Task<int> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        public async Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
         {
             return await NativeBatchInsetUpdateMulti(firstProcedure, parameters, secondProcedure, secondQuery);
         }
 
-        private async Task<int> NativeBatchInsetUpdateMulti(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        private async Task<string> NativeBatchInsetUpdateMulti(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
         {
             try
             {
-                int rowsAffected = 0;
+                string statusMessage = null;
                 using (var connection = new MySqlConnection(_connectionString))
                 {
                     connection.Open();
@@ -696,7 +696,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             int pRowsAffected = await command.ExecuteNonQueryAsync();
                             if (pRowsAffected > 0)
                             {
-                                var statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                                statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
                                 if (statusMessage != "0" && statusMessage != "")
                                 {
                                     string pKey = DbProcedure.getKey(secondProcedure);
@@ -708,12 +708,18 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                     command.Parameters.AddWithValue("_TableName", secondProcedure);
                                     command.Parameters.AddWithValue("_PrimaryKey", pKey);
                                     command.Parameters.AddWithValue("_Rows", rows);
+                                    command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
 
-                                    rowsAffected = await command.ExecuteNonQueryAsync();
+                                    int rowsAffected = await command.ExecuteNonQueryAsync();
                                     if (rowsAffected > 0)
+                                    {
+                                        statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
                                         await transaction.CommitAsync();
+                                    }
                                     else
+                                    {
                                         await transaction.RollbackAsync();
+                                    }
                                 }
                                 else
                                 {
@@ -724,7 +730,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     }
                 }
 
-                return rowsAffected;
+                return statusMessage;
             }
             catch (Exception ex)
             {
@@ -737,7 +743,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         #region BULK INSERT UPDATE SIGLE TABLE
 
-        private string PrepareQuerySingle(List<object> rows, string tableName)
+        private string PrepareQuerySingle(List<object> rows, string tableName, bool isInsert)
         {
             int i = 0;
             var first = rows.First();
@@ -746,9 +752,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             if (tableName != null)
                 query.AppendLine($"insert into {tableName} values ");
 
-            string primaryKey = "@id + ";
             string delimiter = string.Empty;
-
+            string newKeyId = "@id";
             var update = CreateUpdateQuery(first, properties);
 
             rows.ForEach(x =>
@@ -756,14 +761,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 if (i != 0)
                     delimiter = ",";
 
-                query.AppendLine(CreateQuerySingleTableRows(x, properties, delimiter, $"{primaryKey} {(i + 1)}"));
+                query.AppendLine(CreateQuerySingleTableRows(x, properties, delimiter, $"{newKeyId} + {(i + 1)}", isInsert));
                 i++;
             });
 
             return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
         }
 
-        private string CreateQuerySingleTableRows(object x, List<PropertyInfo> properties, string rowDelimiter, string autoIncrementValue)
+        private string CreateQuerySingleTableRows(object x, List<PropertyInfo> properties, string rowDelimiter, string newKey, bool isInsert)
         {
             string delimiter = "";
             object value = null;
@@ -772,23 +777,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             builder.Append($"{rowDelimiter}(");
 
             int i = 0;
+            if (isInsert)
+            {
+                builder.Append(newKey);
+                i = 1;
+            }
+
             PropertyInfo prop = null;
             while (i < properties.Count)
             {
                 if (i != 0)
-                {
                     delimiter = ",";
-                }
-                else
-                {
-                    builder.Append(autoIncrementValue);
-                    i++;
-                    continue;
-                }
 
                 prop = x.GetType().GetProperty(properties[i].Name);
                 value = prop.GetValue(x, null);
-                if (prop.PropertyType == typeof(string) || prop.PropertyType == typeof(DateTime))
+                if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(Nullable<DateTime>))
+                {
+                    var datetime = Convert.ToDateTime(value);
+                    if (datetime.Year == 1)
+                        value = Convert.ToDateTime("1/1/1976").ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    else
+                        value = Convert.ToDateTime(datetime).ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                    builder.Append($"{delimiter} '{value}'");
+                }
+                else if (prop.PropertyType == typeof(string))
                     builder.Append($"{delimiter} '{value}'");
                 else
                     builder.Append(delimiter + value);
@@ -800,14 +813,14 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return builder.ToString();
         }
 
-        public async Task<int> BatchInsetUpdate(string procedureName, List<object> data)
+        public async Task<string> BatchInsetUpdate(string procedureName, List<object> data, bool isInsert = false, bool isDirectCall = false)
         {
-            return await NativeBatchInsetUpdate(procedureName, data);
+            return await NativeBatchInsetUpdate(procedureName, data, isInsert, isDirectCall);
         }
 
-        public async Task<int> NativeBatchInsetUpdate(string procedureName, List<object> secondQuery)
+        public async Task<string> NativeBatchInsetUpdate(string procedureName, List<object> secondQuery, bool isInsert = false, bool isDirectCall = false)
         {
-            int rowsAffected = 0;
+            string statusMessage = null;
             using (var connection = new MySqlConnection(_connectionString))
             {
                 connection.Open();
@@ -819,21 +832,39 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                         {
                             Utility util = new Utility();
                             string pKey = DbProcedure.getKey(procedureName);
-                            var rows = PrepareQuerySingle(secondQuery, procedureName);
                             command.Parameters.Clear();
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = "sp_dynamic_query_ins_upd";
                             command.Connection = connection;
 
-                            command.Parameters.AddWithValue("_TableName", procedureName);
-                            command.Parameters.AddWithValue("_PrimaryKey", pKey);
-                            command.Parameters.AddWithValue("_Rows", rows);
-
-                            rowsAffected = await command.ExecuteNonQueryAsync();
-                            if (rowsAffected > 0)
-                                await transaction.CommitAsync();
+                            if (isDirectCall)
+                            {
+                                command.CommandType = CommandType.Text;
+                                command.CommandText = PrepareQuerySingle(secondQuery, procedureName, isInsert);
+                            }
                             else
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.CommandText = "sp_dynamic_query_ins_upd";
+
+                                command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = procedureName;
+                                command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
+                                command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuerySingle(secondQuery, null, isInsert);
+                                command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                            }
+
+                            int rowsAffected = await command.ExecuteNonQueryAsync();
+                            if (rowsAffected > 0)
+                            {
+                                if (!isDirectCall)
+                                    statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                                else
+                                    statusMessage = rowsAffected.ToString();
+
+                                await transaction.CommitAsync();
+                            }
+                            else
+                            {
                                 await transaction.RollbackAsync();
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -842,7 +873,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     }
                 }
 
-                return rowsAffected;
+                return statusMessage;
             }
         }
 

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BottomhalfCore.DatabaseLayer.MsSql.Code
 {
-    public class Db : IDb
+    public class Db
     {
         private SqlConnection con = null;
         private SqlCommand cmd = null;
@@ -715,17 +715,12 @@ namespace BottomhalfCore.DatabaseLayer.MsSql.Code
             throw new NotImplementedException();
         }
 
-        Task<int> IDb.ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
-        {
-            throw new NotImplementedException();
-        }
-
-        Task<int> IDb.BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<int> BatchInsetUpdate(string procedureName, List<object> queryData)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> BatchInsetUpdate(string procedureName, List<object> queryData, bool isDirectCall = false)
         {
             throw new NotImplementedException();
         }
