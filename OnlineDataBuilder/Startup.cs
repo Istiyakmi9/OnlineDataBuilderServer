@@ -23,6 +23,7 @@ using SchoolInMindServer.MiddlewareServices;
 using ServiceLayer;
 using ServiceLayer.Caching;
 using ServiceLayer.Code;
+using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -197,6 +198,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IServiceRequestService, ServiceRequestService>();
             services.AddScoped<IApprovalChainService, ApprovalChainService>();
             services.AddScoped<IShiftService, ShiftService>();
+            services.AddScoped<WorkFlowChain>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

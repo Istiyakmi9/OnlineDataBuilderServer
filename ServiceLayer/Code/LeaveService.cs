@@ -361,6 +361,7 @@ namespace ServiceLayer.Code
                         requestNotification.UserMessage,
                         requestNotification.EmployeeId,
                         requestNotification.AssigneeId,
+                        requestNotification.ReportingManagerId,
                         requestNotification.ProjectId,
                         requestNotification.ProjectName,
                         requestNotification.FromDate,
