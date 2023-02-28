@@ -296,7 +296,7 @@ namespace ServiceLayer.Code
                 AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
                 AttendacneDetails = attendenceDetails
                                     .TakeWhile(x => DateTime.Now.Date
-                                                    .Subtract(x.AttendanceDay.Date).TotalDays > 0
+                                                    .Subtract(x.AttendanceDay.Date).TotalDays >= 0
                                               ).ToList()
             };
         }
