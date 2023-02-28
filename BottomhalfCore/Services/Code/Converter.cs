@@ -83,38 +83,38 @@ namespace BottomhalfCore.Services.Code
                     else
                     {
                         if (row[property.Name] == DBNull.Value)
+                        {
                             property.SetValue(item, null, null);
+                        }
                         else
                         {
-                            switch (property.PropertyType.FullName)
+                            if (property.PropertyType == typeof(bool) || property.PropertyType == typeof(bool?))
                             {
-                                case "System.Boolean":
-                                    if (row[property.Name].ToString() == "1")
-                                        property.SetValue(item, true, null);
-                                    else
-                                        property.SetValue(item, false, null);
-                                    break;
-                                case "System.Guid":
-                                    property.SetValue(item, Guid.Parse(row[property.Name].ToString()), null);
-                                    break;
-                                case "System.DateTime":
-                                    property.SetValue(item, DateTimeOffset.Parse(row[property.Name].ToString()).UtcDateTime, null);
-                                    break;
-                                case "System.Int32":
-                                    property.SetValue(item, Convert.ToInt32(row[property.Name].ToString()), null);
-                                    break;
-                                case "System.Decimal":
-                                    property.SetValue(item, Convert.ToDecimal(row[property.Name].ToString()), null);
-                                    break;
-                                default:
-                                    property.SetValue(item, row[property.Name], null);
-                                    break;
+
+                                if (row[property.Name].ToString() == "1")
+                                    property.SetValue(item, true, null);
+                                else
+                                    property.SetValue(item, false, null);
                             }
+                            else if (property.PropertyType == typeof(DateTime) || property.PropertyType == typeof(DateTime?))
+                                property.SetValue(item, DateTimeOffset.Parse(row[property.Name].ToString()).UtcDateTime, null);
+                            else if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
+                                property.SetValue(item, Convert.ToInt32(row[property.Name].ToString()), null);
+                            else if (property.PropertyType == typeof(decimal) || property.PropertyType == typeof(decimal?))
+                                property.SetValue(item, Convert.ToDecimal(row[property.Name].ToString()), null);
+                            else if (property.PropertyType == typeof(short) || property.PropertyType == typeof(short?))
+                                property.SetValue(item, Convert.ToInt16(row[property.Name].ToString()), null);
+                            else if (property.PropertyType == typeof(long) || property.PropertyType == typeof(long?))
+                                property.SetValue(item, Convert.ToInt64(row[property.Name].ToString()), null);
+                            else
+                                property.SetValue(item, row[property.Name], null);
                         }
                     }
                 }
+
                 finally { }
             }
+
             return item;
         }
 
