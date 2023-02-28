@@ -1,5 +1,6 @@
 ﻿using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -159,6 +160,53 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     cmd.Parameters.AddWithValue($"_{p.Name}", DBNull.Value);
                 }
             }
+        }
+
+        public static object DefaultOrValue(Type PropertyType, object originalValue)
+        {
+            object value = DBNull.Value;
+            if (PropertyType == typeof(DateTime) || PropertyType == typeof(Nullable<DateTime>))
+            {
+                var datetime = Convert.ToDateTime(originalValue);
+                if (datetime.Year == 1)
+                {
+                    value = Convert.ToDateTime("1/1/1976").ToString("yyyy-MM-dd HH:mm:ss.fff");
+                }
+                else
+                {
+                    value = Convert.ToDateTime(originalValue).ToString("yyyy-MM-dd HH:mm:ss.fff");
+                }
+            }
+            else if (PropertyType == typeof(int) || PropertyType == typeof(Nullable<int>))
+            {
+                value = Convert.ToInt32(originalValue);
+            }
+            else if (PropertyType == typeof(long) || PropertyType == typeof(Nullable<long>))
+            {
+
+            }
+            else if (PropertyType == typeof(double) || PropertyType == typeof(Nullable<double>))
+            {
+
+            }
+            else if (PropertyType == typeof(decimal) || PropertyType == typeof(Nullable<decimal>))
+            {
+
+            }
+            else if (PropertyType == typeof(bool) || PropertyType == typeof(Nullable<bool>))
+            {
+
+            }
+            else if (PropertyType == typeof(short) || PropertyType == typeof(Nullable<short>))
+            {
+
+            }
+            else
+            {
+
+            }
+
+            return value;
         }
     }
 }

@@ -4,6 +4,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -257,7 +258,7 @@ namespace ServiceLayer.Code
                                             n.DeclaredValue,
                                             n.RejectedAmount,
                                             n.AcceptedAmount,
-                                            n.UploadedFileIds,
+                                            UploadedFileIds = string.IsNullOrEmpty(n.UploadedFileIds) ? "[]" : n.UploadedFileIds,
                                             n.Formula,
                                             n.EmployeeContribution,
                                             n.EmployerContribution,
@@ -270,12 +271,15 @@ namespace ServiceLayer.Code
                                             n.RequireDocs,
                                             n.IsOpted,
                                             n.IsActive,
-                                            AdminId = _currentSession.CurrentUserDetail.UserId
+                                            CreatedOn = DateTime.UtcNow,
+                                            n.UpdatedOn,
+                                            n.CreatedBy,
+                                            UpdatedBy = _currentSession.CurrentUserDetail.UserId
                                         }).ToList<object>();
 
                 //var statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
                 var status = await _db.BatchInsetUpdate(DbProcedure.SalaryComponents, updateComponents);
-                if (status <= 0)
+                if (string.IsNullOrEmpty(status))
                     throw new HiringBellException("Unable to update detail");
                 else
                     await AddRemoveSalaryComponents(components, salaryGroups);
@@ -314,17 +318,33 @@ namespace ServiceLayer.Code
                 }
 
                 //var status = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
-                var status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, salaryGroups.ToList<object>());
-                if (status <= 0)
+
+
+                var finalSalaryComponents = (from n in salaryGroups
+                                             select new
+                                             {
+                                                 n.SalaryGroupId,
+                                                 n.SalaryComponents,
+                                                 n.GroupName,
+                                                 n.GroupDescription,
+                                                 n.MinAmount,
+                                                 n.MaxAmount,
+                                                 n.CreatedBy,
+                                                 n.CreatedOn,
+                                                 n.CompanyId
+                                             }).ToList<object>();
+
+                var status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, finalSalaryComponents);
+                if (string.IsNullOrEmpty(status))
                     throw HiringBellException.ThrowBadRequest("Fail to update salary group");
 
                 await Task.CompletedTask;
             }
         }
 
-        private async Task<int> AddorRemoveSalaryComponentfromSalaryGroup(SalaryComponents components)
+        private async Task<string> AddorRemoveSalaryComponentfromSalaryGroup(SalaryComponents components)
         {
-            int status = 0;
+            string status = null;
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
             if (salaryGroups.Count > 0)
             {
@@ -342,11 +362,10 @@ namespace ServiceLayer.Code
 
                 //var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
                 status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, salaryGroups.ToList<object>());
-                if (status <= 0)
+                if (string.IsNullOrEmpty(status))
                     throw new HiringBellException("Unable to update detail");
             }
-            else
-                status = 1;
+
             return status;
         }
 
@@ -401,8 +420,8 @@ namespace ServiceLayer.Code
                 if (!ApplicationConstants.IsExecuted(status))
                     throw new HiringBellException("Fail to update the record.");
 
-                int returnstatus = await this.AddorRemoveSalaryComponentfromSalaryGroup(component);
-                if (returnstatus <= 0)
+                string returnstatus = await this.AddorRemoveSalaryComponentfromSalaryGroup(component);
+                if (string.IsNullOrEmpty(returnstatus))
                     throw new HiringBellException("Unable to update detail");
 
                 salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = 0 });
