@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace ModalLayer.Modal.Leaves
+﻿namespace ModalLayer.Modal.Leaves
 {
     public class LeaveApproval
     {
@@ -13,5 +11,6 @@ namespace ModalLayer.Modal.Leaves
         public bool IsPauseForApprovalNotification { get; set; }
         public bool IsReportingManageIsDefaultForAction { get; set; }
         public int ApprovalWorkFlowId { get; set; }
+        public int LeavePlanId { get; set; }
     }
 }

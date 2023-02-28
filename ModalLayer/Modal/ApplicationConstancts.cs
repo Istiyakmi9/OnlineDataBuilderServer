@@ -97,6 +97,8 @@ public class ApplicationConstants
 
         public const string ApprovalChainDetail = "approval_chain_detail";
         public const string ApprovalWorkFlow = "approval_work_flow";
+        public const string SalaryGroup = "salary_group";
+        public const string SalaryComponents = "salary_components";
 
         public static long getParentKey(long key)
         {
@@ -118,6 +120,10 @@ public class ApplicationConstants
                     return "ApprovalChainDetailId";
                 case DbProcedure.ApprovalWorkFlow:
                     return "ApprovalWorkFlowId";
+                case DbProcedure.SalaryGroup:
+                    return "SalaryGroupId";
+                case DbProcedure.SalaryComponents:
+                    return "ComponentId";
             }
             return null;
         }

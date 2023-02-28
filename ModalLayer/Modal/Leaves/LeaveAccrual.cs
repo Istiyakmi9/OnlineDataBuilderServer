@@ -40,5 +40,6 @@ namespace ModalLayer.Modal.Leaves
         public bool ToPreviousHalfDay { get; set; }
         public bool DoesLeaveExpireAfterSomeTime { get; set; }
         public decimal AfterHowManyDays { get; set; }
+        public int LeavePlanId { get; set; }
     }
 }

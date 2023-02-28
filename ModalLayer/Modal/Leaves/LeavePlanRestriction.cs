@@ -24,5 +24,6 @@
         public decimal AssociatedPlanTypeId { set; get; }
         public bool IsCheckOtherPlanTypeBalance { set; get; }
         public decimal DependentPlanTypeId { set; get; }
+        public int LeavePlanTypeId { get; set; }
     }
 }

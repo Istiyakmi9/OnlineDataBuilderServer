@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -336,9 +337,13 @@ namespace ServiceLayer.Code
                     }
                     item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
                 }
-                
+
                 //var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
-                var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                //var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                var result = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, salaryGroups.ToList<object>());
+                if (result <= 0)
+                    throw HiringBellException.ThrowBadRequest("Fail to update salary group. Please contact to admin");
+
                 await Task.CompletedTask;
             }
         }

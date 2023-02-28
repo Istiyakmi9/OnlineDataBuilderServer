@@ -19,6 +19,7 @@ namespace ModalLayer.Modal.Leaves
         public bool DeductFromSalaryOnYearChange { set; get; }
         public bool ResetBalanceToZero { set; get; }
         public bool CarryForwardToNextYear { set; get; }
+        public int LeavePlanId { get; set; }
         public List<FixedPayNCarryForward> FixedPayNCarryForward { set; get; }
         public List<PercentagePayNCarryForward> PercentagePayNCarryForward { get; set; }
     }

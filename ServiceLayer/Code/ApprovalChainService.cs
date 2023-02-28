@@ -50,121 +50,124 @@ namespace ServiceLayer.Code
         {
             int approvalWorkFlowId = approvalWorkFlowModal.ApprovalWorkFlowId;
             ValidateApprovalWorkFlowDetail(approvalWorkFlowModal);
-            DbResult result = new DbResult
+            //DbResult result = new DbResult
+            //{
+            //    rowsEffected = 0,
+            //    statusMessage = "Failed"
+            //};
+
+            var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>("sp_approval_chain_detail_filter", new
             {
-                rowsEffected = 0,
-                statusMessage = "Failed"
-            };
+                SearchString = GetSelectQuery(approvalWorkFlowModal),
+            });
 
-            try
+            if (approvalWorkFlowModalExisting.Count > 0)
             {
-                var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>("sp_approval_chain_detail_filter", new
-                {
-                    SearchString = GetSelectQuery(approvalWorkFlowModal),
-                });
+                var firstRecord = approvalWorkFlowModalExisting.First();
+                approvalWorkFlowModal.ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId;
 
-                if (approvalWorkFlowModalExisting.Count > 0)
+                ApprovalChainDetail chainDetail = null;
+                approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
                 {
-                    var firstRecord = approvalWorkFlowModalExisting.First();
-                    approvalWorkFlowModal.ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId;
+                    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.AssignieId == item.AssignieId);
 
-                    ApprovalChainDetail chainDetail = null;
-                    approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
+                    if (chainDetail != null)
                     {
-                        chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.AssignieId == item.AssignieId);
-
-                        if (chainDetail != null)
+                        item.ApprovalChainDetailId = chainDetail.ApprovalChainDetailId;
+                        item.ApprovalWorkFlowId = chainDetail.ApprovalWorkFlowId;
+                    }
+                });
+            }
+            var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
+                        select new
                         {
-                            item.ApprovalChainDetailId = chainDetail.ApprovalChainDetailId;
-                            item.ApprovalWorkFlowId = chainDetail.ApprovalWorkFlowId;
+                            ApprovalChainDetailId = ApplicationConstants.LastInsertedNumericKey,
+                            ApprovalWorkFlowId = DbProcedure.getParentKey(approvalWorkFlowId),
+                            AssignieId = n.AssignieId,
+                            IsRequired = n.IsRequired,
+                            IsForwardEnabled = n.IsForwardEnabled,
+                            ForwardWhen = n.ForwardWhen,
+                            ForwardAfterDays = n.ForwardAfterDays,
+                            LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                            ApprovalStatus = n.ApprovalStatus
                         }
-                    });
-                }
-
-                //_db.StartTransaction(System.Data.IsolationLevel.ReadUncommitted);
-
-                //result = await _db.ExecuteAsync("sp_approval_work_flow_insupd", new
-                //{
-                //    approvalWorkFlowModal.ApprovalWorkFlowId,
-                //    approvalWorkFlowModal.Title,
-                //    approvalWorkFlowModal.TitleDescription,
-                //    approvalWorkFlowModal.Status,
-                //    approvalWorkFlowModal.IsAutoExpiredEnabled,
-                //    approvalWorkFlowModal.AutoExpireAfterDays,
-                //    approvalWorkFlowModal.IsSilentListner,
-                //    approvalWorkFlowModal.ListnerDetail,
-                //    AdminId = _currentSession.CurrentUserDetail.UserId
-                //}, true);
-
-                //if (!string.IsNullOrEmpty(result.statusMessage))
-                //{
-                //    approvalWorkFlowId = Convert.ToInt32(result.statusMessage);
-                //    var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
-                //                select new ApprovalChainDetail
-                //                {
-                //                    ApprovalChainDetailId = n.ApprovalChainDetailId,
-                //                    ApprovalWorkFlowId = approvalWorkFlowId,
-                //                    AssignieId = n.AssignieId,
-                //                    IsRequired = n.IsRequired,
-                //                    IsForwardEnabled = n.IsForwardEnabled,
-                //                    ForwardWhen = n.ForwardWhen,
-                //                    ForwardAfterDays = n.ForwardAfterDays,
-                //                    ApprovalStatus = n.ApprovalStatus
-                //                }
-                //    ).ToList<ApprovalChainDetail>();
-
-                //    var rowsEffected = await _db.BulkExecuteAsync("sp_approval_chain_detail_insupd", data, true);
-                //    if (rowsEffected == 0)
-                //        throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-
-                //    _db.Commit();
-                //}
-                //else
-                //{
-                //    throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-                //}
-                var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
-                            select new
-                            {
-                                ApprovalChainDetailId = ApplicationConstants.LastInsertedNumericKey,
-                                ApprovalWorkFlowId = DbProcedure.getParentKey(approvalWorkFlowId),
-                                AssignieId = n.AssignieId,
-                                IsRequired = n.IsRequired,
-                                IsForwardEnabled = n.IsForwardEnabled,
-                                ForwardWhen = n.ForwardWhen,
-                                ForwardAfterDays = n.ForwardAfterDays,
-                                LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                                ApprovalStatus = n.ApprovalStatus
-                            }
                     ).ToList<object>();
 
-                await _db.ConsicutiveBatchInset("sp_approval_work_flow_insupd",
-                    new
-                    {
-                        approvalWorkFlowModal.ApprovalWorkFlowId,
-                        approvalWorkFlowModal.Title,
-                        approvalWorkFlowModal.TitleDescription,
-                        approvalWorkFlowModal.Status,
-                        approvalWorkFlowModal.IsAutoExpiredEnabled,
-                        approvalWorkFlowModal.AutoExpireAfterDays,
-                        approvalWorkFlowModal.IsSilentListner,
-                        approvalWorkFlowModal.ListnerDetail,
-                        AdminId = _currentSession.CurrentUserDetail.UserId
-                    },
-                    DbProcedure.Test,
-                    data);
-            }
-            catch (Exception)
-            {
-                _db.RollBack();
-                await _db.ExecuteAsync("sp_approval_workflow_chain_del", new
+            var result = await _db.ConsicutiveBatchInset("sp_approval_work_flow_insupd",
+                new
                 {
-                    ApprovalWorkFlowId = approvalWorkFlowId
-                });
+                    approvalWorkFlowModal.ApprovalWorkFlowId,
+                    approvalWorkFlowModal.Title,
+                    approvalWorkFlowModal.TitleDescription,
+                    approvalWorkFlowModal.Status,
+                    approvalWorkFlowModal.IsAutoExpiredEnabled,
+                    approvalWorkFlowModal.AutoExpireAfterDays,
+                    approvalWorkFlowModal.IsSilentListner,
+                    approvalWorkFlowModal.ListnerDetail,
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                },
+                DbProcedure.ApprovalChainDetail,
+                data);
+            if (result <= 0)
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-            }
 
-            return result.statusMessage;
+            //try
+            //{
+            //    _db.StartTransaction(System.Data.IsolationLevel.ReadUncommitted);
+
+            //    result = await _db.ExecuteAsync("sp_approval_work_flow_insupd", new
+            //    {
+            //        approvalWorkFlowModal.ApprovalWorkFlowId,
+            //        approvalWorkFlowModal.Title,
+            //        approvalWorkFlowModal.TitleDescription,
+            //        approvalWorkFlowModal.Status,
+            //        approvalWorkFlowModal.IsAutoExpiredEnabled,
+            //        approvalWorkFlowModal.AutoExpireAfterDays,
+            //        approvalWorkFlowModal.IsSilentListner,
+            //        approvalWorkFlowModal.ListnerDetail,
+            //        AdminId = _currentSession.CurrentUserDetail.UserId
+            //    }, true);
+
+            //    if (!string.IsNullOrEmpty(result.statusMessage))
+            //    {
+            //        approvalWorkFlowId = Convert.ToInt32(result.statusMessage);
+            //        var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
+            //                    select new ApprovalChainDetail
+            //                    {
+            //                        ApprovalChainDetailId = n.ApprovalChainDetailId,
+            //                        ApprovalWorkFlowId = approvalWorkFlowId,
+            //                        AssignieId = n.AssignieId,
+            //                        IsRequired = n.IsRequired,
+            //                        IsForwardEnabled = n.IsForwardEnabled,
+            //                        ForwardWhen = n.ForwardWhen,
+            //                        ForwardAfterDays = n.ForwardAfterDays,
+            //                        ApprovalStatus = n.ApprovalStatus
+            //                    }
+            //        ).ToList<ApprovalChainDetail>();
+
+            //        var rowsEffected = await _db.BulkExecuteAsync("sp_approval_chain_detail_insupd", data, true);
+            //        if (rowsEffected == 0)
+            //            throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
+
+            //        _db.Commit();
+            //    }
+            //    else
+            //    {
+            //        throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
+            //    }
+
+            //}
+            //catch (Exception)
+            //{
+            //    _db.RollBack();
+            //    await _db.ExecuteAsync("sp_approval_workflow_chain_del", new
+            //    {
+            //        ApprovalWorkFlowId = approvalWorkFlowId
+            //    });
+            //    throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
+            //}
+
+            return "insert/updated successfully";//result.statusMessage;
         }
 
         private void ValidateApprovalWorkFlowDetail(ApprovalWorkFlowChain approvalWorkFlowModal)
