@@ -92,6 +92,8 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
+            await RunLeaveAccrualAsync();
+
             // await BatchInsertPerformanceTest();
 
             var rng = new Random();
@@ -102,6 +104,11 @@ namespace OnlineDataBuilder.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        private async Task RunLeaveAccrualAsync()
+        {
+            await _leaveCalculation.StartAccrualCycle();
         }
 
         private async Task BatchInsertPerformanceTest()
