@@ -52,6 +52,6 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
 
         Task<int> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
         Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
-        Task<string> BatchInsetUpdate(string procedureName, List<object> queryData, bool isInsert = false, bool isDirectCall = false);
+        Task<string> BatchInsetUpdate(string procedureName, List<object> queryData, bool isDirectCall = false);
     }
 }
