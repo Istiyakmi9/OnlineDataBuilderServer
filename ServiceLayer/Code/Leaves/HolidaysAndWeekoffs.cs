@@ -1,15 +1,9 @@
 ﻿using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.VariantTypes;
-using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace ServiceLayer.Code.Leaves
 {
@@ -270,7 +264,7 @@ namespace ServiceLayer.Code.Leaves
             return weekOffCount;
         }
 
-        private int WeekOffCountIfBetweenLeaveDates(LeaveCalculationModal leaveCalculationModal)
+        public int WeekOffCountIfBetweenLeaveDates(LeaveCalculationModal leaveCalculationModal)
         {
             int totalWeekends = 0;
             var fromDate = _timezoneConverter.ToTimeZoneDateTime(leaveCalculationModal.fromDate, _currentSession.TimeZone);
