@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using NCrontab;
 using ServiceLayer.Interface;
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,23 +26,34 @@ namespace OnlineDataBuilder.HostedService
             _nextCron = _cron.GetNextOccurrence(DateTime.Now);
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            this.RunJob();
-            return Task.CompletedTask;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                int value = WaitForNextCronValue();
+                await Task.Delay(value, cancellationToken);
+
+                await this.RunJobAsync();
+
+                _logger.LogInformation("Daily cron jon ran successfully");
+                _nextCron = _cron.GetNextOccurrence(DateTime.Now);
+            }
         }
 
-        private void RunJob()
+        private async Task RunJobAsync()
         {
-            Task.Run(async () =>
-            {
-                await RunDailyTimesheetCreationJob();
-            });
+            await RunDailyTimesheetCreationJob();
+
+            await SendMail();
+
+            await LeaveAccrualAsync();
         }
+
+        #region WEEKLY TIMESHEET CREATION SCHEDULAR
 
         private async Task RunDailyTimesheetCreationJob()
         {
-            if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Sunday)
+            if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Saturday)
             {
                 var service = _serviceProvider.GetRequiredService<ITimesheetService>();
                 await service.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(1));
@@ -51,6 +61,37 @@ namespace OnlineDataBuilder.HostedService
 
             await Task.CompletedTask;
         }
+
+        #endregion
+
+        #region LEAVE ACCRUAL SCHEDULAR
+
+        private async Task LeaveAccrualAsync()
+        {
+            using (IServiceScope scope = _serviceProvider.CreateScope())
+            {
+                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
+                await _leaveCalculation.StartAccrualCycle();
+            }
+        }
+
+        #endregion
+
+        #region PAYROLL SCHEDULAR
+
+        #endregion
+
+        #region DAILY EMAIL SCHEDULAR
+
+        private async Task SendMail()
+        {
+            // _eMailManager.SendMail();
+            await Task.CompletedTask;
+        }
+
+        #endregion
+
+        private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
