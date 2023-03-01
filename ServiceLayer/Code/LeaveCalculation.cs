@@ -164,7 +164,7 @@ namespace ServiceLayer.Code
                         {
                             leaveCalculationModal.employee = new Employee { CreatedOn = emp.CreatedOn };
                             leavePlan = leaveCalculationModal.leavePlans
-                                .FirstOrDefault(x => x.LeavePlanId == emp.LeavePlanId || x.IsDefaultPlan == true);
+                                .FirstOrDefault(x => emp.LeavePlanId > 0 ? x.LeavePlanId == emp.LeavePlanId : x.IsDefaultPlan == true);
 
                             emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
                             if (emp.LeaveTypeBrief == null)
@@ -224,9 +224,23 @@ namespace ServiceLayer.Code
         {
             var planBrief = brief.Find(x => x.LeavePlanTypeId == planType.LeavePlanTypeId);
             if (planBrief == null)
-                throw HiringBellException.ThrowBadRequest($"Fail to run employee accrual.");
+            {
+                brief.Add(new LeaveTypeBrief
+                {
+                    LeavePlanTypeId = planType.LeavePlanTypeId,
+                    AvailableLeaves = availableLeaves,
+                    AccruedSoFar = availableLeaves,
+                    IsCommentsRequired = false,
+                    IsHalfDay = false,
+                    LeavePlanTypeName = planType.PlanName,
+                    TotalLeaveQuota = planType.MaxLeaveLimit
+                });
+            }
+            else
+            {
+                planBrief.AvailableLeaves += availableLeaves;
+            }
 
-            planBrief.AvailableLeaves += availableLeaves;
         }
 
         public async Task RunAccrualCycleByEmployee(long EmployeeId)
