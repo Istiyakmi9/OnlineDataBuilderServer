@@ -45,5 +45,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _approvalChainService.GetApprovalChainData(ApprovalWorkFlowId);
             return BuildResponse(result);
         }
+
+        [HttpDelete("DeleteApprovalChain/{ApprovalChainDetailId}")]
+        public async Task<ApiResponse> DeleteApprovalChain([FromRoute] int ApprovalChainDetailId)
+        {
+            var result = await _approvalChainService.DeleteApprovalChainService(ApprovalChainDetailId);
+            return BuildResponse(result);
+        }
     }
 }

@@ -891,14 +891,14 @@ namespace ServiceLayer.Code
             currentAttr.PresentDayStatus = itemStatus;
             currentAttr.ApprovedName = _currentSession.CurrentUserDetail.FullName;
             currentAttr.ApprovedBy = _currentSession.CurrentUserDetail.UserId;
-            var logoff = currentAttr.LogOff;
-            var logofftime = logoff.Replace(":", ".");
-            decimal time = decimal.Parse(logofftime);
-            var totaltime = (int)((time * 60) * 2);
-            currentAttr.LogOff = ConvertToMin(totaltime);
-            currentAttr.LogOn = ConvertToMin(totaltime + 60);
-            currentAttr.SessionType = attendance.SessionType;
-            currentAttr.TotalMinutes = currentAttr.TotalMinutes * 2;
+            //var logoff = currentAttr.LogOff;
+            //var logofftime = logoff.Replace(":", ".");
+            //decimal time = decimal.Parse(logofftime);
+            //var totaltime = (int)((time * 60) * 2);
+            currentAttr.LogOff = currentAttr.LogOff;
+            currentAttr.LogOn = currentAttr.LogOn;
+            currentAttr.SessionType = currentAttr.SessionType;
+            currentAttr.TotalMinutes = currentAttr.TotalMinutes;
             attendance.AttendanceDetail = JsonConvert.SerializeObject(attendanceDetail);
 
             return await Task.FromResult(attendance);

@@ -1,14 +1,12 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
-using System.Threading.Tasks;
-using System.Linq;
-using BottomhalfCore.Services.Code;
-using ModalLayer;
-using System.Text;
 using System.Collections.Generic;
-using DocumentFormat.OpenXml.Drawing.ChartDrawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using static ApplicationConstants;
 
 namespace ServiceLayer.Code
@@ -50,11 +48,6 @@ namespace ServiceLayer.Code
         {
             int approvalWorkFlowId = approvalWorkFlowModal.ApprovalWorkFlowId;
             ValidateApprovalWorkFlowDetail(approvalWorkFlowModal);
-            //DbResult result = new DbResult
-            //{
-            //    rowsEffected = 0,
-            //    statusMessage = "Failed"
-            //};
 
             var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>("sp_approval_chain_detail_filter", new
             {
@@ -83,7 +76,7 @@ namespace ServiceLayer.Code
                         select new
                         {
                             ApprovalChainDetailId = n.ApprovalChainDetailId > 0 ? n.ApprovalChainDetailId : 0,
-                            ApprovalWorkFlowId = DbProcedure.getParentKey(approvalWorkFlowId),
+                            ApprovalWorkFlowId = DbProcedure.getParentKey(n.ApprovalWorkFlowId),
                             AssignieId = n.AssignieId,
                             IsRequired = n.IsRequired,
                             IsForwardEnabled = n.IsForwardEnabled,
@@ -112,63 +105,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
 
-            //try
-            //{
-            //    _db.StartTransaction(System.Data.IsolationLevel.ReadUncommitted);
-
-            //    result = await _db.ExecuteAsync("sp_approval_work_flow_insupd", new
-            //    {
-            //        approvalWorkFlowModal.ApprovalWorkFlowId,
-            //        approvalWorkFlowModal.Title,
-            //        approvalWorkFlowModal.TitleDescription,
-            //        approvalWorkFlowModal.Status,
-            //        approvalWorkFlowModal.IsAutoExpiredEnabled,
-            //        approvalWorkFlowModal.AutoExpireAfterDays,
-            //        approvalWorkFlowModal.IsSilentListner,
-            //        approvalWorkFlowModal.ListnerDetail,
-            //        AdminId = _currentSession.CurrentUserDetail.UserId
-            //    }, true);
-
-            //    if (!string.IsNullOrEmpty(result.statusMessage))
-            //    {
-            //        approvalWorkFlowId = Convert.ToInt32(result.statusMessage);
-            //        var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
-            //                    select new ApprovalChainDetail
-            //                    {
-            //                        ApprovalChainDetailId = n.ApprovalChainDetailId,
-            //                        ApprovalWorkFlowId = approvalWorkFlowId,
-            //                        AssignieId = n.AssignieId,
-            //                        IsRequired = n.IsRequired,
-            //                        IsForwardEnabled = n.IsForwardEnabled,
-            //                        ForwardWhen = n.ForwardWhen,
-            //                        ForwardAfterDays = n.ForwardAfterDays,
-            //                        ApprovalStatus = n.ApprovalStatus
-            //                    }
-            //        ).ToList<ApprovalChainDetail>();
-
-            //        var rowsEffected = await _db.BulkExecuteAsync("sp_approval_chain_detail_insupd", data, true);
-            //        if (rowsEffected == 0)
-            //            throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-
-            //        _db.Commit();
-            //    }
-            //    else
-            //    {
-            //        throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-            //    }
-
-            //}
-            //catch (Exception)
-            //{
-            //    _db.RollBack();
-            //    await _db.ExecuteAsync("sp_approval_workflow_chain_del", new
-            //    {
-            //        ApprovalWorkFlowId = approvalWorkFlowId
-            //    });
-            //    throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
-            //}
-
-            return "insert/updated successfully";//result.statusMessage;
+            return "insert/updated successfully";
         }
 
         private void ValidateApprovalWorkFlowDetail(ApprovalWorkFlowChain approvalWorkFlowModal)
@@ -272,5 +209,16 @@ namespace ServiceLayer.Code
             return await Task.FromResult(new { approvalWorkFlowChain, employeeRole });
         }
 
+        public Task<string> DeleteApprovalChainService(int approvalChainDetailId)
+        {
+            if (approvalChainDetailId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid approval chain selected for delete");
+
+            var result = _db.Execute<ApprovalChainDetail>("sp_approval_chain_detail_delete_byid", new { ApprovalChainDetailId = approvalChainDetailId }, true);
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to delete chain level. Please contact to admin");
+
+            return Task.FromResult(result);
+        }
     }
 }

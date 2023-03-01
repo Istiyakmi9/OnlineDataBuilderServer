@@ -11,6 +11,7 @@ using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -247,7 +248,6 @@ namespace ServiceLayer.Code
             {
                 planBrief.AvailableLeaves += availableLeaves;
             }
-
         }
 
         public async Task RunAccrualCycleByEmployee(long EmployeeId)
@@ -266,13 +266,8 @@ namespace ServiceLayer.Code
                 employeeAccrual.LeaveTypeBrief = new List<LeaveTypeBrief>();
                 if (leaveCalculationModal.employee == null)
                     leaveCalculationModal.employee = new Employee { CreatedOn = employeeAccrual.CreatedOn };
-                if (employeeAccrual.LeavePlanId > 0)
-                    leavePlan = leaveCalculationModal.leavePlans
-                        .FirstOrDefault(x => x.LeavePlanId == employeeAccrual.LeavePlanId);
-                else
-                    leavePlan = leaveCalculationModal.leavePlans
-                            .FirstOrDefault(x => x.IsDefaultPlan == true);
-
+                leavePlan = leaveCalculationModal.leavePlans
+                                .FirstOrDefault(x => employeeAccrual.LeavePlanId > 0 ? x.LeavePlanId == employeeAccrual.LeavePlanId : x.IsDefaultPlan == true);
                 if (leavePlan != null)
                 {
                     leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
@@ -280,18 +275,17 @@ namespace ServiceLayer.Code
                     int i = 0;
                     while (i < leavePlanTypes.Count)
                     {
-                        var type = leaveCalculationModal.leavePlanTypes
+                         var type = leaveCalculationModal.leavePlanTypes
                             .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
                         if (type != null)
                         {
                             var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
+                            employeeAccrual.LeaveTypeBrief.Add(BuildLeaveTypeBrief(type, availableLeaves));
                         }
 
-                        employeeAccrual.LeaveTypeBrief.Add(BuildLeaveTypeBrief(type));
                         i++;
                     }
                 }
-
                 await UpdateEmployeesRecord(new List<EmployeeAccrualData> { employeeAccrual });
             }
             catch (Exception)
@@ -302,14 +296,17 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private LeaveTypeBrief BuildLeaveTypeBrief(LeavePlanType type)
+        private LeaveTypeBrief BuildLeaveTypeBrief(LeavePlanType type, decimal availableLeaves)
         {
             var leaveBriefs = new LeaveTypeBrief
             {
                 LeavePlanTypeId = type.LeavePlanTypeId,
+                AvailableLeaves = availableLeaves,
+                AccruedSoFar = availableLeaves,
+                IsCommentsRequired = false,
+                IsHalfDay = false,
                 LeavePlanTypeName = type.PlanName,
-                AvailableLeaves = type.AvailableLeave,
-                TotalLeaveQuota = type.MaxLeaveLimit,
+                TotalLeaveQuota = type.MaxLeaveLimit
             };
 
             return leaveBriefs;
