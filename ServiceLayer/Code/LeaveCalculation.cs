@@ -23,11 +23,10 @@ namespace ServiceLayer.Code
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly DateTime now = DateTime.UtcNow;
         private LeavePlanType _leavePlanType;
-
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
-
+        private readonly ICompanyCalendar _companyCalendar;
         private readonly Quota _quota;
         private readonly Accrual _accrual;
         private readonly Apply _apply;
@@ -43,7 +42,7 @@ namespace ServiceLayer.Code
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction,
-            Approval approval)
+            Approval approval, ICompanyCalendar companyCalendar)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -54,6 +53,7 @@ namespace ServiceLayer.Code
             _restriction = restriction;
             _holidaysAndWeekoffs = holidaysAndWeekoffs;
             _approval = approval;
+            _companyCalendar = companyCalendar;
         }
 
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
@@ -668,7 +668,9 @@ namespace ServiceLayer.Code
             leaveCalculationModal.timeZonePresentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             leaveCalculationModal.utcPresentDate = DateTime.UtcNow;
             leaveCalculationModal.numberOfLeaveApplyring = Convert.ToDecimal(ToDate.Date.Subtract(FromDate.Date).TotalDays + 1);
-
+            var holidays = await _companyCalendar.GetHolidayBetweenTwoDates(FromDate, ToDate);
+            var weekoff = _holidaysAndWeekoffs.WeekOffCountIfBetweenLeaveDates(leaveCalculationModal);
+            leaveCalculationModal.numberOfLeaveApplyring = leaveCalculationModal.numberOfLeaveApplyring - (weekoff + holidays);
             // get employee detail and store it in class level variable
             LoadCalculationData(EmployeeId, leaveCalculationModal);
 

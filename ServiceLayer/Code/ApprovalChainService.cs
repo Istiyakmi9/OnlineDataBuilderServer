@@ -67,39 +67,23 @@ namespace ServiceLayer.Code
                 approvalWorkFlowModal.ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId;
 
                 ApprovalChainDetail chainDetail = null;
-                //approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
-                //{
-                //    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.AssignieId == item.AssignieId);
-
-                //    if (chainDetail != null)
-                //    {
-                //        item.ApprovalChainDetailId = chainDetail.ApprovalChainDetailId;
-                //        item.ApprovalWorkFlowId = chainDetail.ApprovalWorkFlowId;
-                //    }
-                //});
-
-                approvalWorkFlowModalExisting.ForEach(item =>
+                approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
                 {
-                    chainDetail = approvalWorkFlowModal.ApprovalChainDetails.FirstOrDefault(x => x.ApprovalChainDetailId == item.ApprovalChainDetailId);
+                    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.AssignieId == item.AssignieId);
 
                     if (chainDetail != null)
                     {
                         item.ApprovalChainDetailId = chainDetail.ApprovalChainDetailId;
                         item.ApprovalWorkFlowId = chainDetail.ApprovalWorkFlowId;
-                        item.ApprovalStatus = chainDetail.ApprovalStatus;
-                        item.AssignieId = chainDetail.AssignieId;
-                        item.IsRequired = chainDetail.IsRequired;
-                        item.IsForwardEnabled = chainDetail.IsForwardEnabled;
-                        item.ForwardWhen = chainDetail.ForwardWhen;
-                        item.ForwardAfterDays = item.ForwardAfterDays;
                     }
                 });
+
             }
-            var data = (from n in approvalWorkFlowModalExisting
+            var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
                         select new
                         {
-                            ApprovalChainDetailId = n.ApprovalChainDetailId > 0 ? n.ApprovalChainDetailId.ToString() : ApplicationConstants.LastInsertedNumericKey,
-                            ApprovalWorkFlowId = n.ApprovalWorkFlowId > 0 ? n.ApprovalWorkFlowId : DbProcedure.getParentKey(approvalWorkFlowId),
+                            ApprovalChainDetailId = n.ApprovalChainDetailId > 0 ? n.ApprovalChainDetailId : 0,
+                            ApprovalWorkFlowId = DbProcedure.getParentKey(approvalWorkFlowId),
                             AssignieId = n.AssignieId,
                             IsRequired = n.IsRequired,
                             IsForwardEnabled = n.IsForwardEnabled,
