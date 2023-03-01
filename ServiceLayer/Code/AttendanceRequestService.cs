@@ -136,7 +136,7 @@ namespace ServiceLayer.Code
                 _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
 
                 currentAttendance.PresentDayStatus = (int)status;
-                ChnageSessionType(currentAttendance);
+                //ChnageSessionType(currentAttendance);
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
@@ -149,7 +149,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update attendance status");
                 else
                     requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
-                Task task = Task.Run(async() => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
+                Task task = Task.Run(async () => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
                 return requestModel;
             }
             catch (Exception)
@@ -163,11 +163,18 @@ namespace ServiceLayer.Code
             var logoff = currentAttr.LogOff;
             var logofftime = logoff.Replace(":", ".");
             decimal time = decimal.Parse(logofftime);
-            var totaltime = (int)((time * 60) * 2);
-            currentAttr.LogOff = ConvertToMin(totaltime);
-            currentAttr.LogOn = ConvertToMin(totaltime + 60);
-            currentAttr.SessionType = 1;
-            currentAttr.TotalMinutes = currentAttr.TotalMinutes * 2;
+            if (currentAttr.SessionType == 1)
+            {
+
+            }
+            else
+            {
+                var totaltime = (int)((time * 60) * 2);
+                currentAttr.LogOff = ConvertToMin(totaltime);
+                currentAttr.LogOn = ConvertToMin(totaltime + 60);
+                currentAttr.SessionType = 1;
+                currentAttr.TotalMinutes = currentAttr.TotalMinutes * 2;
+            }
         }
 
         private String ConvertToMin(int mins)

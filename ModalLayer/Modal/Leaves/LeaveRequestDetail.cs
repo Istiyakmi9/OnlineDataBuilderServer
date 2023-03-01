@@ -32,5 +32,6 @@ namespace ModalLayer.Modal.Leaves
         public int LeaveRequestNotificationId { get; set; }
         public DateTime UpdatedOn { get; set; }
         public List<EmployeeLeaveQuota> EmployeeLeaveQuotaDetail { set; get; }
+        public bool IsPending { set; get; }
     }
 }
