@@ -94,7 +94,7 @@ namespace ServiceLayer.Code
                         }
                     ).ToList<object>();
 
-            var result = await _db.ConsicutiveBatchInset("sp_approval_work_flow_insupd",
+            var result = await _db.BatchInsetUpdate("sp_approval_work_flow_insupd",
                 new
                 {
                     approvalWorkFlowModal.ApprovalWorkFlowId,
@@ -109,7 +109,7 @@ namespace ServiceLayer.Code
                 },
                 DbProcedure.ApprovalChainDetail,
                 data);
-            if (result <= 0)
+            if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update record. Please contact to admin.");
 
             //try

@@ -699,10 +699,11 @@ namespace ServiceLayer.Code
             leaveCalculationModal.utcPresentDate = DateTime.UtcNow;
             leaveCalculationModal.numberOfLeaveApplyring = Convert.ToDecimal(ToDate.Date.Subtract(FromDate.Date).TotalDays + 1);
             var holidays = await _companyCalendar.GetHolidayBetweenTwoDates(FromDate, ToDate);
-            var weekoff = _holidaysAndWeekoffs.WeekOffCountIfBetweenLeaveDates(leaveCalculationModal);
-            leaveCalculationModal.numberOfLeaveApplyring = leaveCalculationModal.numberOfLeaveApplyring - (weekoff + holidays);
             // get employee detail and store it in class level variable
             LoadCalculationData(EmployeeId, leaveCalculationModal);
+
+            var weekoff = _holidaysAndWeekoffs.WeekOffCountIfBetweenLeaveDates(leaveCalculationModal);
+            leaveCalculationModal.numberOfLeaveApplyring = leaveCalculationModal.numberOfLeaveApplyring - (weekoff + holidays);
 
             // Check employee is in probation period
             CheckForProbationPeriod(leaveCalculationModal);
