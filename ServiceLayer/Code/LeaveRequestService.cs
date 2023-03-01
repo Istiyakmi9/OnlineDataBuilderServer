@@ -9,6 +9,7 @@ using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -84,6 +85,9 @@ namespace ServiceLayer.Code
             if (completeLeaveDetail == null)
                 throw new HiringBellException("Unable to find applied leave detail. Please contact to admin");
 
+
+            var pendingCount = completeLeaveDetail.Where(x => !x.RecordId.Equals(requestDetail.RecordId)).Count(i => i.LeaveStatus == (int)ItemStatus.Pending);
+
             var singleLeaveDetail = completeLeaveDetail.Find(x => x.RecordId.Equals(requestDetail.RecordId));
             if (singleLeaveDetail == null)
                 throw new HiringBellException("Unable to find applied leave. Please contact to admin");
@@ -135,7 +139,8 @@ namespace ServiceLayer.Code
                 leaveRequestDetail.LeaveQuotaDetail,
                 NumOfDays = 0,
                 requestDetail.LeaveRequestNotificationId,
-                RecordId = requestDetail.RecordId
+                RecordId = requestDetail.RecordId,
+                IsPending = pendingCount > 0 ? true : false
             }, true);
             if (string.IsNullOrEmpty(message))
                 throw new HiringBellException("Unable to update leave status. Please contact to admin");

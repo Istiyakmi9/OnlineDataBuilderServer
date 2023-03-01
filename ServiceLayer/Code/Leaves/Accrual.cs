@@ -109,13 +109,9 @@ namespace ServiceLayer.Code.Leaves
                 var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                 if (leaveLimit > 0)
                 {
-                    // check leave expiry
-                    if (!await DoesLeaveExpired())
-                    {
-                        workingDate = now;
-                        // start leave accrual calculation for present month
-                        availableLeaves = await ExecuteLeaveAccrualDetail();
-                    }
+                    workingDate = now;
+                    // start leave accrual calculation for present month
+                    availableLeaves = await ExecuteLeaveAccrualDetail();
                 }
             }
 
@@ -134,32 +130,28 @@ namespace ServiceLayer.Code.Leaves
                 var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                 if (leaveLimit > 0)
                 {
-                    // check leave expiry
-                    if (!await DoesLeaveExpired())
+                    var date = Convert.ToDateTime($"{now.Year}-01-01");
+                    var joiningDate = _leaveCalculationModal.employee.CreatedOn;
+                    while (date.Month <= now.Month)
                     {
-                        var date = Convert.ToDateTime($"{now.Year}-01-01");
-                        var joiningDate = _leaveCalculationModal.employee.CreatedOn;
-                        while (date.Month <= now.Month)
+                        // start leave accrual calculation for present month
+                        if (joiningDate.Year == now.Year)
                         {
-                            // start leave accrual calculation for present month
-                            if (joiningDate.Year == now.Year)
-                            {
-                                if (joiningDate.Month != now.Month && date.Month != now.Month)
-                                    workingDate = Convert.ToDateTime($"{now.Year}-{date.Month}-{DateTime.DaysInMonth(date.Year, date.Month)}");
-                                else
-                                    workingDate = now;
-                            }
+                            if (joiningDate.Month != now.Month && date.Month != now.Month)
+                                workingDate = Convert.ToDateTime($"{now.Year}-{date.Month}-{DateTime.DaysInMonth(date.Year, date.Month)}");
                             else
-                            {
-                                if (date.Month != now.Month)
-                                    workingDate = Convert.ToDateTime($"{now.Year}-{date.Month}-{DateTime.DaysInMonth(date.Year, date.Month)}");
-                                else
-                                    workingDate = now;
-                            }
-
-                            availableLeaves += await ExecuteLeaveAccrualDetail();
-                            date = date.AddMonths(1);
+                                workingDate = now;
                         }
+                        else
+                        {
+                            if (date.Month != now.Month)
+                                workingDate = Convert.ToDateTime($"{now.Year}-{date.Month}-{DateTime.DaysInMonth(date.Year, date.Month)}");
+                            else
+                                workingDate = now;
+                        }
+
+                        availableLeaves += await ExecuteLeaveAccrualDetail();
+                        date = date.AddMonths(1);
                     }
                 }
             }

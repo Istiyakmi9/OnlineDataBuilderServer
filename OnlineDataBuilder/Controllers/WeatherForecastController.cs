@@ -3,6 +3,7 @@ using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -92,9 +93,11 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            //await RunLeaveAccrualAsync();
+            await RunLeaveAccrualAsync();
 
             // await BatchInsertPerformanceTest();
+
+            // await RunDailyTimesheetCreationJob();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -109,6 +112,11 @@ namespace OnlineDataBuilder.Controllers
         private async Task RunLeaveAccrualAsync()
         {
             await _leaveCalculation.StartAccrualCycle(true);
+        }
+
+        private async Task RunDailyTimesheetCreationJob()
+        {
+            await _timesheetService.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(2));
         }
 
         private async Task BatchInsertPerformanceTest()
