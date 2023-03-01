@@ -132,7 +132,7 @@ namespace ServiceLayer.Code
                 if (setting.LeaveAccrualRunDayEveryMonth == DateTime.Now.Day)
                 {
                     _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
-                    await RunAccrualCycle();
+                    await RunAccrualCycle(runTillMonthOfPresnetYear);
                 }
             }
         }
@@ -163,15 +163,19 @@ namespace ServiceLayer.Code
                         foreach (EmployeeAccrualData emp in employeeAccrualData)
                         {
                             leaveCalculationModal.employee = new Employee { CreatedOn = emp.CreatedOn };
-                            if (emp.LeavePlanId > 0)
-                                leavePlan = leaveCalculationModal.leavePlans
-                                    .FirstOrDefault(x => x.LeavePlanId == emp.LeavePlanId);
-                            else
-                                leavePlan = leaveCalculationModal.leavePlans.FirstOrDefault(x => x.IsDefaultPlan == true);
+                            leavePlan = leaveCalculationModal.leavePlans
+                                .FirstOrDefault(x => emp.LeavePlanId > 0 ? x.LeavePlanId == emp.LeavePlanId : x.IsDefaultPlan == true);
 
-                            emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
-                            if (emp.LeaveTypeBrief == null)
+                            if (runTillMonthOfPresnetYear)
+                            {
                                 emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+                            }
+                            else
+                            {
+                                emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
+                                if (emp.LeaveTypeBrief == null)
+                                    emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+                            }
 
                             if (leavePlan != null)
                             {
@@ -227,9 +231,23 @@ namespace ServiceLayer.Code
         {
             var planBrief = brief.Find(x => x.LeavePlanTypeId == planType.LeavePlanTypeId);
             if (planBrief == null)
-                throw HiringBellException.ThrowBadRequest($"Fail to run employee accrual.");
+            {
+                brief.Add(new LeaveTypeBrief
+                {
+                    LeavePlanTypeId = planType.LeavePlanTypeId,
+                    AvailableLeaves = availableLeaves,
+                    AccruedSoFar = availableLeaves,
+                    IsCommentsRequired = false,
+                    IsHalfDay = false,
+                    LeavePlanTypeName = planType.PlanName,
+                    TotalLeaveQuota = planType.MaxLeaveLimit
+                });
+            }
+            else
+            {
+                planBrief.AvailableLeaves += availableLeaves;
+            }
 
-            planBrief.AvailableLeaves += availableLeaves;
         }
 
         public async Task RunAccrualCycleByEmployee(long EmployeeId)
@@ -303,7 +321,7 @@ namespace ServiceLayer.Code
                                  select new
                                  {
                                      EmployeeId = r.EmployeeUid,
-                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
+                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, TimeZoneInfo.Local).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
 
