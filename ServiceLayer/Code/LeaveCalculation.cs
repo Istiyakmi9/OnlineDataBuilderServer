@@ -804,6 +804,7 @@ namespace ServiceLayer.Code
                 LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs),
                 NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
                 LeaveRequestNotificationId = 0,
+                IsPending = true,
                 RecordId
             }, true);
 
