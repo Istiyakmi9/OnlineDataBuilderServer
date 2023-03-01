@@ -303,7 +303,6 @@ namespace ServiceLayer.Code
                                  select new
                                  {
                                      EmployeeId = r.EmployeeUid,
-                                     //LeaveRequestId = r.LeaveRequestId,
                                      Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
