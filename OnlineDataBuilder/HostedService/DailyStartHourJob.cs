@@ -91,6 +91,18 @@ namespace OnlineDataBuilder.HostedService
 
         #endregion
 
+        #region ATTENDANCE APPROVAL LEVEL CHECK
+
+        #endregion
+
+        #region ATTENDANCE APPROVAL LEVEL CHECK
+
+        #endregion
+
+        #region ATTENDANCE APPROVAL LEVEL CHECK
+
+        #endregion
+
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
 
         public async Task StopAsync(CancellationToken cancellationToken)
