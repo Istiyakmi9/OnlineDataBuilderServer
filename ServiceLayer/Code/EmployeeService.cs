@@ -791,7 +791,8 @@ namespace ServiceLayer.Code
                     EmployeeDeclarationId = declarationId,
                     DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
                     employee.WorkShiftId,
-                    AdminId = _currentSession.CurrentUserDetail.UserId,
+                    IsPending = false,
+                    AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
                 );

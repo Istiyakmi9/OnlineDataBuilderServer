@@ -10,5 +10,6 @@ namespace ServiceLayer.Interface
         Task<List<ApprovalWorkFlowModal>> GetPageDateService(FilterModel filterModel);
         Task<string> InsertApprovalChainService(ApprovalWorkFlowChain approvalWorkFlowModal);
         Task<ApprovalWorkFlowModal> GetApprovalChainService(FilterModel filterModel);
+        Task<string> DeleteApprovalChainService(int approvalChainDetailId);
     }
 }
