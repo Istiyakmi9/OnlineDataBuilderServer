@@ -108,7 +108,7 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunLeaveAccrualAsync()
         {
-            await _leaveCalculation.StartAccrualCycle();
+            await _leaveCalculation.StartAccrualCycle(true);
         }
 
         private async Task BatchInsertPerformanceTest()
