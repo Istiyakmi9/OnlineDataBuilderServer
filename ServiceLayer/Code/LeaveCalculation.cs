@@ -257,8 +257,14 @@ namespace ServiceLayer.Code
                     throw HiringBellException.ThrowBadRequest("Employee detail not found. Please contact to admin.");
 
                 employeeAccrual.LeaveTypeBrief = new List<LeaveTypeBrief>();
-                leavePlan = leaveCalculationModal.leavePlans
-                    .FirstOrDefault(x => x.LeavePlanId == employeeAccrual.LeavePlanId || x.IsDefaultPlan == true);
+                if (leaveCalculationModal.employee == null)
+                    leaveCalculationModal.employee = new Employee { CreatedOn = employeeAccrual.CreatedOn };
+                if (employeeAccrual.LeavePlanId > 0)
+                    leavePlan = leaveCalculationModal.leavePlans
+                        .FirstOrDefault(x => x.LeavePlanId == employeeAccrual.LeavePlanId);
+                else
+                    leavePlan = leaveCalculationModal.leavePlans
+                            .FirstOrDefault(x => x.IsDefaultPlan == true);
 
                 if (leavePlan != null)
                 {
@@ -308,7 +314,7 @@ namespace ServiceLayer.Code
                                  select new
                                  {
                                      EmployeeId = r.EmployeeUid,
-                                     LeaveRequestId = r.LeaveRequestId,
+                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
 
@@ -774,7 +780,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 leaveCalculationModal.leaveRequestDetail.LeaveDetail,
                 leaveCalculationModal.leaveRequestDetail.Reason,
-                AssignTo = leaveCalculationModal.employee.ReportingManagerId,
+                AssigneeId = leaveCalculationModal.employee.ReportingManagerId,
                 ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
                 Year = leaveRequestModal.LeaveToDay.Year,
                 leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
