@@ -97,7 +97,7 @@ namespace BottomhalfCore.Services.Code
                                     property.SetValue(item, false, null);
                             }
                             else if (property.PropertyType == typeof(DateTime) || property.PropertyType == typeof(DateTime?))
-                                property.SetValue(item, DateTimeOffset.Parse(row[property.Name].ToString()).UtcDateTime, null);
+                                property.SetValue(item, Convert.ToDateTime(row[property.Name].ToString()), null);
                             else if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
                                 property.SetValue(item, Convert.ToInt32(row[property.Name].ToString()), null);
                             else if (property.PropertyType == typeof(decimal) || property.PropertyType == typeof(decimal?))

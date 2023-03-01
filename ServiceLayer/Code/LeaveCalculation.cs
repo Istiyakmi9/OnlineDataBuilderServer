@@ -124,6 +124,19 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
+        public async Task StartAccrualCycle(bool runTillMonthOfPresnetYear = false)
+        {
+            var CompanySettings = _db.GetList<CompanySetting>("sp_company_setting_get_all");
+            foreach (var setting in CompanySettings)
+            {
+                if (setting.LeaveAccrualRunDayEveryMonth == DateTime.Now.Day)
+                {
+                    _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
+                    await RunAccrualCycle();
+                }
+            }
+        }
+
         public async Task RunAccrualCycle(bool runTillMonthOfPresnetYear = false)
         {
             LeavePlan leavePlan = default;
