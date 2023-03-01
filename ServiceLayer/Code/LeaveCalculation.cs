@@ -132,7 +132,7 @@ namespace ServiceLayer.Code
                 if (setting.LeaveAccrualRunDayEveryMonth == DateTime.Now.Day)
                 {
                     _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
-                    await RunAccrualCycle();
+                    await RunAccrualCycle(runTillMonthOfPresnetYear);
                 }
             }
         }
@@ -166,9 +166,16 @@ namespace ServiceLayer.Code
                             leavePlan = leaveCalculationModal.leavePlans
                                 .FirstOrDefault(x => emp.LeavePlanId > 0 ? x.LeavePlanId == emp.LeavePlanId : x.IsDefaultPlan == true);
 
-                            emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
-                            if (emp.LeaveTypeBrief == null)
+                            if (runTillMonthOfPresnetYear)
+                            {
                                 emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+                            }
+                            else
+                            {
+                                emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
+                                if (emp.LeaveTypeBrief == null)
+                                    emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+                            }
 
                             if (leavePlan != null)
                             {
@@ -314,7 +321,7 @@ namespace ServiceLayer.Code
                                  select new
                                  {
                                      EmployeeId = r.EmployeeUid,
-                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
+                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, TimeZoneInfo.Local).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
 
