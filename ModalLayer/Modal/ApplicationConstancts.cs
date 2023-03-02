@@ -29,6 +29,7 @@ public class ApplicationConstants
     public static string HiringBellLogo = "hb-t-logo.png";
     public static string LogoContentId = "bottomhalf@me.com";
     public static string DeclarationDocumentPath = "declarated_documents";
+    public static string LeaveAttachmentPath = "leave_attachment";
     public static string ProcessingResult = "_ProcessingResult";
     public static string NullValue = null;
     public static int EmptyId = 0;

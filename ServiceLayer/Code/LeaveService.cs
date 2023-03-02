@@ -10,6 +10,7 @@ using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -391,10 +392,10 @@ namespace ServiceLayer.Code
 
         }
 
-        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection FileCollection, List<Files> fileDetail)
+        public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
         {
             this.ValidateRequestModal(leaveRequestModal);
-            var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal);
+            var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal, fileCollection, fileDetail);
 
             if (!leaveCalculationModal.IsEmailNotificationPasued)
             {
@@ -459,6 +460,12 @@ namespace ServiceLayer.Code
                 CompanyHoliday = companyHoliday,
                 ShiftDetail = leaveCalculationModal.shiftDetail
             };
+        }
+
+        public DataSet GetLeaveAttachmentService(string FileIds)
+        {
+            var result = _db.FetchDataSet("sp_user_files_get_byids_json", new { UserFileId = FileIds });
+            return result;
         }
     }
 }

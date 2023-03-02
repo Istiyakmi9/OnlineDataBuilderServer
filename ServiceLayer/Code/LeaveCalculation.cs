@@ -1,17 +1,17 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.VariantTypes;
+using Microsoft.AspNetCore.Http;
+using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +34,8 @@ namespace ServiceLayer.Code
         private readonly Restriction _restriction;
         private readonly IHolidaysAndWeekoffs _holidaysAndWeekoffs;
         private readonly Approval _approval;
+        private readonly IFileService _fileService;
+        private readonly FileLocationDetail _fileLocationDetail;
 
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
@@ -43,7 +45,7 @@ namespace ServiceLayer.Code
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction,
-            Approval approval, ICompanyCalendar companyCalendar)
+            Approval approval, ICompanyCalendar companyCalendar, IFileService fileService, FileLocationDetail fileLocationDetail)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -55,6 +57,8 @@ namespace ServiceLayer.Code
             _holidaysAndWeekoffs = holidaysAndWeekoffs;
             _approval = approval;
             _companyCalendar = companyCalendar;
+            _fileService = fileService;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
@@ -387,6 +391,9 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.numberOfLeaveApplyring = 0.5m;
             }
 
+            if (leaveRequestModal.DocumentProffAttached)
+                leaveCalculationModal.DocumentProffAttached = true;
+
             _leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
             if (_leavePlanType == null)
@@ -714,17 +721,20 @@ namespace ServiceLayer.Code
 
         #region APPLY FOR LEAVE
 
-        public async Task<LeaveCalculationModal> CheckAndApplyForLeave(LeaveRequestModal leaveRequestModal)
+        public async Task<LeaveCalculationModal> CheckAndApplyForLeave(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
         {
             try
             {
+                if (fileDetail != null && fileDetail.Count > 0)
+                    leaveRequestModal.DocumentProffAttached = true;
+
                 var leaveCalculationModal = await PrepareCheckLeaveCriteria(leaveRequestModal);
 
                 LeavePlanType leavePlanType =
                     leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
 
-                var appliedDetail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal);
+                var appliedDetail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal, fileCollection, fileDetail);
                 return leaveCalculationModal;
             }
             catch
@@ -733,7 +743,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task<string> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeaveRequestModal leaveRequestModal)
+        private async Task<string> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
         {
             var leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             if (leavePlanType == null)
@@ -754,6 +764,7 @@ namespace ServiceLayer.Code
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
+            var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
             //var span = DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc));
             var RecordId = DateTime.UtcNow.Ticks.ToString();
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
@@ -771,7 +782,8 @@ namespace ServiceLayer.Code
                 LeaveStatus = (int)ItemStatus.Pending,
                 Reason = leaveRequestModal.Reason,
                 RequestChain = BindApprovalChainDetail(),
-                RequestedOn = DateTime.UtcNow
+                RequestedOn = DateTime.UtcNow,
+                FileIds = fileIds
             };
 
             leaveDetails.Add(newLeaveDeatil);
@@ -809,6 +821,42 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("fail to insert or update");
 
             return await Task.FromResult(result);
+        }
+
+        private async Task<string> SaveLeaveAttachment(IFormFileCollection fileCollection, List<Files> fileDetail, Employee employee)
+        {
+            DbResult Result = null;
+            List<int> fileIds = new List<int>();
+            if (fileCollection.Count > 0)
+            {
+                var documentPath = Path.Combine(
+                    _fileLocationDetail.UserFolder,
+                    employee.Email,
+                ApplicationConstants.LeaveAttachmentPath
+                );
+                // save file to server filesystem
+                _fileService.SaveFileToLocation(documentPath, fileDetail, fileCollection);
+
+                foreach (var n in fileDetail)
+                {
+                    Result = await _db.ExecuteAsync("sp_userfiledetail_Upload", new
+                    {
+                        FileId = n.FileUid,
+                        FileOwnerId = employee.EmployeeUid,
+                        FilePath = documentPath,
+                        FileName = n.FileName,
+                        FileExtension = n.FileExtension,
+                        UserTypeId = (int)UserType.Employee,
+                        AdminId = _currentSession.CurrentUserDetail.UserId
+                    }, true);
+
+                    if (!Bot.IsSuccess(Result))
+                        throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+
+                    fileIds.Add(Convert.ToInt32(Result.statusMessage));
+                }
+            }
+            return JsonConvert.SerializeObject(fileIds);
         }
 
         private List<RequestChainModal> BindApprovalChainDetail()
