@@ -1,6 +1,8 @@
 ﻿using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using TimeZoneConverter;
 
 namespace BottomhalfCore.Services.Code
@@ -10,6 +12,15 @@ namespace BottomhalfCore.Services.Code
         public DateTime ToUtcTime(DateTime now)
         {
             return TimeZoneInfo.ConvertTimeToUtc(now);
+        }
+
+        public static int GetNumberOfWeekdaysInMonth(int year, int month)
+        {
+            return Enumerable.Range(1, DateTime.DaysInMonth(year, month))
+                             .Select(day => new DateTime(year, month, day))
+                             .Where(dt => dt.DayOfWeek != DayOfWeek.Sunday &&
+                                          dt.DayOfWeek != DayOfWeek.Saturday)
+                             .Count();
         }
 
         public DateTime ToUtcTimeFromMidNightTimeZone(DateTime now, TimeZoneInfo timeZoneInfo)
