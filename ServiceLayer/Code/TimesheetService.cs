@@ -79,6 +79,12 @@ namespace ServiceLayer.Code
             else if (timesheetDetail.TimesheetStatus == (int)ItemStatus.Saved)
                 filter.SearchString += $"and IsSaved = true";
 
+            else if (timesheetDetail.TimesheetStatus == (int)ItemStatus.Rejected)
+                filter.SearchString += $"and TimesheetStatus = {timesheetDetail.TimesheetStatus}";
+
+            else if (timesheetDetail.TimesheetStatus == (int)ItemStatus.Approved)
+                filter.SearchString += $"and TimesheetStatus = {timesheetDetail.TimesheetStatus}";
+
             var Result = _db.GetList<TimesheetDetail>("sp_employee_timesheet_filter", new
             {
                 filter.SearchString,
