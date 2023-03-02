@@ -91,7 +91,16 @@ namespace OnlineDataBuilder.HostedService
 
         #endregion
 
-        #region ATTENDANCE APPROVAL LEVEL CHECK
+        #region RUN PAYROLL CYCLE
+
+        private async Task RunPayrollAsync()
+        {
+            using (IServiceScope scope = _serviceProvider.CreateScope())
+            {
+                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
+                await _leaveCalculation.StartAccrualCycle();
+            }
+        }
 
         #endregion
 
