@@ -14,5 +14,6 @@ namespace ModalLayer.Modal.Leaves
         public bool IsProjectedFutureDateAllowed { set; get; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
+        public bool DocumentProffAttached { get; set; }
     }
 }

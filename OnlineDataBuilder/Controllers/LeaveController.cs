@@ -124,5 +124,12 @@ namespace OnlineDataBuilder.Controllers
             await _leaveService.RunAccrualByEmployeeService(EmployeeId);
             return BuildResponse(ApplicationConstants.Successfull);
         }
+
+        [HttpGet("GetLeaveAttachment/{FileIds}")]
+        public IResponse<ApiResponse> GetLeaveAttachment([FromRoute] string FileIds)
+        {
+            var result = _leaveService.GetLeaveAttachmentService(FileIds);
+            return BuildResponse(result);
+        }
     }
 }

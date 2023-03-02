@@ -2,6 +2,7 @@
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
@@ -21,5 +22,6 @@ namespace ServiceLayer.Interface
         Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection FileCollection, List<Files> fileDetail);
         Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal);
         Task RunAccrualByEmployeeService(long EmployeeId);
+        DataSet GetLeaveAttachmentService(string FileIds);
     }
 }

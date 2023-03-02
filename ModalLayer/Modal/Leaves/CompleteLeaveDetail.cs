@@ -24,6 +24,7 @@ namespace ModalLayer.Modal.Leaves
         public int LeavePlanId { get; set; }
         public List<RequestChainModal> RequestChain { set; get; }
         public DateTime RequestedOn { get; set; }
+        public string FileIds { get; set; }
     }
 
     public class RequestChainModal
