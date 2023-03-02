@@ -27,4 +27,10 @@ namespace ModalLayer.Modal
         public long SubmittedBy { set; get; }
         public long? UpdatedBy { set; get; }
     }
+
+    public class PayrollEmployeeData : Attendance
+    {
+        public string LeaveDetail { set; get; }
+        public string CompleteSalaryDetail { set; get; }
+    }
 }
