@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Crypto.Engines;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -792,27 +793,29 @@ namespace ServiceLayer.Code
             decimal grossAmount = Convert.ToDecimal(eCal.CTC - perquisiteAmount);
             decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, grossAmount, eCal.CTC);
 
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.employee.CreatedOn, _currentSession.TimeZone);
+
+            int i = 0;
+            while (i < eCal.salaryGroup.GroupComponents.Count)
+            {
+                var item = eCal.salaryGroup.GroupComponents.ElementAt(i);
+                if (!string.IsNullOrEmpty(item.Formula))
+                {
+                    if (item.Formula.Contains("[BASIC]"))
+                        item.Formula = item.Formula.Replace("[BASIC]", basicAmountValue.ToString());
+                    else if (item.Formula.Contains("[CTC]"))
+                        item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(eCal.CTC)).ToString());
+                    else if (item.Formula.Contains("[GROSS]"))
+                        item.Formula = item.Formula.Replace("[GROSS]", grossAmount.ToString());
+                }
+
+                i++;
+            }
+
             int index = 0;
             while (index < 12)
             {
                 List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
-
-                int i = 0;
-                while (i < eCal.salaryGroup.GroupComponents.Count)
-                {
-                    var item = eCal.salaryGroup.GroupComponents.ElementAt(i);
-                    if (!string.IsNullOrEmpty(item.Formula))
-                    {
-                        if (item.Formula.Contains("[BASIC]"))
-                            item.Formula = item.Formula.Replace("[BASIC]", basicAmountValue.ToString());
-                        else if (item.Formula.Contains("[CTC]"))
-                            item.Formula = item.Formula.Replace("[CTC]", (Convert.ToDecimal(eCal.CTC)).ToString());
-                        else if (item.Formula.Contains("[GROSS]"))
-                            item.Formula = item.Formula.Replace("[GROSS]", grossAmount.ToString());
-                    }
-
-                    i++;
-                }
 
                 decimal amount = 0;
                 CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
@@ -872,6 +875,7 @@ namespace ServiceLayer.Code
                 annualSalaryBreakups.Add(new AnnualSalaryBreakup
                 {
                     MonthName = startDate.ToString("MMM"),
+                    IsPayrollExecutedForThisMonth = false,
                     MonthNumber = startDate.Month,
                     MonthFirstDate = startDate,
                     SalaryBreakupDetails = calculatedSalaryBreakupDetails
