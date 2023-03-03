@@ -34,6 +34,7 @@ namespace ModalLayer.Modal.Accounts
     public class AnnualSalaryBreakup
     {
         public string MonthName { set; get; }
+        public bool IsPayrollExecutedForThisMonth { set; get; }
         public int MonthNumber { set; get; }
         public DateTime MonthFirstDate { set; get; }
         public List<CalculatedSalaryBreakupDetail> SalaryBreakupDetails { get; set; }
