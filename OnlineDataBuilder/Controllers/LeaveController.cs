@@ -131,5 +131,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _leaveService.GetLeaveAttachmentService(FileIds);
             return BuildResponse(result);
         }
+
+        [HttpPost("GetLeaveAttachByManger")]
+        public IResponse<ApiResponse> GetLeaveAttachByManger([FromBody] LeaveRequestNotification leaveRequestNotification)
+        {
+            var result = _leaveService.GetLeaveAttachByMangerService(leaveRequestNotification);
+            return BuildResponse(result);
+        }
     }
 }

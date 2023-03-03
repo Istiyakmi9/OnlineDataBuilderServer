@@ -23,5 +23,6 @@ namespace ServiceLayer.Interface
         Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal);
         Task RunAccrualByEmployeeService(long EmployeeId);
         DataSet GetLeaveAttachmentService(string FileIds);
+        DataSet GetLeaveAttachByMangerService(LeaveRequestNotification leaveRequestNotification);
     }
 }

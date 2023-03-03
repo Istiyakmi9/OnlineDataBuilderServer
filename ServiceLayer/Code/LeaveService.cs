@@ -464,8 +464,27 @@ namespace ServiceLayer.Code
 
         public DataSet GetLeaveAttachmentService(string FileIds)
         {
+            if (string.IsNullOrEmpty(FileIds) || FileIds == "[]")
+                throw HiringBellException.ThrowBadRequest("File ids are null or empty");
+
             var result = _db.FetchDataSet("sp_user_files_get_byids_json", new { UserFileId = FileIds });
             return result;
+        }
+
+        public DataSet GetLeaveAttachByMangerService(LeaveRequestNotification leaveRequestNotification)
+        {
+            if (leaveRequestNotification.LeaveRequestNotificationId < 0)
+                throw HiringBellException.ThrowBadRequest("Invalid leave request selected");
+
+            (LeaveRequestDetail leaveRequestDetail, LeavePlanType leavePlanType) = _db.GetMulti<LeaveRequestDetail, LeavePlanType>("sp_employee_leave_request_GetById", new { LeaveRequestNotificationId = leaveRequestNotification.LeaveRequestNotificationId });
+            var completeLeave = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
+            var slectedleave = completeLeave.Find(x => x.RecordId == leaveRequestNotification.RecordId);
+            if (slectedleave != null && !string.IsNullOrEmpty(slectedleave.FileIds) && slectedleave.FileIds != "[]")
+            {
+                var fileids = slectedleave.FileIds;
+                return this.GetLeaveAttachmentService(fileids);
+            }
+            return null;
         }
     }
 }
