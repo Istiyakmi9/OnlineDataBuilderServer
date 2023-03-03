@@ -37,5 +37,6 @@ namespace ModalLayer.Modal.Accounts
         public bool IsAccrualLeaveForProbationPeriondOnly { set; get; } // override all rule and allow leave for 2 or 3 months (define as per rule) leaves only.
         public int AttendanceSubmissionLimit { set; get; } = 2;
         public int LeaveAccrualRunDayEveryMonth { set; get; } = 1;
+        public string TimezoneName { set; get; }
     }
 }

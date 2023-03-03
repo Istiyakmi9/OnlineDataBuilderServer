@@ -1,4 +1,5 @@
 ﻿using ModalLayer.Modal.Accounts;
+using System;
 using System.Collections.Generic;
 
 namespace ModalLayer.Modal
@@ -14,5 +15,19 @@ namespace ModalLayer.Modal
         public List<SalaryComponents> salaryComponents { set; get; }
         public SalaryGroup salaryGroup { set; get; }
         public CompanySetting companySetting { set; get; }
+        public List<SurChargeSlab> surchargeSlabs { set; get; }
+        public List<PTaxSlab> ptaxSlab { set; get; }
+    }
+
+    public class PayrollCommonData
+    {
+        public List<SalaryComponents> salaryComponents { set; get; }
+        public List<SalaryGroup> salaryGroups { set; get; }
+        public List<Payroll> payrolls { set; get; }
+        public List<SurChargeSlab> surchargeSlabs { set; get; }
+        public List<PTaxSlab> ptaxSlab { set; get; }
+        public TimeZoneInfo timeZone { set; get; }
+        public DateTime presentDate { set; get; }
+        public DateTime utcPresentDate { set; get; }
     }
 }

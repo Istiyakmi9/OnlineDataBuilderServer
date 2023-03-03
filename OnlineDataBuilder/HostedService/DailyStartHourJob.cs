@@ -97,8 +97,8 @@ namespace OnlineDataBuilder.HostedService
         {
             using (IServiceScope scope = _serviceProvider.CreateScope())
             {
-                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
-                await _leaveCalculation.StartAccrualCycle();
+                IPayrollService _payrollService = scope.ServiceProvider.GetRequiredService<IPayrollService>();
+                await _payrollService.RunPayrollCycle();
             }
         }
 
