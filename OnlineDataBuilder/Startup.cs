@@ -25,6 +25,7 @@ using ServiceLayer.Caching;
 using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.Leaves;
+using ServiceLayer.Code.PayrollCycle;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using SocialMediaServices;
@@ -197,6 +198,7 @@ namespace OnlineDataBuilder
             services.AddScoped<ICompanyNotificationService, CompanyNotificationService>();
             services.AddScoped<IServiceRequestService, ServiceRequestService>();
             services.AddScoped<IApprovalChainService, ApprovalChainService>();
+            services.AddScoped<IPayrollService, PayrollService>();
             services.AddScoped<IShiftService, ShiftService>();
             services.AddScoped<WorkFlowChain>();
             services.AddCors(options =>

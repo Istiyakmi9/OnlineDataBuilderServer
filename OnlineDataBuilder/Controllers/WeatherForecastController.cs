@@ -33,18 +33,21 @@ namespace OnlineDataBuilder.Controllers
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly ITimesheetService _timesheetService;
         private readonly CurrentSession _currentSession;
+        private readonly IPayrollService _payrollService;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
             ITimesheetService timesheetService,
             ILeaveCalculation leaveCalculation,
+            IPayrollService payrollService,
             CurrentSession currentSession
             )
         {
             _logger = logger;
             _eMailManager = eMailManager;
             _db = db;
+            _payrollService = payrollService;
             _timesheetService = timesheetService;
             _leaveCalculation = leaveCalculation;
             _currentSession = currentSession;
@@ -93,11 +96,13 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            await RunLeaveAccrualAsync();
+            // await RunLeaveAccrualAsync();
 
             // await BatchInsertPerformanceTest();
 
             // await RunDailyTimesheetCreationJob();
+
+            await RunPayrollAsync();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -107,6 +112,11 @@ namespace OnlineDataBuilder.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        private async Task RunPayrollAsync()
+        {
+            await _payrollService.RunPayrollCycle();
         }
 
         private async Task RunLeaveAccrualAsync()

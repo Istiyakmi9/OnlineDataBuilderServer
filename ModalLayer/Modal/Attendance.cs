@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ModalLayer.Modal.Accounts;
+using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -31,6 +33,14 @@ namespace ModalLayer.Modal
     public class PayrollEmployeeData : Attendance
     {
         public string LeaveDetail { set; get; }
+        public int CompanyId { set; get; }
         public string CompleteSalaryDetail { set; get; }
+        public decimal CTC { set; get; }
+        public int GroupId { set; get; }
+        public string TaxDetail { set; get; }
+        public int DeclarationStartMonth { set; get; }
+        public int DeclarationEndMonth { set; get; }
+        public int FinancialYear { set; get; }
+        public EmployeeDeclaration employeeDeclaration { set; get; }
     }
 }

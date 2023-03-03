@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -137,6 +138,7 @@ namespace ServiceLayer.Code
                 if (setting.LeaveAccrualRunDayEveryMonth == DateTime.Now.Day)
                 {
                     _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
+                    _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
                     await RunAccrualCycle(runTillMonthOfPresnetYear);
                 }
             }
@@ -279,8 +281,8 @@ namespace ServiceLayer.Code
                     int i = 0;
                     while (i < leavePlanTypes.Count)
                     {
-                         var type = leaveCalculationModal.leavePlanTypes
-                            .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
+                        var type = leaveCalculationModal.leavePlanTypes
+                           .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
                         if (type != null)
                         {
                             var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
@@ -322,7 +324,7 @@ namespace ServiceLayer.Code
                                  select new
                                  {
                                      EmployeeId = r.EmployeeUid,
-                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, TimeZoneInfo.Local).Year,
+                                     Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
 
