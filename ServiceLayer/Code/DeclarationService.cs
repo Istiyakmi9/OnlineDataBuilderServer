@@ -313,7 +313,7 @@ namespace ServiceLayer.Code
         {
             var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
                 new { employeeCalculation.EmployeeId });
-            if (ResultSet == null || ResultSet.Tables.Count != 4)
+            if (ResultSet == null || ResultSet.Tables.Count != 6)
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
             if (ResultSet.Tables[1].Rows.Count == 0)
@@ -325,11 +325,19 @@ namespace ServiceLayer.Code
             if (ResultSet.Tables[3].Rows.Count == 0)
                 throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
 
+            if (ResultSet.Tables[4].Rows.Count == 0)
+                throw new Exception("Surcharge data not found. Please contact to admin");
+
+            if (ResultSet.Tables[5].Rows.Count == 0)
+                throw new Exception("Professional tax data not found. Please contact to admin");
+
             employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
             employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
             employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
             employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
-            
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(ResultSet.Tables[0]);
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(ResultSet.Tables[0]);
+
             if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
                 employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
 
@@ -383,6 +391,54 @@ namespace ServiceLayer.Code
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
         }
 
+        public async Task<EmployeeSalaryDetail> ExecuteSalary(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData)
+        {
+            if (payrollEmployeeData.GroupId == 1)
+                throw HiringBellException.ThrowBadRequest($"Salary group for salary " +
+                    $"{payrollEmployeeData.CTC} not found. Default salary group for all calculation. For any query please contact to admin.");
+
+            var firstRow = payrollCommonData.payrolls.Find(x => x.CompanyId == payrollEmployeeData.CompanyId);
+            if (firstRow == null)
+                throw HiringBellException.ThrowBadRequest($"[ExecuteSalary]: Employee payroll detail not found. EmployeeId: {payrollEmployeeData.EmployeeId}");
+
+            int defaultGroupId = 1;
+            if (payrollEmployeeData.GroupId != 0)
+                defaultGroupId = payrollEmployeeData.GroupId;
+
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation
+            {
+                EmployeeId = payrollEmployeeData.EmployeeId,
+                employeeDeclaration = payrollEmployeeData.employeeDeclaration,
+                employee = new Employee { EmployeeUid = payrollEmployeeData.EmployeeId },
+                salaryComponents = payrollCommonData.salaryComponents,
+                CTC = payrollEmployeeData.CTC,
+                employeeSalaryDetail = new EmployeeSalaryDetail
+                {
+                    CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
+                    CTC = payrollEmployeeData.CTC,
+                    GroupId = payrollEmployeeData.GroupId,
+                    TaxDetail = payrollEmployeeData.TaxDetail
+                },
+                salaryGroup = payrollCommonData.salaryGroups.FirstOrDefault(x => x.SalaryGroupId == defaultGroupId),
+                surchargeSlabs = payrollCommonData.surchargeSlabs,
+                ptaxSlab = payrollCommonData.ptaxSlab.FindAll(x => x.CompanyId == firstRow.CompanyId),
+                companySetting = new CompanySetting
+                {
+                    DeclarationEndMonth = payrollEmployeeData.DeclarationEndMonth,
+                    DeclarationStartMonth = payrollEmployeeData.DeclarationStartMonth,
+                    FinancialYear = payrollEmployeeData.FinancialYear
+                }
+            };
+
+            employeeCalculation.salaryGroup.GroupComponents = JsonConvert
+                .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
+
+            if (employeeCalculation.employeeDeclaration.SalaryDetail != null)
+                employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
+
+            return await CalculateSalaryNDeclaration(employeeCalculation, true);
+        }
+
         private async Task<bool> CalculateAndBuildDeclarationDetail(EmployeeCalculation employeeCalculation, bool reCalculateFlag)
         {
             bool flag = await GetEmployeeDeclaration(employeeCalculation.employeeDeclaration, employeeCalculation.salaryComponents);
@@ -433,11 +489,7 @@ namespace ServiceLayer.Code
             totalDeduction += _componentsCalculationService.StandardDeductionComponent(empCal);
 
             // check and apply professional tax
-            var ptaxSlab = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new {CompanyId = empCal.companySetting.CompanyId});
-            if (ptaxSlab == null || ptaxSlab.Count == 0)
-                throw new HiringBellException("Professional tax slab is not declared. Please add PTax slab");
-
-            totalDeduction += _componentsCalculationService.ProfessionalTaxComponent(empCal, ptaxSlab);
+            totalDeduction += _componentsCalculationService.ProfessionalTaxComponent(empCal, empCal.ptaxSlab);
 
             // check and apply employer providentfund
             totalDeduction += _componentsCalculationService.EmployerProvidentFund(empCal.employeeDeclaration, empCal.salaryGroup);
@@ -480,11 +532,7 @@ namespace ServiceLayer.Code
             if (taxRegimeSlabs == null || taxRegimeSlabs.Count == 0)
                 throw new Exception("Tax regime slabs are not found. Please configure tax regime for the current employee.");
 
-            var surchargeSlabs = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
-            if (surchargeSlabs == null || surchargeSlabs.Count == 0)
-                throw new Exception("Surcharge slabs are not found. Please add surcharge slab first");
-
-            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, surchargeSlabs);
+            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, empCal.surchargeSlabs);
 
             //Tac Calculation for every month
             await TaxDetailsCalculation(empCal, reCalculateFlag);
@@ -707,28 +755,37 @@ namespace ServiceLayer.Code
 
         public async Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear)
         {
-            if (EmployeeId <= 0)
-                throw new HiringBellException("Invalid employeeId used. Please login again.");
+            return await Task.FromResult("Done");
+        }
 
-            (EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail employeeSalaryDetail) =
-                _db.GetMulti<EmployeeDeclaration, EmployeeSalaryDetail>("sp_employee_declaration_detail_get_by_empid", new { EmployeeId });
-            if (employeeDeclaration == null || employeeSalaryDetail == null)
-                throw new HiringBellException("Ohh!! fail to get employee declaration or salary detail. Please contact to admin.");
-
+        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData)
+        {
+            EmployeeSalaryDetail employeeSalaryDetail = null;
             List<TaxDetails> breakDetail = null;
             TaxDetails workingDetail = null;
-            if (!string.IsNullOrEmpty(employeeSalaryDetail.TaxDetail))
+            if (!string.IsNullOrEmpty(payrollEmployeeData.TaxDetail))
             {
-                breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
-                workingDetail = breakDetail.FirstOrDefault(x => x.Month == PresentMonth && x.Year == PresentYear);
+                breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(payrollEmployeeData.TaxDetail);
+                workingDetail = breakDetail.FirstOrDefault(x => x.Month == payrollCommonData.presentDate.Month && x.Year == payrollCommonData.presentDate.Year);
                 if (workingDetail == null)
-                    employeeSalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
+                {
+                    employeeSalaryDetail = await this.ExecuteSalary(payrollEmployeeData, payrollCommonData);
+                }
+                else
+                {
+                    employeeSalaryDetail = new EmployeeSalaryDetail
+                    {
+                        EmployeeId = payrollEmployeeData.EmployeeId,
+                        CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
+                        CTC = payrollEmployeeData.CTC
+                    };
+                }
             }
             else
             {
-                employeeSalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration);
+                employeeSalaryDetail = await this.ExecuteSalary(payrollEmployeeData, payrollCommonData);
                 breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
-                workingDetail = breakDetail.FirstOrDefault(x => x.Month == PresentMonth && x.Year == PresentYear);
+                workingDetail = breakDetail.FirstOrDefault(x => x.Month == payrollCommonData.presentDate.Month && x.Year == payrollCommonData.presentDate.Year);
                 if (workingDetail == null)
                     throw new HiringBellException("Fail to calculate salary detail. Look's there are some internal issue. Please contact to admin.");
             }
@@ -736,7 +793,7 @@ namespace ServiceLayer.Code
 
             foreach (var elem in breakDetail)
             {
-                if (elem.Month <= PresentMonth && elem.Month > 3)
+                if (elem.Month <= payrollCommonData.presentDate.Month && elem.Month > 3)
                     elem.TaxPaid = elem.TaxDeducted;
             }
 

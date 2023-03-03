@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ModalLayer.Modal.Accounts
 {
-    public class Payroll: CreationInfo
+    public class Payroll : CreationInfo
     {
         public int CompanyId { set; get; }
         public int PayrollCycleSettingId { set; get; }
@@ -15,5 +15,7 @@ namespace ModalLayer.Modal.Accounts
         public int PayCalculationId { get; set; }
         public bool IsExcludeWeeklyOffs { get; set; }
         public bool IsExcludeHolidays { get; set; }
+        public string TimezoneName { set; get; }
+        public string State { set; get; }
     }
 }

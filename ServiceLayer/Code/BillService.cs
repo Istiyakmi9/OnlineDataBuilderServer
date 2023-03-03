@@ -708,9 +708,8 @@ namespace ServiceLayer.Code
             FileDetail fileDetail = new FileDetail();
             try
             {
-                TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
-                pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, istTimeZome);
-                pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, istTimeZome);
+                pdfModal.billingMonth = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.billingMonth, _currentSession.TimeZone);
+                pdfModal.dateOfBilling = TimeZoneInfo.ConvertTimeFromUtc(pdfModal.dateOfBilling, _currentSession.TimeZone);
 
                 Bills bill = null; //this.GetBillData();
                 if (string.IsNullOrEmpty(pdfModal.billNo))
