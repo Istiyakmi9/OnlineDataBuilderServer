@@ -41,6 +41,7 @@ namespace ModalLayer.Modal
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
         public int FinancialYear { set; get; }
+        public DateTime UpdatedOn { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
     }
 }

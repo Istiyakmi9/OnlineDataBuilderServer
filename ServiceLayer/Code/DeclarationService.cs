@@ -534,7 +534,7 @@ namespace ServiceLayer.Code
 
             _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, empCal.surchargeSlabs);
 
-            //Tac Calculation for every month
+            //Tax Calculation for every month
             await TaxDetailsCalculation(empCal, reCalculateFlag);
 
             return salaryBreakup;
@@ -762,32 +762,20 @@ namespace ServiceLayer.Code
         {
             EmployeeSalaryDetail employeeSalaryDetail = null;
             List<TaxDetails> breakDetail = null;
-            TaxDetails workingDetail = null;
-            if (!string.IsNullOrEmpty(payrollEmployeeData.TaxDetail))
+            DateTime updatedOn = _timezoneConverter.ToTimeZoneDateTime(payrollEmployeeData.UpdatedOn, _currentSession.TimeZone);
+
+            if (updatedOn.Month == payrollCommonData.presentDate.Month && updatedOn.Day <= 20 && !string.IsNullOrEmpty(payrollEmployeeData.TaxDetail))
             {
-                breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(payrollEmployeeData.TaxDetail);
-                workingDetail = breakDetail.FirstOrDefault(x => x.Month == payrollCommonData.presentDate.Month && x.Year == payrollCommonData.presentDate.Year);
-                if (workingDetail == null)
-                {
-                    employeeSalaryDetail = await this.ExecuteSalary(payrollEmployeeData, payrollCommonData);
-                }
-                else
-                {
-                    employeeSalaryDetail = new EmployeeSalaryDetail
-                    {
-                        EmployeeId = payrollEmployeeData.EmployeeId,
-                        CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
-                        CTC = payrollEmployeeData.CTC
-                    };
-                }
+                employeeSalaryDetail = await this.ExecuteSalary(payrollEmployeeData, payrollCommonData);
             }
             else
             {
-                employeeSalaryDetail = await this.ExecuteSalary(payrollEmployeeData, payrollCommonData);
-                breakDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(employeeSalaryDetail.TaxDetail);
-                workingDetail = breakDetail.FirstOrDefault(x => x.Month == payrollCommonData.presentDate.Month && x.Year == payrollCommonData.presentDate.Year);
-                if (workingDetail == null)
-                    throw new HiringBellException("Fail to calculate salary detail. Look's there are some internal issue. Please contact to admin.");
+                employeeSalaryDetail = new EmployeeSalaryDetail
+                {
+                    EmployeeId = payrollEmployeeData.EmployeeId,
+                    CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
+                    CTC = payrollEmployeeData.CTC
+                };
             }
 
 
