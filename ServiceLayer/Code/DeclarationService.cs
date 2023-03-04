@@ -233,8 +233,8 @@ namespace ServiceLayer.Code
                             AdminId = _currentSession.CurrentUserDetail.UserId
                         }, true);
 
-                        if (!Bot.IsSuccess(Result))
-                            throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+                        if (Result.rowsEffected < 0)
+                            throw new HiringBellException("Fail to update documents. Please contact to admin.");
 
                         fileIds.Add(Convert.ToInt32(Result.statusMessage));
                     }

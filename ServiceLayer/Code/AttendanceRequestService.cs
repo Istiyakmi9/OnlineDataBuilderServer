@@ -1,6 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
-using EMailService.Service;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -9,7 +8,6 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
