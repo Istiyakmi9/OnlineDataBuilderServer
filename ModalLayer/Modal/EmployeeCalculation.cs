@@ -8,6 +8,7 @@ namespace ModalLayer.Modal
     {
         public decimal CTC { set; get; }
         public long EmployeeId { set; get; }
+        public DateTime Doj { set; get; }
         public Employee employee { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public EmployeeSalaryDetail employeeSalaryDetail { set; get; }

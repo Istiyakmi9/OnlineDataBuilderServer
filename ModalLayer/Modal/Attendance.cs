@@ -23,7 +23,7 @@ namespace ModalLayer.Modal
         public long ReportingManagerId { set; get; }
         public string ManagerName { set; get; }
         public DateTime? SubmittedOn { set; get; }
-        public DateTime? UpdatedOn { set; get; }
+        public DateTime UpdatedOn { set; get; }
         public DateTime DOJ { set; get; }
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
@@ -41,7 +41,7 @@ namespace ModalLayer.Modal
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
         public int FinancialYear { set; get; }
-        public DateTime UpdatedOn { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
+        public DateTime Doj { get; set; }
     }
 }

@@ -222,6 +222,9 @@ public class ComponentNames
 {
     public static string Gross = "GROSS";
     public static string CTC = "ANNUALCTC";
+    public static string StandardDeduction = "STD";
+    public static string ProfessionalTax = "PTAX";
+    public static string EmployeePF = "EPF";
     public static string Special = "SPECIAL ALLOWANCE";
     public static string HRA = "HRA";
     public static string Basic = "BS";

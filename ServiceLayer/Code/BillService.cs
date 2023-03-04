@@ -1284,6 +1284,7 @@ namespace ServiceLayer.Code
             }
             return html;
         }
+
         private async Task<DataSet> PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
         {
             DataSet ds = this.db.FetchDataSet("sp_payslip_detail", new
@@ -1338,7 +1339,7 @@ namespace ServiceLayer.Code
             //    throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
 
             //payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
-            return ds;
+            return await Task.FromResult(ds);
         }
         private void GetPayslipFileDetail(PayslipGenerationModal payslipModal, FileDetail fileDetail, string fileExtension)
         {

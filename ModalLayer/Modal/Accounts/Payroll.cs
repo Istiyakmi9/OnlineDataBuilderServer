@@ -17,5 +17,8 @@ namespace ModalLayer.Modal.Accounts
         public bool IsExcludeHolidays { get; set; }
         public string TimezoneName { set; get; }
         public string State { set; get; }
+        public int FinancialYear { set; get; }
+        public int DeclarationStartMonth { get; set; }
+        public int DeclarationEndMonth { get; set; }
     }
 }

@@ -16,7 +16,7 @@ namespace ServiceLayer.Code
             SalaryComponents component = null;
             if (empCal.employeeDeclaration.SalaryComponentItems != null)
             {
-                component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "STD");
+                component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == ComponentNames.StandardDeduction);
                 if (component == null)
                     throw new HiringBellException("Standard Deduction component not found. Please add standard deduction components");
 
@@ -30,23 +30,38 @@ namespace ServiceLayer.Code
             return amount;
         }
 
-        public decimal ProfessionalTaxComponent(EmployeeCalculation empCal, List<PTaxSlab> pTaxSlabs)
+        private decimal GetProfessionalTaxAmount(EmployeeCalculation empCal, int totalMonths)
+        {
+            decimal ptaxAmount = 0;
+            var professtionalTax = empCal.ptaxSlab;
+            var monthlyIncome = empCal.employeeSalaryDetail.CTC / 12;
+            var maxMinimumIncome = professtionalTax.Max(i => i.MinIncome);
+            PTaxSlab ptax = null;
+            if (monthlyIncome >= maxMinimumIncome)
+                ptax = professtionalTax.OrderByDescending(i => i.MinIncome).First();
+            else
+                ptax = professtionalTax.Find(x => monthlyIncome >= x.MinIncome && monthlyIncome <= x.MaxIncome);
+
+            if (ptax != null)
+            {
+                ptaxAmount = ptax.TaxAmount * totalMonths;
+            }
+
+            return ptaxAmount;
+        }
+
+        public decimal ProfessionalTaxComponent(EmployeeCalculation empCal, List<PTaxSlab> pTaxSlabs, int totalMonths)
         {
             decimal amount = 0;
             SalaryComponents component = null;
-            decimal ptaxStandardAmount = 8500 * 12;
-            if (empCal.employeeDeclaration.SalaryComponentItems != null && empCal.employeeSalaryDetail.CTC > ptaxStandardAmount)
+            if (empCal.employeeDeclaration.SalaryComponentItems != null)
             {
-                decimal monthlySalarry = empCal.employeeSalaryDetail.CTC / 12;
-                PTaxSlab pTaxSlab = pTaxSlabs.Find(x => x.MinIncome <= monthlySalarry && x.MaxIncome >= monthlySalarry);
-                if (monthlySalarry > pTaxSlabs[pTaxSlabs.Count-1].MaxIncome)
-                    pTaxSlab = pTaxSlabs.Last();
-
-                component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "PTAX");
-                if (component != null && pTaxSlab != null)
+                decimal ptaxAmount = GetProfessionalTaxAmount(empCal, totalMonths);
+                component = empCal.employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == ComponentNames.ProfessionalTax);
+                if (component != null)
                 {
                     if (empCal.employeeDeclaration.EmployeeCurrentRegime == 1)
-                        component.DeclaredValue = (pTaxSlab.TaxAmount * 12);
+                        component.DeclaredValue = ptaxAmount;
                     else
                         component.DeclaredValue = 0;
 
@@ -55,39 +70,36 @@ namespace ServiceLayer.Code
             }
             return amount;
         }
-        public decimal EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup)
+
+        public decimal EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup, int totalMonths)
         {
             decimal value = 0;
             SalaryComponents component = null;
-            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == "EPF");
+            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == ComponentNames.EmployeePF);
             if (component != null)
-                value = component.DeclaredValue;
+                value = (component.DeclaredValue / 12) * totalMonths;
 
             return value;
         }
 
-        private decimal SurchargeAndCess(decimal GrossIncomeTax, decimal GrossIncome, List<SurChargeSlab> surChargeSlabs)
+        private decimal CessOnTax(decimal GrossIncomeTax)
         {
             decimal Cess = 0;
-            decimal Surcharges = 0;
-            int length = surChargeSlabs.Count - 1;
             if (GrossIncomeTax > 0)
-                Cess = (4 * GrossIncomeTax) / 100;
-            var slab = surChargeSlabs.Find(x => x.MinSurcahrgeSlab < GrossIncome && x.MaxSurchargeSlab >= GrossIncome);
-            if (GrossIncome > surChargeSlabs[length].MinSurcahrgeSlab)
-                slab = surChargeSlabs.Last();
-            if (slab != null)
-                Surcharges = (slab.SurchargeRatePercentage * GrossIncome) / 100;
-            //if (GrossIncome > 5000000 && GrossIncome <= 10000000)
-            //    Surcharges = (10 * GrossIncome) / 100;
-            //else if (GrossIncome > 10000000 && GrossIncome <= 20000000)
-            //    Surcharges = (15 * GrossIncome) / 100;
-            //else if (GrossIncome > 20000000 && GrossIncome <= 50000000)
-            //    Surcharges = (25 * GrossIncome) / 100;
-            //else if (GrossIncome > 50000000)
-            //    Surcharges = (37 * GrossIncome) / 100;
+                Cess = (0.04M * GrossIncomeTax);
 
-            return (Cess + Surcharges);
+            return Cess;
+        }
+
+        private decimal Surcharge(decimal GrossIncomeTax, List<SurChargeSlab> surChargeSlabs)
+        {
+            decimal Surcharges = 0;
+            var slab = surChargeSlabs.OrderByDescending(x => x.MinSurcahrgeSlab).First();
+            if (GrossIncomeTax < slab.MinSurcahrgeSlab)
+                slab = surChargeSlabs.Find(x => GrossIncomeTax >= x.MinSurcahrgeSlab && GrossIncomeTax <= x.MaxSurchargeSlab);
+            if (slab != null)
+                Surcharges = (slab.SurchargeRatePercentage * GrossIncomeTax) / 100;
+            return Surcharges;
         }
 
         public void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
@@ -125,10 +137,14 @@ namespace ServiceLayer.Code
                 i++;
             }
 
-            employeeDeclaration.SurChargesAndCess = this.SurchargeAndCess(tax, grossIncome, surChargeSlabs); //(tax * 4) / 100;
-            //taxSlab.Add(taxRegimeSlabs.Count, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
-            taxSlab[0].Value = tax;
+            // calculate surcharge
+            employeeDeclaration.SurChargesAndCess = this.Surcharge(tax, surChargeSlabs);
             employeeDeclaration.TaxNeedToPay = tax + employeeDeclaration.SurChargesAndCess;
+
+            // calculate cess
+            employeeDeclaration.TaxNeedToPay += this.CessOnTax(employeeDeclaration.TaxNeedToPay);
+
+            taxSlab[0].Value = tax;
             employeeDeclaration.IncomeTaxSlab = taxSlab;
         }
 
