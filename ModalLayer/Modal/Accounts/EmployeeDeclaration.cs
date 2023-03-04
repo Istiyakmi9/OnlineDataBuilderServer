@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal.Accounts
 {
@@ -37,6 +38,7 @@ namespace ModalLayer.Modal.Accounts
         public int DeclarationFromYear { set; get; }
         public int DeclarationToYear { set; get; }
         public string DefaultSlaryGroupMessage { get; set; }
+        public int TotalMonths { get; set; }
     }
 
     public class EmployeeHRA

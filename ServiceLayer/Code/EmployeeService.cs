@@ -631,7 +631,7 @@ namespace ServiceLayer.Code
                 employeeCalculation.employee.CTC
             });
 
-            if (resultSet == null || resultSet.Tables.Count != 7)
+            if (resultSet == null || resultSet.Tables.Count != 9)
                 throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
 
             if (resultSet.Tables[4].Rows.Count != 1)
@@ -655,6 +655,18 @@ namespace ServiceLayer.Code
 
             // got duplication email, mobile or employee id if any
             employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[6]);
+
+            // getting professional tax detail based on company id
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[7]);
+
+            if (employeeCalculation.ptaxSlab.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
+
+            // getting surcharges slab detail based on company id
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[8]);
+
+            if (employeeCalculation.surchargeSlabs.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
 
             if (employeeDetail != null)
             {

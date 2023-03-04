@@ -136,6 +136,9 @@ namespace ServiceLayer.Code.PayrollCycle
 
                     foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                     {
+                        empPayroll.FinancialYear = payroll.FinancialYear;
+                        empPayroll.DeclarationStartMonth = payroll.DeclarationStartMonth;
+                        empPayroll.DeclarationEndMonth = payroll.DeclarationEndMonth;
                         var data = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(empPayroll.AttendanceDetail);
                         absents = data.Count(x => x.PresentDayStatus != (int)ItemStatus.Approved);
                         totalDays = totalDaysInMonth - absents;
