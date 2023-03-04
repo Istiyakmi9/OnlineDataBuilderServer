@@ -27,7 +27,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetAllRequestedData/{employeeId}")]
+        [HttpGet("GetAllRequestedData/{employeeId}/{itemStatus}")]
         [Authorize(Roles = Role.Admin)]
         public IResponse<ApiResponse> GetAllRequestedData(int employeeId)
         {

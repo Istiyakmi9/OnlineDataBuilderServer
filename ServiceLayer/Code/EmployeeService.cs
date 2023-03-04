@@ -481,7 +481,8 @@ namespace ServiceLayer.Code
                 DeclarationToYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationToYear,
                 WorkShiftId = employeeCompleteDetailModal.EmployeeDetail.WorkShiftId,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
-                AdminId = _currentSession.CurrentUserDetail.UserId
+                IsPending = false,
+                AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true); ;
 
             if (string.IsNullOrEmpty(result))
