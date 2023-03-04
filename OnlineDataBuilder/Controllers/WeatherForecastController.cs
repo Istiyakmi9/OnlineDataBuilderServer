@@ -100,10 +100,9 @@ namespace OnlineDataBuilder.Controllers
 
             // await BatchInsertPerformanceTest();
 
-            // await RunDailyTimesheetCreationJob();
+             //await RunDailyTimesheetCreationJob();
 
-            await RunPayrollAsync();
-
+            //await RunPayrollAsync();
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -116,7 +115,7 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunPayrollAsync()
         {
-            await _payrollService.RunPayrollCycle();
+            //await _payrollService.RunPayrollCycle();
         }
 
         private async Task RunLeaveAccrualAsync()
