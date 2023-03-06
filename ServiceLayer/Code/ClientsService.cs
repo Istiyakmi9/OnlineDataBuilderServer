@@ -36,8 +36,8 @@ namespace ServiceLayer.Code
 
         public DataSet GetClientDetailById(long ClientId, bool IsActive, int UserTypeId)
         {
-            if (ClientId <= 0)
-                throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(ClientId), FieldValue = ClientId.ToString() };
+            //if (ClientId <= 0)
+            //    throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(ClientId), FieldValue = ClientId.ToString() };
 
             //Organization client = default;
             var resultSet = _db.GetDataSet("SP_Client_ById", new
