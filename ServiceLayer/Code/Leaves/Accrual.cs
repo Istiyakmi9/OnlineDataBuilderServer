@@ -154,6 +154,9 @@ namespace ServiceLayer.Code.Leaves
                         date = date.AddMonths(1);
                     }
                 }
+            } else
+            {
+                availableLeaves = _leavePlanConfiguration.leaveDetail.LeaveLimit;
             }
 
             return await Task.FromResult(availableLeaves);

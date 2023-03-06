@@ -235,7 +235,7 @@ namespace ServiceLayer.Code
                 _currentSession.CurrentUserDetail.OrganizationId,
             });
 
-            if (resultset.Tables.Count == 9)
+            if (resultset.Tables.Count == 10)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
@@ -246,6 +246,7 @@ namespace ServiceLayer.Code
                 resultset.Tables[6].TableName = "Roles";
                 resultset.Tables[7].TableName = "LeavePlans";
                 resultset.Tables[8].TableName = "Companies";
+                resultset.Tables[9].TableName = "WorkShift";
             }
 
             return resultset;
