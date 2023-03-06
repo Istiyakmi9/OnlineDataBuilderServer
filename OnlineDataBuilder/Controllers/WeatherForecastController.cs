@@ -102,7 +102,7 @@ namespace OnlineDataBuilder.Controllers
 
              //await RunDailyTimesheetCreationJob();
 
-            //await RunPayrollAsync();
+            await RunPayrollAsync();
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
