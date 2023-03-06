@@ -572,7 +572,7 @@ namespace ServiceLayer.Code
             _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, empCal.surchargeSlabs);
 
             //Tax Calculation for every month
-            await TaxDetailsCalculation(empCal, reCalculateFlag);
+            await TaxDetailsCalculation(empCal, reCalculateFlag, totalMonths);
 
             return salaryBreakup;
         }
@@ -594,7 +594,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to save calculation detail. Please contact to admin.");
         }
 
-        private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag)
+        private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag, int totalMonths)
         {
             DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             List<TaxDetails> taxdetails = null;
@@ -655,7 +655,7 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    taxdetails = GetPerMontTaxInitialData(empCal.companySetting, empCal.employeeDeclaration);
+                    taxdetails = GetPerMontTaxInitialData(empCal.companySetting, empCal.employeeDeclaration, totalMonths);
                     empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                 .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
@@ -667,7 +667,7 @@ namespace ServiceLayer.Code
             {
                 if (empCal.employeeDeclaration.TaxNeedToPay > 0)
                 {
-                    taxdetails = GetPerMontTaxInitialData(empCal.companySetting, empCal.employeeDeclaration);
+                    taxdetails = GetPerMontTaxInitialData(empCal.companySetting, empCal.employeeDeclaration, totalMonths);
                 }
                 else
                 {
@@ -700,14 +700,14 @@ namespace ServiceLayer.Code
             return taxdetails;
         }
 
-        private List<TaxDetails> GetPerMontTaxInitialData(CompanySetting companySetting, EmployeeDeclaration employeeDeclaration)
+        private List<TaxDetails> GetPerMontTaxInitialData(CompanySetting companySetting, EmployeeDeclaration employeeDeclaration, int totalMonths)
         {
-            var permonthTax = employeeDeclaration.TaxNeedToPay / 12;
+            var permonthTax = employeeDeclaration.TaxNeedToPay / totalMonths;
             employeeDeclaration.TaxPaid = 0;
             List<TaxDetails> taxdetails = new List<TaxDetails>();
             DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
             int i = 0;
-            while (i <= 11)
+            while (i < totalMonths)
             {
                 taxdetails.Add(new TaxDetails
                 {
