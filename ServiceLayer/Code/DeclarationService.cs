@@ -622,7 +622,12 @@ namespace ServiceLayer.Code
                         if (presentDate.Day <= empCal.companySetting.EveryMonthLastDayOfDeclaration)
                             useCurrentMonth = 1;
 
-                        int remaningMonths = (12 - (presentDate.Month - financialYearMonth.Month + 1) + useCurrentMonth);
+                        int remaningMonths = 0;
+                        if (empCal.companySetting.FinancialYear == presentDate.Year)
+                            remaningMonths = (12 - (presentDate.Month - financialYearMonth.Month + 1) + useCurrentMonth);
+                        else
+                            remaningMonths = empCal.companySetting.DeclarationEndMonth - presentDate.Month + useCurrentMonth;
+
                         presentDate = presentDate.AddMonths(useCurrentMonth == 0 ? 1 : 0);
 
                         TaxDetails taxDetail = default(TaxDetails);
@@ -799,6 +804,7 @@ namespace ServiceLayer.Code
         {
             EmployeeSalaryDetail employeeSalaryDetail = null;
             List<TaxDetails> taxDetail = null;
+            string status = "inserted/updaterd";
             DateTime updatedOn = _timezoneConverter.ToTimeZoneDateTime(payrollEmployeeData.UpdatedOn, _currentSession.TimeZone);
 
             if (updatedOn.Month == payrollCommonData.presentDate.Month && updatedOn.Day <= 20 && !string.IsNullOrEmpty(payrollEmployeeData.TaxDetail))
@@ -813,24 +819,29 @@ namespace ServiceLayer.Code
                     CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
                     CTC = payrollEmployeeData.CTC
                 };
+                if (string.IsNullOrEmpty(payrollEmployeeData.TaxDetail) || payrollEmployeeData.TaxDetail == "[]")
+                    throw HiringBellException.ThrowBadRequest("Emaployee tax detail not found. Please contact to admin");
+
+                taxDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(payrollEmployeeData.TaxDetail);
+                foreach (var elem in taxDetail)
+                {
+                    if (elem.Month <= payrollCommonData.presentDate.Month && elem.Month > 3)
+                        elem.TaxPaid = elem.TaxDeducted;
+                }
+
+                var Result = await _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
+                {
+                    EmployeeId = employeeSalaryDetail.EmployeeId,
+                    CompleteSalaryDetail = employeeSalaryDetail.CompleteSalaryDetail,
+                    TaxDetail = JsonConvert.SerializeObject(taxDetail),
+                    CTC = employeeSalaryDetail.CTC,
+                }, true);
+                status = Result.statusMessage;
             }
 
 
-            foreach (var elem in taxDetail)
-            {
-                if (elem.Month <= payrollCommonData.presentDate.Month && elem.Month > 3)
-                    elem.TaxPaid = elem.TaxDeducted;
-            }
 
-            var Result = await _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
-            {
-                EmployeeId = employeeSalaryDetail.EmployeeId,
-                CompleteSalaryDetail = employeeSalaryDetail.CompleteSalaryDetail,
-                TaxDetail = JsonConvert.SerializeObject(taxDetail),
-                CTC = employeeSalaryDetail.CTC,
-            }, true);
-
-            return Result.statusMessage;
+            return status;
         }
 
         public string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration)
