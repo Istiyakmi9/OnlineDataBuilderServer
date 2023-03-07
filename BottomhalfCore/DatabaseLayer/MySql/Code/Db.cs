@@ -700,14 +700,13 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                                 if (statusMessage != "0" && statusMessage != "")
                                 {
                                     string pKey = DbProcedure.getKey(secondProcedure);
-                                    var rows = PrepareQuery(secondQuery, statusMessage);
                                     command.Parameters.Clear();
                                     command.CommandType = CommandType.StoredProcedure;
                                     command.CommandText = "sp_dynamic_query_ins_upd";
 
                                     command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = secondProcedure;
                                     command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
-                                    command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuerySingle(secondQuery, null);
+                                    command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuery(secondQuery, statusMessage);
                                     command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
 
                                     int rowsAffected = await command.ExecuteNonQueryAsync();

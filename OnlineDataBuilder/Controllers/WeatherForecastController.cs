@@ -120,7 +120,7 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunLeaveAccrualAsync()
         {
-            await _leaveCalculation.StartAccrualCycle(true);
+            //await _leaveCalculation.StartAccrualCycle(true);
         }
 
         private async Task RunDailyTimesheetCreationJob()
