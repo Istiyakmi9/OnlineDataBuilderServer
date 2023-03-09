@@ -109,5 +109,11 @@ namespace ServiceLayer.Code
             if (shiftDetail.LunchDuration <= 0)
                 throw HiringBellException.ThrowBadRequest("Lunch duration is zero or invalid");
         }
+
+        public ShiftDetail GetWorkShiftByIdService(int WorkShiftId)
+        {
+            var result = _db.Get<ShiftDetail>("sp_work_shifts_getby_id", new { WorkShiftId = WorkShiftId });
+            return result;
+        }
     }
 }

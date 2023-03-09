@@ -228,7 +228,8 @@ namespace ServiceLayer.Code
                             UpdatedOn = loginDetail.UpdatedOn,
                             EmployeeCurrentRegime = loginDetail.EmployeeCurrentRegime,
                             DOB = loginDetail.DOB,
-                            CreatedOn = loginDetail.CreatedOn
+                            CreatedOn = loginDetail.CreatedOn,
+                            WorkShiftId = loginDetail.WorkShiftId
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);
