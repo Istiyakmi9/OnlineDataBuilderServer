@@ -4,7 +4,6 @@ using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Engines;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -777,8 +776,16 @@ namespace ServiceLayer.Code
 
         public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation eCal)
         {
+            var financialYear = eCal.companySetting.FinancialYear;
+            var startMonth = eCal.companySetting.DeclarationStartMonth;
+
             List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
-            DateTime startDate = new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1);
+            DateTime startDate = _timezoneConverter.ToTimeZoneFixedDateTime(
+                    new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1),
+                    _currentSession.TimeZone
+                );
+
+            eCal.PayrollStartDate = startDate;
 
             if (eCal.salaryGroup == null || string.IsNullOrEmpty(eCal.salaryGroup.SalaryComponents) || eCal.salaryGroup.SalaryComponents == "[]")
                 throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
@@ -789,11 +796,11 @@ namespace ServiceLayer.Code
             decimal perquisiteAmount = GetPerquisiteAmount(eCal.salaryGroup.GroupComponents);
             //decimal EmployeeContributionAmount = (GetEmployeeContributionAmount(eCal.salaryGroup.GroupComponents, eCal.CTC)) + perquisiteAmount;
             //decimal grossAmount = Convert.ToDecimal(eCal.CTC - EmployeeContributionAmount);
-            decimal EmployeeContributionAmount = 0;
+            // decimal EmployeeContributionAmount = 0;
             decimal grossAmount = Convert.ToDecimal(eCal.CTC - perquisiteAmount);
             decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, grossAmount, eCal.CTC);
 
-            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.employee.CreatedOn, _currentSession.TimeZone);
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
 
             int i = 0;
             while (i < eCal.salaryGroup.GroupComponents.Count)
@@ -813,8 +820,29 @@ namespace ServiceLayer.Code
             }
 
             int index = 0;
+            bool NoEntry = false;
+            int daysInMonth = 0;
+            int workingDays = 0;
+            decimal monthlyGrossIncome = 0;
             while (index < 12)
             {
+                monthlyGrossIncome = 0;
+                daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
+                workingDays = daysInMonth;
+                if (startDate.Subtract(doj).TotalDays < 0 && startDate.Month != doj.Month)
+                {
+                    NoEntry = true;
+                }
+                else if (startDate.Month == doj.Month)
+                {
+                    workingDays = daysInMonth - doj.Day + 1;
+                    NoEntry = false;
+                }
+                else
+                {
+                    NoEntry = false;
+                }
+
                 List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
                 decimal amount = 0;
@@ -831,6 +859,7 @@ namespace ServiceLayer.Code
                         calculatedSalaryBreakupDetail.Formula = item.Formula;
                         calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
                         calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
+                        monthlyGrossIncome += amount / 12;
                         calculatedSalaryBreakupDetail.FinalAmount = amount / 12;
 
                         calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
@@ -839,34 +868,38 @@ namespace ServiceLayer.Code
 
                 var value = calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount);
 
+                var finalSpecialAmount = (grossAmount / 12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount));
+                monthlyGrossIncome += finalSpecialAmount;
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     ComponentId = nameof(ComponentNames.Special),
                     Formula = null,
                     ComponentName = ComponentNames.Special,
-                    FinalAmount = (grossAmount / 12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount)),
+                    FinalAmount = finalSpecialAmount,
                     ComponentTypeId = 102
                 };
 
                 calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
 
+                var finalMonthlyAmount = NoEntry ? monthlyGrossIncome : (monthlyGrossIncome / daysInMonth) * workingDays;
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
-                    FinalAmount = (eCal.CTC - EmployeeContributionAmount) / 12,
+                    FinalAmount = finalMonthlyAmount,
                     ComponentTypeId = 100
                 };
 
                 calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
 
+                var finalMonthlyCTC = NoEntry ? eCal.CTC / 12 : ((eCal.CTC / 12) / daysInMonth) * workingDays;
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     ComponentId = nameof(ComponentNames.CTC),
                     Formula = null,
                     ComponentName = ComponentNames.CTC,
-                    FinalAmount = eCal.CTC / 12,
+                    FinalAmount = finalMonthlyCTC,
                     ComponentTypeId = 101
                 };
 
@@ -878,6 +911,7 @@ namespace ServiceLayer.Code
                     IsPayrollExecutedForThisMonth = false,
                     MonthNumber = startDate.Month,
                     MonthFirstDate = startDate,
+                    IsActive = !NoEntry,
                     SalaryBreakupDetails = calculatedSalaryBreakupDetails
                 });
 

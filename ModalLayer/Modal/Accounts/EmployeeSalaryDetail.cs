@@ -12,6 +12,6 @@ namespace ModalLayer.Modal.Accounts
         public int GroupId { set; get; }
         public string TaxDetail { get; set; }
         public bool IsCTCChanged { set; get; } = false;
-        public DateTime EmployeeDOJ { set; get; }
+        public DateTime DateOfJoining { set; get; }
     }
 }

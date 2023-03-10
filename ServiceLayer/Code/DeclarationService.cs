@@ -7,13 +7,13 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -333,7 +333,7 @@ namespace ServiceLayer.Code
 
             employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
             employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
-            employeeCalculation.Doj = employeeCalculation.employeeSalaryDetail.EmployeeDOJ;
+            employeeCalculation.Doj = employeeCalculation.employeeSalaryDetail.DateOfJoining;
             employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
             employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
             employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(ResultSet.Tables[4]);
@@ -352,6 +352,16 @@ namespace ServiceLayer.Code
 
             if (employeeCalculation.employeeDeclaration.SalaryDetail != null)
                 employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
+
+            var numOfYears = employeeCalculation.Doj.Year - employeeCalculation.companySetting.FinancialYear;
+            if ((numOfYears == 0 || numOfYears == 1)
+                &&
+                employeeCalculation.Doj.Month >= employeeCalculation.companySetting.DeclarationStartMonth
+                &&
+                employeeCalculation.Doj.Month <= employeeCalculation.companySetting.DeclarationEndMonth)
+                employeeCalculation.IsFirstYearDeclaration = true;
+            else
+                employeeCalculation.IsFirstYearDeclaration = false;
 
             await Task.CompletedTask;
         }
@@ -374,9 +384,15 @@ namespace ServiceLayer.Code
             if (grossComponent == null)
                 throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
 
-            employeeDeclaration.TotalAmount = grossComponent.FinalAmount * 12;
-
             return calculatedSalaryBreakupDetails;
+        }
+
+        private void CalculateTotalAmountWillBeReceived(EmployeeCalculation empCal)
+        {
+            var salary = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empCal.employeeSalaryDetail.CompleteSalaryDetail);
+            empCal.expectedAmountAnnually = salary.Where(x => x.IsActive).SelectMany(i => i.SalaryBreakupDetails)
+                .Where(x => x.ComponentName == ComponentNames.Gross)
+                .Sum(x => x.FinalAmount);
         }
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false)
@@ -463,6 +479,11 @@ namespace ServiceLayer.Code
             int declarationEndMonth = empCal.companySetting.DeclarationEndMonth;
             var doj = _timezoneConverter.ToTimeZoneDateTime(empCal.Doj, _currentSession.TimeZone);
 
+            if (doj.Year == financialStartYear || doj.Year == financialStartYear + 1)
+                empCal.IsFirstYearDeclaration = true;
+            else
+                empCal.IsFirstYearDeclaration = false;
+
             if (doj.Year < financialStartYear)
             {
                 numOfMonths = 12;
@@ -521,6 +542,9 @@ namespace ServiceLayer.Code
             // calculate and get gross income value and salary breakup detail
             var calculatedSalaryBreakupDetails = GetGrossIncome(empCal.employeeDeclaration, completeSalaryBreakups);
 
+            // find total amount to be received
+            CalculateTotalAmountWillBeReceived(empCal);
+
             //check and apply standard deduction
             totalDeduction += _componentsCalculationService.StandardDeductionComponent(empCal);
 
@@ -551,10 +575,10 @@ namespace ServiceLayer.Code
             if (empCal.employeeDeclaration.HRADeatils != null)
                 hraAmount = (empCal.employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
 
-            salaryBreakup.GrossIncome = empCal.employeeDeclaration.TotalAmount;
+            salaryBreakup.GrossIncome = empCal.expectedAmountAnnually;
 
             // final total taxable amount.
-            empCal.employeeDeclaration.TotalAmount = empCal.employeeDeclaration.TotalAmount - (totalDeduction + hraAmount);
+            empCal.employeeDeclaration.TotalAmount = empCal.expectedAmountAnnually - (totalDeduction + hraAmount);
 
             //Tax regime calculation 
             if (empCal.employeeDeclaration.TotalAmount < 0)
@@ -569,10 +593,10 @@ namespace ServiceLayer.Code
             if (taxRegimeSlabs == null || taxRegimeSlabs.Count == 0)
                 throw new Exception("Tax regime slabs are not found. Please configure tax regime for the current employee.");
 
-            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, salaryBreakup.GrossIncome, taxRegimeSlabs, empCal.surchargeSlabs);
+            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, taxRegimeSlabs, empCal.surchargeSlabs);
 
             //Tax Calculation for every month
-            await TaxDetailsCalculation(empCal, reCalculateFlag, totalMonths);
+            await TaxDetailsCalculation(empCal, reCalculateFlag);
 
             return salaryBreakup;
         }
@@ -594,84 +618,53 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to save calculation detail. Please contact to admin.");
         }
 
-        private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag, int totalMonths)
+        private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag)
         {
-            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             List<TaxDetails> taxdetails = null;
             if (empCal.companySetting == null)
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
 
-            if (empCal.employeeSalaryDetail.TaxDetail != null)
+            if (!string.IsNullOrEmpty(empCal.employeeSalaryDetail.TaxDetail) && empCal.employeeSalaryDetail.TaxDetail != "[]")
             {
-                decimal totalTaxNeedToPay = 0;
+                // decimal totalTaxNeedToPay = 0;
                 taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
-                if (taxdetails != null && taxdetails.Count > 0)
-                    totalTaxNeedToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
+                //if (taxdetails != null && taxdetails.Count > 0)
+                //    totalTaxNeedToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
 
-                if (totalTaxNeedToPay > 0)
+                if (reCalculateFlag)
                 {
-                    if (reCalculateFlag)
+                    if (empCal.employeeDeclaration.TaxNeedToPay > 0)
                     {
-                        empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
-                            .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
-
-                        decimal remaningTaxAmount = empCal.employeeDeclaration.TaxNeedToPay - empCal.employeeDeclaration.TaxPaid;
-                        DateTime financialYearMonth = new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1);
-
-                        int useCurrentMonth = 0;
-                        if (presentDate.Day <= empCal.companySetting.EveryMonthLastDayOfDeclaration)
-                            useCurrentMonth = 1;
-
-                        int remaningMonths = 0;
-                        if (empCal.companySetting.FinancialYear == presentDate.Year)
-                            remaningMonths = (12 - (presentDate.Month - financialYearMonth.Month + 1) + useCurrentMonth);
-                        else
-                            remaningMonths = empCal.companySetting.DeclarationEndMonth - presentDate.Month + useCurrentMonth;
-
-                        presentDate = presentDate.AddMonths(useCurrentMonth == 0 ? 1 : 0);
-
-                        TaxDetails taxDetail = default(TaxDetails);
-                        decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / remaningMonths));
-                        while (presentDate.Month != (empCal.companySetting.DeclarationEndMonth + 1))
-                        {
-                            taxDetail = taxdetails.FirstOrDefault(x => x.Month == presentDate.Month);
-                            if (taxDetail != null)
-                            {
-                                taxDetail.TaxDeducted = singleMonthTax;
-                                taxDetail.TaxPaid = 0M;
-                            }
-
-                            presentDate = presentDate.AddMonths(1);
-                        }
+                        UpdateTaxDetail(empCal, taxdetails);
 
                         empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
                         await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
                     }
                     else
                     {
+                        taxdetails = GetPerMonthTaxInitialData(empCal);
                         empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
-                                .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+                                    .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+
+                        empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+                        await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
                     }
                 }
                 else
                 {
-                    taxdetails = GetPerMontTaxInitialData(empCal.companySetting, empCal.employeeDeclaration, totalMonths);
-                    empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
-                                .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
-
-                    empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                    await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
+                    empCal.employeeDeclaration.DeclaredValue = Convert.ToDecimal(taxdetails
+                            .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
                 }
             }
             else
             {
                 if (empCal.employeeDeclaration.TaxNeedToPay > 0)
                 {
-                    taxdetails = GetPerMontTaxInitialData(empCal.companySetting, empCal.employeeDeclaration, totalMonths);
+                    taxdetails = GetPerMonthTaxInitialData(empCal);
                 }
                 else
                 {
-                    taxdetails = GetPerMontTaxDetail(empCal.companySetting, empCal.employeeDeclaration.EmployeeId);
+                    taxdetails = GetPerMontTaxDetail(empCal);
                 }
 
                 empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
@@ -679,18 +672,111 @@ namespace ServiceLayer.Code
             }
         }
 
-        private List<TaxDetails> GetPerMontTaxDetail(CompanySetting companySetting, long EmployeeId)
+        private void UpdateTaxDetail(EmployeeCalculation empCal, List<TaxDetails> taxdetails)
+        {
+            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            bool isPresentMonth = false;
+            empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
+                                        .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+
+            TaxDetails firstMonthTaxDetail = null;
+            if (empCal.IsFirstYearDeclaration)
+            {
+                var items = taxdetails.OrderBy(x => x.Index).ToList();
+                int index = 0;
+                while (index < items.Count)
+                {
+                    firstMonthTaxDetail = items[index];
+                    if (firstMonthTaxDetail.Month == empCal.Doj.Month && firstMonthTaxDetail.TaxPaid == 0)
+                    {
+                        isPresentMonth = true;
+                        break;
+                    }
+                    else if (firstMonthTaxDetail.TaxPaid == 0 && firstMonthTaxDetail.Month >= empCal.Doj.Month)
+                    {
+                        isPresentMonth = false;
+                        break;
+                    }
+
+                    firstMonthTaxDetail = null;
+                    index++;
+                }
+
+                if (firstMonthTaxDetail == null)
+                    throw HiringBellException.ThrowBadRequest("Unable to find the tax detail. Please contact to amdin.");
+
+            }
+            else
+            {
+                firstMonthTaxDetail = taxdetails.OrderBy(x => x.Index).First(x => x.TaxPaid == 0);
+            }
+
+            decimal remaningTaxAmount = empCal.employeeDeclaration.TaxNeedToPay - empCal.employeeDeclaration.TaxPaid;
+            DateTime financialYearMonth = new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1);
+
+            int useCurrentMonth = 0;
+            if (presentDate.Day <= empCal.companySetting.EveryMonthLastDayOfDeclaration)
+                useCurrentMonth = 1;
+
+            int remaningMonths = 0;
+            if (presentDate.Year == financialYearMonth.Year)
+            {
+                remaningMonths = 12 - firstMonthTaxDetail.Month + empCal.companySetting.DeclarationEndMonth + useCurrentMonth;
+            }
+            else
+            {
+                remaningMonths = empCal.companySetting.DeclarationEndMonth - firstMonthTaxDetail.Month + useCurrentMonth;
+            }
+
+            presentDate = presentDate.AddMonths(useCurrentMonth == 0 ? 1 : 0);
+
+            TaxDetails taxDetail = default(TaxDetails);
+            decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / remaningMonths));
+            while (presentDate.Month != (empCal.companySetting.DeclarationEndMonth + 1))
+            {
+                taxDetail = taxdetails.FirstOrDefault(x => x.Month == presentDate.Month);
+                if (taxDetail != null)
+                {
+                    if (isPresentMonth)
+                    {
+                        var daysInMonth = DateTime.DaysInMonth(presentDate.Year, presentDate.Month);
+                        var workingDays = daysInMonth - empCal.Doj.Day + 1;
+                        var currentMonthTax = ProrateAmountOnJoiningMonth(singleMonthTax, daysInMonth, workingDays);
+                        var finalTaxForOtherMonths = (singleMonthTax * remaningMonths) - currentMonthTax;
+                        singleMonthTax = finalTaxForOtherMonths / (remaningMonths - 1);
+
+                        taxDetail.TaxDeducted = currentMonthTax;
+                        taxDetail.TaxPaid = 0M;
+                        isPresentMonth = false;
+                    }
+                    else
+                    {
+                        taxDetail.TaxDeducted = singleMonthTax;
+                        taxDetail.TaxPaid = 0M;
+                    }
+                }
+
+                presentDate = presentDate.AddMonths(1);
+            }
+        }
+
+        private List<TaxDetails> GetPerMontTaxDetail(EmployeeCalculation empCal)
         {
             var taxdetails = new List<TaxDetails>();
-            DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
+            DateTime financialYearMonth = _timezoneConverter.ToTimeZoneFixedDateTime(
+                    new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1),
+                    _currentSession.TimeZone
+                );
             int i = 0;
             while (i <= 11)
             {
                 taxdetails.Add(new TaxDetails
                 {
+                    Index = i + 1,
+                    IsPayrollCompleted = false,
                     Month = financialYearMonth.AddMonths(i).Month,
                     Year = financialYearMonth.AddMonths(i).Year,
-                    EmployeeId = EmployeeId,
+                    EmployeeId = empCal.EmployeeId,
                     TaxDeducted = 0,
                     TaxPaid = 0
                 });
@@ -700,27 +786,88 @@ namespace ServiceLayer.Code
             return taxdetails;
         }
 
-        private List<TaxDetails> GetPerMontTaxInitialData(CompanySetting companySetting, EmployeeDeclaration employeeDeclaration, int totalMonths)
+        private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
         {
-            var permonthTax = employeeDeclaration.TaxNeedToPay / totalMonths;
-            employeeDeclaration.TaxPaid = 0;
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
+            DateTime startDate = eCal.PayrollStartDate;
+
+            CompanySetting companySetting = eCal.companySetting;
+            EmployeeDeclaration employeeDeclaration = eCal.employeeDeclaration;
+
+            var salary = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(eCal.employeeSalaryDetail.CompleteSalaryDetail);
+            var totalWorkingMonth = salary.Count(x => x.IsActive);
+            if (totalWorkingMonth == 0)
+                throw HiringBellException.ThrowBadRequest($"Invalid working month count found in method: {nameof(GetPerMonthTaxInitialData)}");
+
+            var permonthTax = employeeDeclaration.TaxNeedToPay / totalWorkingMonth;
             List<TaxDetails> taxdetails = new List<TaxDetails>();
-            DateTime financialYearMonth = new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1);
+            DateTime financialYearMonth = _timezoneConverter.ToTimeZoneFixedDateTime(
+                    new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1),
+                    _currentSession.TimeZone
+                );
+
             int i = 0;
-            while (i < totalMonths)
+            while (i < 12)
             {
-                taxdetails.Add(new TaxDetails
+                if (startDate.Subtract(doj).TotalDays < 0 && startDate.Month != doj.Month && eCal.IsFirstYearDeclaration)
                 {
-                    Month = financialYearMonth.AddMonths(i).Month,
-                    Year = financialYearMonth.AddMonths(i).Year,
-                    EmployeeId = employeeDeclaration.EmployeeId,
-                    TaxDeducted = permonthTax,
-                    TaxPaid = 0
-                });
+                    taxdetails.Add(new TaxDetails
+                    {
+                        Index = i + 1,
+                        Month = financialYearMonth.AddMonths(i).Month,
+                        Year = financialYearMonth.AddMonths(i).Year,
+                        EmployeeId = employeeDeclaration.EmployeeId,
+                        TaxDeducted = 0,
+                        IsPayrollCompleted = false,
+                        TaxPaid = 0
+                    });
+                }
+                else if (startDate.Month == doj.Month)
+                {
+                    var daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
+                    var workingDays = daysInMonth - eCal.Doj.Day + 1;
+                    var currentMonthTax = ProrateAmountOnJoiningMonth(permonthTax, daysInMonth, workingDays);
+                    var remaningTaxAmount = (permonthTax * totalWorkingMonth) - currentMonthTax;
+                    permonthTax = remaningTaxAmount / (totalWorkingMonth - 1);
+
+                    taxdetails.Add(new TaxDetails
+                    {
+                        Index = i + 1,
+                        Month = financialYearMonth.AddMonths(i).Month,
+                        Year = financialYearMonth.AddMonths(i).Year,
+                        EmployeeId = employeeDeclaration.EmployeeId,
+                        TaxDeducted = currentMonthTax,
+                        IsPayrollCompleted = false,
+                        TaxPaid = 0
+                    });
+                }
+                else
+                {
+                    taxdetails.Add(new TaxDetails
+                    {
+                        Index = i + 1,
+                        Month = financialYearMonth.AddMonths(i).Month,
+                        Year = financialYearMonth.AddMonths(i).Year,
+                        EmployeeId = employeeDeclaration.EmployeeId,
+                        TaxDeducted = permonthTax,
+                        IsPayrollCompleted = false,
+                        TaxPaid = 0
+                    });
+                }
+
+                startDate = startDate.AddMonths(1);
                 i++;
             }
 
             return taxdetails;
+        }
+
+        private decimal ProrateAmountOnJoiningMonth(decimal monthlyTaxAmount, int numOfDaysInMonth, int workingDays)
+        {
+            if (numOfDaysInMonth != workingDays)
+                return (monthlyTaxAmount / numOfDaysInMonth) * workingDays;
+            else
+                return monthlyTaxAmount;
         }
 
         private void BuildSectionWiseComponents(EmployeeCalculation employeeCalculation)
@@ -800,48 +947,20 @@ namespace ServiceLayer.Code
             return await Task.FromResult("Done");
         }
 
-        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData)
+        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData, bool IsTaxCalculationRequired)
         {
-            EmployeeSalaryDetail employeeSalaryDetail = null;
-            List<TaxDetails> taxDetail = null;
-            string status = "inserted/updaterd";
-            DateTime updatedOn = _timezoneConverter.ToTimeZoneDateTime(payrollEmployeeData.UpdatedOn, _currentSession.TimeZone);
-
-            if (updatedOn.Month == payrollCommonData.presentDate.Month && updatedOn.Day <= 20 && !string.IsNullOrEmpty(payrollEmployeeData.TaxDetail))
+            var Result = await _db.ExecuteAsync("sp_employee_salary_detail_upd_on_payroll_run", new
             {
-                employeeSalaryDetail = await this.ExecuteSalary(payrollEmployeeData, payrollCommonData);
-            }
-            else
+                EmployeeId = payrollEmployeeData.EmployeeId,
+                TaxDetail = payrollEmployeeData.TaxDetail,
+            }, true);
+
+            if (ApplicationConstants.IsExecuted(Result.statusMessage) && IsTaxCalculationRequired)
             {
-                employeeSalaryDetail = new EmployeeSalaryDetail
-                {
-                    EmployeeId = payrollEmployeeData.EmployeeId,
-                    CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
-                    CTC = payrollEmployeeData.CTC
-                };
-                if (string.IsNullOrEmpty(payrollEmployeeData.TaxDetail) || payrollEmployeeData.TaxDetail == "[]")
-                    throw HiringBellException.ThrowBadRequest("Emaployee tax detail not found. Please contact to admin");
-
-                taxDetail = JsonConvert.DeserializeObject<List<TaxDetails>>(payrollEmployeeData.TaxDetail);
-                foreach (var elem in taxDetail)
-                {
-                    if (elem.Month <= payrollCommonData.presentDate.Month && elem.Month > 3)
-                        elem.TaxPaid = elem.TaxDeducted;
-                }
-
-                var Result = await _db.ExecuteAsync("sp_employee_salary_detail_upd_salarydetail", new
-                {
-                    EmployeeId = employeeSalaryDetail.EmployeeId,
-                    CompleteSalaryDetail = employeeSalaryDetail.CompleteSalaryDetail,
-                    TaxDetail = JsonConvert.SerializeObject(taxDetail),
-                    CTC = employeeSalaryDetail.CTC,
-                }, true);
-                status = Result.statusMessage;
+                await ExecuteSalary(payrollEmployeeData, payrollCommonData);
             }
 
-
-
-            return status;
+            return Result.statusMessage;
         }
 
         public string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration)

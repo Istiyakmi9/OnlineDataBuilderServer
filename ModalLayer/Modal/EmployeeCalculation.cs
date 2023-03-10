@@ -9,7 +9,10 @@ namespace ModalLayer.Modal
         public decimal CTC { set; get; }
         public long EmployeeId { set; get; }
         public DateTime Doj { set; get; }
+        public bool IsFirstYearDeclaration { set; get; }
+        public DateTime PayrollStartDate { set; get; }
         public Employee employee { set; get; }
+        public decimal expectedAmountAnnually { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public EmployeeSalaryDetail employeeSalaryDetail { set; get; }
         public EmployeeEmailMobileCheck emailMobileCheck { set; get; }

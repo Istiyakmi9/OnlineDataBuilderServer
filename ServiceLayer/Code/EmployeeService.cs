@@ -524,6 +524,15 @@ namespace ServiceLayer.Code
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
             EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+            var numOfYears = employeeCalculation.Doj.Year - employeeCalculation.companySetting.FinancialYear;
+            if ((numOfYears == 0 || numOfYears == 1)
+                &&
+                employeeCalculation.Doj.Month >= employeeCalculation.companySetting.DeclarationStartMonth
+                &&
+                employeeCalculation.Doj.Month <= employeeCalculation.companySetting.DeclarationEndMonth)
+                employeeCalculation.IsFirstYearDeclaration = true;
+            else
+                employeeCalculation.IsFirstYearDeclaration = false;
 
             if (employeeEmailMobileCheck.EmployeeCount == 0)
                 throw new HiringBellException("Employee record not found. Please contact to admin.");
@@ -538,6 +547,8 @@ namespace ServiceLayer.Code
             EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
             employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
             employeeCalculation.Doj = DateTime.UtcNow;
+            employeeCalculation.IsFirstYearDeclaration = true;
+
             if (employeeEmailMobileCheck.EmployeeCount > 0)
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
@@ -641,6 +652,11 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
 
             Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
+
+            if (employeeDetail.EmployeeUid > 0)
+                employeeCalculation.Doj = employeeDetail.CreatedOn;
+            else
+                employeeCalculation.Doj = DateTime.UtcNow;
 
             // check and get Declaration object
             employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);

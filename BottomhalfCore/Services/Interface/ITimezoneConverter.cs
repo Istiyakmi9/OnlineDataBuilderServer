@@ -8,6 +8,7 @@ namespace BottomhalfCore.Services.Interface
         DateTime ToUtcTime(DateTime now);
         DateTime ToUtcTimeFromMidNightTimeZone(DateTime now, TimeZoneInfo timeZoneInfo);
         DateTime ToTimeZoneDateTime(DateTime now, TimeZoneInfo timeZoneInfo);
+        DateTime ToTimeZoneFixedDateTime(DateTime now, TimeZoneInfo timeZoneInfo);
         DateTime UpdateToUTCTimeZoneOnly(DateTime now);
         DateTime ToSpecificTimezoneDateTime(TimeZoneInfo timeZoneInfo, DateTime? now = null);
         DateTime ToIstTime(DateTime now);
