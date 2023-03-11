@@ -44,5 +44,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _shiftService.GetWorkShiftByIdService(WorkShiftId);
             return BuildResponse(result);
         }
+
+        [HttpGet("GetWorkShiftByEmpId/{EmployeeId}")]
+        public IResponse<ApiResponse> GetWorkShiftByEmpId([FromRoute] int EmployeeId)
+        {
+            var result = _shiftService.GetWorkShiftByEmpIdService(EmployeeId);
+            return BuildResponse(result);
+        }
     }
 }

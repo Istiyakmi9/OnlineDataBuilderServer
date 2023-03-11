@@ -9,5 +9,6 @@ namespace ServiceLayer.Interface
         List<ShiftDetail> InsertWorkShiftService(ShiftDetail shiftDetail);
         List<ShiftDetail> UpdateWorkShiftService(ShiftDetail shiftDetail);
         ShiftDetail GetWorkShiftByIdService(int WorkShiftId);
+        ShiftDetail GetWorkShiftByEmpIdService(int EmployeeId);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
+using NUnit.Framework.Internal.Execution;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 
@@ -113,6 +114,12 @@ namespace ServiceLayer.Code
         public ShiftDetail GetWorkShiftByIdService(int WorkShiftId)
         {
             var result = _db.Get<ShiftDetail>("sp_work_shifts_getby_id", new { WorkShiftId = WorkShiftId });
+            return result;
+        }
+
+        public ShiftDetail GetWorkShiftByEmpIdService(int EmployeeId)
+        {
+            var result = _db.Get<ShiftDetail>("sp_work_shifts_getby_empid", new { EmployeeId = EmployeeId });
             return result;
         }
     }

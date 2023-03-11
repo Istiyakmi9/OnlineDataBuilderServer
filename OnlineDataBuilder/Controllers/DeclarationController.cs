@@ -101,5 +101,26 @@ namespace OnlineDataBuilder.Controllers
             var result = await _declarationService.DeleteDeclaredHRAService(DeclarationId);
             return BuildResponse(result);
         }
+
+        [HttpPost("PreviousEmployemnt/{EmployeeId}")]
+        public async Task<ApiResponse> PreviousEmployemnt([FromRoute] int EmployeeId, [FromBody] List<PreviousEmployementDetail> previousEmployementDetail)
+        {
+            var result = await _declarationService.ManagePreviousEmployemntService(EmployeeId, previousEmployementDetail);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetPreviousEmployemntandEmp/{EmployeeId}")]
+        public async Task<ApiResponse> GetPreviousEmployemntandEmp([FromRoute] int EmployeeId)
+        {
+            var result = await _declarationService.GetPreviousEmployemntandEmpService(EmployeeId);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetPreviousEmployemnt/{EmployeeId}")]
+        public async Task<ApiResponse> GetPreviousEmployemnt([FromRoute] int EmployeeId)
+        {
+            var result = await _declarationService.GetPreviousEmployemntService(EmployeeId);
+            return BuildResponse(result);
+        }
     }
 }
