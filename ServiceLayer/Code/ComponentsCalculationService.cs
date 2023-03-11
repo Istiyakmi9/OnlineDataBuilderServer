@@ -102,7 +102,7 @@ namespace ServiceLayer.Code
             return Surcharges;
         }
 
-        public void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, decimal grossIncome, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
+        public void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
         {
             decimal taxableIncome = employeeDeclaration.TotalAmount;
             if (taxableIncome < 0)

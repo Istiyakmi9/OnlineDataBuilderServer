@@ -5,6 +5,8 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -30,54 +32,6 @@ namespace ServiceLayer.Code.PayrollCycle
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _declarationService = declarationService;
-        }
-
-        private decimal CheckLeaveFromAttendance(decimal totalDays, PayrollEmployeeData attr)
-        {
-            if (!string.IsNullOrEmpty(attr.LeaveDetail) && attr.LeaveDetail != "[]")
-            {
-                var leaves = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(attr.LeaveDetail);
-
-                DateTime presentDate = DateTime.UtcNow;
-                // find if both from date and to date is on same month
-                var leavesOnMonth = leaves.FindAll(x => x.LeaveFromDay.Month == DateTime.UtcNow.Month && x.LeaveToDay.Month == DateTime.UtcNow.Month);
-                if (leavesOnMonth.Count > 0)
-                {
-                    foreach (var item in leavesOnMonth)
-                    {
-                        totalDays = totalDays + item.NumOfDays;
-                    }
-                }
-
-                // else find if from date in on present month
-                var leave = leaves.Find(x => x.LeaveFromDay.Month == DateTime.UtcNow.Month && x.LeaveToDay.Month != DateTime.UtcNow.Month);
-                if (leave != null)
-                {
-                    totalDays = totalDays + leave.NumOfDays;
-                }
-
-                // else find to date on present month
-                leave = leaves.Find(x => x.LeaveFromDay.Month != DateTime.UtcNow.Month && x.LeaveToDay.Month == DateTime.UtcNow.Month);
-                if (leave != null)
-                {
-                    totalDays = totalDays + leave.NumOfDays;
-                }
-            }
-
-            return totalDays;
-        }
-
-        private decimal GetFinalAmountMonthly(decimal totalDays, PayrollEmployeeData empPayroll, DateTime presentDate, int totalDaysInMonth)
-        {
-            var annualSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
-            var annualSalaryBreakup = annualSalaryBreakups.Find(x => x.MonthNumber == presentDate.Month);
-
-            // now get salary for 1 day
-            var totalAmount = annualSalaryBreakup.SalaryBreakupDetails.Where(x => x.ComponentId.ToLower() != "gross" && x.ComponentId.ToLower() != "ctc")
-                .Sum(x => x.FinalAmount);
-
-            decimal finalAmount = (totalAmount / totalDaysInMonth) * totalDays;
-            return finalAmount;
         }
 
         private List<PayrollEmployeeData> GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
@@ -108,12 +62,26 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollEmployeeData;
         }
 
+        private int GetTotalAttendance(PayrollEmployeeData empPayroll, List<PayrollEmployeeData> payrollEmployeeData, DateTime payrollDate)
+        {
+            var attrDetail = payrollEmployeeData
+                                .Where(x => x.EmployeeId == empPayroll.EmployeeId && (x.ForMonth == payrollDate.Month))
+                                .FirstOrDefault();
+
+            if (attrDetail == null)
+                throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
+
+
+            List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attrDetail.AttendanceDetail);
+            int totalDays = attendanceDetailJsons.Count(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+            return totalDays;
+        }
+
         private async Task CalculateRunPayrollForEmployees(Payroll payroll, PayrollCommonData payrollCommonData)
         {
+            DateTime payrollDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
             int offsetindex = 0;
-            int absents = 0;
             decimal totalDays = 0;
-            decimal finalAmount = 0;
             int totalDaysInMonth = 0;
             int pageSize = 5;
             while (true)
@@ -134,17 +102,34 @@ namespace ServiceLayer.Code.PayrollCycle
                         totalDaysInMonth = TimezoneConverter.GetNumberOfWeekdaysInMonth(payrollCommonData.presentDate.Year, payrollCommonData.presentDate.Month);
                     }
 
+                    bool IsTaxCalculationRequired = false;
                     foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                     {
-                        empPayroll.FinancialYear = payroll.FinancialYear;
-                        empPayroll.DeclarationStartMonth = payroll.DeclarationStartMonth;
-                        empPayroll.DeclarationEndMonth = payroll.DeclarationEndMonth;
-                        var data = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(empPayroll.AttendanceDetail);
-                        absents = data.Count(x => x.PresentDayStatus != (int)ItemStatus.Approved);
-                        totalDays = totalDaysInMonth - absents;
-                        totalDays = CheckLeaveFromAttendance(totalDays, empPayroll);
-                        finalAmount = GetFinalAmountMonthly(totalDays, empPayroll, payrollCommonData.presentDate, totalDaysInMonth);
-                        await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData);
+                        totalDays = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
+                        var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
+                        if (taxDetails == null)
+                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                        var presentData = taxDetails.Find(x => x.Month == payrollDate.Month);
+                        if (presentData == null)
+                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                        if (totalDays != totalDaysInMonth)
+                        {
+                            var newAmount = (presentData.TaxDeducted / totalDaysInMonth) * totalDays;
+                            presentData.TaxPaid = newAmount;
+                            presentData.TaxDeducted = newAmount;
+                            presentData.IsPayrollCompleted = true;
+                            IsTaxCalculationRequired = true;
+                        }
+                        else
+                        {
+                            presentData.TaxPaid = presentData.TaxDeducted;
+                            presentData.IsPayrollCompleted = true;
+                        }
+
+                        await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
+                        IsTaxCalculationRequired = false;
                     }
 
                     offsetindex = offsetindex + pageSize;

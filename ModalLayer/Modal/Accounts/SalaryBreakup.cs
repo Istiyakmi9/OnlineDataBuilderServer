@@ -37,6 +37,9 @@ namespace ModalLayer.Modal.Accounts
         public bool IsPayrollExecutedForThisMonth { set; get; }
         public int MonthNumber { set; get; }
         public DateTime MonthFirstDate { set; get; }
+        // this flag indicate whether the candidate if eligible for the salary or not,
+        // e.g. if join in this and onword month is eligible but not for previous month of current financial year.
+        public bool IsActive { set; get; }
         public List<CalculatedSalaryBreakupDetail> SalaryBreakupDetails { get; set; }
     }
 }
