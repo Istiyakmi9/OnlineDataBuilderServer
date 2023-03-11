@@ -1,7 +1,6 @@
 ﻿using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using TimeZoneConverter;
 
@@ -200,6 +199,14 @@ namespace BottomhalfCore.Services.Code
         public DateTime ToTimeZoneDateTime(DateTime now, TimeZoneInfo timeZoneInfo)
         {
             return TimeZoneInfo.ConvertTimeFromUtc(now, timeZoneInfo);
+        }
+
+        /// <summary>
+        /// Convert datetime into specific timezone without changing any time on it.
+        /// </summary>
+        public DateTime ToTimeZoneFixedDateTime(DateTime now, TimeZoneInfo timeZoneInfo)
+        {
+            return TimeZoneInfo.ConvertTimeBySystemTimeZoneId(now, timeZoneInfo.StandardName);
         }
 
         /// <summary>

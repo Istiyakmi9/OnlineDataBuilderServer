@@ -18,7 +18,6 @@ namespace ModalLayer.Modal
         public long FileId { set; get; }
         public int BillingHours { set; get; } = 0;
         public int WorkingDaysPerWeek { set; get; } = 0;
-        public DateTime? DateOfLeaving { set; get; }
-        public DateTime? DateOfJoining { set; get; }
+        public DateTime? DateOfLeaving { set; get; }        
     }
 }

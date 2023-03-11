@@ -263,6 +263,7 @@ public enum DayStatus
 
 public enum ItemStatus
 {
+    NotSubmitted = 0,
     Completed = 1,
     Pending = 2,
     Canceled = 3,
