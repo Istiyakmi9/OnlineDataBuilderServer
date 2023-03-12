@@ -1,6 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Math;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using ModalLayer;
@@ -15,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
+using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -1017,6 +1020,96 @@ namespace ServiceLayer.Code
                 _db.RollBack();
                 throw;
             }
+        }
+
+        public async Task<string> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail)
+        {
+            if (EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
+
+            var employementDetails = _db.GetList<PreviousEmployementDetail>("sp_previous_employement_details_by_empid", new { EmployeeId = EmployeeId });
+            if (employementDetails != null && employementDetails.Count > 0)
+            {
+                employementDetails.ForEach(x =>
+                {
+                    var employementDetail = previousEmployementDetail.Find(i => i.PreviousEmpDetailId == x.PreviousEmpDetailId);
+                    if (employementDetail != null)
+                    {
+                        x.Gross = employementDetail.Gross;
+                        x.Basic = employementDetail.Basic;
+                        x.HouseRent = employementDetail.HouseRent;
+                        x.EmployeePR = employementDetail.EmployeePR;
+                        x.ESI = employementDetail.ESI;
+                        x.LWF = employementDetail.LWF;
+                        x.LWFEmp = employementDetail.LWFEmp;
+                        x.Professional = employementDetail.Professional;
+                        x.IncomeTax = employementDetail.IncomeTax;
+                        x.OtherTax = employementDetail.OtherTax;
+                        x.OtherTaxable = employementDetail.OtherTaxable;
+                    }
+                });
+            }
+            else
+                employementDetails = previousEmployementDetail;
+
+            var item = (from n in employementDetails
+                        select new
+                        {
+                            PreviousEmpDetailId = n.PreviousEmpDetailId,
+                            EmployeeId = n.EmployeeId,
+                            Month = n.Month,
+                            Year = n.Year,
+                            Gross = n.Gross,
+                            Basic = n.Basic,
+                            HouseRent = n.HouseRent,
+                            EmployeePR = n.EmployeePR,
+                            ESI = n.ESI,
+                            LWF = n.LWF,
+                            LWFEmp = n.LWFEmp,
+                            Professional = n.Professional,
+                            IncomeTax = n.IncomeTax,
+                            OtherTax = n.OtherTax,
+                            OtherTaxable = n.OtherTaxable,
+                            CreatedBy = _currentSession.CurrentUserDetail.UserId,
+                            UpdatedBy = _currentSession.CurrentUserDetail.UserId,
+                            CreatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                            UpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        }).ToList<object>();
+
+            var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item);
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to insert or update previous employement details");
+
+            return result;
+        }
+
+        public async Task<dynamic> GetPreviousEmployemntandEmpService(int EmployeeId)
+        {
+            List<PreviousEmployementDetail> employementDetails = null;
+            Employee emp = null;
+            if (EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
+
+            DataSet ds = _db.FetchDataSet("sp_previous_employement_details_and_emp_by_empid", new { EmployeeId = EmployeeId });
+            if (ds != null && ds.Tables.Count > 0 )
+            {
+                employementDetails = Converter.ToList<PreviousEmployementDetail>(ds.Tables[0]);
+                emp = Converter.ToType<Employee>(ds.Tables[1]);
+            }
+
+            return await Task.FromResult( new
+            {
+                EmployementDetails =employementDetails, EmployeeDetail = emp 
+            });
+        }
+
+        public async Task<List<PreviousEmployementDetail>> GetPreviousEmployemntService(int EmployeeId)
+        {
+            if (EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
+
+            var employementDetails = _db.GetList<PreviousEmployementDetail>("sp_previous_employement_details_by_empid", new { EmployeeId = EmployeeId });
+            return employementDetails;
         }
     }
 }

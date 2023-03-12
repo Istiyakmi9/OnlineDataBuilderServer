@@ -47,7 +47,7 @@ namespace ServiceLayer.Code
 
                 projectDetail.PageIndexDetail = "[]";
                 projectDetail.KeywordDetail = "[]";
-                projectDetail.HomePageUrl = filepath;
+                projectDetail.DocumentPath = filepath;
                 projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             var result = _db.Execute<Project>("sp_wiki_detail_upd", projectDetail, true);
@@ -83,6 +83,7 @@ namespace ServiceLayer.Code
                 project.ProjectStartedOn = projectDetail.ProjectStartedOn;
                 project.ProjectEndedOn = projectDetail.ProjectEndedOn;
                 project.CompanyId = projectDetail.CompanyId;
+                project.DocumentPath = projectDetail.DocumentPath;
             }
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
 

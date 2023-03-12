@@ -36,6 +36,7 @@ namespace ModalLayer.Modal
         public int RoleId { set; get; }
         public int AccessLevelId { set; get; }
         public int UserTypeId { set; get; }
+        public int WorkShiftId { get; set; }
         public string Password { set; get; }
         public long ReportingManagerId { set; get; }
         public DateTime UpdatedOn { get; set; }
