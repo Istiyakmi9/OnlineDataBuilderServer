@@ -813,7 +813,7 @@ namespace ServiceLayer.Code
             }
 
             List<AnnualSalaryBreakup> annualSalaryBreakup = null;
-            if (string.IsNullOrEmpty(eCal.employeeSalaryDetail.CompleteSalaryDetail))
+            if (!string.IsNullOrEmpty(eCal.employeeSalaryDetail.CompleteSalaryDetail))
                 annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(eCal.employeeSalaryDetail.CompleteSalaryDetail);
 
             // create salary brackup freshelly
@@ -832,7 +832,6 @@ namespace ServiceLayer.Code
 
         private List<AnnualSalaryBreakup> UpdateSalaryBreakUp(EmployeeCalculation eCal, List<AnnualSalaryBreakup> annualSalaryBreakup, decimal grossAmount)
         {
-            List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
             DateTime startDate = eCal.PayrollStartDate;
 
@@ -864,6 +863,8 @@ namespace ServiceLayer.Code
             {
                 if (!salary.IsPayrollExecutedForThisMonth)
                 {
+                    List<CalculatedSalaryBreakupDetail> otherDetail = new List<CalculatedSalaryBreakupDetail>();
+
                     monthlyGrossIncome = 0;
                     daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
                     workingDays = daysInMonth;
@@ -883,7 +884,7 @@ namespace ServiceLayer.Code
 
                     var value = calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount);
 
-                    var finalSpecialAmount = (grossAmount / pendingPayrolls - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount));
+                    var finalSpecialAmount = (grossAmount / 12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount));
                     monthlyGrossIncome = expectedGrossIncome + finalSpecialAmount;
                     var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                     {
@@ -894,7 +895,7 @@ namespace ServiceLayer.Code
                         ComponentTypeId = 102
                     };
 
-                    calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                    otherDetail.Add(calculatedSalaryBreakupDetail);
 
                     var finalMonthlyAmount = NoEntry ? monthlyGrossIncome : (monthlyGrossIncome / daysInMonth) * workingDays;
                     calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
@@ -906,7 +907,7 @@ namespace ServiceLayer.Code
                         ComponentTypeId = 100
                     };
 
-                    calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                    otherDetail.Add(calculatedSalaryBreakupDetail);
 
                     var finalMonthlyCTC = NoEntry ? eCal.CTC / 12 : ((eCal.CTC / 12) / daysInMonth) * workingDays;
                     calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
@@ -918,23 +919,16 @@ namespace ServiceLayer.Code
                         ComponentTypeId = 101
                     };
 
-                    calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                    otherDetail.Add(calculatedSalaryBreakupDetail);
+                    otherDetail.AddRange(calculatedSalaryBreakupDetails);
 
-                    annualSalaryBreakups.Add(new AnnualSalaryBreakup
-                    {
-                        MonthName = startDate.ToString("MMM"),
-                        IsPayrollExecutedForThisMonth = false,
-                        MonthNumber = startDate.Month,
-                        MonthFirstDate = startDate,
-                        IsActive = !NoEntry,
-                        SalaryBreakupDetails = calculatedSalaryBreakupDetails
-                    });
+                    salary.SalaryBreakupDetails = otherDetail;
                 }
 
                 startDate = startDate.AddMonths(1);
             }
 
-            return annualSalaryBreakups;
+            return annualSalaryBreakup;
         }
 
         private List<AnnualSalaryBreakup> CreateFreshSalaryBreakUp(EmployeeCalculation eCal, decimal grossAmount)
