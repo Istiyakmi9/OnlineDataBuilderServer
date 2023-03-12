@@ -84,6 +84,8 @@ namespace ServiceLayer.Code
 
             double days = 0;
             var barrierDate = GetBarrierDate(attendanceModal.attendanceSubmissionLimit);
+            if (timezoneFirstDate.Day > 1)
+                totalNumOfDaysInPresentMonth = totalNumOfDaysInPresentMonth - timezoneFirstDate.Day;
 
             int weekDays = 0;
             int totalMinute = 0;
@@ -116,7 +118,7 @@ namespace ServiceLayer.Code
 
                 attendenceDetails.Add(new AttendanceDetailJson
                 {
-                    AttendenceDetailId = i + 1,
+                    AttendenceDetailId = timezoneFirstDate.AddDays(i).Day,
                     IsHoliday = isHoliday,
                     IsOnLeave = false,
                     IsWeekend = isWeekend,
