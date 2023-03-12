@@ -79,32 +79,39 @@ namespace ServiceLayer.Code.PayrollCycle
 
         private async Task CalculateRunPayrollForEmployees(Payroll payroll, PayrollCommonData payrollCommonData)
         {
-            DateTime payrollDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+            DateTime payrollDate = (DateTime)_currentSession.TimeZoneNow;
             int offsetindex = 0;
             decimal totalDays = 0;
             int totalDaysInMonth = 0;
             int pageSize = 5;
             while (true)
             {
-                try
+                List<PayrollEmployeeData> payrollEmployeeData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
+                if (payrollEmployeeData == null || payrollEmployeeData.Count == 0)
+                    break;
+
+                // run pay cycle by considering actual days in months
+                if (payroll.PayCalculationId == 1)
                 {
-                    List<PayrollEmployeeData> payrollEmployeeData = GetEmployeeDetail(payrollCommonData.presentDate, offsetindex, pageSize);
-                    if (payrollEmployeeData == null || payrollEmployeeData.Count == 0)
-                        break;
+                    totalDaysInMonth = DateTime.DaysInMonth(payrollCommonData.presentDate.Year, payrollDate.Month);
+                }
+                else // run pay cycle by considering only weekdays in month
+                {
+                    totalDaysInMonth = TimezoneConverter.GetNumberOfWeekdaysInMonth(payrollCommonData.presentDate.Year, payrollDate.Month);
+                }
 
-                    // run pay cycle by considering actual days in months
-                    if (payroll.PayCalculationId == 1)
+                bool IsTaxCalculationRequired = false;
+                foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
+                {
+                    try
                     {
-                        totalDaysInMonth = DateTime.DaysInMonth(payrollCommonData.presentDate.Year, payrollCommonData.presentDate.Month);
-                    }
-                    else // run pay cycle by considering only weekdays in month
-                    {
-                        totalDaysInMonth = TimezoneConverter.GetNumberOfWeekdaysInMonth(payrollCommonData.presentDate.Year, payrollCommonData.presentDate.Month);
-                    }
+                        DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
+                        if (doj.Year == payrollDate.Year && doj.Month == payrollDate.Month)
+                        {
+                            if (doj.Year == payrollDate.Year && doj.Month == payrollDate.Month)
+                                totalDaysInMonth = totalDaysInMonth - doj.Day + 1;
+                        }
 
-                    bool IsTaxCalculationRequired = false;
-                    foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
-                    {
                         totalDays = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
                         var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
                         if (taxDetails == null)
@@ -114,30 +121,34 @@ namespace ServiceLayer.Code.PayrollCycle
                         if (presentData == null)
                             throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
 
-                        if (totalDays != totalDaysInMonth)
+                        if (!presentData.IsPayrollCompleted)
                         {
-                            var newAmount = (presentData.TaxDeducted / totalDaysInMonth) * totalDays;
-                            presentData.TaxPaid = newAmount;
-                            presentData.TaxDeducted = newAmount;
-                            presentData.IsPayrollCompleted = true;
-                            IsTaxCalculationRequired = true;
-                        }
-                        else
-                        {
-                            presentData.TaxPaid = presentData.TaxDeducted;
-                            presentData.IsPayrollCompleted = true;
-                        }
+                            if (totalDays != totalDaysInMonth)
+                            {
+                                var newAmount = (presentData.TaxDeducted / totalDaysInMonth) * totalDays;
+                                presentData.TaxPaid = newAmount;
+                                presentData.TaxDeducted = newAmount;
+                                presentData.IsPayrollCompleted = true;
+                                IsTaxCalculationRequired = true;
+                            }
+                            else
+                            {
+                                presentData.TaxPaid = presentData.TaxDeducted;
+                                presentData.IsPayrollCompleted = true;
+                            }
 
-                        await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
-                        IsTaxCalculationRequired = false;
+                            empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
+                            await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
+                            IsTaxCalculationRequired = false;
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
 
-                    offsetindex = offsetindex + pageSize;
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
+                offsetindex = offsetindex + pageSize;
             }
 
             await Task.CompletedTask;
@@ -181,6 +192,7 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(payroll.TimezoneName);
                 payrollCommonData.timeZone = _currentSession.TimeZone;
+                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow.AddMonths(-7), _currentSession.TimeZone);
 
                 payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                 payrollCommonData.utcPresentDate = DateTime.UtcNow;
