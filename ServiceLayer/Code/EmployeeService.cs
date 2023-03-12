@@ -757,6 +757,7 @@ namespace ServiceLayer.Code
 
                 try
                 {
+                    _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                     await _declarationService.CalculateSalaryNDeclaration(eCal, true);
                 }
                 catch

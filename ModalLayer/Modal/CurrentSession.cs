@@ -15,5 +15,6 @@ namespace ModalLayer.Modal
         public string FileUploadFolderName { set; get; }
         public UserDetail CurrentUserDetail { set; get; }
         public TimeZoneInfo TimeZone { set; get; }
+        public DateTime? TimeZoneNow { set; get; } = null;
     }
 }

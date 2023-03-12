@@ -161,9 +161,11 @@ namespace ServiceLayer.Code
         public async Task<EmployeeDeclaration> GetEmployeeDeclarationDetail(long EmployeeId, bool reCalculateFlag = false)
         {
             List<Files> files = default;
-            EmployeeDeclaration employeeDeclaration = default;
             if (EmployeeId <= 0)
-                throw new HiringBellException("Invalid employee selected. Please select a vlid employee");
+                throw new HiringBellException("Invalid employee selected. Please select a valid employee");
+
+            if(_currentSession.TimeZoneNow == null)
+                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
             DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
             {
@@ -174,7 +176,7 @@ namespace ServiceLayer.Code
             if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get the detail");
 
-            employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+            EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
             if (employeeDeclaration == null)
                 throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
@@ -408,55 +410,6 @@ namespace ServiceLayer.Code
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
         }
 
-        public async Task<EmployeeSalaryDetail> ExecuteSalary(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData)
-        {
-            if (payrollEmployeeData.GroupId == 1)
-                throw HiringBellException.ThrowBadRequest($"Salary group for salary " +
-                    $"{payrollEmployeeData.CTC} not found. Default salary group for all calculation. For any query please contact to admin.");
-
-            var firstRow = payrollCommonData.payrolls.Find(x => x.CompanyId == payrollEmployeeData.CompanyId);
-            if (firstRow == null)
-                throw HiringBellException.ThrowBadRequest($"[ExecuteSalary]: Employee payroll detail not found. EmployeeId: {payrollEmployeeData.EmployeeId}");
-
-            int defaultGroupId = 1;
-            if (payrollEmployeeData.GroupId != 0)
-                defaultGroupId = payrollEmployeeData.GroupId;
-
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation
-            {
-                EmployeeId = payrollEmployeeData.EmployeeId,
-                employeeDeclaration = payrollEmployeeData.employeeDeclaration,
-                employee = new Employee { EmployeeUid = payrollEmployeeData.EmployeeId },
-                salaryComponents = payrollCommonData.salaryComponents,
-                CTC = payrollEmployeeData.CTC,
-                Doj = payrollEmployeeData.Doj,
-                employeeSalaryDetail = new EmployeeSalaryDetail
-                {
-                    CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail,
-                    CTC = payrollEmployeeData.CTC,
-                    GroupId = payrollEmployeeData.GroupId,
-                    TaxDetail = payrollEmployeeData.TaxDetail
-                },
-                salaryGroup = payrollCommonData.salaryGroups.FirstOrDefault(x => x.SalaryGroupId == defaultGroupId),
-                surchargeSlabs = payrollCommonData.surchargeSlabs,
-                ptaxSlab = payrollCommonData.ptaxSlab.FindAll(x => x.CompanyId == firstRow.CompanyId),
-                companySetting = new CompanySetting
-                {
-                    DeclarationEndMonth = payrollEmployeeData.DeclarationEndMonth,
-                    DeclarationStartMonth = payrollEmployeeData.DeclarationStartMonth,
-                    FinancialYear = payrollEmployeeData.FinancialYear
-                }
-            };
-
-            employeeCalculation.salaryGroup.GroupComponents = JsonConvert
-                .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
-
-            if (employeeCalculation.employeeDeclaration.SalaryDetail != null)
-                employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
-
-            return await CalculateSalaryNDeclaration(employeeCalculation, true);
-        }
-
         private async Task<bool> CalculateAndBuildDeclarationDetail(EmployeeCalculation employeeCalculation, bool reCalculateFlag)
         {
             bool flag = await GetEmployeeDeclaration(employeeCalculation.employeeDeclaration, employeeCalculation.salaryComponents);
@@ -652,7 +605,7 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    empCal.employeeDeclaration.DeclaredValue = Convert.ToDecimal(taxdetails
+                    empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                             .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
                 }
             }
@@ -674,89 +627,20 @@ namespace ServiceLayer.Code
 
         private void UpdateTaxDetail(EmployeeCalculation empCal, List<TaxDetails> taxdetails)
         {
-            DateTime presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-            bool isPresentMonth = false;
             empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                         .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
-            TaxDetails firstMonthTaxDetail = null;
-            if (empCal.IsFirstYearDeclaration)
-            {
-                var items = taxdetails.OrderBy(x => x.Index).ToList();
-                int index = 0;
-                while (index < items.Count)
-                {
-                    firstMonthTaxDetail = items[index];
-                    if (firstMonthTaxDetail.Month == empCal.Doj.Month && firstMonthTaxDetail.TaxPaid == 0)
-                    {
-                        isPresentMonth = true;
-                        break;
-                    }
-                    else if (firstMonthTaxDetail.TaxPaid == 0 && firstMonthTaxDetail.Month >= empCal.Doj.Month)
-                    {
-                        isPresentMonth = false;
-                        break;
-                    }
-
-                    firstMonthTaxDetail = null;
-                    index++;
-                }
-
-                if (firstMonthTaxDetail == null)
-                    throw HiringBellException.ThrowBadRequest("Unable to find the tax detail. Please contact to amdin.");
-
-            }
-            else
-            {
-                firstMonthTaxDetail = taxdetails.OrderBy(x => x.Index).First(x => x.TaxPaid == 0);
-            }
-
             decimal remaningTaxAmount = empCal.employeeDeclaration.TaxNeedToPay - empCal.employeeDeclaration.TaxPaid;
-            DateTime financialYearMonth = new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1);
+            int pendingMonths = taxdetails.Count(x => !x.IsPayrollCompleted);
 
-            int useCurrentMonth = 0;
-            if (presentDate.Day <= empCal.companySetting.EveryMonthLastDayOfDeclaration)
-                useCurrentMonth = 1;
-
-            int remaningMonths = 0;
-            if (presentDate.Year == financialYearMonth.Year)
+            decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / pendingMonths));
+            foreach (var taxDetail in taxdetails)
             {
-                remaningMonths = 12 - firstMonthTaxDetail.Month + empCal.companySetting.DeclarationEndMonth + useCurrentMonth;
-            }
-            else
-            {
-                remaningMonths = empCal.companySetting.DeclarationEndMonth - firstMonthTaxDetail.Month + useCurrentMonth;
-            }
-
-            presentDate = presentDate.AddMonths(useCurrentMonth == 0 ? 1 : 0);
-
-            TaxDetails taxDetail = default(TaxDetails);
-            decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / remaningMonths));
-            while (presentDate.Month != (empCal.companySetting.DeclarationEndMonth + 1))
-            {
-                taxDetail = taxdetails.FirstOrDefault(x => x.Month == presentDate.Month);
-                if (taxDetail != null)
+                if (!taxDetail.IsPayrollCompleted)
                 {
-                    if (isPresentMonth)
-                    {
-                        var daysInMonth = DateTime.DaysInMonth(presentDate.Year, presentDate.Month);
-                        var workingDays = daysInMonth - empCal.Doj.Day + 1;
-                        var currentMonthTax = ProrateAmountOnJoiningMonth(singleMonthTax, daysInMonth, workingDays);
-                        var finalTaxForOtherMonths = (singleMonthTax * remaningMonths) - currentMonthTax;
-                        singleMonthTax = finalTaxForOtherMonths / (remaningMonths - 1);
-
-                        taxDetail.TaxDeducted = currentMonthTax;
-                        taxDetail.TaxPaid = 0M;
-                        isPresentMonth = false;
-                    }
-                    else
-                    {
-                        taxDetail.TaxDeducted = singleMonthTax;
-                        taxDetail.TaxPaid = 0M;
-                    }
+                    taxDetail.TaxDeducted = singleMonthTax;
+                    taxDetail.TaxPaid = 0M;
                 }
-
-                presentDate = presentDate.AddMonths(1);
             }
         }
 
@@ -818,7 +702,7 @@ namespace ServiceLayer.Code
                         Year = financialYearMonth.AddMonths(i).Year,
                         EmployeeId = employeeDeclaration.EmployeeId,
                         TaxDeducted = 0,
-                        IsPayrollCompleted = false,
+                        IsPayrollCompleted = true,
                         TaxPaid = 0
                     });
                 }
@@ -957,7 +841,7 @@ namespace ServiceLayer.Code
 
             if (ApplicationConstants.IsExecuted(Result.statusMessage) && IsTaxCalculationRequired)
             {
-                await ExecuteSalary(payrollEmployeeData, payrollCommonData);
+                await GetEmployeeDeclarationDetail(payrollEmployeeData.EmployeeId, true);
             }
 
             return Result.statusMessage;
