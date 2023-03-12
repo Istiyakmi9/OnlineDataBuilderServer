@@ -835,6 +835,7 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = payrollEmployeeData.EmployeeId,
                 TaxDetail = payrollEmployeeData.TaxDetail,
+                CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail
             }, true);
 
             if (ApplicationConstants.IsExecuted(Result.statusMessage) && IsTaxCalculationRequired)
