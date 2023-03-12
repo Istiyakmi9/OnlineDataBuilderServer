@@ -959,6 +959,7 @@ namespace ServiceLayer.Code
                     calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
                     expectedGrossIncome += amount / 12;
                     calculatedSalaryBreakupDetail.FinalAmount = amount / 12;
+                    calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
                 }
             }
 
@@ -970,6 +971,8 @@ namespace ServiceLayer.Code
             decimal monthlyGrossIncome = 0;
             while (index < 12)
             {
+                List<CalculatedSalaryBreakupDetail> otherDetails = new List<CalculatedSalaryBreakupDetail>();
+
                 monthlyGrossIncome = 0;
                 daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
                 workingDays = daysInMonth;
@@ -1000,7 +1003,7 @@ namespace ServiceLayer.Code
                     ComponentTypeId = 102
                 };
 
-                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                otherDetails.Add(calculatedSalaryBreakupDetail);
 
                 var finalMonthlyAmount = NoEntry ? monthlyGrossIncome : (monthlyGrossIncome / daysInMonth) * workingDays;
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
@@ -1012,7 +1015,7 @@ namespace ServiceLayer.Code
                     ComponentTypeId = 100
                 };
 
-                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                otherDetails.Add(calculatedSalaryBreakupDetail);
 
                 var finalMonthlyCTC = NoEntry ? eCal.CTC / 12 : ((eCal.CTC / 12) / daysInMonth) * workingDays;
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
@@ -1024,16 +1027,17 @@ namespace ServiceLayer.Code
                     ComponentTypeId = 101
                 };
 
-                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                otherDetails.Add(calculatedSalaryBreakupDetail);
+                otherDetails.AddRange(calculatedSalaryBreakupDetails);
 
                 annualSalaryBreakups.Add(new AnnualSalaryBreakup
                 {
                     MonthName = startDate.ToString("MMM"),
-                    IsPayrollExecutedForThisMonth = false,
+                    IsPayrollExecutedForThisMonth = NoEntry,
                     MonthNumber = startDate.Month,
                     MonthFirstDate = startDate,
                     IsActive = !NoEntry,
-                    SalaryBreakupDetails = calculatedSalaryBreakupDetails
+                    SalaryBreakupDetails = otherDetails
                 });
 
                 startDate = startDate.AddMonths(1);
