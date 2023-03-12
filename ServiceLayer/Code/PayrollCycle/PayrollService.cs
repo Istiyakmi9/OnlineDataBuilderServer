@@ -125,6 +125,8 @@ namespace ServiceLayer.Code.PayrollCycle
                         {
                             if (totalDays != totalDaysInMonth)
                             {
+                                UpdateSalaryBreakup(payrollDate, totalDays, totalDaysInMonth, empPayroll);
+
                                 var newAmount = (presentData.TaxDeducted / totalDaysInMonth) * totalDays;
                                 presentData.TaxPaid = newAmount;
                                 presentData.TaxDeducted = newAmount;
@@ -152,6 +154,24 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             await Task.CompletedTask;
+        }
+
+        private static void UpdateSalaryBreakup(DateTime payrollDate, decimal totalDays, int totalDaysInMonth, PayrollEmployeeData empPayroll)
+        {
+            var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
+            if (salaryBreakup == null)
+                throw HiringBellException.ThrowBadRequest("Invalid salary breakup found. Fail to run payroll.");
+
+            var presentMonthSalaryDetail = salaryBreakup.Find(x => x.MonthNumber == payrollDate.Month);
+            if (presentMonthSalaryDetail != null)
+            {
+                foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
+                {
+                    item.FinalAmount = (item.FinalAmount / totalDaysInMonth) * totalDays;
+                }
+            }
+
+            empPayroll.CompleteSalaryDetail = JsonConvert.SerializeObject(salaryBreakup);
         }
 
         private PayrollCommonData GetCommonPayrollData()

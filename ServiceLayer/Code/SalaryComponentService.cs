@@ -931,15 +931,10 @@ namespace ServiceLayer.Code
             return annualSalaryBreakup;
         }
 
-        private List<AnnualSalaryBreakup> CreateFreshSalaryBreakUp(EmployeeCalculation eCal, decimal grossAmount)
+        private decimal GetComponentsDetail(EmployeeCalculation eCal, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails)
         {
-            List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
-            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
-            DateTime startDate = eCal.PayrollStartDate;
-
             decimal amount = 0;
             decimal expectedGrossIncome = 0;
-            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
             foreach (var item in eCal.salaryGroup.GroupComponents)
             {
                 if (!string.IsNullOrEmpty(item.ComponentId))
@@ -957,6 +952,16 @@ namespace ServiceLayer.Code
                 }
             }
 
+            return expectedGrossIncome;
+        }
+
+        private List<AnnualSalaryBreakup> CreateFreshSalaryBreakUp(EmployeeCalculation eCal, decimal grossAmount)
+        {
+            List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
+            DateTime startDate = eCal.PayrollStartDate;
+
+            decimal expectedGrossIncome = 0;
 
             int index = 0;
             bool NoEntry = false;
@@ -967,24 +972,13 @@ namespace ServiceLayer.Code
             {
                 List<CalculatedSalaryBreakupDetail> otherDetails = new List<CalculatedSalaryBreakupDetail>();
 
+                NoEntry = false;
                 monthlyGrossIncome = 0;
                 daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
                 workingDays = daysInMonth;
-                if (startDate.Subtract(doj).TotalDays < 0 && startDate.Month != doj.Month)
-                {
-                    NoEntry = true;
-                }
-                else if (startDate.Month == doj.Month)
-                {
-                    workingDays = daysInMonth - doj.Day + 1;
-                    NoEntry = false;
-                }
-                else
-                {
-                    NoEntry = false;
-                }
 
-                var value = calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount);
+                List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
+                expectedGrossIncome = GetComponentsDetail(eCal, calculatedSalaryBreakupDetails);
 
                 var finalSpecialAmount = (grossAmount / 12 - calculatedSalaryBreakupDetails.Where(x => x.ComponentTypeId == 2).Sum(x => x.FinalAmount));
                 monthlyGrossIncome = expectedGrossIncome + finalSpecialAmount;
@@ -1024,6 +1018,22 @@ namespace ServiceLayer.Code
                 otherDetails.Add(calculatedSalaryBreakupDetail);
                 otherDetails.AddRange(calculatedSalaryBreakupDetails);
 
+                if (startDate.Subtract(doj).TotalDays < 0 && startDate.Month != doj.Month)
+                {
+                    NoEntry = true;
+                    var grossComponent = otherDetails.Find(x => x.ComponentName == ComponentNames.Gross);
+                    grossComponent.FinalAmount = 0;
+
+                    var ctcComponent = otherDetails.Find(x => x.ComponentName == ComponentNames.Gross);
+                    ctcComponent.FinalAmount = 0;
+                }
+                else if (startDate.Month == doj.Month)
+                {
+                    workingDays = daysInMonth - doj.Day + 1;
+                    foreach (var item in otherDetails)
+                        item.FinalAmount = (item.FinalAmount / daysInMonth) * workingDays;
+                }
+
                 annualSalaryBreakups.Add(new AnnualSalaryBreakup
                 {
                     MonthName = startDate.ToString("MMM"),
@@ -1033,6 +1043,7 @@ namespace ServiceLayer.Code
                     IsActive = !NoEntry,
                     SalaryBreakupDetails = otherDetails
                 });
+
 
                 startDate = startDate.AddMonths(1);
                 index++;
