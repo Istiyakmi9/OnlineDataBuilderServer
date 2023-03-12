@@ -164,7 +164,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid employee selected. Please select a valid employee");
 
-            if(_currentSession.TimeZoneNow == null)
+            if (_currentSession.TimeZoneNow == null)
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
             DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
@@ -368,7 +368,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private List<CalculatedSalaryBreakupDetail> GetGrossIncome(EmployeeDeclaration employeeDeclaration, List<AnnualSalaryBreakup> completeSalaryBreakups)
+        private List<CalculatedSalaryBreakupDetail> GetPresentMonthSalaryDetail(List<AnnualSalaryBreakup> completeSalaryBreakups)
         {
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
@@ -382,17 +382,12 @@ namespace ServiceLayer.Code
             else
                 calculatedSalaryBreakupDetails = currentMonthSalaryBreakup.SalaryBreakupDetails;
 
-            var grossComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Gross);
-            if (grossComponent == null)
-                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
-
             return calculatedSalaryBreakupDetails;
         }
 
-        private void CalculateTotalAmountWillBeReceived(EmployeeCalculation empCal)
+        private decimal CalculateTotalAmountWillBeReceived(List<AnnualSalaryBreakup> salary)
         {
-            var salary = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empCal.employeeSalaryDetail.CompleteSalaryDetail);
-            empCal.expectedAmountAnnually = salary.Where(x => x.IsActive).SelectMany(i => i.SalaryBreakupDetails)
+            return salary.Where(x => x.IsActive).SelectMany(i => i.SalaryBreakupDetails)
                 .Where(x => x.ComponentName == ComponentNames.Gross)
                 .Sum(x => x.FinalAmount);
         }
@@ -493,10 +488,10 @@ namespace ServiceLayer.Code
             decimal totalDeduction = 0;
 
             // calculate and get gross income value and salary breakup detail
-            var calculatedSalaryBreakupDetails = GetGrossIncome(empCal.employeeDeclaration, completeSalaryBreakups);
+            var calculatedSalaryBreakupDetails = GetPresentMonthSalaryDetail(completeSalaryBreakups);
 
-            // find total amount to be received
-            CalculateTotalAmountWillBeReceived(empCal);
+            // find total sum of gross from complete salary breakup list
+            empCal.expectedAmountAnnually = CalculateTotalAmountWillBeReceived(completeSalaryBreakups);
 
             //check and apply standard deduction
             totalDeduction += _componentsCalculationService.StandardDeductionComponent(empCal);
