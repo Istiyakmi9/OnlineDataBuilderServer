@@ -96,13 +96,15 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-             await RunLeaveAccrualAsync();
+            // await RunLeaveAccrualAsync();
 
             // await BatchInsertPerformanceTest();
 
              //await RunDailyTimesheetCreationJob();
 
-            await RunPayrollAsync();
+            // await RunPayrollAsync();
+
+
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -115,12 +117,12 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunPayrollAsync()
         {
-            await _payrollService.RunPayrollCycle();
+            // await _payrollService.RunPayrollCycle();
         }
 
         private async Task RunLeaveAccrualAsync()
         {
-            //await _leaveCalculation.StartAccrualCycle(true);
+            await _leaveCalculation.StartAccrualCycle(true);
         }
 
         private async Task RunDailyTimesheetCreationJob()
