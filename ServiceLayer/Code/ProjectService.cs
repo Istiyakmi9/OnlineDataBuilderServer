@@ -96,9 +96,9 @@ namespace ServiceLayer.Code
         public Project GetAllWikiService(long ProjectId)
         {
             var result = _db.Get<Project>("sp_project_detail_getby_id", new { ProjectId });
-            if (File.Exists(result.HomePageUrl))
+            if (File.Exists(result.DocumentPath))
             {
-                var txt = File.ReadAllText(result.HomePageUrl);
+                var txt = File.ReadAllText(result.DocumentPath);
                 result.DocumentationDetail = txt;
             }
             return result;
