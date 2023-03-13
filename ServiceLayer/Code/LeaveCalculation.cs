@@ -872,12 +872,13 @@ namespace ServiceLayer.Code
 
             if (approvalChainDetail.Count > 0)
             {
+                int index = 1;
                 requestStatuses = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
                                    select new RequestChainModal
                                    {
                                        ExecuterId = n.AssignieId,
                                        FeedBack = String.Empty,
-                                       Level = (n.ApprovalChainDetailId - n.ApprovalChainDetailId) + 1,
+                                       Level = index++,
                                        ReactedOn = DateTime.Now,
                                        Status = (int)ItemStatus.Pending
                                    }).ToList();
