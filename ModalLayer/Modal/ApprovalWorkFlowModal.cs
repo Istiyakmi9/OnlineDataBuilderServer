@@ -13,7 +13,7 @@ namespace ModalLayer.Modal
         public string Title { set; get; }
         public string TitleDescription { set; get; }
         public int Status { set; get; } = 2;
-        public bool IsAutoExpiredEnabled { set; get; }
+        public bool IsAutoExpiredEnabled { set; get; } = true;
         public int AutoExpireAfterDays { set; get; }
         public bool IsSilentListner { set; get; }
         public string ListnerDetail { set; get; }
@@ -26,11 +26,11 @@ namespace ModalLayer.Modal
     public class ApprovalWorkFlowModal
     {
         public int ApprovalChainDetailId { set; get; }
-        public int ApprovalWorkFlowId { set; get; }
+        public int ApprovalWorkFlowId { set; get; } 
         public string Title { set; get; }
         public string TitleDescription { set; get; }
         public int Status { set; get; } = 2;
-        public bool IsAutoExpiredEnabled { set; get; }
+        public bool IsAutoExpiredEnabled { set; get; } = true;
         public int AutoExpireAfterDays { set; get; }
         public bool IsSilentListner { set; get; }
         public string ListnerDetail { set; get; }

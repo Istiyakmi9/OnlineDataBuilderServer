@@ -14,7 +14,7 @@ namespace OnlineDataBuilder.HostedService.Services
                 using (IServiceScope scope = _serviceProvider.CreateScope())
                 {
                     var service = scope.ServiceProvider.GetRequiredService<ITimesheetService>();
-                    await service.RunWeeklyTimesheetCreation(DateTime.UtcNow);
+                    await service.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(2));
                 }
             }
 
