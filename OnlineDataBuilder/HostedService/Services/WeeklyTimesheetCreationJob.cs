@@ -11,8 +11,11 @@ namespace OnlineDataBuilder.HostedService.Services
         {
             if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Saturday)
             {
-                var service = _serviceProvider.GetRequiredService<ITimesheetService>();
-                await service.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(2));
+                using (IServiceScope scope = _serviceProvider.CreateScope())
+                {
+                    var service = scope.ServiceProvider.GetRequiredService<ITimesheetService>();
+                    await service.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(2));
+                }
             }
 
             await Task.CompletedTask;

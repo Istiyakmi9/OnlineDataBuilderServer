@@ -771,8 +771,8 @@ namespace ServiceLayer.Code
             var leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             var RecordId = DateTime.UtcNow.Ticks.ToString();
 
-            List<RequestChainModal> requestChainModals = new List<RequestChainModal>();
-            int autoExpiryDays = GetApprovalChainDetail(requestChainModals);
+            int autoExpiryDays = 0;
+            List <RequestChainModal> requestChainModals = GetApprovalChainDetail(ref autoExpiryDays);
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
                 RecordId = RecordId,
@@ -867,10 +867,9 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(fileIds);
         }
 
-        private int GetApprovalChainDetail(List<RequestChainModal> requestChainModals)
+        private List<RequestChainModal> GetApprovalChainDetail(ref int autoExipredDays)
         {
-            int expiryDays = 0;
-            List<RequestChainModal> requestStatuses = new List<RequestChainModal>();
+            var requestChainModals = new List<RequestChainModal>();
             List<ApprovalChainDetail> approvalChainDetail = _db.GetList<ApprovalChainDetail>("sp_workflow_chain_by_ids", new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
@@ -878,10 +877,10 @@ namespace ServiceLayer.Code
 
             if (approvalChainDetail.Count > 0)
             {
-                expiryDays = approvalChainDetail.First().AutoExpireAfterDays;
+                autoExipredDays = approvalChainDetail.First().AutoExpireAfterDays;
 
                 int index = 1;
-                requestStatuses = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
+                requestChainModals = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
                                    select new RequestChainModal
                                    {
                                        ExecuterId = n.AssignieId,
@@ -895,7 +894,7 @@ namespace ServiceLayer.Code
                                    }).ToList();
             }
 
-            return expiryDays;
+            return requestChainModals;
         }
 
         #endregion

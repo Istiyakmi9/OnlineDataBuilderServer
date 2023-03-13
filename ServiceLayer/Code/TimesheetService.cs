@@ -307,24 +307,46 @@ namespace ServiceLayer.Code
             return timesheetDetail;
         }
 
-        public dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail)
+        public List<DailyTimesheetDetail> GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail)
         {
-            (TimesheetDetail currentTimesheetDetail, Employee employee) =
-                _db.GetMulti<TimesheetDetail, Employee>("sp_employee_timesheet_getby_empid", new
+            var now = DateTime.UtcNow;
+            int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, now.Month);
+            var lastDate = new DateTime(timesheetDetail.ForYear, now.Month, daysInMonth);
+            var firstDate = new DateTime(timesheetDetail.ForYear, now.Month, 1);
+            List<TimesheetDetail> currentTimesheetDetail=
+                _db.GetList<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
                 {
                     timesheetDetail.EmployeeId,
                     timesheetDetail.ForYear,
-                    timesheetDetail.ClientId
+                    timesheetDetail.ClientId,
+                    firstDate,
+                    lastDate
                 });
+            if (currentTimesheetDetail.Count <= 0)
+                throw HiringBellException.ThrowBadRequest("Timesheet is not found");
 
-            if (currentTimesheetDetail == null)
-                currentTimesheetDetail = new TimesheetDetail
-                {
-                    ForYear = timesheetDetail.ForYear
-                };
+            List<DailyTimesheetDetail> monthlyTimesheet = new List<DailyTimesheetDetail>();
+            currentTimesheetDetail.ForEach(x => {
+                if (string.IsNullOrEmpty(x.TimesheetWeeklyJson))
+                    throw HiringBellException.ThrowBadRequest("Weeklytimesheet not found");
 
-            var result = BuildFinalTimesheet(currentTimesheetDetail);
-            return new { TimesheetDetails = result.Item1, MissingDate = result.Item2 };
+                var dailyTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(x.TimesheetWeeklyJson);
+                monthlyTimesheet.AddRange(dailyTimesheet);
+            });
+
+            //if (daysInMonth != monthlyTimesheet.Count)
+            //    throw HiringBellException.ThrowBadRequest("Timesheet of current month is mismatch. Please submit timesheet first");
+
+
+            //if (currentTimesheetDetail == null)
+            //    currentTimesheetDetail = new TimesheetDetail
+            //    {
+            //        ForYear = timesheetDetail.ForYear
+            //    };
+
+            //var result = BuildFinalTimesheet(currentTimesheetDetail);
+            //return new { TimesheetDetails = result.Item1, MissingDate = result.Item2 };
+            return monthlyTimesheet;
         }
 
         public (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail)
