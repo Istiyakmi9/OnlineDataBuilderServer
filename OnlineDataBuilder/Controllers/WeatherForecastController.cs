@@ -32,6 +32,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly ITimesheetService _timesheetService;
         private readonly CurrentSession _currentSession;
         private readonly IPayrollService _payrollService;
+        private readonly ILeaveRequestService _leaveRequestService;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
@@ -39,7 +40,8 @@ namespace OnlineDataBuilder.Controllers
             ITimesheetService timesheetService,
             ILeaveCalculation leaveCalculation,
             IPayrollService payrollService,
-            CurrentSession currentSession
+            CurrentSession currentSession,
+            ILeaveRequestService leaveRequestService
             )
         {
             _logger = logger;
@@ -49,6 +51,7 @@ namespace OnlineDataBuilder.Controllers
             _timesheetService = timesheetService;
             _leaveCalculation = leaveCalculation;
             _currentSession = currentSession;
+            _leaveRequestService = leaveRequestService;
         }
 
         [HttpGet]
@@ -117,7 +120,7 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task LeaveLevelMigration()
         {
-            await _leaveCalculation.LeaveLeaveManagerMigration();
+            await _leaveRequestService.LeaveLeaveManagerMigration();
         }
 
         private async Task RunPayrollAsync()

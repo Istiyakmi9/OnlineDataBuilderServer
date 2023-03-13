@@ -887,10 +887,11 @@ namespace ServiceLayer.Code
                                        ExecuterId = n.AssignieId,
                                        FeedBack = String.Empty,
                                        Level = index++,
-                                       ReactedOn = DateTime.Now,
-                                       Status = (int)ItemStatus.Pending,
+                                       ReactedOn = DateTime.UtcNow,
+                                       Status = index == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
                                        ForwardAfterDays = n.ForwardAfterDays,
-                                       ForwardWhenStatus = n.ForwardWhen
+                                       ForwardWhenStatus = n.ForwardWhen,
+                                       IsRequired = n.IsRequired
                                    }).ToList();
             }
 
@@ -898,27 +899,5 @@ namespace ServiceLayer.Code
         }
 
         #endregion
-
-        public async Task LeaveLeaveManagerMigration()
-        {
-            var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new { Year = DateTime.UtcNow.Year });
-
-            List<CompleteLeaveDetail> completeLeaveDetails = null;
-            foreach (var level in leaveRequestDetails)
-            {
-                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(level.LeaveDetail);
-                if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
-                {
-                    var ids = completeLeaveDetails.Select(x => x.ApprovalWorkFlowId).Aggregate(string.Empty, (i, j) => i + ", " + j);
-                    var approvalChainDetails = _db.GetList<ApprovalChainDetail>("sp_workflow_chain_by_ids", new { Ids = ids });
-                    if (approvalChainDetails.Count > 0)
-                    {
-
-                    }
-                }
-            }
-
-            await Task.CompletedTask;
-        }
     }
 }

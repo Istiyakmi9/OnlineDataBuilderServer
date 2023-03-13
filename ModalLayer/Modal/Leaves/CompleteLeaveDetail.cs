@@ -40,5 +40,6 @@ namespace ModalLayer.Modal.Leaves
         public string FeedBack { get; set; }
         public int ForwardAfterDays { get; set; }
         public int ForwardWhenStatus { get; set; }
+        public bool IsRequired { get; set; }
     }
 }
