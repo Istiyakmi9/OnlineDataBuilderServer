@@ -279,7 +279,9 @@ public enum ItemStatus
     Present = 10,
     Absent = 11,
     MissingAttendanceRequest = 12,
-    Saved = 13
+    Saved = 13,
+    AutoPromoted = 14,
+    FinalLevel = 15
 }
 
 public enum LeaveType
