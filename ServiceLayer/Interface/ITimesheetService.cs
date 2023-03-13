@@ -12,7 +12,7 @@ namespace ServiceLayer.Interface
         Task<TimesheetDetail> SaveTimesheetService(TimesheetDetail timesheetDetail);
         Task<string> ExecuteActionOnTimesheetService(TimesheetDetail timesheetDetail);
         List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId);
-        dynamic GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);
+        List<DailyTimesheetDetail> GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);
         (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail);
         BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
         Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate);
