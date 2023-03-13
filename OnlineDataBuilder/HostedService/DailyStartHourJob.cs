@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NCrontab;
+using OnlineDataBuilder.HostedService.Services;
 using ServiceLayer.Interface;
 using System;
 using System.Threading;
@@ -12,12 +13,12 @@ namespace OnlineDataBuilder.HostedService
 {
     public class DailyStartHourJob : IHostedService
     {
-        private readonly ILogger<LeaveAccrualSchedular> _logger;
+        private readonly ILogger<DailyStartHourJob> _logger;
         private readonly CrontabSchedule _cron;
         private readonly IServiceProvider _serviceProvider;
         DateTime _nextCron;
 
-        public DailyStartHourJob(ILogger<LeaveAccrualSchedular> logger, IConfiguration configuration, IServiceProvider serviceProvider)
+        public DailyStartHourJob(ILogger<DailyStartHourJob> logger, IConfiguration configuration, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -42,75 +43,14 @@ namespace OnlineDataBuilder.HostedService
 
         private async Task RunJobAsync()
         {
-            await RunDailyTimesheetCreationJob();
+            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
 
-            await SendMail();
+            await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
 
-            await LeaveAccrualAsync();
+            await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
+
+            await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider);
         }
-
-        #region WEEKLY TIMESHEET CREATION SCHEDULAR
-
-        private async Task RunDailyTimesheetCreationJob()
-        {
-            if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Saturday)
-            {
-                var service = _serviceProvider.GetRequiredService<ITimesheetService>();
-                await service.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(2));
-            }
-
-            await Task.CompletedTask;
-        }
-
-        #endregion
-
-        #region LEAVE ACCRUAL SCHEDULAR
-
-        private async Task LeaveAccrualAsync()
-        {
-            using (IServiceScope scope = _serviceProvider.CreateScope())
-            {
-                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
-                await _leaveCalculation.StartAccrualCycle();
-            }
-        }
-
-        #endregion
-
-        #region PAYROLL SCHEDULAR
-
-        #endregion
-
-        #region DAILY EMAIL SCHEDULAR
-
-        private async Task SendMail()
-        {
-            // _eMailManager.SendMail();
-            await Task.CompletedTask;
-        }
-
-        #endregion
-
-        #region RUN PAYROLL CYCLE
-
-        private async Task RunPayrollAsync()
-        {
-            using (IServiceScope scope = _serviceProvider.CreateScope())
-            {
-                IPayrollService _payrollService = scope.ServiceProvider.GetRequiredService<IPayrollService>();
-                await _payrollService.RunPayrollCycle();
-            }
-        }
-
-        #endregion
-
-        #region ATTENDANCE APPROVAL LEVEL CHECK
-
-        #endregion
-
-        #region ATTENDANCE APPROVAL LEVEL CHECK
-
-        #endregion
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
 
