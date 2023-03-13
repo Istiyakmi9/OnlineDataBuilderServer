@@ -62,17 +62,21 @@ namespace ServiceLayer.Code
                 ApprovalChainDetail chainDetail = null;
                 approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
                 {
-                    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.AssignieId == item.AssignieId);
+                    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.ApprovalChainDetailId == item.ApprovalChainDetailId);
 
                     if (chainDetail != null)
                     {
-                        item.ApprovalChainDetailId = chainDetail.ApprovalChainDetailId;
-                        item.ApprovalWorkFlowId = chainDetail.ApprovalWorkFlowId;
+                        chainDetail.AssignieId = item.AssignieId;
+                        chainDetail.IsRequired = item.IsRequired;
+                        chainDetail.IsForwardEnabled = item.IsForwardEnabled;
+                        chainDetail.ForwardWhen = item.ForwardWhen;
+                        chainDetail.ForwardAfterDays = item.ForwardAfterDays;
                     }
                 });
 
             }
-            var data = (from n in approvalWorkFlowModal.ApprovalChainDetails
+
+            var data = (from n in approvalWorkFlowModalExisting
                         select new
                         {
                             ApprovalChainDetailId = n.ApprovalChainDetailId > 0 ? n.ApprovalChainDetailId : 0,

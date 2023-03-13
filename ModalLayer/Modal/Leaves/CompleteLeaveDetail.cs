@@ -26,6 +26,7 @@ namespace ModalLayer.Modal.Leaves
         public DateTime RequestedOn { get; set; }
         public string FileIds { get; set; }
         public int ApprovalWorkFlowId { set; get; }
+        public int AutoExpiredAfter { set; get; }
     }
 
     public class RequestChainModal
@@ -37,5 +38,7 @@ namespace ModalLayer.Modal.Leaves
 
         // level indicate approved, rejected etc by first, second etc person according to depth definde in the work flow
         public string FeedBack { get; set; }
+        public int ForwardAfterDays { get; set; }
+        public int ForwardWhenStatus { get; set; }
     }
 }

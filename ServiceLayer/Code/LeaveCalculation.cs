@@ -770,6 +770,9 @@ namespace ServiceLayer.Code
 
             var leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             var RecordId = DateTime.UtcNow.Ticks.ToString();
+
+            List<RequestChainModal> requestChainModals = new List<RequestChainModal>();
+            int autoExpiryDays = GetApprovalChainDetail(requestChainModals);
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
                 RecordId = RecordId,
@@ -784,10 +787,11 @@ namespace ServiceLayer.Code
                 NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
                 LeaveStatus = (int)ItemStatus.Pending,
                 Reason = leaveRequestModal.Reason,
-                RequestChain = BindApprovalChainDetail(),
+                RequestChain = requestChainModals,
                 RequestedOn = DateTime.UtcNow,
                 FileIds = fileIds,
-                ApprovalWorkFlowId = leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId
+                ApprovalWorkFlowId = leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId,
+                AutoExpiredAfter = autoExpiryDays
             };
 
             leaveDetails.Add(newLeaveDeatil);
@@ -863,17 +867,19 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(fileIds);
         }
 
-        private List<RequestChainModal> BindApprovalChainDetail()
+        private int GetApprovalChainDetail(List<RequestChainModal> requestChainModals)
         {
+            int expiryDays = 0;
             List<RequestChainModal> requestStatuses = new List<RequestChainModal>();
-
-            (List<ApprovalChainDetail> approvalChainDetail, List<EmployeeRole> RolesAndMenu) = _db.GetList<ApprovalChainDetail, EmployeeRole>("sp_approval_chain_detail_by_id", new
+            List<ApprovalChainDetail> approvalChainDetail = _db.GetList<ApprovalChainDetail>("sp_workflow_chain_by_ids", new
             {
-                _leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId
+                Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
             });
 
             if (approvalChainDetail.Count > 0)
             {
+                expiryDays = approvalChainDetail.First().AutoExpireAfterDays;
+
                 int index = 1;
                 requestStatuses = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
                                    select new RequestChainModal
@@ -882,11 +888,13 @@ namespace ServiceLayer.Code
                                        FeedBack = String.Empty,
                                        Level = index++,
                                        ReactedOn = DateTime.Now,
-                                       Status = (int)ItemStatus.Pending
+                                       Status = (int)ItemStatus.Pending,
+                                       ForwardAfterDays = n.ForwardAfterDays,
+                                       ForwardWhenStatus = n.ForwardWhen
                                    }).ToList();
             }
 
-            return requestStatuses;
+            return expiryDays;
         }
 
         #endregion
@@ -901,7 +909,12 @@ namespace ServiceLayer.Code
                 completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(level.LeaveDetail);
                 if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
                 {
+                    var ids = completeLeaveDetails.Select(x => x.ApprovalWorkFlowId).Aggregate(string.Empty, (i, j) => i + ", " + j);
+                    var approvalChainDetails = _db.GetList<ApprovalChainDetail>("sp_workflow_chain_by_ids", new { Ids = ids });
+                    if (approvalChainDetails.Count > 0)
+                    {
 
+                    }
                 }
             }
 
