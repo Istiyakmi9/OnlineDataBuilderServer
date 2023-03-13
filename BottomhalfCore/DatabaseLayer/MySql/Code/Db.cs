@@ -563,19 +563,23 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             PropertyInfo prop = null;
             while (i < properties.Count)
             {
+                prop = x.GetType().GetProperty(properties[i].Name);
+                value = prop.GetValue(x, null);
+
                 if (i != 0)
                 {
                     delimiter = ",";
                 }
                 else
                 {
-                    builder.Append(autoIncrementValue);
-                    i++;
-                    continue;
+                    if (value.ToString() == "0")
+                    {
+                        builder.Append(autoIncrementValue);
+                        i++;
+                        continue;
+                    }
                 }
 
-                prop = x.GetType().GetProperty(properties[i].Name);
-                value = prop.GetValue(x, null);
                 if (value.ToString() == ApplicationConstants.LastInsertedKey)
                 {
                     value = Convert.ChangeType(affectedValue, prop.PropertyType);
