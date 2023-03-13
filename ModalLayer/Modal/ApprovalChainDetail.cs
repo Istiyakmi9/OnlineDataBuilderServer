@@ -13,5 +13,6 @@ namespace ModalLayer.Modal
         public int ForwardAfterDays { set; get; }
         public DateTime LastUpdatedOn { set; get; }
         public int ApprovalStatus { set; get; } = 2;
+        public int AutoExpireAfterDays { set; get; }
     }
 }
