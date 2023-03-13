@@ -767,7 +767,8 @@ namespace ServiceLayer.Code
                 leaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
             var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
-            //var span = DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            var leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             var RecordId = DateTime.UtcNow.Ticks.ToString();
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
@@ -785,7 +786,8 @@ namespace ServiceLayer.Code
                 Reason = leaveRequestModal.Reason,
                 RequestChain = BindApprovalChainDetail(),
                 RequestedOn = DateTime.UtcNow,
-                FileIds = fileIds
+                FileIds = fileIds,
+                ApprovalWorkFlowId = leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId
             };
 
             leaveDetails.Add(newLeaveDeatil);
@@ -888,5 +890,22 @@ namespace ServiceLayer.Code
         }
 
         #endregion
+
+        public async Task LeaveLeaveManagerMigration()
+        {
+            var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new { Year = DateTime.UtcNow.Year });
+
+            List<CompleteLeaveDetail> completeLeaveDetails = null;
+            foreach (var level in leaveRequestDetails)
+            {
+                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(level.LeaveDetail);
+                if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
+                {
+
+                }
+            }
+
+            await Task.CompletedTask;
+        }
     }
 }
