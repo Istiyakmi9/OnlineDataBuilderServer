@@ -3,7 +3,6 @@ using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -11,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using static ApplicationConstants;
 
@@ -100,10 +98,12 @@ namespace OnlineDataBuilder.Controllers
 
             // await BatchInsertPerformanceTest();
 
-             //await RunDailyTimesheetCreationJob();
+            //await RunDailyTimesheetCreationJob();
 
             // await RunPayrollAsync();
 
+
+            await LeaveLevelMigration();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -115,9 +115,14 @@ namespace OnlineDataBuilder.Controllers
             .ToArray();
         }
 
+        private async Task LeaveLevelMigration()
+        {
+            await _leaveCalculation.LeaveLeaveManagerMigration();
+        }
+
         private async Task RunPayrollAsync()
         {
-            // await _payrollService.RunPayrollCycle();
+            await _payrollService.RunPayrollCycle();
         }
 
         private async Task RunLeaveAccrualAsync()

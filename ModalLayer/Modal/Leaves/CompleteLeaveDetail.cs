@@ -25,6 +25,7 @@ namespace ModalLayer.Modal.Leaves
         public List<RequestChainModal> RequestChain { set; get; }
         public DateTime RequestedOn { get; set; }
         public string FileIds { get; set; }
+        public int ApprovalWorkFlowId { set; get; }
     }
 
     public class RequestChainModal
@@ -32,8 +33,8 @@ namespace ModalLayer.Modal.Leaves
         public long ExecuterId { set; get; }
         public int Status { set; get; }
         public DateTime ReactedOn { set; get; }
-        public int Level { get; set; } 
-        
+        public int Level { get; set; }
+
         // level indicate approved, rejected etc by first, second etc person according to depth definde in the work flow
         public string FeedBack { get; set; }
     }
