@@ -15,6 +15,7 @@ namespace ModalLayer.Modal.Accounts
         public string Email { set; get; }
         public decimal TotalAmount { set; get; }
         public decimal TaxNeedToPay { set; get; }
+        public decimal TaxNeedToPayOnNewRegim { set; get; }
         public decimal TaxPaid { set; get; }
         public List<SalaryComponents> SalaryComponentItems { set; get; }
         public List<SalaryComponents> ExemptionDeclaration { set; get; }
@@ -27,7 +28,9 @@ namespace ModalLayer.Modal.Accounts
         public List<DeclarationReport> Declarations { set; get; } = new List<DeclarationReport>();
         public string HouseRentDetail { get; set; }
         public Dictionary<int, TaxSlabDetail> IncomeTaxSlab { get; set; }
+        public Dictionary<int, TaxSlabDetail> NewRegimIncomeTaxSlab { get; set; }
         public decimal SurChargesAndCess { get; set; }
+        public decimal SurChargesAndCessOnNewRegim { get; set; }
         public EmployeeHRA HRADeatils { get; set; }
         public decimal TotalDeclaredAmount { set; get; }
         public decimal TotalApprovedAmount { set; get; }

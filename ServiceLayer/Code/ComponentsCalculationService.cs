@@ -148,6 +148,53 @@ namespace ServiceLayer.Code
             employeeDeclaration.IncomeTaxSlab = taxSlab;
         }
 
+        public void NewTaxRegimeCalculation(EmployeeCalculation eCal, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
+        {
+            EmployeeDeclaration employeeDeclaration = eCal.employeeDeclaration;
+            decimal taxableIncome = eCal.expectedAmountAnnually;
+            if (taxableIncome < 0)
+                throw new HiringBellException("Invalid TaxableIncome");
+
+            decimal tax = 0;
+            decimal remainingAmount = taxableIncome;
+            taxRegimeSlabs = taxRegimeSlabs.OrderByDescending(x => x.MinTaxSlab).ToList<TaxRegime>();
+            var taxSlab = new Dictionary<int, TaxSlabDetail>();
+            decimal slabAmount = 0;
+            var i = 0;
+            taxSlab.Add(i, new TaxSlabDetail { Description = "Gross Income Tax", Value = tax });
+            while (taxableIncome > 0)
+            {
+                slabAmount = 0;
+                if (taxableIncome >= taxRegimeSlabs[i].MinTaxSlab)
+                {
+                    remainingAmount = taxableIncome - (taxRegimeSlabs[i].MinTaxSlab - 1);
+                    slabAmount = (taxRegimeSlabs[i].TaxRatePercentage * remainingAmount) / 100;
+                    tax += slabAmount;
+                    taxableIncome -= remainingAmount;
+
+                    var maxSlabAmount = taxRegimeSlabs[i].MaxTaxSlab.ToString() == "0" ? "Above" : taxRegimeSlabs[i].MaxTaxSlab.ToString();
+                    var taxSlabDetail = new TaxSlabDetail
+                    {
+                        Description = $"{taxRegimeSlabs[i].TaxRatePercentage}% Tax on income between {taxRegimeSlabs[i].MinTaxSlab} and {maxSlabAmount}",
+                        Value = slabAmount
+                    };
+                    taxSlab.Add(i + 1, taxSlabDetail);
+                }
+
+                i++;
+            }
+
+            // calculate surcharge
+            employeeDeclaration.SurChargesAndCessOnNewRegim = this.Surcharge(tax, surChargeSlabs);
+            employeeDeclaration.TaxNeedToPayOnNewRegim = tax + employeeDeclaration.SurChargesAndCess;
+
+            // calculate cess
+            employeeDeclaration.TaxNeedToPayOnNewRegim += this.CessOnTax(employeeDeclaration.TaxNeedToPayOnNewRegim);
+
+            taxSlab[0].Value = tax;
+            employeeDeclaration.NewRegimIncomeTaxSlab = taxSlab;
+        }
+
         public void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails)
         {
             var calculatedSalaryBreakupDetail = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);

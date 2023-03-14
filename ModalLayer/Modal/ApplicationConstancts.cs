@@ -11,6 +11,8 @@ public class ApplicationConstants
     public static int NotGenerated = 4;
     public static int Rejected = 5;
     public static int DefaultTaxRegin = 1;
+    public static int OldRegim = 1;
+    public static int NewRegim = 2;
 
     public const int Regular = 0;
     public const int InNoticePeriod = 1;
