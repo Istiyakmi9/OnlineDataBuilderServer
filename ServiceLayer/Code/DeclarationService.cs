@@ -563,6 +563,7 @@ namespace ServiceLayer.Code
                 salaryBreakup.CompleteSalaryDetail,
                 salaryBreakup.GroupId,
                 salaryBreakup.TaxDetail,
+                salaryBreakup.NewSalaryDetail
             }, true);
 
             if (!Bot.IsSuccess(result.statusMessage))

@@ -73,7 +73,24 @@ namespace ServiceLayer.Code
                         chainDetail.ForwardAfterDays = item.ForwardAfterDays;
                     }
                 });
-
+            }
+            else
+            {
+                foreach (var item in approvalWorkFlowModal.ApprovalChainDetails)
+                {
+                    approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
+                    {
+                        ApprovalChainDetailId = 0,
+                        ApprovalWorkFlowId = 0,
+                        AssignieId = item.AssignieId,
+                        IsRequired = item.IsRequired,
+                        IsForwardEnabled = item.IsForwardEnabled,
+                        ForwardWhen = item.ForwardWhen,
+                        ForwardAfterDays = item.ForwardAfterDays,
+                        LastUpdatedOn = item.LastUpdatedOn,
+                        ApprovalStatus = (int)ItemStatus.Pending
+                    });
+                }
             }
 
             var data = (from n in approvalWorkFlowModalExisting

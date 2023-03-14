@@ -43,10 +43,9 @@ namespace ServiceLayer.Code
             return pfEsiSettings;
         }
 
-        public PfEsiSetting PfEsiSetting(int CompanyId, PfEsiSetting pfesiSetting)
+        public async Task<PfEsiSetting> PfEsiSetting(int CompanyId, PfEsiSetting pfesiSetting)
         {
             string value = string.Empty;
-            pfesiSetting.Admin = _currentSession.CurrentUserDetail.UserId;
             var existing = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
             if (existing != null)
             {
@@ -76,10 +75,12 @@ namespace ServiceLayer.Code
             else
                 existing = pfesiSetting;
 
+            pfesiSetting.Admin = _currentSession.CurrentUserDetail.UserId;
             value = _db.Execute<PfEsiSetting>("sp_pf_esi_setting_insupd", existing, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
-
+            else
+                await this.updateSalaryGroupByUdatingComponent(existing);
             return existing;
         }
 
@@ -455,6 +456,64 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to retrieve component detail.");
 
             return salaryComponent;
+        }
+
+        private async Task updateSalaryGroupByUdatingComponent(PfEsiSetting pfesiSetting)
+        {
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
+            if (salaryGroups.Count > 0)
+            {
+                foreach (var item in salaryGroups)
+                {
+                    if (string.IsNullOrEmpty(item.SalaryComponents))
+                        throw new HiringBellException("Salary component not found");
+
+                    List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(item.SalaryComponents);
+                    var component = salaryComponents.Find(x => x.ComponentId == "EPER-PF");
+                    if (component == null)
+                        throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
+
+                    component.DeclaredValue = pfesiSetting.EmployerPFLimit;
+                    component.EmployerContribution = pfesiSetting.EmployerPFLimit;
+                    component.Formula = pfesiSetting.EmployerPFLimit.ToString();
+                    component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
+                    component.IsActive = pfesiSetting.PFEnable;
+
+                    component = salaryComponents.Find(x => x.ComponentId == "ECI");
+                    if (component == null)
+                        throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
+
+                    component.DeclaredValue = 0;
+                    component.Formula = pfesiSetting.EsiEmployerContribution.ToString();
+                    component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
+                    component.IsActive = pfesiSetting.EsiEnable;
+                    component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
+                    component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
+
+                    item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
+                }
+
+                //var statue = await _db.BatchInsertUpdateAsync("sp_salary_group_insupd", table, true);
+                //var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
+                var data = (from n in salaryGroups
+                            select new
+                            {
+                                n.SalaryGroupId,
+                                n.SalaryComponents,
+                                n.GroupName,
+                                n.GroupDescription,
+                                n.MinAmount,
+                                n.MaxAmount,
+                                CreatedBy = _currentSession.CurrentUserDetail.UserId,
+                                CreatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                                n.CompanyId
+                            }).ToList<object>();
+                var result = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, data);
+                if (string.IsNullOrEmpty(result))
+                    throw HiringBellException.ThrowBadRequest("Fail to update salary group. Please contact to admin");
+
+                await Task.CompletedTask;
+            }
         }
     }
 }
