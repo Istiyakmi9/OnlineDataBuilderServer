@@ -106,7 +106,7 @@ namespace OnlineDataBuilder.Controllers
             // await RunPayrollAsync();
 
 
-            await LeaveLevelMigration();
+            // await LeaveLevelMigration();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

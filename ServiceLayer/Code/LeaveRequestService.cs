@@ -58,6 +58,9 @@ namespace ServiceLayer.Code
                 {
                     var item = records.Find(x => x.LeavePlanTypeId == leaveTypeId);
                     item.AvailableLeaves += leaveCount;
+                    if (item.AvailableLeaves > item.TotalLeaveQuota)
+                        item.AvailableLeaves = item.TotalLeaveQuota;
+
                     LeaveRequestDetail.LeaveQuotaDetail = JsonConvert.SerializeObject(records);
                 }
             }
@@ -227,7 +230,7 @@ namespace ServiceLayer.Code
 
                                             level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
                                             // notify to next manage for the request.
-                                            UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
+                                            await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
                                             break;
                                         }
                                         else
@@ -254,7 +257,7 @@ namespace ServiceLayer.Code
                                     {
                                         chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
                                         level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-                                        
+
                                         // reject in employee leave request
                                         await UpdateLeaveDetail(level, ItemStatus.Rejected);
                                         break;
@@ -271,7 +274,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private void UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, long ExecuterId)
+        private async Task UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, long ExecuterId)
         {
             // update employee_leave_request table and update leave_request_notification to next manager
             var result = _db.Execute<string>("sp_leave_request_and_notification_update_level", new
@@ -281,8 +284,19 @@ namespace ServiceLayer.Code
                 RecordId,
                 ExecuterId
             }, false);
+
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to update leave request and notification");
+            else
+            {
+                var employee = _db.Get<Employee>("sp_employee_only_by_id", new { EmployeeId = ExecuterId });
+                if (employee != null)
+                {
+                    var task = Task.Run(async () => await _approvalEmailService.ManagerApprovalMigrationEmail(leaveRequestDetail, employee));
+                }
+            }
+
+            await Task.CompletedTask;
         }
     }
 }
