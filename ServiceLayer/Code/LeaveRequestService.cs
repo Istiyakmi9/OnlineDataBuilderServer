@@ -204,6 +204,7 @@ namespace ServiceLayer.Code
                                         // entire workflow will get rejected
                                         chain.Status = (int)ItemStatus.Rejected;
                                         chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
+                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
 
                                         // reject in employee leave request
                                         await UpdateLeaveDetail(level, ItemStatus.Rejected);
@@ -232,6 +233,7 @@ namespace ServiceLayer.Code
                                         else
                                         {
                                             chain.Status = (int)ItemStatus.Rejected;
+                                            chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
 
                                             level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
                                             // reject in employee leave request
@@ -241,14 +243,18 @@ namespace ServiceLayer.Code
                                     }
                                     else if (chain.Status == (int)ItemStatus.Approved)
                                     {
+                                        chain.FeedBack = "AUTO APPROVED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
                                         level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
+
                                         // approve in employee leave request
                                         await UpdateLeaveDetail(level, ItemStatus.Approved);
                                         break;
                                     }
                                     else if (chain.Status == (int)ItemStatus.Rejected)
                                     {
+                                        chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
                                         level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
+                                        
                                         // reject in employee leave request
                                         await UpdateLeaveDetail(level, ItemStatus.Rejected);
                                         break;

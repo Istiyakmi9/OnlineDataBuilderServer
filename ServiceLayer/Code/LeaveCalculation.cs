@@ -880,14 +880,15 @@ namespace ServiceLayer.Code
                 autoExipredDays = approvalChainDetail.First().AutoExpireAfterDays;
 
                 int index = 1;
-                requestChainModals = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
+                int condition = 1;
+                requestStatuses = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
                                    select new RequestChainModal
                                    {
                                        ExecuterId = n.AssignieId,
                                        FeedBack = String.Empty,
                                        Level = index++,
                                        ReactedOn = DateTime.UtcNow,
-                                       Status = index == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
+                                       Status = condition++ == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
                                        ForwardAfterDays = n.ForwardAfterDays,
                                        ForwardWhenStatus = n.ForwardWhen,
                                        IsRequired = n.IsRequired
