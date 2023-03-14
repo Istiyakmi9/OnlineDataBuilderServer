@@ -11,9 +11,8 @@ namespace OnlineDataBuilder.HostedService.Services
         {
             using (IServiceScope scope = _serviceProvider.CreateScope())
             {
-                IAttendanceService _attendanceService = _serviceProvider.GetRequiredService<IAttendanceService>();
-                // await _leaveCalculation.StartAccrualCycle();
-                await Task.CompletedTask;
+                ILeaveRequestService _leaveRequestService = scope.ServiceProvider.GetRequiredService<ILeaveRequestService>();
+                await _leaveRequestService.LeaveLeaveManagerMigration();
             }
         }
     }
