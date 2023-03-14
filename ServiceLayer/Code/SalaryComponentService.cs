@@ -651,7 +651,8 @@ namespace ServiceLayer.Code
                 GrossIncome = employeeSalaryDetail.GrossIncome,
                 GroupId = employeeSalaryDetail.GroupId,
                 NetSalary = employeeSalaryDetail.NetSalary,
-                TaxDetail = employeeSalaryDetail.TaxDetail
+                TaxDetail = employeeSalaryDetail.TaxDetail,
+                NewSalaryDetail = employeeSalaryDetail.NewSalaryDetail
             };
             var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
@@ -949,6 +950,7 @@ namespace ServiceLayer.Code
                     expectedGrossIncome += amount / 12;
                     calculatedSalaryBreakupDetail.FinalAmount = amount / 12;
                     calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+                    calculatedSalaryBreakupDetail.IsIncludeInPayslip = item.IncludeInPayslip;
                 }
             }
 
@@ -988,7 +990,8 @@ namespace ServiceLayer.Code
                     Formula = null,
                     ComponentName = ComponentNames.Special,
                     FinalAmount = finalSpecialAmount,
-                    ComponentTypeId = 102
+                    ComponentTypeId = 102,
+                    IsIncludeInPayslip = true
                 };
 
                 otherDetails.Add(calculatedSalaryBreakupDetail);
@@ -1000,7 +1003,8 @@ namespace ServiceLayer.Code
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
                     FinalAmount = finalMonthlyAmount,
-                    ComponentTypeId = 100
+                    ComponentTypeId = 100,
+                    IsIncludeInPayslip = true
                 };
 
                 otherDetails.Add(calculatedSalaryBreakupDetail);
@@ -1012,7 +1016,8 @@ namespace ServiceLayer.Code
                     Formula = null,
                     ComponentName = ComponentNames.CTC,
                     FinalAmount = finalMonthlyCTC,
-                    ComponentTypeId = 101
+                    ComponentTypeId = 101,
+                    IsIncludeInPayslip = true
                 };
 
                 otherDetails.Add(calculatedSalaryBreakupDetail);
@@ -1072,6 +1077,7 @@ namespace ServiceLayer.Code
                     calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
                     calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
                     calculatedSalaryBreakupDetail.FinalAmount = 0;
+                    calculatedSalaryBreakupDetail.IsIncludeInPayslip = item.IncludeInPayslip;
 
                     calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
                 }
@@ -1083,7 +1089,8 @@ namespace ServiceLayer.Code
                 Formula = null,
                 ComponentName = ComponentNames.Special,
                 FinalAmount = 0,
-                ComponentTypeId = 102
+                ComponentTypeId = 102,
+                IsIncludeInPayslip = true
             };
 
             calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
@@ -1094,7 +1101,8 @@ namespace ServiceLayer.Code
                 Formula = null,
                 ComponentName = ComponentNames.Gross,
                 FinalAmount = 0,
-                ComponentTypeId = 100
+                ComponentTypeId = 100,
+                IsIncludeInPayslip = true
             };
 
             calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
@@ -1105,7 +1113,8 @@ namespace ServiceLayer.Code
                 Formula = null,
                 ComponentName = ComponentNames.CTC,
                 FinalAmount = 0,
-                ComponentTypeId = 101
+                ComponentTypeId = 101,
+                IsIncludeInPayslip = true
             };
 
             calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
