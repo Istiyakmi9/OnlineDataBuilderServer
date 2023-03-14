@@ -9,6 +9,7 @@ namespace ModalLayer.Modal.Accounts
         public decimal GrossIncome { set; get; }
         public decimal NetSalary { set; get; }
         public string CompleteSalaryDetail { set; get; }
+        public string NewSalaryDetail { get; set; }
         public int GroupId { set; get; }
         public string TaxDetail { get; set; }
         public bool IsCTCChanged { set; get; } = false;

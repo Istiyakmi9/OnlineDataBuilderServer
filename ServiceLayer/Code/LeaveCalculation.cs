@@ -881,7 +881,7 @@ namespace ServiceLayer.Code
 
                 int index = 1;
                 int condition = 1;
-                requestStatuses = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
+                requestChainModals = (from n in approvalChainDetail.OrderBy(i => i.ApprovalChainDetailId)
                                    select new RequestChainModal
                                    {
                                        ExecuterId = n.AssignieId,

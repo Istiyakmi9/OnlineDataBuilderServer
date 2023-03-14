@@ -8,7 +8,7 @@ namespace ServiceLayer.Interface
     {
         string AddUpdateComponentService(SalaryComponents salaryComponents);
         PfEsiSetting GetSalaryComponentService(int CompanyId);
-        PfEsiSetting PfEsiSetting(int CompanyId, PfEsiSetting PfesiSetting);
+        Task<PfEsiSetting> PfEsiSetting(int CompanyId, PfEsiSetting PfesiSetting);
         List<OrganizationDetail> GetOrganizationInfo();
         BankDetail GetOrganizationBankDetailInfoService(int organizationId);
         string InsertUpdatePayrollSetting(Payroll payroll);
