@@ -16,8 +16,7 @@ namespace ServiceLayer.Interface
         string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure);
         Task<List<SalaryComponents>> ActivateCurrentComponentService(List<SalaryComponents> components);
         string UpdateGroupSalaryComponentDetailService(string componentId, int groupId,SalaryComponents component);
-        Task<List<SalaryComponents>> EnableSalaryComponentDetailService(string componentId, SalaryComponents component);
-        Task<List<SalaryComponents>> UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
+        List<SalaryComponents> UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
         List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);
         List<SalaryComponents> FetchActiveComponentService();
     }

@@ -18,6 +18,7 @@ namespace ModalLayer.Modal
         public int DaysPerWeek { get; set; }
         public DateTime DateOfJoining { get; set; }
         public DateTime DateOfLeaving { get; set; }
+        public DateTime AssigneDate { get; set; }
 
     }
 }

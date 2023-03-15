@@ -455,12 +455,18 @@ namespace ServiceLayer.Code
                 TaxDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.TaxDetail) ? "[]" : employeeCompleteDetailModal.SalaryDetail.TaxDetail,
                 TimesheetId = employeeCompleteDetailModal.TimesheetDetails.TimesheetId,
                 ClientId = employeeCompleteDetailModal.TimesheetDetails.ClientId,
-                TimesheetMonthJson = string.IsNullOrEmpty(employeeCompleteDetailModal.TimesheetDetails.TimesheetWeeklyJson) ? "[]" : employeeCompleteDetailModal.TimesheetDetails.TimesheetWeeklyJson,
+                TimesheetWeeklyJson = string.IsNullOrEmpty(employeeCompleteDetailModal.TimesheetDetails.TimesheetWeeklyJson) ? "[]" : employeeCompleteDetailModal.TimesheetDetails.TimesheetWeeklyJson,
                 ExpectedBurnedMinutes = employeeCompleteDetailModal.TimesheetDetails.ExpectedBurnedMinutes,
                 ActualBurnedMinutes = employeeCompleteDetailModal.TimesheetDetails.ActualBurnedMinutes,
                 TotalWeekDays = employeeCompleteDetailModal.TimesheetDetails.TotalWeekDays,
                 TotalWorkingDays = employeeCompleteDetailModal.TimesheetDetails.TotalWorkingDays,
+                TimesheetStatus = employeeCompleteDetailModal.TimesheetDetails.TimesheetStatus,
                 MonthTimesheetApprovalState = employeeCompleteDetailModal.TimesheetDetails.TimesheetStatus,
+                TimesheetStartDate = employeeCompleteDetailModal.TimesheetDetails.TimesheetStartDate,
+                TimesheetEndDate = employeeCompleteDetailModal.TimesheetDetails.TimesheetEndDate,
+                UserComments = employeeCompleteDetailModal.TimesheetDetails.UserComments,
+                IsSaved = employeeCompleteDetailModal.TimesheetDetails.IsSaved,
+                IsSubmitted = employeeCompleteDetailModal.TimesheetDetails.IsSubmitted,
                 ForYear = employeeCompleteDetailModal.TimesheetDetails.ForYear,
                 EmployeeMappedClientUid = employeeCompleteDetailModal.MappedClient.EmployeeMappedClientsUid,
                 ClientName = employeeCompleteDetailModal.MappedClient.ClientName,
@@ -483,6 +489,8 @@ namespace ServiceLayer.Code
                 WorkShiftId = employeeCompleteDetailModal.EmployeeDetail.WorkShiftId,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 IsPending = false,
+                AssigneDate = employeeCompleteDetailModal.MappedClient.AssigneDate,
+                NewSalaryDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail) ? "[]" : employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true); ;
 
@@ -773,6 +781,9 @@ namespace ServiceLayer.Code
                 if (employee.AccessLevelId != (int)RolesName.Admin)
                     employee.UserTypeId = (int)RolesName.User;
 
+                if (string.IsNullOrEmpty(employee.NewSalaryDetail))
+                    employee.NewSalaryDetail = "[]";
+
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
                 {
@@ -827,6 +838,7 @@ namespace ServiceLayer.Code
                     DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
                     employee.WorkShiftId,
                     IsPending = false,
+                    employee.NewSalaryDetail,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
