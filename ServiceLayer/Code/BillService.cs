@@ -1165,9 +1165,6 @@ namespace ServiceLayer.Code
             if (!File.Exists(payslipModal.PdfTemplatePath))
                 throw new HiringBellException("PDF template not found. Please contact to admin.");
 
-            payslipModal.HeaderLogoPath = Path.Combine(_fileLocationDetail.RootPath,
-                _fileLocationDetail.LogoPath, "logo.png");
-
             if (!File.Exists(payslipModal.HeaderLogoPath))
                 throw new HiringBellException("Logo image not found. Please contact to admin.");
 
@@ -1193,7 +1190,7 @@ namespace ServiceLayer.Code
         {
             string html = string.Empty;
             var salaryDetailsHTML = string.Empty;
-            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => x.ComponentId != "ECI" && x.ComponentId != "EPER-PF" && x.ComponentId != "GRA" && x.ComponentId != "Gross" && x.ComponentId != "CTC");
+            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => x.ComponentId != "ECI" && x.ComponentId != "EPER-PF" && x.ComponentId != "GRA" && x.ComponentId != "Gross" && x.ComponentId != "CTC" && x.IsIncludeInPayslip == true);
             foreach (var item in salaryDetail)
             {
                 salaryDetailsHTML += "<tr>";
@@ -1291,10 +1288,11 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = payslipGenerationModal.EmployeeId,
                 ForMonth = payslipGenerationModal.Month,
-                ForYear = payslipGenerationModal.Year
+                ForYear = payslipGenerationModal.Year,
+                FileRole = ApplicationConstants.CompanyPrimaryLogo
             });
 
-            if (ds == null || ds.Tables.Count != 6)
+            if (ds == null || ds.Tables.Count != 7)
                 throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
 
             payslipGenerationModal.ResultSet = ds;
@@ -1339,6 +1337,12 @@ namespace ServiceLayer.Code
             //    throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
 
             //payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
+
+            if (ds.Tables[6].Rows.Count == 0)
+                throw new HiringBellException("Company primary logo not found. Please contact to admin.");
+
+            var file = Converter.ToType<Files>(ds.Tables[6]);
+            payslipGenerationModal.HeaderLogoPath = Path.Combine(file.FilePath, file.FileName);
             return await Task.FromResult(ds);
         }
         private void GetPayslipFileDetail(PayslipGenerationModal payslipModal, FileDetail fileDetail, string fileExtension)

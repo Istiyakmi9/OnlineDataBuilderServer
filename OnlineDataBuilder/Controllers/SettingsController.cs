@@ -93,6 +93,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPut("UpdateSalaryComponentDetail/{componentId}")]
+        public async Task<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
+        {
+            var result = await _settingService.UpdateSalaryComponentDetailService(componentId, component);
+            return BuildResponse(result);
+        }
+
         [HttpGet("FetchComponentDetailById/{componentId}")]
         public IResponse<ApiResponse> FetchComponentDetailById(int componentTypeId)
         {
