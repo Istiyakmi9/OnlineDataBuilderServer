@@ -7,6 +7,7 @@ namespace ModalLayer.Modal.Accounts
         public long PreviousEmpDetailId { get; set; }
         public int EmployeeId { get; set; }
         public string Month { get; set; }
+        public int MonthNumber { get; set; }
         public decimal Gross { get; set; }
         public decimal Basic { get; set; }
         public decimal HouseRent { get; set; }

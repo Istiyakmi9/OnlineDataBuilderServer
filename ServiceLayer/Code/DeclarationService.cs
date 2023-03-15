@@ -9,6 +9,8 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -1044,7 +1046,15 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var employementDetails = _db.GetList<PreviousEmployementDetail>("sp_previous_employement_details_by_empid", new { EmployeeId = EmployeeId });
+            var dataSet = await _db.GetDataSetAsync("sp_previous_employement_and_salary_details_by_empid", new { EmployeeId = EmployeeId });
+            if (dataSet.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Fail to get employee previous employment and salary detail.");
+
+            var salaryDetail = Converter.ToType<EmployeeSalaryDetail>(dataSet.Tables[1]);
+            if (salaryDetail == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get employee salary detail.");
+
+            List<PreviousEmployementDetail> employementDetails = Converter.ToList<PreviousEmployementDetail>(dataSet.Tables[0]);
             if (employementDetails != null && employementDetails.Count > 0)
             {
                 employementDetails.ForEach(x =>
@@ -1067,7 +1077,52 @@ namespace ServiceLayer.Code
                 });
             }
             else
+            {
                 employementDetails = previousEmployementDetail;
+            }
+
+            var annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryDetail.CompleteSalaryDetail);
+            var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(salaryDetail.TaxDetail);
+            var previousSalary = annualSalaryBreakup.Where(x => !x.IsActive).ToList();
+            if (previousSalary.Count > 0)
+            {
+                foreach (var breakup in previousSalary)
+                {
+                    var workingMonth = employementDetails.Find(x => x.MonthNumber == breakup.MonthNumber);
+                    var taxDetail = taxDetails.Find(x => x.Month == breakup.MonthNumber);
+                    if (taxDetail != null && workingMonth != null)
+                    {
+                        foreach (var elem in breakup.SalaryBreakupDetails)
+                        {
+                            switch (elem.ComponentId)
+                            {
+                                case ComponentNames.GrossId:
+                                    elem.FinalAmount = workingMonth.Gross;
+                                    break;
+                                case ComponentNames.Basic:
+                                    elem.FinalAmount = workingMonth.Basic;
+                                    break;
+                                case ComponentNames.HRA:
+                                    elem.FinalAmount = workingMonth.HouseRent;
+                                    break;
+                                case ComponentNames.ProfessionalTax:
+                                    elem.FinalAmount = workingMonth.Professional;
+                                    break;
+                                case ComponentNames.EmployeePF:
+                                    elem.FinalAmount = workingMonth.EmployeePR;
+                                    break;
+                                case ComponentNames.SpecialAllowanceId:
+                                    elem.FinalAmount = workingMonth.LWF;
+                                    break;
+                                case ComponentNames.IncomeTax:
+                                    taxDetail.TaxPaid = workingMonth.IncomeTax;
+                                    taxDetail.TaxDeducted = workingMonth.IncomeTax;
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
 
             var item = (from n in employementDetails
                         select new
@@ -1075,6 +1130,7 @@ namespace ServiceLayer.Code
                             PreviousEmpDetailId = n.PreviousEmpDetailId,
                             EmployeeId = n.EmployeeId,
                             Month = n.Month,
+                            MonthNumber = n.MonthNumber,
                             Year = n.Year,
                             Gross = n.Gross,
                             Basic = n.Basic,
@@ -1127,7 +1183,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
             var employementDetails = _db.GetList<PreviousEmployementDetail>("sp_previous_employement_details_by_empid", new { EmployeeId = EmployeeId });
-            return employementDetails;
+            return await Task.FromResult(employementDetails);
         }
     }
 }
