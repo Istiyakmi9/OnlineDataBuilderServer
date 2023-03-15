@@ -86,17 +86,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPut("EnableSalaryComponentDetail/{componentId}")]
-        public async Task<ApiResponse> EnableSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
-        {
-            var result = await _settingService.EnableSalaryComponentDetailService(componentId, component);
-            return BuildResponse(result);
-        }
-
         [HttpPut("UpdateSalaryComponentDetail/{componentId}")]
-        public async Task<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
+        public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
         {
-            var result = await _settingService.UpdateSalaryComponentDetailService(componentId, component);
+            var result = _settingService.UpdateSalaryComponentDetailService(componentId, component);
             return BuildResponse(result);
         }
 

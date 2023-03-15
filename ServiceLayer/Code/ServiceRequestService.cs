@@ -1,9 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -18,7 +16,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public Task<List<ServiceRequest>> GetServiceRequestService(FilterModel filter)
+        public async Task<List<ServiceRequest>> GetServiceRequestService(FilterModel filter)
         {
             List<ServiceRequest> ServiceRequests = _db.GetList<ServiceRequest>("sp_service_request_filter", new
             {
@@ -28,10 +26,10 @@ namespace ServiceLayer.Code
                 filter.PageSize
             });
 
-            return Task.FromResult(ServiceRequests);
+            return await Task.FromResult(ServiceRequests);
         }
 
-        public Task<List<ServiceRequest>> AddUpdateServiceRequestService(ServiceRequest serviceRequest)
+        public async Task<List<ServiceRequest>> AddUpdateServiceRequestService(ServiceRequest serviceRequest)
         {
             validateServiceRequest(serviceRequest);
             var oldrequest = _db.Get<ServiceRequest>("sp_service_request_sel_by_id", new { ServiceRequestId = serviceRequest.ServiceRequestId });
@@ -52,12 +50,13 @@ namespace ServiceLayer.Code
                 }
             }
             oldrequest.AdminId = _currentSession.CurrentUserDetail.UserId;
+            oldrequest.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
             var result = _db.Execute<string>("sp_service_request_ins_upd", oldrequest, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update service request");
 
             FilterModel filterModel = new FilterModel();
-            return this.GetServiceRequestService(filterModel);
+            return await this.GetServiceRequestService(filterModel);
         }
 
         private void validateServiceRequest(ServiceRequest serviceRequest)

@@ -342,168 +342,14 @@ namespace ServiceLayer.Code
                                             UpdatedBy = _currentSession.CurrentUserDetail.UserId
                                         }).ToList<object>();
 
-                //var statue = await _db.BulkExecuteAsync("sp_salary_components_insupd", updateComponents, true);
                 var status = await _db.BatchInsetUpdate(DbProcedure.SalaryComponents, updateComponents);
                 if (string.IsNullOrEmpty(status))
                     throw new HiringBellException("Unable to update detail");
-                else
-                    await AddRemoveSalaryComponents(components);
             }
             else
-            {
                 throw new HiringBellException("Invalid component passed.");
-            }
 
             return salaryComponent;
-        }
-
-        private async Task AddRemoveSalaryComponents(List<SalaryComponents> components)
-        {
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
-            if (salaryGroups.Count > 0)
-            {
-                List<SalaryComponents> salaryComponents = null;
-                foreach (SalaryGroup salaryGroup in salaryGroups)
-                {
-                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-                    Parallel.For(0, components.Count, i =>
-                    {
-                        if (components[i].IsOpted == true)
-                        {
-                            var existingComponent = salaryComponents.Find(x => x.ComponentId == components[i].ComponentId);
-                            if (existingComponent != null)
-                                existingComponent = components[i];
-                            else
-                                salaryComponents.Add(components[i]);
-                        }
-                        else
-                            salaryComponents.RemoveAll(x => x.ComponentId == components[i].ComponentId);
-
-                    });
-                    salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-                }
-
-                var finalSalaryComponents = (from n in salaryGroups
-                                             select new
-                                             {
-                                                 n.SalaryGroupId,
-                                                 n.SalaryComponents,
-                                                 n.GroupName,
-                                                 n.GroupDescription,
-                                                 n.MinAmount,
-                                                 n.MaxAmount,
-                                                 n.CreatedBy,
-                                                 n.CreatedOn,
-                                                 n.CompanyId
-                                             }).ToList<object>();
-
-                var status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, finalSalaryComponents);
-                if (string.IsNullOrEmpty(status))
-                    throw HiringBellException.ThrowBadRequest("Fail to update salary group");
-
-                await Task.CompletedTask;
-            }
-        }
-
-        private async Task<string> AddorRemoveSalaryComponentfromSalaryGroup(SalaryComponents components)
-        {
-            string status = null;
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll");
-            if (salaryGroups.Count > 0)
-            {
-                List<SalaryComponents> salaryComponents = null;
-                foreach (SalaryGroup salaryGroup in salaryGroups)
-                {
-                    salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-                    if (components.IsActive == true)
-                        salaryComponents.Add(components);
-                    else
-                        salaryComponents.RemoveAll(x => x.ComponentId == components.ComponentId);
-
-                    salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-                }
-                var data = (from n in salaryGroups
-                            select new
-                            {
-                                n.SalaryGroupId,
-                                n.SalaryComponents,
-                                n.GroupName,
-                                n.GroupDescription,
-                                n.MinAmount,
-                                n.MaxAmount,
-                                CreatedBy = _currentSession.CurrentUserDetail.UserId,
-                                CreatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                                n.CompanyId
-                            }).ToList<object>();
-
-                //var result = await _db.BulkExecuteAsync("sp_salary_group_insupd", salaryGroups, true);
-                status = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, data);
-                if (string.IsNullOrEmpty(status))
-                    throw new HiringBellException("Unable to update detail");
-            }
-
-            return status;
-        }
-
-        public async Task<List<SalaryComponents>> EnableSalaryComponentDetailService(string componentId, SalaryComponents component)
-        {
-            List<SalaryComponents> salaryComponents = null;
-
-            if (string.IsNullOrEmpty(componentId))
-                throw new HiringBellException("Invalid component passed.");
-
-            var salaryComponent = _db.Get<SalaryComponents>("sp_salary_components_get_byId", new { ComponentId = componentId });
-            if (salaryComponent != null)
-            {
-                salaryComponent.IsActive = component.IsActive;
-
-                var status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
-                {
-                    salaryComponent.ComponentId,
-                    salaryComponent.ComponentFullName,
-                    salaryComponent.ComponentDescription,
-                    salaryComponent.ComponentCatagoryId,
-                    salaryComponent.CalculateInPercentage,
-                    salaryComponent.TaxExempt,
-                    salaryComponent.ComponentTypeId,
-                    salaryComponent.PercentageValue,
-                    salaryComponent.MaxLimit,
-                    salaryComponent.DeclaredValue,
-                    salaryComponent.AcceptedAmount,
-                    salaryComponent.RejectedAmount,
-                    salaryComponent.UploadedFileIds,
-                    salaryComponent.Formula,
-                    salaryComponent.EmployeeContribution,
-                    salaryComponent.EmployerContribution,
-                    salaryComponent.IncludeInPayslip,
-                    salaryComponent.IsAdHoc,
-                    salaryComponent.AdHocId,
-                    salaryComponent.Section,
-                    salaryComponent.SectionMaxLimit,
-                    salaryComponent.IsAffectInGross,
-                    salaryComponent.RequireDocs,
-                    salaryComponent.IsOpted,
-                    salaryComponent.IsActive,
-                    salaryComponent.AdminId
-                }, true);
-
-                if (!ApplicationConstants.IsExecuted(status))
-                    throw new HiringBellException("Fail to update the record.");
-
-                string returnstatus = await this.AddorRemoveSalaryComponentfromSalaryGroup(salaryComponent);
-                if (string.IsNullOrEmpty(returnstatus))
-                    throw new HiringBellException("Unable to update detail");
-
-                salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = 0 });
-                if (salaryComponents == null)
-                    throw new HiringBellException("Fail to retrieve component detail.");
-            }
-            else
-            {
-                throw new HiringBellException("Invalid component passed.");
-            }
-
-            return salaryComponents;
         }
 
         public List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId)
@@ -527,7 +373,7 @@ namespace ServiceLayer.Code
             return salaryComponent;
         }
 
-        public async Task<List<SalaryComponents>> UpdateSalaryComponentDetailService(string componentId, SalaryComponents component)
+        public List<SalaryComponents> UpdateSalaryComponentDetailService(string componentId, SalaryComponents component)
         {
             List<SalaryComponents> salaryComponents = null;
 
@@ -537,7 +383,7 @@ namespace ServiceLayer.Code
             salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = 0 });
             if (salaryComponents == null)
                 throw new HiringBellException("Fail to retrieve component detail.");
-            //var salaryComponent = _db.Get<SalaryComponents>("sp_salary_components_get_byId", new { ComponentId = componentId });
+
             var salaryComponent = salaryComponents.Find(x => x.ComponentId == componentId);
             if (salaryComponent != null)
             {
@@ -581,8 +427,6 @@ namespace ServiceLayer.Code
 
                 if (!ApplicationConstants.IsExecuted(status))
                     throw new HiringBellException("Fail to update the record.");
-
-                await updateSalaryGroupByUdatingComponent(salaryComponent);
             }
             else
             {
@@ -590,55 +434,6 @@ namespace ServiceLayer.Code
             }
 
             return salaryComponents;
-        }
-
-        private async Task updateSalaryGroupByUdatingComponent(SalaryComponents salaryComponent)
-        {
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
-
-            if (salaryGroups.Count > 0)
-            {
-                foreach (var item in salaryGroups)
-                {
-                    if (string.IsNullOrEmpty(item.SalaryComponents))
-                        throw new HiringBellException("Salary component not found");
-
-                    List<SalaryComponents> salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(item.SalaryComponents);
-                    var component = salaryComponents.Find(x => x.ComponentId == salaryComponent.ComponentId);
-                    if (component == null)
-                        throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
-
-                    component.IsOpted = salaryComponent.IsOpted;
-                    component.MaxLimit = salaryComponent.MaxLimit;
-                    component.ComponentFullName = salaryComponent.ComponentFullName;
-                    component.TaxExempt = salaryComponent.TaxExempt;
-                    component.Section = salaryComponent.Section;
-                    component.RequireDocs = salaryComponent.RequireDocs;
-                    component.IncludeInPayslip = salaryComponent.IncludeInPayslip;
-                    component.CalculateInPercentage = salaryComponent.CalculateInPercentage;
-                    component.IsActive = salaryComponent.IsActive;
-                    component.AdminId = _currentSession.CurrentUserDetail.UserId;
-                    item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-                }
-
-                var data = (from n in salaryGroups
-                            select new
-                            {
-                                n.SalaryGroupId,
-                                n.SalaryComponents,
-                                n.GroupName,
-                                n.GroupDescription,
-                                n.MinAmount,
-                                n.MaxAmount,
-                                CreatedBy = _currentSession.CurrentUserDetail.UserId,
-                                CreatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                                n.CompanyId
-                            }).ToList<object>();
-                var result = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, data);
-                if (string.IsNullOrEmpty(result))
-                    throw HiringBellException.ThrowBadRequest("Fail to update salary group. Please contact to admin");
-            }
-            await Task.CompletedTask;
         }
     }
 }

@@ -643,7 +643,7 @@ namespace ServiceLayer.Code
                 this.CleanOldFiles(fileDetail);
 
                 // execute and build timesheet if missing
-                await GenerateUpdateTimesheet(billModal);
+                //await GenerateUpdateTimesheet(billModal);
 
                 // generate pdf, docx and excel files
                 await GeneratePdfFile(billModal);
@@ -1205,6 +1205,9 @@ namespace ServiceLayer.Code
             var netSalary = totalEarning - (pfAmount + payslipModal.TaxDetail.TaxDeducted);
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
+            var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
+            var TotalWorkingDays = payslipModal.AttendanceDetail.TotalDays;
+            var LossOfPayDays = ActualPayableDays - TotalWorkingDays;
             using (FileStream stream = File.Open(templatePath, FileMode.Open))
             {
                 StreamReader reader = new StreamReader(stream);
@@ -1228,10 +1231,10 @@ namespace ServiceLayer.Code
                 Replace("[[PAN]]", payslipModal.Employee.PANNo).
                 Replace("[[UAN]]", payslipModal.Employee.AadharNo).
                 Replace("[[PFNumber]]", payslipModal.Employee.EmployeeUid.ToString()).
-                Replace("[[ActualPayableDays]]", payslipModal.Company.SecondAddress).
-                Replace("[[TotalWorkingDays]]", payslipModal.Company.SecondAddress).
-                Replace("[[LossOfPayDays]]", payslipModal.Company.SecondAddress).
-                Replace("[[DaysPayable]]", payslipModal.Company.SecondAddress).
+                Replace("[[ActualPayableDays]]", ActualPayableDays.ToString()).
+                Replace("[[TotalWorkingDays]]", TotalWorkingDays.ToString()).
+                Replace("[[LossOfPayDays]]", LossOfPayDays.ToString()).
+                Replace("[[DaysPayable]]", TotalWorkingDays.ToString()).
                 Replace("[[Month]]", payslipModal.SalaryDetail.MonthName.ToUpper()).
                 Replace("[[Year]]", payslipModal.Year.ToString()).
                 Replace("[[CompleteSalaryDetails]]", salaryDetailsHTML).
@@ -1333,10 +1336,10 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to get employee role. Please contact to admin.");
 
             payslipGenerationModal.EmployeeRoles = Converter.ToList<EmployeeRole>(ds.Tables[5]);
-            //if (ds.Tables[3].Rows.Count != 1)
-            //    throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
+            if (ds.Tables[3].Rows.Count != 1)
+                throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
 
-            //payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
+            payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
 
             if (ds.Tables[6].Rows.Count == 0)
                 throw new HiringBellException("Company primary logo not found. Please contact to admin.");
