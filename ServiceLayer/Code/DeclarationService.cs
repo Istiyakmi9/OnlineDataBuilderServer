@@ -190,7 +190,7 @@ namespace ServiceLayer.Code
 
             employeeDeclaration.FileDetails = files;
             employeeDeclaration.Sections = _sections;
-            return employeeDeclaration;
+            return await Task.FromResult(employeeDeclaration);
         }
 
         private async Task UpdateDeclarationDetail(List<Files> files, EmployeeDeclaration declaration, IFormFileCollection FileCollection, HousingDeclartion housingDeclartion)
@@ -530,6 +530,7 @@ namespace ServiceLayer.Code
 
             // final total taxable amount.
             empCal.employeeDeclaration.TotalAmount = empCal.expectedAmountAnnually - (totalDeduction + hraAmount);
+            empCal.employeeDeclaration.TotalAmountOnNewRegim = empCal.expectedAmountAnnually;
 
             //Tax regime calculation 
             if (empCal.employeeDeclaration.TotalAmount < 0)
@@ -537,14 +538,19 @@ namespace ServiceLayer.Code
 
             var taxRegimeSlabs = _db.GetList<TaxRegime>("sp_tax_regime_by_id_age", new
             {
-                RegimeDescId = empCal.employeeDeclaration.EmployeeCurrentRegime,
                 empCal.EmployeeId
             });
 
             if (taxRegimeSlabs == null || taxRegimeSlabs.Count == 0)
                 throw new Exception("Tax regime slabs are not found. Please configure tax regime for the current employee.");
 
-            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, taxRegimeSlabs, empCal.surchargeSlabs);
+            // generate for old tax regine detail
+            var oldRegimeData = taxRegimeSlabs.Where(x => x.RegimeDescId == ApplicationConstants.OldRegim).ToList();
+            _componentsCalculationService.TaxRegimeCalculation(empCal.employeeDeclaration, oldRegimeData, empCal.surchargeSlabs);
+
+            // generate for new tax regine detail
+            var newRegimeData = taxRegimeSlabs.Where(x => x.RegimeDescId == ApplicationConstants.NewRegim).ToList();
+            _componentsCalculationService.NewTaxRegimeCalculation(empCal, newRegimeData, empCal.surchargeSlabs);
 
             //Tax Calculation for every month
             await TaxDetailsCalculation(empCal, reCalculateFlag);
@@ -561,9 +567,9 @@ namespace ServiceLayer.Code
                 salaryBreakup.GrossIncome,
                 salaryBreakup.NetSalary,
                 salaryBreakup.CompleteSalaryDetail,
+                salaryBreakup.NewSalaryDetail,
                 salaryBreakup.GroupId,
-                salaryBreakup.TaxDetail,
-                salaryBreakup.NewSalaryDetail
+                salaryBreakup.TaxDetail
             }, true);
 
             if (!Bot.IsSuccess(result.statusMessage))
@@ -572,6 +578,12 @@ namespace ServiceLayer.Code
 
         private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag)
         {
+            decimal taxNeetToPay = 0;
+            if (empCal.employeeDeclaration.EmployeeCurrentRegime == ApplicationConstants.OldRegim)
+                taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPay;
+            else
+                taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPayOnNewRegim;
+
             List<TaxDetails> taxdetails = null;
             if (empCal.companySetting == null)
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
@@ -585,9 +597,9 @@ namespace ServiceLayer.Code
 
                 if (reCalculateFlag)
                 {
-                    if (empCal.employeeDeclaration.TaxNeedToPay > 0)
+                    if (taxNeetToPay > 0)
                     {
-                        UpdateTaxDetail(empCal, taxdetails);
+                        UpdateTaxDetail(empCal, taxNeetToPay, taxdetails);
 
                         empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
                         await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
@@ -610,7 +622,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                if (empCal.employeeDeclaration.TaxNeedToPay > 0)
+                if (taxNeetToPay > 0)
                 {
                     taxdetails = GetPerMonthTaxInitialData(empCal);
                 }
@@ -624,12 +636,12 @@ namespace ServiceLayer.Code
             }
         }
 
-        private void UpdateTaxDetail(EmployeeCalculation empCal, List<TaxDetails> taxdetails)
+        private void UpdateTaxDetail(EmployeeCalculation empCal, decimal taxNeetToPay, List<TaxDetails> taxdetails)
         {
             empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                         .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
-            decimal remaningTaxAmount = empCal.employeeDeclaration.TaxNeedToPay - empCal.employeeDeclaration.TaxPaid;
+            decimal remaningTaxAmount = taxNeetToPay - empCal.employeeDeclaration.TaxPaid;
             int pendingMonths = taxdetails.Count(x => !x.IsPayrollCompleted);
 
             decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / pendingMonths));
@@ -847,7 +859,7 @@ namespace ServiceLayer.Code
             return Result.statusMessage;
         }
 
-        public string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration)
+        public async Task<string> SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration)
         {
             if (employeeDeclaration.EmployeeId == 0)
                 throw new HiringBellException("Invalid employee selected. Please select a valid employee");
@@ -859,6 +871,8 @@ namespace ServiceLayer.Code
                 new { EmployeeId = employeeDeclaration.EmployeeId, EmployeeCurrentRegime = employeeDeclaration.EmployeeCurrentRegime }, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to switch the tax regime");
+
+            await GetEmployeeDeclarationDetail(employeeDeclaration.EmployeeId, true);
             return result;
         }
 
@@ -1088,15 +1102,16 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
             DataSet ds = _db.FetchDataSet("sp_previous_employement_details_and_emp_by_empid", new { EmployeeId = EmployeeId });
-            if (ds != null && ds.Tables.Count > 0 )
+            if (ds != null && ds.Tables.Count > 0)
             {
                 employementDetails = Converter.ToList<PreviousEmployementDetail>(ds.Tables[0]);
                 emp = Converter.ToType<Employee>(ds.Tables[1]);
             }
 
-            return await Task.FromResult( new
+            return await Task.FromResult(new
             {
-                EmployementDetails =employementDetails, EmployeeDetail = emp 
+                EmployementDetails = employementDetails,
+                EmployeeDetail = emp
             });
         }
 

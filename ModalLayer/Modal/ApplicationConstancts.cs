@@ -11,6 +11,8 @@ public class ApplicationConstants
     public static int NotGenerated = 4;
     public static int Rejected = 5;
     public static int DefaultTaxRegin = 1;
+    public static int OldRegim = 1;
+    public static int NewRegim = 2;
 
     public const int Regular = 0;
     public const int InNoticePeriod = 1;
@@ -88,6 +90,7 @@ public class ApplicationConstants
     public const int TimesheetApprovalStatusEmailTemplate = 9;
     public const int ForgotPasswordEmailTemplate = 10;
     public const int NewProjectAssignEmailTemplate = 11;
+    public const int MigrateApprovalToNewLevel = 12;
 
     public const int ReportingManager = 1;
     public const int SeniorHRManager = 2;

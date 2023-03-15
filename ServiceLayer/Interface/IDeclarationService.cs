@@ -17,7 +17,7 @@ namespace ServiceLayer.Interface
         Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false);
         Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData, bool IsTaxCalculationRequired);
         Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear);
-        string SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration);
+        Task<string> SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration);
         Task<EmployeeDeclaration> DeleteDeclarationValueService(long DeclarationId, string ComponentId);
         Task<EmployeeDeclaration> DeleteDeclaredHRAService(long DeclarationId);
         Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId);

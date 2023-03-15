@@ -770,6 +770,9 @@ namespace ServiceLayer.Code
                     _configuration.GetSection("EncryptSecret").Value
                 );
 
+                if (employee.AccessLevelId != (int)RolesName.Admin)
+                    employee.UserTypeId = (int)RolesName.User;
+
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
                 {

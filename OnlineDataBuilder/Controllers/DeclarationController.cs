@@ -75,9 +75,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("SwitchEmployeeTaxRegime")]
-        public IResponse<ApiResponse> SwitchEmployeeTaxRegime(EmployeeDeclaration employeeDeclaration)
+        public async Task<ApiResponse> SwitchEmployeeTaxRegime(EmployeeDeclaration employeeDeclaration)
         {
-            var result = _declarationService.SwitchEmployeeTaxRegimeService(employeeDeclaration);
+            var result = await _declarationService.SwitchEmployeeTaxRegimeService(employeeDeclaration);
             return BuildResponse(result);
         }
 
