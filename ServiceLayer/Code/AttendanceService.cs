@@ -276,10 +276,10 @@ namespace ServiceLayer.Code
 
             attendanceDetailBuildModal.calendars = Converter.ToList<Calendar>(Result.Tables[2]);
 
+            attendanceDetailBuildModal.attendanceSubmissionLimit = attendanceDetailBuildModal.employee.AttendanceSubmissionLimit;
             if (attendanceDetailBuildModal.attendance.AttendanceDetail == null || attendanceDetailBuildModal.attendance.AttendanceDetail == "[]" ||
                 attendanceDetailBuildModal.attendance.AttendanceDetail.Count() == 0)
             {
-                attendanceDetailBuildModal.attendanceSubmissionLimit = attendanceDetailBuildModal.employee.AttendanceSubmissionLimit;
                 attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
                 var nowDate = attendance.AttendanceDay.AddDays(1);
 
@@ -292,14 +292,32 @@ namespace ServiceLayer.Code
                 attendenceDetails = await CreateAttendanceTillDate(attendanceDetailBuildModal);
             }
 
+            var attendances = attendenceDetails.OrderBy(i => i.AttendanceDay)
+                                .TakeWhile(x => DateTime.Now.Date.Subtract(x.AttendanceDay.Date).TotalDays >= 0)
+                                .OrderByDescending(i => i.AttendanceDay)
+                                .ToList();
+
+            //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
+
+            int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
+            foreach (var item in attendances)
+            {
+                if (!CheckWeekend(attendanceDetailBuildModal.shiftDetail, item.AttendanceDay))
+                {
+                    if (daysLimit > 0)
+                        item.IsOpen = true;
+                    else
+                        item.IsOpen = false;
+
+                    daysLimit--;
+                }
+            }
+
             return new AttendanceWithClientDetail
             {
                 EmployeeDetail = attendanceDetailBuildModal.employee,
                 AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
-                AttendacneDetails = attendenceDetails
-                                    .TakeWhile(x => DateTime.Now.Date
-                                                    .Subtract(x.AttendanceDay.Date).TotalDays >= 0
-                                              ).ToList()
+                AttendacneDetails = attendances.OrderBy(i => i.AttendanceDay).ToList()
             };
         }
 
