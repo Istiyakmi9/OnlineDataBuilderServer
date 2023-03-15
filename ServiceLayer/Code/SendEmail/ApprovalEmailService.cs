@@ -77,7 +77,12 @@ namespace ServiceLayer.Code.SendEmail
         {
             var templateReplaceModal = await GetLeaveApprovalTemplate(leaveRequestDetail, status);
             await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal);
-            await Task.CompletedTask;
+        }
+
+        public async Task ManagerApprovalMigrationEmail(LeaveRequestDetail leaveRequestDetail, Employee employee)
+        {
+            var templateReplaceModal = await GetLeaveApprovalTemplate(leaveRequestDetail, ItemStatus.Generated);
+            await _emailService.SendEmailWithTemplate(ApplicationConstants.MigrateApprovalToNewLevel, templateReplaceModal);
         }
 
         #endregion
