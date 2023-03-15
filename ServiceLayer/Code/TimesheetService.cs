@@ -385,42 +385,42 @@ namespace ServiceLayer.Code
                 ForYear = fileDetail.ForYear
             });
 
-            if (Result.Tables.Count == 3)
+            if (Result.Tables.Count == 2)
             {
                 billingDetail = new BillingDetail();
                 billingDetail.FileDetail = Result.Tables[0];
                 billingDetail.Employees = Result.Tables[1];
 
-                if (Result.Tables[2] == null || Result.Tables[2].Rows.Count == 0)
-                {
-                    bool flag = false;
-                    billingDetail.TimesheetDetail = new TimesheetDetail
-                    {
-                        ForYear = 0
-                    };
+                //if (Result.Tables[2] == null || Result.Tables[2].Rows.Count == 0)
+                //{
+                //    bool flag = false;
+                //    billingDetail.TimesheetDetail = new TimesheetDetail
+                //    {
+                //        ForYear = 0
+                //    };
 
-                    if (billingDetail.FileDetail.Rows[0]["BillForMonth"] == DBNull.Value)
-                        flag = true;
+                //    if (billingDetail.FileDetail.Rows[0]["BillForMonth"] == DBNull.Value)
+                //        flag = true;
 
-                    if (billingDetail.FileDetail.Rows[0]["BillYear"] == DBNull.Value)
-                        flag = true;
-                    else
-                        billingDetail.TimesheetDetail.ForYear = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillYear"]);
+                //    if (billingDetail.FileDetail.Rows[0]["BillYear"] == DBNull.Value)
+                //        flag = true;
+                //    else
+                //        billingDetail.TimesheetDetail.ForYear = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillYear"]);
 
-                    DateTime billingOn = DateTime.Now;
-                    if (flag)
-                    {
-                        billingOn = Convert.ToDateTime(billingDetail.FileDetail.Rows[0]["BillYear"]);
-                        billingDetail.TimesheetDetail.ForYear = billingOn.Year;
-                    }
+                //    DateTime billingOn = DateTime.Now;
+                //    if (flag)
+                //    {
+                //        billingOn = Convert.ToDateTime(billingDetail.FileDetail.Rows[0]["BillYear"]);
+                //        billingDetail.TimesheetDetail.ForYear = billingOn.Year;
+                //    }
 
-                }
-                else
-                    billingDetail.TimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
+                //}
+                //else
+                //    billingDetail.TimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
 
-                var attrs = BuildFinalTimesheet(billingDetail.TimesheetDetail);
-                billingDetail.TimesheetDetails = attrs.Item1;
-                billingDetail.MissingDate = attrs.Item2;
+                //var attrs = BuildFinalTimesheet(billingDetail.TimesheetDetail);
+                //billingDetail.TimesheetDetails = attrs.Item1;
+                //billingDetail.MissingDate = attrs.Item2;
 
                 var companies = _cacheManager.Get(CacheTable.Company);
                 billingDetail.Organizations = companies;

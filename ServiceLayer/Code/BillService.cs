@@ -643,7 +643,7 @@ namespace ServiceLayer.Code
                 this.CleanOldFiles(fileDetail);
 
                 // execute and build timesheet if missing
-                await GenerateUpdateTimesheet(billModal);
+                //await GenerateUpdateTimesheet(billModal);
 
                 // generate pdf, docx and excel files
                 await GeneratePdfFile(billModal);
