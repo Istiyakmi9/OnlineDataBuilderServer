@@ -34,6 +34,7 @@ public class ApplicationConstants
     public static string DeclarationDocumentPath = "declarated_documents";
     public static string LeaveAttachmentPath = "leave_attachment";
     public static string ProcessingResult = "_ProcessingResult";
+    public static string CompanyPrimaryLogo = "Company Primary Logo";
     public static string NullValue = null;
     public static int EmptyId = 0;
 

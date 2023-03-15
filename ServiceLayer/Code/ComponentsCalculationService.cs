@@ -142,7 +142,9 @@ namespace ServiceLayer.Code
             employeeDeclaration.TaxNeedToPay = tax + employeeDeclaration.SurChargesAndCess;
 
             // calculate cess
-            employeeDeclaration.TaxNeedToPay += this.CessOnTax(employeeDeclaration.TaxNeedToPay);
+            var cess = this.CessOnTax(employeeDeclaration.TaxNeedToPay);
+            employeeDeclaration.SurChargesAndCess += cess;
+            employeeDeclaration.TaxNeedToPay += cess;
 
             taxSlab[0].Value = tax;
             employeeDeclaration.IncomeTaxSlab = taxSlab;
@@ -189,7 +191,9 @@ namespace ServiceLayer.Code
             employeeDeclaration.TaxNeedToPayOnNewRegim = tax + employeeDeclaration.SurChargesAndCess;
 
             // calculate cess
-            employeeDeclaration.TaxNeedToPayOnNewRegim += this.CessOnTax(employeeDeclaration.TaxNeedToPayOnNewRegim);
+            var cessOnNewRegim = this.CessOnTax(employeeDeclaration.TaxNeedToPayOnNewRegim);
+            employeeDeclaration.SurChargesAndCessOnNewRegim += cessOnNewRegim;
+            employeeDeclaration.TaxNeedToPayOnNewRegim += cessOnNewRegim;
 
             taxSlab[0].Value = tax;
             employeeDeclaration.NewRegimIncomeTaxSlab = taxSlab;

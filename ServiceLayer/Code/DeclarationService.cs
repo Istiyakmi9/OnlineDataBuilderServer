@@ -60,6 +60,9 @@ namespace ServiceLayer.Code
         {
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            if (declaration.EmployeeCurrentRegime != 1)
+                throw HiringBellException.ThrowBadRequest("You can't submit the declration because you selected new tax regime");
+
             declaration.Email = employeeDeclaration.Email;
             SalaryComponents salaryComponent = null;
             if (declaration != null && !string.IsNullOrEmpty(declaration.DeclarationDetail))
@@ -286,6 +289,9 @@ namespace ServiceLayer.Code
 
                 if (declaration == null || string.IsNullOrEmpty(declaration.DeclarationDetail))
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
+
+                if (declaration.EmployeeCurrentRegime != 1)
+                    throw HiringBellException.ThrowBadRequest("You can't submit house rent because you selected new tax regime");
 
                 declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
 
