@@ -530,6 +530,7 @@ namespace ServiceLayer.Code
 
             // final total taxable amount.
             empCal.employeeDeclaration.TotalAmount = empCal.expectedAmountAnnually - (totalDeduction + hraAmount);
+            empCal.employeeDeclaration.TotalAmountOnNewRegim = empCal.expectedAmountAnnually;
 
             //Tax regime calculation 
             if (empCal.employeeDeclaration.TotalAmount < 0)

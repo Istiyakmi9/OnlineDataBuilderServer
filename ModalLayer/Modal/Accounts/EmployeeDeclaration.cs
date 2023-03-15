@@ -14,6 +14,7 @@ namespace ModalLayer.Modal.Accounts
         public int TaxRegimeDescId { get; set; }
         public string Email { set; get; }
         public decimal TotalAmount { set; get; }
+        public decimal TotalAmountOnNewRegim { set; get; }
         public decimal TaxNeedToPay { set; get; }
         public decimal TaxNeedToPayOnNewRegim { set; get; }
         public decimal TaxPaid { set; get; }
