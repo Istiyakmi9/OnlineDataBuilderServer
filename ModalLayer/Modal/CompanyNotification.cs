@@ -19,6 +19,7 @@ namespace ModalLayer.Modal
         public int AnnouncementType { get; set; }
         public string FileIds { get; set; }
         public string AnnouncementId { get; set; }
+        public bool IsExpired { get; set; }
         public List<Departments> DepartmentsList { get; set; }
     }
     public class Departments

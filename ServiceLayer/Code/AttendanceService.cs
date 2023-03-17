@@ -300,17 +300,24 @@ namespace ServiceLayer.Code
             //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
 
             int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
-            foreach (var item in attendances)
+            if (attendances.Count == DateTime.UtcNow.Day || DateTime.UtcNow.Day < daysLimit)
             {
-                if (!CheckWeekend(attendanceDetailBuildModal.shiftDetail, item.AttendanceDay))
-                {
-                    if (daysLimit > 0)
-                        item.IsOpen = true;
-                    else
-                        item.IsOpen = false;
+                if (DateTime.UtcNow.Day < daysLimit)
+                    daysLimit = daysLimit - DateTime.UtcNow.Day;
 
-                    daysLimit--;
+                foreach (var item in attendances)
+                {
+                    if (!CheckWeekend(attendanceDetailBuildModal.shiftDetail, item.AttendanceDay))
+                    {
+                        if (daysLimit > 0)
+                            item.IsOpen = true;
+                        else
+                            item.IsOpen = false;
+
+                        daysLimit--;
+                    }
                 }
+
             }
 
             return new AttendanceWithClientDetail
@@ -374,11 +381,11 @@ namespace ServiceLayer.Code
 
             var workingattendance = attendanceList.Find(x => x.AttendenceDetailId == attendance.AttendenceDetailId);
             await this.CheckAndCreateAttendance(workingattendance);
-
+            workingattendance.UserComments = attendance.UserComments;
             int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
             presentAttendance.DaysPending = pendingDays;
             presentAttendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
-
+            attendance.PendingRequestCount = ++attendance.PendingRequestCount;
             // check for halfday or fullday.
             await this.CheckHalfdayAndFullday(workingattendance, attendance);
 

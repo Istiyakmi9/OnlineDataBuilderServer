@@ -12,7 +12,7 @@ namespace ServiceLayer.Interface
         List<OrganizationDetail> AddCompanyGroup(OrganizationDetail companyGroup);
         List<OrganizationDetail> UpdateCompanyGroup(OrganizationDetail companyGroup, int companyId);
         dynamic GetCompanyById(int companyId);
-        dynamic GetOrganizationDetailService();
+        OrganizationDetail GetOrganizationDetailService();
         Task<OrganizationDetail> InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection);
         List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail);
         List<BankDetail> GetCompanyBankDetail(FilterModel filterModel);

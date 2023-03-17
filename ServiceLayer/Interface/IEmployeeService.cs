@@ -14,7 +14,7 @@ namespace ServiceLayer.Interface
         DataSet GetEmployeeLeaveDetailService(long EmployeeId);
         DataSet LoadMappedClientService(long EmployeeId);
         DataSet GetManageClientService(long EmployeeId);
-        DataSet UpdateEmployeeMappedClientDetailService(Employee employee, bool IsUpdating);
+        DataSet UpdateEmployeeMappedClientDetailService(EmployeeMappedClient employeeMappedClient, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, int IsActive);
         List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive);
         Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);

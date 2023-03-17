@@ -41,5 +41,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _projectService.GetAllProjectDeatilService(filterModel);
             return BuildResponse(result);
         }
+
+        [HttpGet("GetProjectPageDetail/{ProjectId}")]
+        public IResponse<ApiResponse> GetProjectPageDetail([FromRoute] long ProjectId)
+        {
+            var result = _projectService.GetProjectPageDetailService(ProjectId);
+            return BuildResponse(result);
+        }
     }
 }

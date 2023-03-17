@@ -9,7 +9,8 @@ namespace ModalLayer.Modal
         Candidate = 3,
         Client = 4,
         Other = 5,
-        Compnay = 6
+        Compnay = 6,
+        Organization = 7
     }
 
     public enum DeclarationType

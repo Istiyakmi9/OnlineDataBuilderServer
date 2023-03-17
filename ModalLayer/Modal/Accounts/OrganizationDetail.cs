@@ -10,5 +10,6 @@ namespace ModalLayer.Modal.Accounts
         public string OrgPrimaryPhoneNo { get; set; }
         public string OrgSecondaryPhoneNo { get; set; }
         public string OrgFax { get; set; }
+        public Files Files { get; set; }
     }
 }
