@@ -197,7 +197,7 @@ namespace ServiceLayer.Code
                                             chain.Status = (int)ItemStatus.Pending;
 
                                             level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-                                            UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
+                                            await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
                                         }
 
                                         break;

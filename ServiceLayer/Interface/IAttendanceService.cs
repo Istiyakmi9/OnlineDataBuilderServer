@@ -17,5 +17,6 @@ namespace ServiceLayer.Interface
         dynamic GetEmployeePerformanceService(AttendenceDetail attendanceDetails);
         Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
         Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
+        Task GenerateAttendanceForAll();
     }
 }

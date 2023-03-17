@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -53,7 +54,7 @@ namespace ServiceLayer.Code
         {
             int i = limit;
             DateTime todayDate = DateTime.UtcNow.Date;
-            while (true)
+            while (true && i > 0)
             {
                 todayDate = todayDate.AddDays(-1);
                 switch (todayDate.DayOfWeek)
@@ -220,13 +221,137 @@ namespace ServiceLayer.Code
             return flag;
         }
 
+        public async Task GenerateAttendanceForAll()
+        {
+            List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
+            {
+                SearchString = "1=1",
+                SortBy = string.Empty,
+                PageIndex = 1,
+                PageSize = 500
+            });
+
+            _currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
+            _currentSession.CurrentUserDetail.CompanyId = 1;
+            DateTime workingDate = DateTime.UtcNow;
+            foreach (var employee in employees)
+            {
+                if (employee.CreatedOn.Year == DateTime.UtcNow.Year)
+                {
+                    workingDate = employee.CreatedOn;
+
+                    while (workingDate.Day != 1)
+                        workingDate = workingDate.AddDays(-1);
+                }
+                else
+                {
+                    workingDate = _timezoneConverter.FirstDayOfWeekIST();
+                    while (workingDate.Month != 1)
+                        workingDate = workingDate.AddMonths(-1);
+
+                    while (workingDate.Day != 1)
+                        workingDate = workingDate.AddDays(-1);
+
+                    workingDate = _timezoneConverter.ToUtcTime(workingDate);
+                }
+
+                while (workingDate.Month <= DateTime.UtcNow.Month)
+                {
+                    Attendance attendance = new Attendance
+                    {
+                        AttendanceDay = workingDate,
+                        ForMonth = workingDate.Month,
+                        ForYear = workingDate.Year,
+                        EmployeeId = employee.EmployeeUid
+                    };
+
+                    var record = _db.Get<Attendance>("sp_attendance_get_by_empid", new
+                    {
+                        EmployeeId = employee.EmployeeUid,
+                        ForYear = workingDate.Year,
+                        ForMonth = workingDate.Month
+                    });
+
+                    if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
+                    {
+                        List<AttendanceDetailJson> attendenceDetails;
+                        var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
+
+                        attendanceModal.attendanceSubmissionLimit = 2;
+                        await CreateAttendanceTillDate(attendanceModal);
+
+                        workingDate = workingDate.AddMonths(1);
+
+                        while (workingDate.Day != 1)
+                            workingDate = workingDate.AddDays(-1);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            await Task.CompletedTask;
+        }
+
         public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
+        {
+            List<AttendanceDetailJson> attendenceDetails;
+            AttendanceDetailBuildModal attendanceDetailBuildModal = GetAttendanceDetail(attendance, out attendenceDetails);
+
+            attendanceDetailBuildModal.attendanceSubmissionLimit = attendanceDetailBuildModal.employee.AttendanceSubmissionLimit;
+            if (attendanceDetailBuildModal.attendance.AttendanceDetail == null || attendanceDetailBuildModal.attendance.AttendanceDetail == "[]" ||
+                attendanceDetailBuildModal.attendance.AttendanceDetail.Count() == 0)
+            {
+                attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
+                var nowDate = attendance.AttendanceDay.AddDays(1);
+
+                if (nowDate.Year == attendanceDetailBuildModal.employee.CreatedOn.Year && nowDate.Month == attendanceDetailBuildModal.employee.CreatedOn.Month)
+                {
+                    var days = attendanceDetailBuildModal.employee.CreatedOn.Date.Subtract(nowDate.Date).TotalDays;
+                    attendanceDetailBuildModal.firstDate = attendanceDetailBuildModal.firstDate.AddDays(days);
+                }
+
+                attendenceDetails = await CreateAttendanceTillDate(attendanceDetailBuildModal);
+            }
+
+            var attendances = attendenceDetails.OrderBy(i => i.AttendanceDay)
+                                .TakeWhile(x => DateTime.Now.Date.Subtract(x.AttendanceDay.Date).TotalDays >= 0)
+                                .OrderByDescending(i => i.AttendanceDay)
+                                .ToList();
+
+            //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
+
+            int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
+            foreach (var item in attendances)
+            {
+                if (!CheckWeekend(attendanceDetailBuildModal.shiftDetail, item.AttendanceDay))
+                {
+                    if (daysLimit > 0)
+                        item.IsOpen = true;
+                    else
+                        item.IsOpen = false;
+
+                    daysLimit--;
+                }
+            }
+
+            return new AttendanceWithClientDetail
+            {
+                EmployeeDetail = attendanceDetailBuildModal.employee,
+                AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
+                AttendacneDetails = attendances.OrderBy(i => i.AttendanceDay).ToList()
+            };
+        }
+
+        private AttendanceDetailBuildModal GetAttendanceDetail(Attendance attendance, out List<AttendanceDetailJson> attendenceDetails)
         {
             var now = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendance.AttendanceDay, _currentSession.TimeZone);
             if (now.Day != 1)
                 throw HiringBellException.ThrowBadRequest("Invalid from date submitted.");
 
-            List<AttendanceDetailJson> attendenceDetails = new List<AttendanceDetailJson>();
+            attendenceDetails = new List<AttendanceDetailJson>();
             AttendanceDetailBuildModal attendanceDetailBuildModal = new AttendanceDetailBuildModal();
             attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
 
@@ -275,50 +400,7 @@ namespace ServiceLayer.Code
             }
 
             attendanceDetailBuildModal.calendars = Converter.ToList<Calendar>(Result.Tables[2]);
-
-            attendanceDetailBuildModal.attendanceSubmissionLimit = attendanceDetailBuildModal.employee.AttendanceSubmissionLimit;
-            if (attendanceDetailBuildModal.attendance.AttendanceDetail == null || attendanceDetailBuildModal.attendance.AttendanceDetail == "[]" ||
-                attendanceDetailBuildModal.attendance.AttendanceDetail.Count() == 0)
-            {
-                attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
-                var nowDate = attendance.AttendanceDay.AddDays(1);
-
-                if (nowDate.Year == attendanceDetailBuildModal.employee.CreatedOn.Year && nowDate.Month == attendanceDetailBuildModal.employee.CreatedOn.Month)
-                {
-                    var days = attendanceDetailBuildModal.employee.CreatedOn.Date.Subtract(nowDate.Date).TotalDays;
-                    attendanceDetailBuildModal.firstDate = attendanceDetailBuildModal.firstDate.AddDays(days);
-                }
-
-                attendenceDetails = await CreateAttendanceTillDate(attendanceDetailBuildModal);
-            }
-
-            var attendances = attendenceDetails.OrderBy(i => i.AttendanceDay)
-                                .TakeWhile(x => DateTime.Now.Date.Subtract(x.AttendanceDay.Date).TotalDays >= 0)
-                                .OrderByDescending(i => i.AttendanceDay)
-                                .ToList();
-
-            //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
-
-            int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
-            foreach (var item in attendances)
-            {
-                if (!CheckWeekend(attendanceDetailBuildModal.shiftDetail, item.AttendanceDay))
-                {
-                    if (daysLimit > 0)
-                        item.IsOpen = true;
-                    else
-                        item.IsOpen = false;
-
-                    daysLimit--;
-                }
-            }
-
-            return new AttendanceWithClientDetail
-            {
-                EmployeeDetail = attendanceDetailBuildModal.employee,
-                AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
-                AttendacneDetails = attendances.OrderBy(i => i.AttendanceDay).ToList()
-            };
+            return attendanceDetailBuildModal;
         }
 
         public List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId)

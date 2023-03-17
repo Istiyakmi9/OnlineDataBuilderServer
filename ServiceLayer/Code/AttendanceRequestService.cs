@@ -148,7 +148,8 @@ namespace ServiceLayer.Code
                 else
                     requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
                 Task task = Task.Run(async () => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
-                return requestModel;
+
+                return await Task.FromResult(requestModel);
             }
             catch (Exception)
             {

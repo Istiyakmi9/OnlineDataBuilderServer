@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly ITimesheetService _timesheetService;
         private readonly CurrentSession _currentSession;
         private readonly IPayrollService _payrollService;
+        private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
@@ -41,6 +43,7 @@ namespace OnlineDataBuilder.Controllers
             ILeaveCalculation leaveCalculation,
             IPayrollService payrollService,
             CurrentSession currentSession,
+            IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService
             )
         {
@@ -49,6 +52,7 @@ namespace OnlineDataBuilder.Controllers
             _db = db;
             _payrollService = payrollService;
             _timesheetService = timesheetService;
+            _attendanceService = attendanceService;
             _leaveCalculation = leaveCalculation;
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
@@ -107,6 +111,8 @@ namespace OnlineDataBuilder.Controllers
 
 
             // await LeaveLevelMigration();
+
+            // await _attendanceService.GenerateAttendanceForAll();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

@@ -1124,6 +1124,8 @@ namespace ServiceLayer.Code
                 }
             }
 
+            salaryDetail.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakup);
+            salaryDetail.TaxDetail = JsonConvert.SerializeObject(taxDetails);
             var item = (from n in employementDetails
                         select new
                         {
@@ -1151,7 +1153,22 @@ namespace ServiceLayer.Code
 
             var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item);
             if (string.IsNullOrEmpty(result))
+            {
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update previous employement details");
+            }
+            else
+            {
+                var state = _db.Execute("sp_employee_salary_detail_upd_salarydetail", new
+                {
+                    salaryDetail.EmployeeId,
+                    salaryDetail.CompleteSalaryDetail,
+                    salaryDetail.TaxDetail,
+                    salaryDetail.CTC,
+                }, true);
+
+                if (!ApplicationConstants.IsExecuted(state.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to update employement salary details");
+            }
 
             return result;
         }
