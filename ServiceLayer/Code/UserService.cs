@@ -59,8 +59,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to insert of update");
 
             employeeId = Convert.ToInt64(result);
-            
-            
+
+
             profileDetail = this.GetUserDetail(employeeId);
             return profileDetail;
         }
@@ -189,7 +189,7 @@ namespace ServiceLayer.Code
                 profileDetail.employee = Converter.ToType<Employee>(result.Tables[0]);
                 professionalUser = Converter.ToType<ProfessionalUser>(result.Tables[1]);
                 profileDetail.profileDetail = Converter.ToList<FileDetail>(result.Tables[2]);
-            } 
+            }
             else
                 throw new HiringBellException("unable to get records");
 
@@ -209,7 +209,7 @@ namespace ServiceLayer.Code
 
             var value = string.Empty;
             ProfileDetail profileDetail = new ProfileDetail();
-            
+
             var Result = _db.GetDataSet("sp_professionaldetail_filter", new
             {
                 UserId = userId,
@@ -248,27 +248,25 @@ namespace ServiceLayer.Code
         public async Task<DataSet> GetEmployeeAndChientListService()
         {
             DataSet ds = new DataSet();
-            await Task.Run(() =>
+            FilterModel filterModel = new FilterModel();
+            filterModel.PageSize = 1000;
+
+            ds = _db.FetchDataSet("sp_employee_and_all_clients_get", new
             {
-                FilterModel filterModel = new FilterModel();
-                filterModel.PageSize = 1000;
-                
-                ds = _db.FetchDataSet("sp_employee_and_all_clients_get", new
-                {
-                    SearchString = filterModel.SearchString,
-                    SortBy = filterModel.SortBy,
-                    PageIndex = filterModel.PageIndex,
-                    PageSize = filterModel.PageSize,
-                    IsActive = filterModel.IsActive
-                });
-
-                if (ds == null || ds.Tables.Count != 2)
-                    throw new HiringBellException("Unable to find employees");
-
-                ds.Tables[0].TableName = "Employees";
-                ds.Tables[1].TableName = "Clients";
+                SearchString = filterModel.SearchString,
+                SortBy = filterModel.SortBy,
+                PageIndex = filterModel.PageIndex,
+                PageSize = filterModel.PageSize,
+                IsActive = filterModel.IsActive
             });
-            return ds;
+
+            if (ds == null || ds.Tables.Count != 2)
+                throw new HiringBellException("Unable to find employees");
+
+            ds.Tables[0].TableName = "Employees";
+            ds.Tables[1].TableName = "Clients";
+
+            return await Task.FromResult(ds);
         }
     }
 }

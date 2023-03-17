@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -53,7 +54,7 @@ namespace ServiceLayer.Code
         {
             int i = limit;
             DateTime todayDate = DateTime.UtcNow.Date;
-            while (true)
+            while (true && i > 0)
             {
                 todayDate = todayDate.AddDays(-1);
                 switch (todayDate.DayOfWeek)
@@ -220,61 +221,84 @@ namespace ServiceLayer.Code
             return flag;
         }
 
-        public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
+        public async Task GenerateAttendanceForAll()
         {
-            var now = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendance.AttendanceDay, _currentSession.TimeZone);
-            if (now.Day != 1)
-                throw HiringBellException.ThrowBadRequest("Invalid from date submitted.");
-
-            List<AttendanceDetailJson> attendenceDetails = new List<AttendanceDetailJson>();
-            AttendanceDetailBuildModal attendanceDetailBuildModal = new AttendanceDetailBuildModal();
-            attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
-
-            if (attendance.ForMonth <= 0)
-                throw new HiringBellException("Invalid month num. passed.", nameof(attendance.ForMonth), attendance.ForMonth.ToString());
-
-            var Result = _db.FetchDataSet("sp_attendance_get", new
+            List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
             {
-                EmployeeId = attendance.EmployeeId,
-                StartDate = attendance.AttendanceDay,
-                ForYear = attendance.ForYear,
-                ForMonth = attendance.ForMonth,
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
-                RequestTypeId = (int)RequestType.Attendance
+                SearchString = "1=1",
+                SortBy = string.Empty,
+                PageIndex = 1,
+                PageSize = 500
             });
 
-            if (Result.Tables.Count != 5)
-                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
-
-            if (Result.Tables[3].Rows.Count != 1)
-                throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
-
-            attendanceDetailBuildModal.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
-            attendanceDetailBuildModal.compalintOrRequests = Converter.ToList<ComplaintOrRequest>(Result.Tables[4]);
-
-            if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
-                throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
-
-            attendanceDetailBuildModal.employee = Converter.ToType<Employee>(Result.Tables[1]);
-
-            if (ApplicationConstants.ContainSingleRow(Result.Tables[0]) &&
-                !string.IsNullOrEmpty(Result.Tables[0].Rows[0]["AttendanceDetail"].ToString()))
+            _currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
+            _currentSession.CurrentUserDetail.CompanyId = 1;
+            DateTime workingDate = DateTime.UtcNow;
+            foreach (var employee in employees)
             {
-                attendanceDetailBuildModal.attendance = Converter.ToType<Attendance>(Result.Tables[0]);
-                attendenceDetails = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendanceDetailBuildModal.attendance.AttendanceDetail);
-            }
-            else
-            {
-                attendanceDetailBuildModal.attendance = new Attendance
+                if (employee.CreatedOn.Year == DateTime.UtcNow.Year)
                 {
-                    AttendanceDetail = "[]",
-                    AttendanceId = 0,
-                    EmployeeId = attendance.EmployeeId,
-                };
+                    workingDate = employee.CreatedOn;
 
+                    while (workingDate.Day != 1)
+                        workingDate = workingDate.AddDays(-1);
+                }
+                else
+                {
+                    workingDate = _timezoneConverter.FirstDayOfWeekIST();
+                    while (workingDate.Month != 1)
+                        workingDate = workingDate.AddMonths(-1);
+
+                    while (workingDate.Day != 1)
+                        workingDate = workingDate.AddDays(-1);
+
+                    workingDate = _timezoneConverter.ToUtcTime(workingDate);
+                }
+
+                while (workingDate.Month <= DateTime.UtcNow.Month)
+                {
+                    Attendance attendance = new Attendance
+                    {
+                        AttendanceDay = workingDate,
+                        ForMonth = workingDate.Month,
+                        ForYear = workingDate.Year,
+                        EmployeeId = employee.EmployeeUid
+                    };
+
+                    var record = _db.Get<Attendance>("sp_attendance_get_by_empid", new
+                    {
+                        EmployeeId = employee.EmployeeUid,
+                        ForYear = workingDate.Year,
+                        ForMonth = workingDate.Month
+                    });
+
+                    if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
+                    {
+                        List<AttendanceDetailJson> attendenceDetails;
+                        var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
+
+                        attendanceModal.attendanceSubmissionLimit = 2;
+                        await CreateAttendanceTillDate(attendanceModal);
+
+                        workingDate = workingDate.AddMonths(1);
+
+                        while (workingDate.Day != 1)
+                            workingDate = workingDate.AddDays(-1);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
 
-            attendanceDetailBuildModal.calendars = Converter.ToList<Calendar>(Result.Tables[2]);
+            await Task.CompletedTask;
+        }
+
+        public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
+        {
+            List<AttendanceDetailJson> attendenceDetails;
+            AttendanceDetailBuildModal attendanceDetailBuildModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
             attendanceDetailBuildModal.attendanceSubmissionLimit = attendanceDetailBuildModal.employee.AttendanceSubmissionLimit;
             if (attendanceDetailBuildModal.attendance.AttendanceDetail == null || attendanceDetailBuildModal.attendance.AttendanceDetail == "[]" ||
@@ -326,6 +350,64 @@ namespace ServiceLayer.Code
                 AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
                 AttendacneDetails = attendances.OrderBy(i => i.AttendanceDay).ToList()
             };
+        }
+
+        private AttendanceDetailBuildModal GetAttendanceDetail(Attendance attendance, out List<AttendanceDetailJson> attendenceDetails)
+        {
+            var now = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendance.AttendanceDay, _currentSession.TimeZone);
+            if (now.Day != 1)
+                throw HiringBellException.ThrowBadRequest("Invalid from date submitted.");
+
+            attendenceDetails = new List<AttendanceDetailJson>();
+            AttendanceDetailBuildModal attendanceDetailBuildModal = new AttendanceDetailBuildModal();
+            attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
+
+            if (attendance.ForMonth <= 0)
+                throw new HiringBellException("Invalid month num. passed.", nameof(attendance.ForMonth), attendance.ForMonth.ToString());
+
+            var Result = _db.FetchDataSet("sp_attendance_get", new
+            {
+                EmployeeId = attendance.EmployeeId,
+                StartDate = attendance.AttendanceDay,
+                ForYear = attendance.ForYear,
+                ForMonth = attendance.ForMonth,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
+                RequestTypeId = (int)RequestType.Attendance
+            });
+
+            if (Result.Tables.Count != 5)
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
+
+            if (Result.Tables[3].Rows.Count != 1)
+                throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
+
+            attendanceDetailBuildModal.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
+            attendanceDetailBuildModal.compalintOrRequests = Converter.ToList<ComplaintOrRequest>(Result.Tables[4]);
+
+            if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
+                throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
+
+            attendanceDetailBuildModal.employee = Converter.ToType<Employee>(Result.Tables[1]);
+
+            if (ApplicationConstants.ContainSingleRow(Result.Tables[0]) &&
+                !string.IsNullOrEmpty(Result.Tables[0].Rows[0]["AttendanceDetail"].ToString()))
+            {
+                attendanceDetailBuildModal.attendance = Converter.ToType<Attendance>(Result.Tables[0]);
+                attendenceDetails = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendanceDetailBuildModal.attendance.AttendanceDetail);
+            }
+            else
+            {
+                attendanceDetailBuildModal.attendance = new Attendance
+                {
+                    AttendanceDetail = "[]",
+                    AttendanceId = 0,
+                    EmployeeId = attendance.EmployeeId,
+                };
+
+            }
+
+            attendanceDetailBuildModal.calendars = Converter.ToList<Calendar>(Result.Tables[2]);
+            return attendanceDetailBuildModal;
         }
 
         public List<AttendenceDetail> GetAllPendingAttendanceByUserIdService(long employeeId, int UserTypeId, long clientId)

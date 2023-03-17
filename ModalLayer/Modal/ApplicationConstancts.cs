@@ -228,14 +228,20 @@ public class ApplicationConstants
 
 public class ComponentNames
 {
-    public static string Gross = "GROSS";
-    public static string CTC = "ANNUALCTC";
-    public static string StandardDeduction = "STD";
-    public static string ProfessionalTax = "PTAX";
-    public static string EmployeePF = "EPF";
-    public static string Special = "SPECIAL ALLOWANCE";
-    public static string HRA = "HRA";
-    public static string Basic = "BS";
+    public const string Gross = "GROSS";
+    public const string GrossId = "Gross";
+    public const string CTC = "ANNUALCTC";
+    public const string StandardDeduction = "STD";
+    public const string ProfessionalTax = "PTAX";
+    public const string EmployeePF = "EPF";
+    public const string Special = "SPECIAL ALLOWANCE";
+    public const string SpecialAllowanceId = "Special";
+    public const string HRA = "HRA";
+    public const string Basic = "BS";
+    public const string ESI = "ESI";
+    public const string LabourWelfareFund = "LWF";
+    public const string LabourWelfareFundEmployee = "LWFE";
+    public const string IncomeTax = "IT";
 }
 
 public class FileRoleType
