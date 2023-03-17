@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
@@ -42,6 +43,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("GetProjectPageDetail/{ProjectId}")]
         public IResponse<ApiResponse> GetProjectPageDetail([FromRoute] long ProjectId)
         {
