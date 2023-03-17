@@ -124,8 +124,9 @@ namespace ServiceLayer.Code
 
                 if (attendance == null)
                     throw new HiringBellException("Invalid attendance day selected");
+                if (attendance.PendingRequestCount > 0)
+                    attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
-                attendance.PendingRequestCount = --attendance.PendingRequestCount;
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)
@@ -147,8 +148,8 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update attendance status");
                 else
                     requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
-                Task task = Task.Run(async () => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
-                return requestModel;
+                //Task task = Task.Run(async () => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
+                return await Task.FromResult(requestModel);
             }
             catch (Exception)
             {

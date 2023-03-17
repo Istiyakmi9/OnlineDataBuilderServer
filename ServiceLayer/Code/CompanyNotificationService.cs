@@ -46,6 +46,8 @@ namespace ServiceLayer.Code
             foreach (var item in result)
             {
                 item.AnnouncementId = _commonService.GetUniquecode(item.NotificationId, item.Topic);
+                if (item.EndDate.Subtract(item.StartDate).TotalDays > 0)
+                    item.IsExpired = true;
             }
             return result;
         }
