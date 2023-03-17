@@ -77,9 +77,9 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost]
         [Authorize(Roles = Role.Admin)]
         [Route("UpdateEmployeeMappedClientDetail/{IsUpdating}")]
-        public ApiResponse UpdateEmployeeMappedClientDetail([FromBody] Employee employee, bool IsUpdating)
+        public ApiResponse UpdateEmployeeMappedClientDetail([FromBody] EmployeeMappedClient employeeMappedClient, bool IsUpdating)
         {
-            var Result = _employeeService.UpdateEmployeeMappedClientDetailService(employee, IsUpdating);
+            var Result = _employeeService.UpdateEmployeeMappedClientDetailService(employeeMappedClient, IsUpdating);
             return BuildResponse(Result, HttpStatusCode.OK);
         }
 

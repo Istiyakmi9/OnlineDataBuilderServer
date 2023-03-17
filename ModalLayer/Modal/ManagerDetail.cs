@@ -8,5 +8,7 @@
         public string ProjectName { set; get; }
         public int CompanyId { set; get; }
         public string CompanyName { set; get; }
+        public string ManagerEmail { get; set; }
+        public string ManagerMobileNo { get; set; }
     }
 }

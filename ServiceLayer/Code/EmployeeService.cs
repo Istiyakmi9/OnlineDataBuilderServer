@@ -266,43 +266,55 @@ namespace ServiceLayer.Code
             return resultset;
         }
 
-        public DataSet UpdateEmployeeMappedClientDetailService(Employee employee, bool IsUpdating)
+        public DataSet UpdateEmployeeMappedClientDetailService(EmployeeMappedClient employeeMappedClient, bool IsUpdating)
         {
-            if (employee.AssigneDate == null || employee.AssigneDate.Year <= 1900)
+            if (employeeMappedClient.AssigneDate == null || employeeMappedClient.AssigneDate.Year <= 1900)
                 throw HiringBellException.ThrowBadRequest("Assign date is a required field");
 
-            if (employee.EmployeeUid <= 0)
-                throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
+            if (employeeMappedClient.EmployeeUid <= 0)
+                throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employeeMappedClient.EmployeeUid), FieldValue = employeeMappedClient.EmployeeUid.ToString() };
 
-            if (employee.ClientUid <= 0)
-                throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employee.ClientUid), FieldValue = employee.ClientUid.ToString() };
-
+            if (employeeMappedClient.ClientUid <= 0)
+                throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employeeMappedClient.ClientUid), FieldValue = employeeMappedClient.ClientUid.ToString() };
+            
             var records = _db.GetList<EmployeeMappedClient>("sp_employees_mappedClient_get_by_employee_id", new
             {
-                EmployeeId = employee.EmployeeUid
+                EmployeeId = employeeMappedClient.EmployeeUid
             });
 
-            var first = records.Find(i => i.ClientUid == employee.ClientUid);
-            if (first != null)
+            var first = records.Find(i => i.ClientUid == employeeMappedClient.ClientUid);
+            if (first == null)
+                first = employeeMappedClient;
+            else
             {
-                employee.EmployeeMappedClientsUid = first.EmployeeMappedClientsUid;
+                first.ActualPackage = employeeMappedClient.ActualPackage;
+                first.ClientUid = employeeMappedClient.ClientUid;
+                first.ClientName = employeeMappedClient.ClientName;
+                first.FinalPackage = employeeMappedClient.FinalPackage;
+                first.TakeHomeByCandidate = employeeMappedClient.TakeHomeByCandidate;
+                first.IsPermanent = employeeMappedClient.IsPermanent;
+                first.IsActive = employeeMappedClient.IsActive;
+                first.BillingHours = employeeMappedClient.BillingHours;
+                first.DaysPerWeek = employeeMappedClient.DaysPerWeek;
+                first.DateOfJoining = employeeMappedClient.DateOfJoining;
+                first.AssigneDate = employeeMappedClient.AssigneDate;
+                first.DaysPerWeek = employeeMappedClient.DaysPerWeek; 
             }
-
-            this.ValidateEmployeeDetails(employee);
+            this.ValidateEmployeeMapDetails(employeeMappedClient);
 
             var resultset = _db.GetDataSet("sp_employees_addupdate_remote_client", new
             {
-                employeeMappedClientsUid = employee.EmployeeMappedClientsUid,
-                employeeUid = employee.EmployeeUid,
-                clientUid = employee.ClientUid,
-                finalPackage = employee.FinalPackage,
-                actualPackage = employee.ActualPackage,
-                takeHome = employee.TakeHomeByCandidate,
-                isPermanent = employee.IsPermanent,
-                BillingHours = employee.BillingHours,
-                DaysPerWeek = employee.WorkingDaysPerWeek,
-                DateOfLeaving = employee.DateOfLeaving,
-                AssigneDate = employee.AssigneDate
+                employeeMappedClientsUid = first.EmployeeMappedClientsUid,
+                employeeUid = first.EmployeeUid,
+                clientUid = first.ClientUid,
+                finalPackage = first.FinalPackage,
+                actualPackage = first.ActualPackage,
+                takeHome = first.TakeHomeByCandidate,
+                isPermanent = first.IsPermanent,
+                BillingHours = first.BillingHours,
+                DaysPerWeek = first.DaysPerWeek,
+                DateOfLeaving = first.DateOfLeaving,
+                AssigneDate = first.AssigneDate
             });
 
             if (!ApplicationConstants.ContainSingleRow(resultset))
@@ -310,7 +322,6 @@ namespace ServiceLayer.Code
 
             var weekFirstDay = _timezoneConverter.FirstDayOfWeekUTC(DateTime.UtcNow);
             _timesheetService.RunWeeklyTimesheetCreation(weekFirstDay.AddDays(1));
-
             return resultset;
         }
 
@@ -887,6 +898,25 @@ namespace ServiceLayer.Code
         }
 
         private void ValidateEmployeeDetails(Employee employee)
+        {
+
+            if (employee.ActualPackage < 0)
+                throw new HiringBellException { UserMessage = "Invalid Actual Package.", FieldName = nameof(employee.ActualPackage), FieldValue = employee.ActualPackage.ToString() };
+
+            if (employee.FinalPackage < 0)
+                throw new HiringBellException { UserMessage = "Invalid Final Package.", FieldName = nameof(employee.FinalPackage), FieldValue = employee.FinalPackage.ToString() };
+
+            if (employee.TakeHomeByCandidate < 0)
+                throw new HiringBellException { UserMessage = "Invalid TakeHome By Candidate.", FieldName = nameof(employee.TakeHomeByCandidate), FieldValue = employee.TakeHomeByCandidate.ToString() };
+
+            if (employee.FinalPackage < employee.ActualPackage)
+                throw new HiringBellException { UserMessage = "Final package must be greater that or equal to Actual package.", FieldName = nameof(employee.FinalPackage), FieldValue = employee.FinalPackage.ToString() };
+
+            if (employee.ActualPackage < employee.TakeHomeByCandidate)
+                throw new HiringBellException { UserMessage = "Actual package must be greater that or equal to TakeHome package.", FieldName = nameof(employee.ActualPackage), FieldValue = employee.ActualPackage.ToString() };
+        }
+
+        private void ValidateEmployeeMapDetails(EmployeeMappedClient employee)
         {
 
             if (employee.ActualPackage < 0)

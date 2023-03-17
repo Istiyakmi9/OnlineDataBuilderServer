@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Text;
 
@@ -127,6 +129,18 @@ namespace ServiceLayer.Code
             if (project.CompanyId <= 0)
                 throw new HiringBellException("Compnay is not selected. Please selete your company.");
 
+        }
+
+        public DataSet GetProjectPageDetailService(long ProjectId)
+        {
+            if (ProjectId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid project selected. Please select a valid project");
+
+            var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId});
+            result.Tables[0].TableName = "Project";
+            result.Tables[1].TableName = "Clients";
+            result.Tables[2].TableName = "Employees";
+            return result;
         }
     }
 }

@@ -124,8 +124,9 @@ namespace ServiceLayer.Code
 
                 if (attendance == null)
                     throw new HiringBellException("Invalid attendance day selected");
+                if (attendance.PendingRequestCount > 0)
+                    attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
-                attendance.PendingRequestCount = --attendance.PendingRequestCount;
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)

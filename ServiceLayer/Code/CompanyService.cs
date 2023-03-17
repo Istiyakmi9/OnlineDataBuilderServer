@@ -107,15 +107,15 @@ namespace ServiceLayer.Code
             return new { OrganizationDetail = result, Files = files };
         }
 
-        public dynamic GetOrganizationDetailService()
+        public OrganizationDetail GetOrganizationDetailService()
         {
             var ResultSet = _db.FetchDataSet("sp_organization_detail_get");
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
 
             OrganizationDetail organizationDetail = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
-            var fileDetail = ResultSet.Tables[1];
-            return new { OrganizationDetail = organizationDetail, Files = fileDetail };
+            organizationDetail.Files = Converter.ToType<Files>(ResultSet.Tables[1]);
+            return organizationDetail;
         }
 
         public async Task<OrganizationDetail> InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
@@ -191,22 +191,20 @@ namespace ServiceLayer.Code
                 company.IsPrimaryAccount = true;
             }
 
-
             var status = _db.Execute<OrganizationDetail>("sp_organization_intupd", company, true);
 
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to insert or update.");
 
             if (fileCollection.Count == 1)
-            {
-                await UpdateOrganizationLogo(companyInfo, fileCollection);
-            }
-            List<OrganizationDetail> organizationDetails = this.GetAllCompany();
+                await UpdateOrganizationLogo(companyInfo, fileCollection, (int)UserType.Organization);
+
             // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
-            return company;
+
+            return await Task.FromResult(this.GetOrganizationDetailService());
         }
 
-        private async Task UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        private async Task UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection, int userType)
         {
             string companyLogo = String.Empty;
             try
@@ -236,19 +234,14 @@ namespace ServiceLayer.Code
                                 {
                                     FileId = n.FileUid,
                                     FileOwnerId = companyInfo.CompanyId,
-                                    FilePath = n.FilePath,
                                     FileName = n.FileName,
+                                    FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
-                                    ItemStatusId = 0,
-                                    PaidOn = DateTime.Now,
-                                    UserTypeId = (int)UserType.Compnay,
-                                    CreatedBy = _currentSession.CurrentUserDetail.UserId,
-                                    UpdatedBy = _currentSession.CurrentUserDetail.UserId,
-                                    CreatedOn = DateTime.Now,
-                                    UpdatedOn = DateTime.Now
+                                    UserTypeId = userType,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                var batchResult = await _db.BulkExecuteAsync("sp_Files_InsUpd", fileInfo);
+                var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
             }
             catch
             {
@@ -304,7 +297,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
 
             if (fileCollection.Count > 0)
-                await UpdateOrganizationLogo(companyInfo, fileCollection);
+                await UpdateOrganizationLogo(companyInfo, fileCollection, (int)UserType.Compnay);
 
             return company;
         }
@@ -339,7 +332,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("City is null or empty");
 
             if (companyInfo.Pincode <= 0)
-                throw new HiringBellException("Pincode is empty");
+                throw new HiringBellException("Pincode is invalid. Please enter a valid pincode");
         }
 
         public List<BankDetail> InsertUpdateCompanyAccounts(BankDetail bankDetail)
