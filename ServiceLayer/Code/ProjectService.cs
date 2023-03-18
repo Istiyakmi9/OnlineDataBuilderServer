@@ -137,6 +137,10 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid project selected. Please select a valid project");
 
             var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId});
+
+            if (result.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("Project detail not found. Please contact to admin.");
+
             result.Tables[0].TableName = "Project";
             result.Tables[1].TableName = "Clients";
             result.Tables[2].TableName = "Employees";

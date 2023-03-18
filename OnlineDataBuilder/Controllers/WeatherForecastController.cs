@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
