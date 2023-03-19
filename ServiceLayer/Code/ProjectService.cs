@@ -2,13 +2,10 @@
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using System.Text;
 
 namespace ServiceLayer.Code
 {

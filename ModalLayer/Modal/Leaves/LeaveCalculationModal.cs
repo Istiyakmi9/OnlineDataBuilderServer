@@ -35,5 +35,11 @@ namespace ModalLayer.Modal.Leaves
         public List<LeaveRequestNotification> lastAppliedLeave { set; get; }
         public bool runTillMonthOfPresnetYear { set; get; }
         public decimal ProjectedFutureLeave { get; set; }
+        public List<ProjectMemberDetail> projectMemberDetail { set; get; }
+        public int ProjectOffset { set; get; } = 0;
+        public int GetNextOffset()
+        {
+            return ProjectOffset += 100;
+        }
     }
 }

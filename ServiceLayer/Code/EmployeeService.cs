@@ -276,7 +276,7 @@ namespace ServiceLayer.Code
 
             if (employeeMappedClient.ClientUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employeeMappedClient.ClientUid), FieldValue = employeeMappedClient.ClientUid.ToString() };
-            
+
             var records = _db.GetList<EmployeeMappedClient>("sp_employees_mappedClient_get_by_employee_id", new
             {
                 EmployeeId = employeeMappedClient.EmployeeUid
@@ -298,7 +298,7 @@ namespace ServiceLayer.Code
                 first.DaysPerWeek = employeeMappedClient.DaysPerWeek;
                 first.DateOfJoining = employeeMappedClient.DateOfJoining;
                 first.AssigneDate = employeeMappedClient.AssigneDate;
-                first.DaysPerWeek = employeeMappedClient.DaysPerWeek; 
+                first.DaysPerWeek = employeeMappedClient.DaysPerWeek;
             }
             this.ValidateEmployeeMapDetails(employeeMappedClient);
 
@@ -871,7 +871,9 @@ namespace ServiceLayer.Code
                         Email = employee.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, employeeId, employee.OldFileName);
+
+                    var ownerPath = Path.Combine(_fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
+                    _fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
 
                     var fileInfo = (from n in files
                                     select new

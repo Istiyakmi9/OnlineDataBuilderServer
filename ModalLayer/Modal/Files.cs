@@ -59,6 +59,7 @@ namespace ModalLayer.Modal
         public string FileSize { set; get; }
         public long FileId { set; get; }
         public string ParentFolder { set; get; } = null;
+        public string OwnerFolderName { set; get; } = null;
         public FileSystemType SystemFileType { set; get; }
         public string FileDescription { set; get; }
         public string FileRole { set; get; }

@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -163,115 +164,116 @@ namespace ServiceLayer.Code
         public async Task LeaveLeaveManagerMigration()
         {
             var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new { Year = DateTime.UtcNow.Year });
-
-            double daysPending = 0;
-            List<CompleteLeaveDetail> completeLeaveDetails = null;
             foreach (var level in leaveRequestDetails)
             {
-                completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(level.LeaveDetail);
-                if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
+                await ExecuteFlowChainCycle(level);
+            }
+        }
+
+        private async Task ExecuteFlowChainCycle(LeaveRequestDetail level)
+        {
+            double daysPending = 0;
+            List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(level.LeaveDetail);
+            if (completeLeaveDetails != null && completeLeaveDetails.Count > 0)
+            {
+                var requests = completeLeaveDetails.Where(x => x.LeaveStatus == (int)ItemStatus.Pending).ToList();
+                foreach (var request in requests)
                 {
-                    var requests = completeLeaveDetails.Where(x => x.LeaveStatus == (int)ItemStatus.Pending).ToList();
-                    foreach (var request in requests)
+                    int i = 0;
+                    int count = request.RequestChain.Count;
+                    var chainDetail = request.RequestChain.OrderBy(x => x.Level).ToList();
+                    while (i < count)
                     {
-                        int i = 0;
-                        int count = request.RequestChain.Count;
-                        var chainDetail = request.RequestChain.OrderBy(x => x.Level).ToList();
-                        while (i < count)
+                        var chain = chainDetail.ElementAt(i);
+
+                        daysPending = DateTime.UtcNow.Subtract(chain.ReactedOn.AddDays(chain.ForwardAfterDays)).TotalDays;
+                        if (chain.Status == (int)ItemStatus.Pending && daysPending > 0)
                         {
-                            var chain = chainDetail.ElementAt(i);
-
-                            daysPending = DateTime.UtcNow.Subtract(chain.ReactedOn.AddDays(chain.ForwardAfterDays)).TotalDays;
-                            if (chain.Status == (int)ItemStatus.Pending && daysPending > 0)
+                            if (chain.IsRequired)
                             {
-                                if (chain.IsRequired)
+                                if (chain.Status == (int)ItemStatus.Approved)
                                 {
-                                    if (chain.Status == (int)ItemStatus.Approved)
+                                    i++;
+                                    // forward request to next level if any exists else approve the request.
+                                    chain.Status = (int)ItemStatus.AutoPromoted;
+                                    if (i < count)
                                     {
-                                        i++;
-                                        // forward request to next level if any exists else approve the request.
+                                        chain = chainDetail[i];
+                                        chain.Status = (int)ItemStatus.Pending;
+
+                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
+                                        await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
+                                    }
+
+                                    break;
+                                }
+                                else
+                                {
+                                    // entire workflow will get rejected
+                                    chain.Status = (int)ItemStatus.Rejected;
+                                    chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
+                                    level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
+
+                                    // reject in employee leave request
+                                    await UpdateLeaveDetail(level, ItemStatus.Rejected);
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (chain.Status == chain.ForwardWhenStatus)
+                                {
+                                    // forward request to next level if any exists else approve the request.
+                                    i++;
+                                    if (chain.Status == (int)ItemStatus.Pending)
                                         chain.Status = (int)ItemStatus.AutoPromoted;
-                                        if (i < count)
-                                        {
-                                            chain = chainDetail[i];
-                                            chain.Status = (int)ItemStatus.Pending;
 
-                                            level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-                                            await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
-                                        }
+                                    if (i < count)
+                                    {
+                                        chain = chainDetail[i];
+                                        chain.Status = (int)ItemStatus.Pending;
 
+                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
+                                        // notify to next manage for the request.
+                                        await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
                                         break;
                                     }
                                     else
                                     {
-                                        // entire workflow will get rejected
                                         chain.Status = (int)ItemStatus.Rejected;
                                         chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
-                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
 
+                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
                                         // reject in employee leave request
                                         await UpdateLeaveDetail(level, ItemStatus.Rejected);
                                         break;
                                     }
                                 }
-                                else
+                                else if (chain.Status == (int)ItemStatus.Approved)
                                 {
-                                    if (chain.Status == chain.ForwardWhenStatus)
-                                    {
-                                        // forward request to next level if any exists else approve the request.
-                                        i++;
-                                        if (chain.Status == (int)ItemStatus.Pending)
-                                            chain.Status = (int)ItemStatus.AutoPromoted;
+                                    chain.FeedBack = "AUTO APPROVED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
+                                    level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
 
-                                        if (i < count)
-                                        {
-                                            chain = chainDetail[i];
-                                            chain.Status = (int)ItemStatus.Pending;
+                                    // approve in employee leave request
+                                    await UpdateLeaveDetail(level, ItemStatus.Approved);
+                                    break;
+                                }
+                                else if (chain.Status == (int)ItemStatus.Rejected)
+                                {
+                                    chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
+                                    level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
 
-                                            level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-                                            // notify to next manage for the request.
-                                            await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
-                                            break;
-                                        }
-                                        else
-                                        {
-                                            chain.Status = (int)ItemStatus.Rejected;
-                                            chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
-
-                                            level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-                                            // reject in employee leave request
-                                            await UpdateLeaveDetail(level, ItemStatus.Rejected);
-                                            break;
-                                        }
-                                    }
-                                    else if (chain.Status == (int)ItemStatus.Approved)
-                                    {
-                                        chain.FeedBack = "AUTO APPROVED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
-                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-
-                                        // approve in employee leave request
-                                        await UpdateLeaveDetail(level, ItemStatus.Approved);
-                                        break;
-                                    }
-                                    else if (chain.Status == (int)ItemStatus.Rejected)
-                                    {
-                                        chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
-                                        level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-
-                                        // reject in employee leave request
-                                        await UpdateLeaveDetail(level, ItemStatus.Rejected);
-                                        break;
-                                    }
+                                    // reject in employee leave request
+                                    await UpdateLeaveDetail(level, ItemStatus.Rejected);
+                                    break;
                                 }
                             }
-
-                            i++;
                         }
+
+                        i++;
                     }
                 }
             }
-
-            await Task.CompletedTask;
         }
 
         private async Task UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, long ExecuterId)
