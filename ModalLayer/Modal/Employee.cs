@@ -27,7 +27,6 @@ namespace ModalLayer.Modal
         public int LunchDuration { set; get; }
         public string OfficeTime { set; get; }
         public int RowIndex { set; get; }
-        public int ProjectId { set; get; }
         public DateTime DOB { get; set; }
         public DateTime CreatedOn { get; set; }
         public string ProfessionalDetail_Json { get; set; }
@@ -68,5 +67,13 @@ namespace ModalLayer.Modal
         public int EmployeeCount { get; set; } = 0;
         public int MobileCount { get; set; } = 0;
         public int EmailCount { get; set; } = 0;
+    }
+
+    public class EmployeeWithRoles
+    {
+        public int DesignationId { get; set; }
+        public long EmployeeId { set; get; }
+        public string RoleName { get; set; }
+        public string Email { get; set; }
     }
 }
