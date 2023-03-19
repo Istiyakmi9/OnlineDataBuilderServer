@@ -1043,6 +1043,8 @@ namespace ServiceLayer.Code
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId = 1, LetterType });
             if (File.Exists(result.FilePath))
                 html = File.ReadAllText(result.FilePath);
+            else
+                throw HiringBellException.ThrowBadRequest("Offer letter is not found. Please contact to admin");
 
             html = html.Replace("[[Company-Name]]", organization.CompanyName).
             Replace("[[Generate-Date]]", DateTime.Now.ToString("dd MMM, yyyy")).
