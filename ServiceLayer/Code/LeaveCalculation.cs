@@ -137,7 +137,7 @@ namespace ServiceLayer.Code
             var CompanySettings = _db.GetList<CompanySetting>("sp_company_setting_get_all");
             foreach (var setting in CompanySettings)
             {
-                if (setting.LeaveAccrualRunDayEveryMonth == DateTime.Now.Day)
+                if (setting.LeaveAccrualRunCronDayOfMonth == DateTime.Now.Day)
                 {
                     _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
                     _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
@@ -152,70 +152,67 @@ namespace ServiceLayer.Code
             List<LeavePlanType> leavePlanTypes = default;
             LeaveCalculationModal leaveCalculationModal = await LoadLeaveMasterData();
             leaveCalculationModal.runTillMonthOfPresnetYear = runTillMonthOfPresnetYear;
-            int runDay = leaveCalculationModal.companySetting.PayrollCycleMonthlyRunDay;
-            if (runDay == DateTime.Now.Day)
+
+            var offsetindex = 0;
+            while (true)
             {
-                var offsetindex = 0;
-                while (true)
+                try
                 {
-                    try
+                    var employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
                     {
-                        var employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
+                        OffsetIndex = offsetindex,
+                        PageSize = 500
+                    }, false);
+
+                    if (employeeAccrualData == null || employeeAccrualData.Count == 0)
+                        break;
+
+                    foreach (EmployeeAccrualData emp in employeeAccrualData)
+                    {
+                        leaveCalculationModal.employee = new Employee { CreatedOn = emp.CreatedOn };
+                        leavePlan = leaveCalculationModal.leavePlans
+                            .FirstOrDefault(x => emp.LeavePlanId > 0 ? x.LeavePlanId == emp.LeavePlanId : x.IsDefaultPlan == true);
+
+                        if (runTillMonthOfPresnetYear)
                         {
-                            OffsetIndex = offsetindex,
-                            PageSize = 500
-                        }, false);
-
-                        if (employeeAccrualData == null || employeeAccrualData.Count == 0)
-                            break;
-
-                        foreach (EmployeeAccrualData emp in employeeAccrualData)
+                            emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
+                        }
+                        else
                         {
-                            leaveCalculationModal.employee = new Employee { CreatedOn = emp.CreatedOn };
-                            leavePlan = leaveCalculationModal.leavePlans
-                                .FirstOrDefault(x => emp.LeavePlanId > 0 ? x.LeavePlanId == emp.LeavePlanId : x.IsDefaultPlan == true);
-
-                            if (runTillMonthOfPresnetYear)
-                            {
+                            emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
+                            if (emp.LeaveTypeBrief == null)
                                 emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
-                            }
-                            else
-                            {
-                                emp.LeaveTypeBrief = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(emp.LeaveQuotaDetail);
-                                if (emp.LeaveTypeBrief == null)
-                                    emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
-                            }
-
-                            if (leavePlan != null)
-                            {
-                                leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
-
-                                int i = 0;
-                                while (i < leavePlanTypes.Count)
-                                {
-                                    var type = leaveCalculationModal.leavePlanTypes
-                                        .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
-                                    if (type != null)
-                                    {
-                                        var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
-                                        if (runTillMonthOfPresnetYear)
-                                            replaceLeaveTypeBriefCompletely(availableLeaves, emp.LeaveTypeBrief, type);
-                                        else
-                                            updateLeaveTypeBrief(availableLeaves, emp.LeaveTypeBrief, type);
-                                    }
-
-                                    i++;
-                                }
-                            }
                         }
 
-                        await UpdateEmployeesRecord(employeeAccrualData);
-                        offsetindex += 500;
+                        if (leavePlan != null)
+                        {
+                            leavePlanTypes = JsonConvert.DeserializeObject<List<LeavePlanType>>(leavePlan.AssociatedPlanTypes);
+
+                            int i = 0;
+                            while (i < leavePlanTypes.Count)
+                            {
+                                var type = leaveCalculationModal.leavePlanTypes
+                                    .FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypes[i].LeavePlanTypeId);
+                                if (type != null)
+                                {
+                                    var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
+                                    if (runTillMonthOfPresnetYear)
+                                        replaceLeaveTypeBriefCompletely(availableLeaves, emp.LeaveTypeBrief, type);
+                                    else
+                                        updateLeaveTypeBrief(availableLeaves, emp.LeaveTypeBrief, type, leaveCalculationModal);
+                                }
+
+                                i++;
+                            }
+                        }
                     }
-                    catch (Exception)
-                    {
-                        break;
-                    }
+
+                    await UpdateEmployeesRecord(employeeAccrualData);
+                    offsetindex += 500;
+                }
+                catch (Exception)
+                {
+                    break;
                 }
             }
 
@@ -236,9 +233,10 @@ namespace ServiceLayer.Code
             });
         }
 
-        public void updateLeaveTypeBrief(decimal availableLeaves, List<LeaveTypeBrief> brief, LeavePlanType planType)
+        public void updateLeaveTypeBrief(decimal availableLeaves, List<LeaveTypeBrief> brief, LeavePlanType planType, LeaveCalculationModal leaveCalculationModal)
         {
             var planBrief = brief.Find(x => x.LeavePlanTypeId == planType.LeavePlanTypeId);
+
             if (planBrief == null)
             {
                 brief.Add(new LeaveTypeBrief
@@ -254,7 +252,10 @@ namespace ServiceLayer.Code
             }
             else
             {
-                planBrief.AvailableLeaves += availableLeaves;
+                if (leaveCalculationModal.IsAllLeaveAvailable)
+                    planBrief.AccruedSoFar = availableLeaves;
+                else
+                    planBrief.AvailableLeaves += availableLeaves;
             }
         }
 

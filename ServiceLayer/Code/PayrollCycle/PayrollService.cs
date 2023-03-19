@@ -169,6 +169,8 @@ namespace ServiceLayer.Code.PayrollCycle
                 {
                     item.FinalAmount = (item.FinalAmount / totalDaysInMonth) * totalDays;
                 }
+
+                presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
             }
 
             empPayroll.CompleteSalaryDetail = JsonConvert.SerializeObject(salaryBreakup);
@@ -212,14 +214,14 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(payroll.TimezoneName);
                 payrollCommonData.timeZone = _currentSession.TimeZone;
-                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow.AddMonths(-7), _currentSession.TimeZone);
+                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
                 payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                 payrollCommonData.utcPresentDate = DateTime.UtcNow;
                 switch (payroll.PayFrequency)
                 {
                     case "monthly":
-                        if (payroll.PayCycleDayOfMonth == payrollCommonData.presentDate.Day || true)
+                        if (payroll.PayCycleDayOfMonth == payrollCommonData.presentDate.Day)
                         {
                             await CalculateRunPayrollForEmployees(payroll, payrollCommonData);
                         }

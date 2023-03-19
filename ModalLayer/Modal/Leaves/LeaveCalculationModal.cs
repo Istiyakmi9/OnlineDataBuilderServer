@@ -36,6 +36,7 @@ namespace ModalLayer.Modal.Leaves
         public bool runTillMonthOfPresnetYear { set; get; }
         public decimal ProjectedFutureLeave { get; set; }
         public List<ProjectMemberDetail> projectMemberDetail { set; get; }
+        public bool IsAllLeaveAvailable { set; get; }
         public int ProjectOffset { set; get; } = 0;
         public int GetNextOffset()
         {
