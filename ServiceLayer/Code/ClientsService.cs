@@ -7,6 +7,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
@@ -114,7 +115,9 @@ namespace ServiceLayer.Code
                         Email = client.Email,
                         FileExtension = string.Empty
                     }).ToList<Files>();
-                    _fileService.SaveFile(_fileLocationDetail.UserFolder, files, fileCollection, (organization.ClientId).ToString(), client.OldFileName);
+
+                    var ownerFolderPath = Path.Combine(_fileLocationDetail.UserFolder, $"{UserType.Client}_{organization.ClientId}");
+                    _fileService.SaveFile(ownerFolderPath, files, fileCollection, client.OldFileName);
 
                     var fileInfo = (from n in files
                                     select new

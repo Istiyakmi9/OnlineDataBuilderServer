@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer;
@@ -48,7 +49,7 @@ namespace CoreServiceLayer.Implementation
             return deleteCount;
         }
 
-        public List<Files> SaveFile(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles, string ProfileUid)
+        public List<Files> SaveFile(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles, string oldFileName = null)
         {
             string Extension = "";
             string Email = string.Empty;
@@ -63,115 +64,32 @@ namespace CoreServiceLayer.Implementation
                     if (!string.IsNullOrEmpty(file.Name))
                     {
                         var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
-                        Email = currentFile.Email.Replace("@", "_").Replace(".", "_");
-
-                        if (currentFile.FilePath != null)
-                        {
-                            if (currentFile.FilePath.IndexOf(Email) == -1 && _folderPath.IndexOf(Email) == -1)
-                                _folderPath = Path.Combine(_folderPath, Email);
-                        }
-                        else
-                        {
-                            _folderPath = Path.Combine(_folderPath, Email);
-                        }
-
-                        if (!string.IsNullOrEmpty(currentFile.FilePath))
-                            ActualPath = Path.Combine(_folderPath, currentFile.FilePath);
-                        else
-                            ActualPath = _folderPath;
-
-                        currentFile.FilePath = ActualPath;
-                        if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath)))
-                            Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath));
-
-                        Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
-                        currentFile.FileName = file.Name;
-                        if (!file.Name.Contains("."))
-                            NewFileName = file.Name + "." + Extension;
-                        else
-                            NewFileName = file.Name;
-
                         if (currentFile != null)
                         {
-                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
-                            if (File.Exists(FilePath))
+                            currentFile.FilePath = _folderPath;
+
+                            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath)))
+                                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath));
+
+                            Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
+                            currentFile.FileName = file.Name;
+                            if (!file.Name.Contains("."))
+                                NewFileName = file.Name + "." + Extension;
+                            else
+                                NewFileName = file.Name;
+
+                            if (oldFileName != null)
                             {
-                                File.Delete(FilePath);
-                            }
-
-                            currentFile.FileExtension = Extension;
-                            currentFile.DocumentId = Convert.ToInt64(ProfileUid);
-                            currentFile.FilePath = ActualPath;
-
-                            using (FileStream fs = System.IO.File.Create(FilePath))
-                            {
-                                file.CopyTo(fs);
-                                fs.Flush();
-                            }
-                        }
-                    }
-                }
-            }
-            return fileDetail;
-        }
-
-        public List<Files> SaveFile(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles, string ProfileUid, string OldName)
-        {
-            string Extension = "";
-            string Email = string.Empty;
-            string NewFileName = string.Empty;
-            string ActualPath = string.Empty;
-            string _folderPath = String.Empty;
-            if (!string.IsNullOrEmpty(FolderPath))
-            {
-                foreach (var file in formFiles)
-                {
-                    _folderPath = FolderPath;
-                    if (!string.IsNullOrEmpty(file.Name))
-                    {
-                        var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
-                        Email = currentFile.Email.Replace("@", "_").Replace(".", "_");
-
-                        if (currentFile.FilePath != null)
-                        {
-                            if (currentFile.FilePath.IndexOf(Email) == -1 && _folderPath.IndexOf(Email) == -1)
-                                _folderPath = Path.Combine(_folderPath, Email);
-                        }
-                        else
-                        {
-                            _folderPath = Path.Combine(_folderPath, Email);
-                        }
-
-                        if (!string.IsNullOrEmpty(currentFile.FilePath))
-                            ActualPath = Path.Combine(_folderPath, currentFile.FilePath);
-                        else
-                            ActualPath = _folderPath;
-
-                        currentFile.FilePath = ActualPath;
-                        if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath)))
-                            Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath));
-
-                        Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
-                        currentFile.FileName = file.Name;
-                        if (!file.Name.Contains("."))
-                            NewFileName = file.Name + "." + Extension;
-                        else
-                            NewFileName = file.Name;
-
-                        if (currentFile != null)
-                        {
-                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
-                            if (File.Exists(FilePath))
-                                File.Delete(FilePath);
-                            if (OldName != null)
-                            {
-                                string oldFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, OldName);
-                                if (File.Exists(oldFilePath) && !string.IsNullOrEmpty(OldName))
+                                string oldFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath, oldFileName);
+                                if (File.Exists(oldFilePath) && !string.IsNullOrEmpty(oldFileName))
                                     File.Delete(oldFilePath);
                             }
+
+                            string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, _folderPath, NewFileName);
+                            if (File.Exists(FilePath))
+                                File.Delete(FilePath);
+
                             currentFile.FileExtension = Extension;
-                            currentFile.DocumentId = Convert.ToInt64(ProfileUid);
-                            currentFile.FilePath = ActualPath;
 
                             using (FileStream fs = System.IO.File.Create(FilePath))
                             {
@@ -182,8 +100,80 @@ namespace CoreServiceLayer.Implementation
                     }
                 }
             }
+
             return fileDetail;
         }
+
+        //public List<Files> SaveFile(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles, string OldName)
+        //{
+        //    string Extension = "";
+        //    // string Email = string.Empty;
+        //    string NewFileName = string.Empty;
+        //    string ActualPath = string.Empty;
+        //    string _folderPath = String.Empty;
+        //    if (!string.IsNullOrEmpty(FolderPath))
+        //    {
+        //        foreach (var file in formFiles)
+        //        {
+        //            _folderPath = FolderPath;
+        //            if (!string.IsNullOrEmpty(file.Name))
+        //            {
+        //                var currentFile = fileDetail.Where(x => x.FileName == file.Name).FirstOrDefault();
+        //                // Email = currentFile.Email.Replace("@", "_").Replace(".", "_");
+
+        //                if (currentFile.FilePath != null)
+        //                {
+        //                    _folderPath = Path.Combine(_folderPath, currentFile.FileOwnerId.ToString());
+
+        //                    if (currentFile.FilePath.IndexOf(Email) == -1 && _folderPath.IndexOf(Email) == -1)
+        //                        _folderPath = Path.Combine(_folderPath, Email);
+        //                }
+        //                else
+        //                {
+        //                    _folderPath = Path.Combine(_folderPath, Email);
+        //                }
+
+        //                if (!string.IsNullOrEmpty(currentFile.FilePath))
+        //                    ActualPath = Path.Combine(_folderPath, currentFile.FilePath);
+        //                else
+        //                    ActualPath = _folderPath;
+
+        //                currentFile.FilePath = ActualPath;
+        //                if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath)))
+        //                    Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath));
+
+        //                Extension = file.FileName.Substring(file.FileName.LastIndexOf('.') + 1, file.FileName.Length - file.FileName.LastIndexOf('.') - 1);
+        //                currentFile.FileName = file.Name;
+        //                if (!file.Name.Contains("."))
+        //                    NewFileName = file.Name + "." + Extension;
+        //                else
+        //                    NewFileName = file.Name;
+
+        //                if (currentFile != null)
+        //                {
+        //                    string FilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, NewFileName);
+        //                    if (File.Exists(FilePath))
+        //                        File.Delete(FilePath);
+        //                    if (OldName != null)
+        //                    {
+        //                        string oldFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, ActualPath, OldName);
+        //                        if (File.Exists(oldFilePath) && !string.IsNullOrEmpty(OldName))
+        //                            File.Delete(oldFilePath);
+        //                    }
+        //                    currentFile.FileExtension = Extension;
+        //                    currentFile.FilePath = ActualPath;
+
+        //                    using (FileStream fs = System.IO.File.Create(FilePath))
+        //                    {
+        //                        file.CopyTo(fs);
+        //                        fs.Flush();
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    return fileDetail;
+        //}
 
         public List<Files> SaveFileToLocation(string FolderPath, List<Files> fileDetail, IFormFileCollection formFiles)
         {

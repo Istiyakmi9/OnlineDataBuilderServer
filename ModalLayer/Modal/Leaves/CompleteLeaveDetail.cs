@@ -32,6 +32,7 @@ namespace ModalLayer.Modal.Leaves
     public class RequestChainModal
     {
         public long ExecuterId { set; get; }
+        public string ExecuterEmail { set; get; }
         public int Status { set; get; }
         public DateTime ReactedOn { set; get; }
         public int Level { get; set; }

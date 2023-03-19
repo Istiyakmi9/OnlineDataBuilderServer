@@ -27,6 +27,7 @@ namespace ModalLayer.Modal
         public int LunchDuration { set; get; }
         public string OfficeTime { set; get; }
         public int RowIndex { set; get; }
+        public int ProjectId { set; get; }
         public DateTime DOB { get; set; }
         public DateTime CreatedOn { get; set; }
         public string ProfessionalDetail_Json { get; set; }
