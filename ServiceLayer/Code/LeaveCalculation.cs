@@ -775,6 +775,13 @@ namespace ServiceLayer.Code
 
             int autoExpiryDays = 0;
             List<RequestChainModal> requestChainModals = GetApprovalChainDetail(leaveCalculationModal, ref autoExpiryDays);
+            if (requestChainModals.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Unable to find the approval work flow or reporting manage detail.");
+
+            var firstExecuter = requestChainModals.First();
+            leaveCalculationModal.AssigneId = firstExecuter.ExecuterId;
+            leaveCalculationModal.AssigneeEmail = firstExecuter.ExecuterEmail;
+
             CompleteLeaveDetail newLeaveDeatil = new CompleteLeaveDetail()
             {
                 RecordId = RecordId,
@@ -809,7 +816,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.EmployeeId,
                 leaveCalculationModal.leaveRequestDetail.LeaveDetail,
                 leaveCalculationModal.leaveRequestDetail.Reason,
-                AssigneeId = leaveCalculationModal.employee.ReportingManagerId,
+                AssigneeId = firstExecuter.ExecuterId,
                 ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
                 Year = leaveRequestModal.LeaveToDay.Year,
                 leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
@@ -871,45 +878,58 @@ namespace ServiceLayer.Code
 
         private List<RequestChainModal> GetApprovalChainDetail(LeaveCalculationModal leaveCalculationModal, ref int autoExipredDays)
         {
+
             var requestChainModals = new List<RequestChainModal>();
-            if (leaveCalculationModal.employee.ProjectId == 0)
+            var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
+            {
+                Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
+            });
+
+            if (resultSet.Tables.Count != 2)
             {
                 autoExipredDays = 0;
                 requestChainModals = AssignReportingManager(leaveCalculationModal);
             }
             else
             {
-                List<ApprovalChainDetail> approvalChainDetail = _db.GetList<ApprovalChainDetail>("sp_workflow_chain_by_ids", new
-                {
-                    Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
-                });
+                List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
+                List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
 
                 if (approvalChainDetail.Count > 0)
                 {
                     autoExipredDays = approvalChainDetail.First().AutoExpireAfterDays;
 
                     bool flag = false;
-                    int index = 1;
+                    int index = 0;
                     while (index < approvalChainDetail.Count)
                     {
                         var n = approvalChainDetail.ElementAt(index);
-                        flag = GetExecuterId(leaveCalculationModal, n);
+                        flag = GetExecuterId(leaveCalculationModal, n, employeeWithRoles);
 
-                        requestChainModals.Add(new RequestChainModal
+                        if (flag)
                         {
-                            ExecuterId = n.AssignieId,
-                            ExecuterEmail = n.AssignieeEmail,
-                            FeedBack = String.Empty,
-                            Level = index,
-                            ReactedOn = DateTime.UtcNow,
-                            Status = index == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
-                            ForwardAfterDays = n.ForwardAfterDays,
-                            ForwardWhenStatus = n.ForwardWhen,
-                            IsRequired = n.IsRequired
-                        });
-
-                        if (!flag)
+                            requestChainModals.Add(new RequestChainModal
+                            {
+                                ExecuterId = n.AssignieId,
+                                IsActive = index == 0 ? true : false,
+                                ExecuterEmail = n.AssignieeEmail,
+                                FeedBack = String.Empty,
+                                Level = index,
+                                ReactedOn = DateTime.UtcNow,
+                                Status = index == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
+                                ForwardAfterDays = n.ForwardAfterDays,
+                                ForwardWhenStatus = n.ForwardWhen,
+                                IsRequired = n.IsRequired
+                            });
+                        }
+                        else
+                        {
+                            autoExipredDays = 0;
+                            if (requestChainModals.Count == 0)
+                                requestChainModals = AssignReportingManager(leaveCalculationModal);
                             break;
+                        }
+
 
                         index++;
                     }
@@ -930,6 +950,7 @@ namespace ServiceLayer.Code
             requestChainModals.Add(new RequestChainModal
             {
                 ExecuterId = leaveCalculationModal.employee.ReportingManagerId,
+                IsActive = true,
                 ExecuterEmail = leaveCalculationModal.employee.ManagerEmail,
                 FeedBack = String.Empty,
                 Level = 1,
@@ -943,9 +964,17 @@ namespace ServiceLayer.Code
             return requestChainModals;
         }
 
-        private bool GetExecuterId(LeaveCalculationModal leaveCalculationModal, ApprovalChainDetail chain)
+        private bool GetExecuterId(LeaveCalculationModal leaveCalculationModal, ApprovalChainDetail chain, List<EmployeeWithRoles> employeeWithRoles)
         {
-            var memberDetail = leaveCalculationModal.projectMemberDetail.Find(x => x.EmployeeId == chain.AssignieId && x.DesignationId == 1);
+            var record = employeeWithRoles.Find(x => x.DesignationId == chain.AssignieId);
+            if (record != null)
+            {
+                chain.AssignieId = record.EmployeeId;
+                chain.AssignieeEmail = record.Email;
+                return true;
+            }
+
+            var memberDetail = leaveCalculationModal.projectMemberDetail.Find(x => x.DesignationId == chain.AssignieId && x.ProjectId == leaveCalculationModal.employee.ProjectId);
             if (memberDetail != null)
             {
                 chain.AssignieId = memberDetail.EmployeeId;
@@ -953,24 +982,6 @@ namespace ServiceLayer.Code
                 return true;
             }
 
-            memberDetail = leaveCalculationModal.projectMemberDetail.Find(x => x.EmployeeId == chain.AssignieId && x.DesignationId == 2);
-            if (memberDetail != null)
-            {
-                chain.AssignieId = memberDetail.EmployeeId;
-                chain.AssignieeEmail = memberDetail.Email;
-                return true;
-            }
-
-            memberDetail = leaveCalculationModal.projectMemberDetail.Find(x => x.EmployeeId == chain.AssignieId && x.DesignationId == 10);
-            if (memberDetail != null)
-            {
-                chain.AssignieId = memberDetail.EmployeeId;
-                chain.AssignieeEmail = memberDetail.Email;
-                return true;
-            }
-
-            chain.AssignieId = leaveCalculationModal.employee.ReportingManagerId;
-            chain.AssignieeEmail = leaveCalculationModal.employee.ManagerEmail;
             return false;
         }
 

@@ -30,28 +30,28 @@ namespace ServiceLayer.Code
             Project projectDetail = _db.Get<Project>("sp_project_detail_getby_id", new { project.ProjectId });
             if (projectDetail == null)
                 throw new HiringBellException("Invalid project selected");
-            else
-            {
-                var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, "project_document");
-                if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
-                    Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
-                string filename = projectDetail.ProjectName.Replace(" ", "") + ".txt";
-                var filepath = Path.Combine(folderPath, filename);
-                if (File.Exists(filepath))
-                    File.Delete(filepath);
 
-                var txt = new StreamWriter(filepath);
-                txt.Write(project.SectionDescription);
-                txt.Close();
+            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, "project_document");
+            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+            string filename = projectDetail.ProjectName.Replace(" ", "") + ".txt";
+            var filepath = Path.Combine(folderPath, filename);
+            if (File.Exists(filepath))
+                File.Delete(filepath);
 
-                projectDetail.PageIndexDetail = "[]";
-                projectDetail.KeywordDetail = "[]";
-                projectDetail.DocumentPath = filepath;
-                projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
-            }
+            var txt = new StreamWriter(filepath);
+            txt.Write(project.SectionDescription);
+            txt.Close();
+
+            projectDetail.PageIndexDetail = "[]";
+            projectDetail.KeywordDetail = "[]";
+            projectDetail.DocumentPath = filepath;
+            projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
+
             var result = _db.Execute<Project>("sp_wiki_detail_upd", projectDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
+
             return result;
         }
 
@@ -62,7 +62,7 @@ namespace ServiceLayer.Code
             if (project == null)
             {
                 project = projectDetail;
-                project.TeamMemberIds = project.TeamMemberIds == null ? "[]" 
+                project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
                                         : JsonConvert.SerializeObject(project.TeamMemberIds);
                 project.PageIndexDetail = "[]";
                 project.KeywordDetail = "[]";
@@ -72,9 +72,11 @@ namespace ServiceLayer.Code
             {
                 project.ProjectName = projectDetail.ProjectName;
                 project.ProjectDescription = projectDetail.ProjectDescription;
+                project.PreviousProjectManagerId = projectDetail.ProjectManagerId == project.ProjectManagerId ? 0 : project.ProjectManagerId;
                 project.ProjectManagerId = projectDetail.ProjectManagerId;
                 project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
                                         : project.TeamMemberIds;
+                project.PreviousArchitectId = projectDetail.ArchitectId == project.ArchitectId ? 0 : project.ArchitectId;
                 project.ArchitectId = projectDetail.ArchitectId;
                 project.IsClientProject = projectDetail.IsClientProject;
                 project.ClientId = projectDetail.ClientId;
@@ -83,13 +85,14 @@ namespace ServiceLayer.Code
                 project.ProjectEndedOn = projectDetail.ProjectEndedOn;
                 project.CompanyId = projectDetail.CompanyId;
                 project.DocumentPath = projectDetail.DocumentPath;
-                project.TeamLeadId = projectDetail.TeamLeadId;
             }
+
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
 
             var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to Insert or Update");
+
             return result;
         }
 
@@ -131,7 +134,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetProjectPageDetailService(long ProjectId)
         {
-            var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId});
+            var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId });
 
             if (result.Tables.Count != 3)
                 throw HiringBellException.ThrowBadRequest("Project detail not found. Please contact to admin.");

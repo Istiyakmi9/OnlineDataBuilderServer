@@ -399,8 +399,6 @@ namespace ServiceLayer.Code
 
             if (!leaveCalculationModal.IsEmailNotificationPasued)
             {
-                leaveCalculationModal.AssigneId = leaveRequestModal.AssigneId;
-                leaveCalculationModal.AssigneeEmail = leaveRequestModal.AssigneeEmail;
                 Task task = Task.Run(async () => await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason));
             }
 
