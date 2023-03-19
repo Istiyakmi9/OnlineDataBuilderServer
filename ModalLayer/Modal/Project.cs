@@ -6,7 +6,9 @@ namespace ModalLayer.Modal
     {
         public string ProjectName { set; get; }
         public long ProjectManagerId { set; get; }
+        public long PreviousProjectManagerId { set; get; }
         public long ArchitectId { set; get; }
+        public long PreviousArchitectId { set; get; }
         public string ProjectDescription { set; get; }
         public string TeamMemberIds { set; get; }
         public DateTime? ProjectStartedOn { set; get; }
@@ -21,7 +23,6 @@ namespace ModalLayer.Modal
         public long AdminId { get; set; }
         public int Total { get; set; }
         public string DocumentPath { get; set; }
-        public long TeamLeadId { get; set; }
     }
 
     public class ProjectMemberDetail
