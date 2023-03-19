@@ -104,7 +104,7 @@ namespace ServiceLayer.Code.Leaves
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
             now = leaveCalculationModal.timeZonePresentDate;
 
-            if (!await CanApplyEntireLeave(leavePlanType))
+            if (!await CanApplyEntireLeave(leaveCalculationModal, leavePlanType))
             {
                 var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                 if (leaveLimit > 0)
@@ -113,6 +113,10 @@ namespace ServiceLayer.Code.Leaves
                     // start leave accrual calculation for present month
                     availableLeaves = await ExecuteLeaveAccrualDetail();
                 }
+            }
+            else
+            {
+                availableLeaves = leavePlanType.AvailableLeave;
             }
 
             return await Task.FromResult(availableLeaves);
@@ -125,7 +129,7 @@ namespace ServiceLayer.Code.Leaves
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
             now = leaveCalculationModal.timeZonePresentDate;
 
-            if (!await CanApplyEntireLeave(leavePlanType))
+            if (!await CanApplyEntireLeave(leaveCalculationModal, leavePlanType))
             {
                 var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
                 if (leaveLimit > 0)
@@ -163,13 +167,18 @@ namespace ServiceLayer.Code.Leaves
         }
 
         // step - 1
-        private async Task<bool> CanApplyEntireLeave(LeavePlanType leaveType)
+        private async Task<bool> CanApplyEntireLeave(LeaveCalculationModal leaveCalculationModal, LeavePlanType leaveType)
         {
             bool flag = false;
             if (_leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave)
             {
                 flag = true;
+                leaveCalculationModal.IsAllLeaveAvailable = true;
                 leaveType.AvailableLeave = _leavePlanConfiguration.leaveDetail.LeaveLimit;
+            }
+            else
+            {
+                leaveCalculationModal.IsAllLeaveAvailable = false;
             }
 
             return await Task.FromResult(flag);

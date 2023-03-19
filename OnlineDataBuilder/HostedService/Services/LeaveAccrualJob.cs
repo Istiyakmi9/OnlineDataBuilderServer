@@ -11,12 +11,8 @@ namespace OnlineDataBuilder.HostedService.Services
         {
             using (IServiceScope scope = _serviceProvider.CreateScope())
             {
-                int days = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
-                if (DateTime.UtcNow.Day == days)
-                {
-                    ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
-                    await _leaveCalculation.StartAccrualCycle();
-                }
+                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
+                await _leaveCalculation.StartAccrualCycle();
             }
         }
     }

@@ -50,6 +50,8 @@ namespace OnlineDataBuilder.HostedService
             await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
 
             await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider);
+
+            await PayrollCycleJob.RunPayrollAsync(_serviceProvider);
         }
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
