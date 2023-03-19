@@ -240,7 +240,7 @@ namespace ServiceLayer.Code
                  ).ToList<ApprovalChainDetail>();
             }
 
-            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 11 || x.RoleId == 12 || x.RoleId == 13 || x.RoleId == 16);
+            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 2 || x.RoleId == 19 || x.RoleId == 3 || x.RoleId == 5);
 
             return await Task.FromResult(new { approvalWorkFlowChain, employeeRole });
         }
