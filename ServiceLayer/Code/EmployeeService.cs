@@ -1020,7 +1020,7 @@ namespace ServiceLayer.Code
                 Title = "Title"
             };
 
-            _eMailManager.SendMailAsync(emailSenderModal);
+            await _eMailManager.SendMailAsync(emailSenderModal);
             return "Generated successfuly";
         }
 
