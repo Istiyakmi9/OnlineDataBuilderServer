@@ -83,6 +83,7 @@ namespace ServiceLayer.Code
                 project.ProjectEndedOn = projectDetail.ProjectEndedOn;
                 project.CompanyId = projectDetail.CompanyId;
                 project.DocumentPath = projectDetail.DocumentPath;
+                project.TeamLeadId = projectDetail.TeamLeadId;
             }
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
 
@@ -130,9 +131,6 @@ namespace ServiceLayer.Code
 
         public DataSet GetProjectPageDetailService(long ProjectId)
         {
-            if (ProjectId <= 0)
-                throw HiringBellException.ThrowBadRequest("Invalid project selected. Please select a valid project");
-
             var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId});
 
             if (result.Tables.Count != 3)
