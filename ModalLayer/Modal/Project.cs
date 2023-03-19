@@ -21,6 +21,7 @@ namespace ModalLayer.Modal
         public long AdminId { get; set; }
         public int Total { get; set; }
         public string DocumentPath { get; set; }
+        public long TeamLeadId { get; set; }
     }
 
     public class ProjectMemberDetail
