@@ -43,13 +43,13 @@ namespace OnlineDataBuilder.HostedService
 
         private async Task RunJobAsync()
         {
-            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
+            var companySettings = await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
 
-            await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
+            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
 
             await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
 
-            await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider);
+            await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
 
             await PayrollCycleJob.RunPayrollAsync(_serviceProvider);
         }

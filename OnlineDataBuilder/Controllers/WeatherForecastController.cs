@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -106,7 +107,7 @@ namespace OnlineDataBuilder.Controllers
 
             //await RunDailyTimesheetCreationJob();
 
-            await RunPayrollAsync();
+            // await RunPayrollAsync();
 
 
             // await LeaveLevelMigration();
@@ -125,7 +126,14 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task LeaveLevelMigration()
         {
-            await _leaveRequestService.LeaveLeaveManagerMigration();
+            List<CompanySetting> companySettings = new List<CompanySetting>();
+            companySettings.Add(new CompanySetting
+            {
+                CompanyId = 1,
+                TimezoneName = "India Standard Time"
+            });
+
+            await _leaveRequestService.LeaveLeaveManagerMigration(companySettings);
         }
 
         private async Task RunPayrollAsync()
