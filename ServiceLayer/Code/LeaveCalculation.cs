@@ -1,8 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Presentation;
 using Microsoft.AspNetCore.Http;
 using ModalLayer;
 using ModalLayer.Modal;
@@ -132,7 +130,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
-        public async Task StartAccrualCycle(bool runTillMonthOfPresnetYear = false)
+        public async Task<List<CompanySetting>> StartAccrualCycle(bool runTillMonthOfPresnetYear = false)
         {
             var CompanySettings = _db.GetList<CompanySetting>("sp_company_setting_get_all");
             foreach (var setting in CompanySettings)
@@ -144,6 +142,8 @@ namespace ServiceLayer.Code
                     await RunAccrualCycle(runTillMonthOfPresnetYear);
                 }
             }
+
+            return CompanySettings;
         }
 
         public async Task RunAccrualCycle(bool runTillMonthOfPresnetYear = false)
@@ -915,9 +915,9 @@ namespace ServiceLayer.Code
                                 IsActive = index == 0 ? true : false,
                                 ExecuterEmail = n.AssignieeEmail,
                                 FeedBack = String.Empty,
-                                Level = index,
+                                Level = (index + 1),
                                 ReactedOn = DateTime.UtcNow,
-                                Status = index == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
+                                Status = (index + 1) == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
                                 ForwardAfterDays = n.ForwardAfterDays,
                                 ForwardWhenStatus = n.ForwardWhen,
                                 IsRequired = n.IsRequired

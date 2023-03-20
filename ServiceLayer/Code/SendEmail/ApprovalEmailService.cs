@@ -53,13 +53,13 @@ namespace ServiceLayer.Code.SendEmail
 
         #region LEAVE APPROVAL
 
-        private async Task<TemplateReplaceModal> GetLeaveApprovalTemplate(LeaveRequestDetail leaveRequestDetail, ItemStatus status)
+        private async Task<TemplateReplaceModal> GetLeaveApprovalTemplate(LeaveRequestDetail leaveRequestDetail, ItemStatus status, string SendTo)
         {
             var templateReplaceModal = new TemplateReplaceModal
             {
                 DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
                 RequestType = ApplicationConstants.Leave,
-                ToAddress = new List<string> { leaveRequestDetail.Email },
+                ToAddress = new List<string> { SendTo },
                 ActionType = status.ToString(),
                 FromDate = leaveRequestDetail.LeaveFromDay,
                 ToDate = leaveRequestDetail.LeaveToDay,
@@ -75,13 +75,13 @@ namespace ServiceLayer.Code.SendEmail
 
         public async Task LeaveApprovalStatusSendEmail(LeaveRequestDetail leaveRequestDetail, ItemStatus status)
         {
-            var templateReplaceModal = await GetLeaveApprovalTemplate(leaveRequestDetail, status);
+            var templateReplaceModal = await GetLeaveApprovalTemplate(leaveRequestDetail, status, leaveRequestDetail.Email);
             await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal);
         }
 
-        public async Task ManagerApprovalMigrationEmail(LeaveRequestDetail leaveRequestDetail, Employee employee)
+        public async Task ManagerApprovalMigrationEmail(LeaveRequestDetail leaveRequestDetail, string SendTo)
         {
-            var templateReplaceModal = await GetLeaveApprovalTemplate(leaveRequestDetail, ItemStatus.Generated);
+            var templateReplaceModal = await GetLeaveApprovalTemplate(leaveRequestDetail, ItemStatus.Generated, SendTo);
             await _emailService.SendEmailWithTemplate(ApplicationConstants.MigrateApprovalToNewLevel, templateReplaceModal);
         }
 
