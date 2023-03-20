@@ -434,8 +434,9 @@ namespace ServiceLayer.Code
                 companySettingDetail.IsPrimary = companySetting.IsPrimary;
                 companySettingDetail.FinancialYear = companySetting.FinancialYear;
                 companySettingDetail.AttendanceSubmissionLimit = companySetting.AttendanceSubmissionLimit;
+                companySettingDetail.LeaveAccrualRunCronDayOfMonth = companySetting.LeaveAccrualRunCronDayOfMonth;
+                companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
             }
-            companySettingDetail.DefaultManagers = JsonConvert.SerializeObject(companySetting.ManagerLevelId);
 
             var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
             {
@@ -447,8 +448,10 @@ namespace ServiceLayer.Code
                 companySettingDetail.DeclarationEndMonth,
                 companySettingDetail.IsPrimary,
                 companySettingDetail.FinancialYear,
-                companySettingDetail.DefaultManagers,
                 companySettingDetail.AttendanceSubmissionLimit,
+                companySettingDetail.LeaveAccrualRunCronDayOfMonth,
+                companySettingDetail.EveryMonthLastDayOfDeclaration,
+                companySettingDetail.TimezoneName,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
