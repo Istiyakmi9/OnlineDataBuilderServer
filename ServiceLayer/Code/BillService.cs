@@ -1337,7 +1337,7 @@ namespace ServiceLayer.Code
 
             payslipGenerationModal.EmployeeRoles = Converter.ToList<EmployeeRole>(ds.Tables[5]);
             if (ds.Tables[3].Rows.Count != 1)
-                throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
+                throw new HiringBellException("Fail to get attendance detail. Please contact to admin.");
 
             payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
 
