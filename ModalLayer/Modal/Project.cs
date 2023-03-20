@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -23,6 +24,7 @@ namespace ModalLayer.Modal
         public long AdminId { get; set; }
         public int Total { get; set; }
         public string DocumentPath { get; set; }
+        public List<ProjectMemberDetail> TeamMembers { get; set; }
     }
 
     public class ProjectMemberDetail
