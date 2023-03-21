@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Code.ApprovalChain;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -161,12 +163,22 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public async Task LeaveLeaveManagerMigration()
+        public async Task LeaveLeaveManagerMigration(List<CompanySetting> companySettings)
         {
-            var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new { Year = DateTime.UtcNow.Year });
-            foreach (var level in leaveRequestDetails)
+            foreach (var setting in companySettings)
             {
-                await ExecuteFlowChainCycle(level);
+                _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
+                _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
+
+                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new 
+                { 
+                    Year = DateTime.UtcNow.Year,
+                    setting.CompanyId
+                });
+                foreach (var level in leaveRequestDetails)
+                {
+                    await ExecuteFlowChainCycle(level);
+                }
             }
         }
 
@@ -202,7 +214,7 @@ namespace ServiceLayer.Code
                                         chain.Status = (int)ItemStatus.Pending;
 
                                         level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
-                                        await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
+                                        await UpdateLeaveNotification(level, request.RecordId, chain);
                                     }
 
                                     break;
@@ -235,7 +247,7 @@ namespace ServiceLayer.Code
 
                                         level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
                                         // notify to next manage for the request.
-                                        await UpdateLeaveNotification(level, request.RecordId, chain.ExecuterId);
+                                        await UpdateLeaveNotification(level, request.RecordId, chain);
                                         break;
                                     }
                                     else
@@ -251,7 +263,7 @@ namespace ServiceLayer.Code
                                 }
                                 else if (chain.Status == (int)ItemStatus.Approved)
                                 {
-                                    chain.FeedBack = "AUTO APPROVED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
+                                    chain.FeedBack = "LEAVE APPROVED.";
                                     level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
 
                                     // approve in employee leave request
@@ -259,6 +271,15 @@ namespace ServiceLayer.Code
                                     break;
                                 }
                                 else if (chain.Status == (int)ItemStatus.Rejected)
+                                {
+                                    chain.FeedBack = "LEAVE REJECTED.";
+                                    level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
+
+                                    // reject in employee leave request
+                                    await UpdateLeaveDetail(level, ItemStatus.Rejected);
+                                    break;
+                                }
+                                else
                                 {
                                     chain.FeedBack = "AUTO REJECTED, NO ACTION TAKEN FOR THE GIVEN PERIOD OF TIME.";
                                     level.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetails);
@@ -276,7 +297,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, long ExecuterId)
+        private async Task UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, RequestChainModal chain)
         {
             // update employee_leave_request table and update leave_request_notification to next manager
             var result = _db.Execute<string>("sp_leave_request_and_notification_update_level", new
@@ -284,18 +305,14 @@ namespace ServiceLayer.Code
                 leaveRequestDetail.LeaveRequestId,
                 leaveRequestDetail.LeaveDetail,
                 RecordId,
-                ExecuterId
+                chain.ExecuterId
             }, false);
 
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to update leave request and notification");
             else
             {
-                var employee = _db.Get<Employee>("sp_employee_only_by_id", new { EmployeeId = ExecuterId });
-                if (employee != null)
-                {
-                    var task = Task.Run(async () => await _approvalEmailService.ManagerApprovalMigrationEmail(leaveRequestDetail, employee));
-                }
+                var task = Task.Run(async () => await _approvalEmailService.ManagerApprovalMigrationEmail(leaveRequestDetail, chain.ExecuterEmail));
             }
 
             await Task.CompletedTask;
