@@ -48,7 +48,7 @@ namespace ModalLayer.Modal
         public decimal TotalMinutes { get; set; }
         public bool IsHoliday { get; set; }
         public bool IsWeekEnd { get; set; }
-        public ItemStatus TimesheetStatus { get; set; }
+        public int TimesheetStatus { get; set; }
         public DateTime PresentDate { get; set; }
         public string UserComments { get; set; }
         public string EmployeeName { set; get; }
