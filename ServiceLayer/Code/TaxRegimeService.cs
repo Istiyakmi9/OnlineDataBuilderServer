@@ -138,7 +138,6 @@ namespace ServiceLayer.Code
             }
             catch (Exception)
             {
-                _db.RollBack();
                 throw;
             }
         }
@@ -233,7 +232,6 @@ namespace ServiceLayer.Code
             }
             catch (Exception)
             {
-                _db.RollBack();
                 throw;
             }
         }

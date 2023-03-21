@@ -1,10 +1,6 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using ModalLayer;
-using System;
-using System.Collections.Concurrent;
+﻿using ModalLayer;
 using System.Collections.Generic;
 using System.Data;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace BottomhalfCore.DatabaseLayer.Common.Code
@@ -13,10 +9,6 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
     {
         /*===========================================  GetDataSet =============================================================*/
         Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false);
-        string ExecuteNonQuery(string ProcedureName, DbParam[] param, bool OutParam);
-        void StartTransaction(IsolationLevel isolationLevel);
-        void Commit();
-        void RollBack();
 
         /*=========================================  Generic type =====================================*/
 
