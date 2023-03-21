@@ -731,7 +731,7 @@ namespace ServiceLayer.Code
                     var workingDays = daysInMonth - eCal.Doj.Day + 1;
                     var currentMonthTax = ProrateAmountOnJoiningMonth(permonthTax, daysInMonth, workingDays);
                     var remaningTaxAmount = (permonthTax * totalWorkingMonth) - currentMonthTax;
-                    permonthTax = remaningTaxAmount / (totalWorkingMonth - 1);
+                    permonthTax = remaningTaxAmount > 0 ? remaningTaxAmount / (totalWorkingMonth - 1) : 0;
 
                     taxdetails.Add(new TaxDetails
                     {
