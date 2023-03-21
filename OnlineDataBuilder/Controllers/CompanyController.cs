@@ -48,6 +48,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateOrganizationDetail")]
         public async Task<ApiResponse> InsertUpdateOrganizationDetail()
         {
@@ -85,6 +86,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("GetOrganizationDetail")]
         public IResponse<ApiResponse> GetOrganizationDetail()
         {
