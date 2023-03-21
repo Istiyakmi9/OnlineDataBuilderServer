@@ -103,7 +103,7 @@ namespace ServiceLayer.Code
         public dynamic GetCompanyById(int CompanyId)
         {
             OrganizationDetail result = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId });
-            List<Files> files = _db.GetList<Files>("sp_Files_GetBy_OwnerId", new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
+            List<Files> files = _db.GetList<Files>("sp_userFiles_GetBy_OwnerId", new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
             return new { OrganizationDetail = result, Files = files };
         }
 
@@ -132,6 +132,11 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to get organization detail.");
 
             company = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
+            if (ResultSet.Tables[1].Rows.Count > 0)
+                companyInfo.Files = Converter.ToType<Files>(ResultSet.Tables[1]);
+            else
+                companyInfo.Files = new Files();
+
             if (company != null)
             {
                 company.OrganizationName = companyInfo.OrganizationName;
@@ -222,7 +227,7 @@ namespace ServiceLayer.Code
 
                 var files = fileCollection.Select(x => new Files
                 {
-                    FileUid = companyInfo.FileId,
+                    FileUid = userType == (int)UserType.Compnay ? companyInfo.FileId : companyInfo.Files.FileId,
                     FileName = x.Name,
                     Email = companyInfo.Email,
                     FileExtension = string.Empty
@@ -233,7 +238,7 @@ namespace ServiceLayer.Code
                                 select new
                                 {
                                     FileId = n.FileUid,
-                                    FileOwnerId = companyInfo.CompanyId,
+                                    FileOwnerId = userType == (int)UserType.Compnay ? companyInfo.CompanyId : companyInfo.OrganizationId,
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
