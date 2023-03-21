@@ -9,7 +9,6 @@ namespace ModalLayer.Modal
         public DataTable FileDetail { get; set; }
         public DataTable Employees { get; set; }
         public List<DailyTimesheetDetail> TimesheetDetails { get; set; }
-        public List<DateTime> MissingDate { get; set; }
         public DataTable Organizations { get; set; }
         public TimesheetDetail TimesheetDetail { get; set; }
     }

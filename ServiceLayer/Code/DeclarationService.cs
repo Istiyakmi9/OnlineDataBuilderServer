@@ -213,8 +213,6 @@ namespace ServiceLayer.Code
         {
             try
             {
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-
                 DbResult Result = null;
                 List<int> fileIds = new List<int>();
                 if (FileCollection.Count > 0)
@@ -268,12 +266,9 @@ namespace ServiceLayer.Code
 
                 if (!Bot.IsSuccess(Result))
                     throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
-
-                _db.Commit();
             }
             catch
             {
-                _db.RollBack();
                 _fileService.DeleteFiles(files);
                 throw;
             }
@@ -941,8 +936,6 @@ namespace ServiceLayer.Code
 
                 declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
 
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-
                 DbResult Result = null;
                 if (files != null && files.Count > 0)
                 {
@@ -970,13 +963,10 @@ namespace ServiceLayer.Code
                 if (files != null)
                     _fileService.DeleteFiles(files);
 
-                _db.Commit();
-
                 return await this.GetEmployeeDeclarationDetail(declaration.EmployeeId, true);
             }
             catch
             {
-                _db.RollBack();
                 throw;
             }
         }
@@ -1009,7 +999,6 @@ namespace ServiceLayer.Code
                     declaration.DeclarationDetail = JsonConvert.SerializeObject(salaryComponents);
                 }
 
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
 
                 var Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId }, true);
                 if (ApplicationConstants.IsExecuted(Result.statusMessage))
@@ -1030,13 +1019,11 @@ namespace ServiceLayer.Code
                     if (file != null)
                         _fileService.DeleteFiles(new List<Files> { file });
                 }
-                _db.Commit();
+
                 return await this.GetEmployeeDeclarationDetail(declaration.EmployeeId, false);
-                //return await Task.FromResult(ApplicationConstants.Successfull);
             }
             catch
             {
-                _db.RollBack();
                 throw;
             }
         }

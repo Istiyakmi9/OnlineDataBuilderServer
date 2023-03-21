@@ -40,15 +40,15 @@ namespace OnlineDataBuilder.Controllers
         [Route("GenerateBill")]
         public async Task<ApiResponse> GenerateBill()
         {
-            //_httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
-            //_httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
-            //_httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
+            _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
+            _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
+            _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
             _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
 
             BillGenerationModal billModal = new BillGenerationModal();
-            //billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
-            //billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
-            //billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
+            billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
+            billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
+            billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
             billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
 
             // var fileDetail = _billService.GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
@@ -61,15 +61,15 @@ namespace OnlineDataBuilder.Controllers
         [Route("UpdateGeneratedBill")]
         public async Task<ApiResponse> UpdateGeneratedBill()
         {
-            //_httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
-            //_httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
-            //_httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
+            _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
+            _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
+            _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
             _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
 
             BillGenerationModal billModal = new BillGenerationModal();
-            //billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
-            //billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
-            //billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
+            billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
+            billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
+            billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
             billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
             
             var fileDetail = await _billService.UpdateGeneratedBillService(billModal);

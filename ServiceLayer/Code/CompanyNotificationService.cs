@@ -86,8 +86,6 @@ namespace ServiceLayer.Code
         {
             try
             {
-                _db.StartTransaction(IsolationLevel.ReadUncommitted);
-
                 string Result = null;
                 List<int> fileIds = new List<int>();
                 if (FileCollection.Count > 0)
@@ -129,11 +127,9 @@ namespace ServiceLayer.Code
                 var result = _db.Execute<CompanyNotification>("sp_company_notification_insupd", notification, true);
                 if (string.IsNullOrEmpty(result))
                     throw HiringBellException.ThrowBadRequest("Fail to insert or update company notification");
-                _db.Commit();
             }
             catch (System.Exception)
             {
-                _db.RollBack();
                 _fileService.DeleteFiles(files);
                 throw;
             }

@@ -313,118 +313,71 @@ namespace ServiceLayer.Code
             int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, now.Month);
             var lastDate = new DateTime(timesheetDetail.ForYear, now.Month, daysInMonth);
             var firstDate = new DateTime(timesheetDetail.ForYear, now.Month, 1);
-            List<TimesheetDetail> currentTimesheetDetail=
-                _db.GetList<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
-                {
-                    timesheetDetail.EmployeeId,
-                    timesheetDetail.ForYear,
-                    timesheetDetail.ClientId,
-                    firstDate,
-                    lastDate
-                });
+            List<TimesheetDetail> currentTimesheetDetail = _db.GetList<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
+            {
+                timesheetDetail.EmployeeId,
+                timesheetDetail.ForYear,
+                timesheetDetail.ClientId,
+                firstDate,
+                lastDate
+            });
+
             if (currentTimesheetDetail.Count <= 0)
                 throw HiringBellException.ThrowBadRequest("Timesheet is not found");
 
+            return BuildFinalTimesheet(currentTimesheetDetail);
+        }
+
+        public List<DailyTimesheetDetail> BuildFinalTimesheet(List<TimesheetDetail> timesheetDetail)
+        {
             List<DailyTimesheetDetail> monthlyTimesheet = new List<DailyTimesheetDetail>();
-            currentTimesheetDetail.ForEach(x => {
+            timesheetDetail.ForEach(x =>
+            {
                 if (string.IsNullOrEmpty(x.TimesheetWeeklyJson))
                     throw HiringBellException.ThrowBadRequest("Weeklytimesheet not found");
 
                 var dailyTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(x.TimesheetWeeklyJson);
+                dailyTimesheet.ForEach(i =>
+                {
+                    i.TimesheetStatus = x.TimesheetStatus;
+                });
+
                 monthlyTimesheet.AddRange(dailyTimesheet);
             });
 
-            //if (daysInMonth != monthlyTimesheet.Count)
-            //    throw HiringBellException.ThrowBadRequest("Timesheet of current month is mismatch. Please submit timesheet first");
-
-
-            //if (currentTimesheetDetail == null)
-            //    currentTimesheetDetail = new TimesheetDetail
-            //    {
-            //        ForYear = timesheetDetail.ForYear
-            //    };
-
-            //var result = BuildFinalTimesheet(currentTimesheetDetail);
-            //return new { TimesheetDetails = result.Item1, MissingDate = result.Item2 };
             return monthlyTimesheet;
-        }
-
-        public (List<DailyTimesheetDetail>, List<DateTime>) BuildFinalTimesheet(TimesheetDetail currentTimesheetDetail)
-        {
-            List<DailyTimesheetDetail> dailyTimesheetDetails = new List<DailyTimesheetDetail>();
-            List<DateTime> missingDayList = new List<DateTime>();
-            if (currentTimesheetDetail != null && currentTimesheetDetail.TimesheetWeeklyJson != null)
-            {
-                dailyTimesheetDetails = JsonConvert
-                    .DeserializeObject<List<DailyTimesheetDetail>>(currentTimesheetDetail.TimesheetWeeklyJson);
-
-                Parallel.ForEach(dailyTimesheetDetails, x => x.TimesheetId = currentTimesheetDetail.TimesheetId);
-            }
-            else
-            {
-                currentTimesheetDetail = new TimesheetDetail
-                {
-                    ForYear = currentTimesheetDetail.ForYear
-                };
-            }
-
-            return (dailyTimesheetDetails, missingDayList);
         }
 
         public BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail)
         {
             BillingDetail billingDetail = default(BillingDetail);
+            var now = DateTime.UtcNow;
+            int daysInMonth = DateTime.DaysInMonth(fileDetail.ForYear, now.Month);
+            var lastDate = new DateTime(fileDetail.ForYear, now.Month, daysInMonth);
+            var firstDate = new DateTime(fileDetail.ForYear, now.Month, 1);
+
             var Result = _db.FetchDataSet("sp_EmployeeBillDetail_ById", new
             {
-                AdminId = _currentSession.CurrentUserDetail.UserId,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 EmployeeId = fileDetail.EmployeeId,
                 ClientId = fileDetail.ClientId,
                 FileId = fileDetail.FileId,
-                UserTypeId = fileDetail.UserTypeId,
-                ForMonth = fileDetail.ForMonth,
+                FirstDate = firstDate,
+                LastDate = lastDate,
                 ForYear = fileDetail.ForYear
             });
 
-            if (Result.Tables.Count == 2)
-            {
-                billingDetail = new BillingDetail();
-                billingDetail.FileDetail = Result.Tables[0];
-                billingDetail.Employees = Result.Tables[1];
+            if (Result.Tables.Count != 4)
+                throw HiringBellException.ThrowBadRequest("Server error. Unable to get detail.");
 
-                //if (Result.Tables[2] == null || Result.Tables[2].Rows.Count == 0)
-                //{
-                //    bool flag = false;
-                //    billingDetail.TimesheetDetail = new TimesheetDetail
-                //    {
-                //        ForYear = 0
-                //    };
-
-                //    if (billingDetail.FileDetail.Rows[0]["BillForMonth"] == DBNull.Value)
-                //        flag = true;
-
-                //    if (billingDetail.FileDetail.Rows[0]["BillYear"] == DBNull.Value)
-                //        flag = true;
-                //    else
-                //        billingDetail.TimesheetDetail.ForYear = Convert.ToInt32(billingDetail.FileDetail.Rows[0]["BillYear"]);
-
-                //    DateTime billingOn = DateTime.Now;
-                //    if (flag)
-                //    {
-                //        billingOn = Convert.ToDateTime(billingDetail.FileDetail.Rows[0]["BillYear"]);
-                //        billingDetail.TimesheetDetail.ForYear = billingOn.Year;
-                //    }
-
-                //}
-                //else
-                //    billingDetail.TimesheetDetail = Converter.ToType<TimesheetDetail>(Result.Tables[2]);
-
-                //var attrs = BuildFinalTimesheet(billingDetail.TimesheetDetail);
-                //billingDetail.TimesheetDetails = attrs.Item1;
-                //billingDetail.MissingDate = attrs.Item2;
-
-                var companies = _cacheManager.Get(CacheTable.Company);
-                billingDetail.Organizations = companies;
-            }
+            billingDetail = new BillingDetail();
+            billingDetail.FileDetail = Result.Tables[0];
+            billingDetail.Employees = Result.Tables[1];
+            
+            List<TimesheetDetail> currentTimesheetDetail = Converter.ToList<TimesheetDetail>(Result.Tables[2]);
+            billingDetail.TimesheetDetails = BuildFinalTimesheet(currentTimesheetDetail);
+            var companies = _cacheManager.Get(CacheTable.Company);
+            billingDetail.Organizations = Result.Tables[3];
 
             return billingDetail;
         }
