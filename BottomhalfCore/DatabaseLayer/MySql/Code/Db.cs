@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer;
+using ModalLayer.MarkerInterface;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
 using System;
@@ -16,18 +17,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 {
     public class Db : IDb
     {
-        private MySqlConnection con = null;
-        private MySqlCommand cmd = null;
-        private MySqlTransaction transaction = null;
-        private bool IsTransactionStarted = false;
         private readonly string _connectionString;
         private static readonly object _lock = new object();
 
         public Db(string ConnectionString)
         {
             _connectionString = ConnectionString;
-            con = new MySqlConnection();
-            cmd = new MySqlCommand();
         }
 
         /*===========================================  Bulk Insert Update =====================================================*/
@@ -323,7 +318,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return genericReaderData;
         }
 
-        private string CreateUpdateQuery(object row, List<PropertyInfo> properties)
+        private string CreateUpdateQuery(List<PropertyInfo> properties)
         {
             int i = 0;
             string delimiter = "";
@@ -364,7 +359,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
             string delimiter = string.Empty;
 
-            var update = CreateUpdateQuery(first, properties);
+            var update = CreateUpdateQuery(properties);
+
+            rows.ForEach(x =>
+            {
+                if (i != 0)
+                    delimiter = ",";
+
+                query.AppendLine(CreateQueryRow(affectedValue, x, properties, delimiter, $"{primaryKey} {(i + 1)}"));
+                i++;
+            });
+
+            return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
+        }
+
+        private string PrepareQuery(OperationDetail operationDetail, List<object> rows, string affectedValue)
+        {
+            int i = 0;
+            var properties = operationDetail.props;
+            StringBuilder query = new StringBuilder();
+            // query.AppendLine($"insert into {operationDetail.tableName} values ");
+            string primaryKey = "@id + ";
+
+            string delimiter = string.Empty;
+
+            var update = CreateUpdateQuery(properties);
 
             rows.ForEach(x =>
             {
@@ -407,22 +426,34 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     }
                 }
 
-                if (value.ToString() == ApplicationConstants.LastInsertedKey)
+                if (value != null)
                 {
-                    value = Convert.ChangeType(affectedValue, prop.PropertyType);
-                    builder.Append($"{delimiter} '{value}'");
-                }
-                else if (value.ToString() == ApplicationConstants.LastInsertedNumericKey)
-                {
-                    value = Convert.ChangeType(affectedValue, prop.PropertyType);
-                    builder.Append(delimiter + value);
+                    if (value.ToString() == ApplicationConstants.LastInsertedKey)
+                    {
+                        value = Convert.ChangeType(affectedValue, prop.PropertyType);
+                        builder.Append($"{delimiter} '{value}'");
+                    }
+                    else if (value.ToString() == ApplicationConstants.LastInsertedNumericKey)
+                    {
+                        value = Convert.ChangeType(affectedValue, prop.PropertyType);
+                        builder.Append(delimiter + value);
+                    }
+                    else
+                    {
+                        if (prop.PropertyType == typeof(string))
+                            builder.Append($"{delimiter} '{value}'");
+                        else if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(DateTime?))
+                        {
+                            var dt = Convert.ToDateTime(value);
+                            builder.Append($"{delimiter} '{dt.ToString("yyyy-MM-dd HH:mm:ss.fff")}'");
+                        }
+                        else
+                            builder.Append(delimiter + value);
+                    }
                 }
                 else
                 {
-                    if (prop.PropertyType == typeof(string) || prop.PropertyType == typeof(DateTime))
-                        builder.Append($"{delimiter} '{value}'");
-                    else
-                        builder.Append(delimiter + value);
+                    builder.Append($"{delimiter} null");
                 }
 
                 i++;
@@ -498,12 +529,57 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             }
         }
 
-        public async Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        private OperationDetail SetTargetDataPropertyInfoList(List<object> data, bool findKeys = false)
         {
-            return await NativeBatchInsetUpdateMulti(firstProcedure, parameters, secondProcedure, secondQuery);
+            OperationDetail operationDetail = new OperationDetail();
+            if (data == null || data.Count == 0)
+                throw HiringBellException.ThrowBadRequest("[SetTargetDataPropertyInfoList]: Target data is null or empty. BatchInserUpdate second query data.");
+
+            var type = data.First().GetType();
+            operationDetail.props = type.GetProperties().ToList();
+
+            if (operationDetail.props == null || operationDetail.props.Count == 0)
+                throw HiringBellException.ThrowBadRequest("[SetTargetDataPropertyInfoList]: Target data is null or empty. BatchInserUpdate second query data.");
+
+            if (findKeys)
+            {
+                var tableAttr = type.GetCustomAttribute<Table>(false);
+                if (tableAttr == null)
+                    throw HiringBellException.ThrowBadRequest("[SetTargetDataPropertyInfoList]: Second table name not found. Db layer exception.");
+
+                operationDetail.tableName = tableAttr._name;
+                foreach (var prop in operationDetail.props)
+                {
+                    var primaryAttr = prop.GetCustomAttribute<Primary>(false);
+                    if (primaryAttr != null)
+                    {
+                        operationDetail.primaryKey = primaryAttr.GetName();
+                        break;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(operationDetail.primaryKey))
+                    throw HiringBellException.ThrowBadRequest("[GetTableDetail]: Second table primary key not found. Db layer exception.");
+            }
+
+            return operationDetail;
         }
 
-        private async Task<string> NativeBatchInsetUpdateMulti(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
+        public async Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, List<object> secondQuery)
+        {
+            OperationDetail operationDetail = SetTargetDataPropertyInfoList(secondQuery, true);
+            return await NativeBatchInsetUpdateMulti(firstProcedure, parameters, operationDetail, secondQuery);
+        }
+
+        public async Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string tableName, List<object> secondQuery)
+        {
+            OperationDetail operationDetail = SetTargetDataPropertyInfoList(secondQuery);
+            operationDetail.tableName = tableName;
+            operationDetail.primaryKey = DbProcedure.getKey(operationDetail.tableName);
+            return await NativeBatchInsetUpdateMulti(firstProcedure, parameters, operationDetail, secondQuery);
+        }
+
+        private async Task<string> NativeBatchInsetUpdateMulti(string firstProcedure, dynamic parameters, OperationDetail operationDetail, List<object> secondQuery)
         {
             try
             {
@@ -525,19 +601,19 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                             var properties = userType.GetType().GetProperties().ToList();
                             util.BindParametersWithValue(parameters, properties, command, true);
                             int pRowsAffected = await command.ExecuteNonQueryAsync();
-                            if (pRowsAffected > 0)
+                            statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                            if (pRowsAffected > 0 || (statusMessage != "0" && !string.IsNullOrEmpty(statusMessage)))
                             {
-                                statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
                                 if (statusMessage != "0" && statusMessage != "")
                                 {
-                                    string pKey = DbProcedure.getKey(secondProcedure);
+                                    string pKey = operationDetail.primaryKey;
                                     command.Parameters.Clear();
                                     command.CommandType = CommandType.StoredProcedure;
                                     command.CommandText = "sp_dynamic_query_ins_upd";
 
-                                    command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = secondProcedure;
+                                    command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = operationDetail.tableName;
                                     command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
-                                    command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuery(secondQuery, statusMessage);
+                                    command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuery(operationDetail, secondQuery, statusMessage);
                                     command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
 
                                     int rowsAffected = await command.ExecuteNonQueryAsync();
@@ -584,7 +660,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
             string delimiter = string.Empty;
             string newKeyId = "@id";
-            var update = CreateUpdateQuery(first, properties);
+            var update = CreateUpdateQuery(properties);
 
             rows.ForEach(x =>
             {
@@ -981,5 +1057,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         {
             throw new NotImplementedException();
         }
+    }
+
+    public class OperationDetail
+    {
+        public List<PropertyInfo> props { set; get; }
+        public string tableName { set; get; }
+        public string primaryKey { set; get; }
     }
 }
