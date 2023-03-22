@@ -12,5 +12,6 @@ namespace ServiceLayer.Interface
         Task<string> AddUpdateProjectDetailService(Project projectDetail);
         List<Project> GetAllProjectDeatilService(FilterModel filterModel);
         DataSet GetProjectPageDetailService(long ProjectId);
+        List<ProjectMemberDetail> DeleteTeamMemberService(int projectMemberDetailId, int projectId);
     }
 }
