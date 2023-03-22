@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -30,9 +31,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("AddUpdateProjectDetail")]
-        public IResponse<ApiResponse> AddUpdateProjectDetail(Project projectDetail)
+        public async Task<ApiResponse> AddUpdateProjectDetail(Project projectDetail)
         {
-            var result = _projectService.AddUpdateProjectDetailService(projectDetail);
+            var result = await _projectService.AddUpdateProjectDetailService(projectDetail);
             return BuildResponse(result);
         }
 
