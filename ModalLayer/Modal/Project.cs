@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ModalLayer.MarkerInterface;
+using System;
 using System.Collections.Generic;
 
 namespace ModalLayer.Modal
@@ -27,8 +28,10 @@ namespace ModalLayer.Modal
         public List<ProjectMemberDetail> TeamMembers { get; set; }
     }
 
+    [Table(name: "project_members_detail")]
     public class ProjectMemberDetail
     {
+        [Primary("ProjectMemberDetailId")]
         public int ProjectMemberDetailId { set; get; }
         public int ProjectId { set; get; }
         public long EmployeeId { set; get; }
@@ -36,6 +39,8 @@ namespace ModalLayer.Modal
         public string FullName { set; get; }
         public string Email { set; get; }
         public bool IsActive { set; get; }
+        public DateTime AssignedOn { set; get; }
+        public DateTime? LastDateOnProject { set; get; }
     }
 
     public class WikiDetail

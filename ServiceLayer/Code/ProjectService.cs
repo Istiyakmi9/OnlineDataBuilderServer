@@ -3,9 +3,13 @@ using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -55,7 +59,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public string AddUpdateProjectDetailService(Project projectDetail)
+        public async Task<string> AddUpdateProjectDetailService(Project projectDetail)
         {
             this.ProjectDetailValidtion(projectDetail);
             Project project = _db.Get<Project>("sp_project_detail_getby_id", new { projectDetail.ProjectId });
@@ -89,7 +93,29 @@ namespace ServiceLayer.Code
 
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-            var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
+
+            var data = (from n in projectDetail.TeamMembers
+                        select new ProjectMemberDetail
+                        {
+                            ProjectMemberDetailId = n.ProjectMemberDetailId > 0 ? n.ProjectMemberDetailId : 0,
+                            ProjectId = Convert.ToInt32(DbProcedure.getParentKey(projectDetail.ProjectId)),
+                            EmployeeId = n.EmployeeId,
+                            DesignationId = n.DesignationId,
+                            FullName = n.FullName,
+                            Email = n.Email,
+                            IsActive = n.IsActive,
+                            AssignedOn = DateTime.UtcNow,
+                            LastDateOnProject = null
+                        }).ToList<object>();
+
+            var result = await _db.BatchInsetUpdate(
+                "sp_project_detail_insupd",
+                project,
+                data
+            );
+
+
+            // var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to Insert or Update");
 

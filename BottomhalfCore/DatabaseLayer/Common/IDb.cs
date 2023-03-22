@@ -1,4 +1,5 @@
 ﻿using ModalLayer;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -43,7 +44,8 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
             where Q : new();
 
         Task<int> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
-        Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery);
+        Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, string tableName, List<object> secondQuery);
+        Task<string> BatchInsetUpdate(string firstProcedure, dynamic parameters, List<object> secondQuery);
         Task<string> BatchInsetUpdate(string procedureName, List<object> queryData, bool isDirectCall = false);
     }
 }
