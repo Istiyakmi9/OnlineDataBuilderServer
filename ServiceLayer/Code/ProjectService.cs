@@ -59,15 +59,14 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<string> AddUpdateProjectDetailService(Project projectDetail)
+        public async Task<Project> AddUpdateProjectDetailService(Project projectDetail)
         {
+            string result = string.Empty;
             this.ProjectDetailValidtion(projectDetail);
             Project project = _db.Get<Project>("sp_project_detail_getby_id", new { projectDetail.ProjectId });
             if (project == null)
             {
                 project = projectDetail;
-                project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
-                                        : JsonConvert.SerializeObject(project.TeamMemberIds);
                 project.PageIndexDetail = "[]";
                 project.KeywordDetail = "[]";
                 project.DocumentationDetail = "[]";
@@ -78,8 +77,6 @@ namespace ServiceLayer.Code
                 project.ProjectDescription = projectDetail.ProjectDescription;
                 project.PreviousProjectManagerId = projectDetail.ProjectManagerId == project.ProjectManagerId ? 0 : project.ProjectManagerId;
                 project.ProjectManagerId = projectDetail.ProjectManagerId;
-                project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
-                                        : project.TeamMemberIds;
                 project.PreviousArchitectId = projectDetail.ArchitectId == project.ArchitectId ? 0 : project.ArchitectId;
                 project.ArchitectId = projectDetail.ArchitectId;
                 project.IsClientProject = projectDetail.IsClientProject;
@@ -92,32 +89,41 @@ namespace ServiceLayer.Code
             }
 
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
-            var data = (from n in projectDetail.TeamMembers
-                        select new ProjectMemberDetail
-                        {
-                            ProjectMemberDetailId = n.ProjectMemberDetailId > 0 ? n.ProjectMemberDetailId : 0,
-                            ProjectId = Convert.ToInt32(DbProcedure.getParentKey(projectDetail.ProjectId)),
-                            EmployeeId = n.EmployeeId,
-                            DesignationId = n.DesignationId,
-                            FullName = n.FullName,
-                            Email = n.Email,
-                            IsActive = n.IsActive,
-                            AssignedOn = DateTime.UtcNow,
-                            LastDateOnProject = null
-                        }).ToList<object>();
+            if (projectDetail.TeamMembers != null && projectDetail.TeamMembers.Count > 0)
+            {
+                var data = (from n in projectDetail.TeamMembers
+                            select new ProjectMemberDetail
+                            {
+                                ProjectMemberDetailId = n.ProjectMemberDetailId > 0 ? n.ProjectMemberDetailId : 0,
+                                ProjectId = Convert.ToInt32(DbProcedure.getParentKey(projectDetail.ProjectId)),
+                                EmployeeId = n.EmployeeId,
+                                DesignationId = n.DesignationId,
+                                FullName = n.FullName,
+                                Email = n.Email,
+                                IsActive = n.IsActive,
+                                AssignedOn = DateTime.UtcNow,
+                                LastDateOnProject = null
+                            }).ToList<object>();
+                result = await _db.BatchInsetUpdate(
+                    "sp_project_detail_insupd",
+                    project,
+                    data);
 
-            var result = await _db.BatchInsetUpdate(
-                "sp_project_detail_insupd",
-                project,
-                data
-            );
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Fail to Insert or Update");
 
+                project.TeamMembers = projectDetail.TeamMembers;
+            }
+            else
+            {
+                result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Fail to Insert or Update");
 
-            // var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail to Insert or Update");
+                project.ProjectId = Int32.Parse(result);
+            }
 
-            return result;
+            return project;
         }
 
         public Project GetAllWikiService(long ProjectId)

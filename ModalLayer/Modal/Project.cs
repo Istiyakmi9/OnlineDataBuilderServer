@@ -12,7 +12,6 @@ namespace ModalLayer.Modal
         public long ArchitectId { set; get; }
         public long PreviousArchitectId { set; get; }
         public string ProjectDescription { set; get; }
-        public string TeamMemberIds { set; get; }
         public DateTime? ProjectStartedOn { set; get; }
         public DateTime? ProjectEndedOn { set; get; }
         public bool IsClientProject { set; get; }
