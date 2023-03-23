@@ -221,7 +221,7 @@ namespace ServiceLayer.Code
                     {
                         declaration.DocumentPath = Path.Combine(
                             _fileLocationDetail.UserFolder,
-                            declaration.Email,
+                           $"Employee_{declaration.EmployeeId}",
                             ApplicationConstants.DeclarationDocumentPath
                         );
                     }
@@ -294,12 +294,12 @@ namespace ServiceLayer.Code
 
                 if (FileCollection.Count > 0)
                 {
-                    var email = DeclarationDetail.Email.Replace("@", "_").Replace(".", "_");
+                    
                     if (string.IsNullOrEmpty(declaration.DocumentPath))
                     {
                         declaration.DocumentPath = Path.Combine(
                             _fileLocationDetail.UserFolder,
-                            email,
+                            $"Employee_{declaration.EmployeeId}",
                             ApplicationConstants.DeclarationDocumentPath
                         );
                     }

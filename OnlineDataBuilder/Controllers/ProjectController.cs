@@ -51,5 +51,15 @@ namespace OnlineDataBuilder.Controllers
             var result = _projectService.GetProjectPageDetailService(ProjectId);
             return BuildResponse(result);
         }
+
+        [Authorize(Roles= Role.Admin)]
+        [HttpDelete("DeleteTeamMember/{ProjectMemberDetailId}/{ProjectId}")]
+        public IResponse<ApiResponse> DeleteTeamMember([FromRoute] int ProjectMemberDetailId, [FromRoute] int ProjectId)
+        {
+            var result = _projectService.DeleteTeamMemberService(ProjectMemberDetailId, ProjectId);
+            return BuildResponse(result);  
+        }
+
+
     }
 }

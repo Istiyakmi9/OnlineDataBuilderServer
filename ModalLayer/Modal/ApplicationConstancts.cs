@@ -318,6 +318,14 @@ public enum CommonFlags
     HalfDay = 4
 }
 
+public enum EmployeesRole
+{
+    ProjectManager = 2,
+    ProjectArchitect = 3,
+    TeamLead = 19,
+    TeamMember = 21
+}
+
 public static class Bot
 {
     public static bool IsSuccess(string Result)

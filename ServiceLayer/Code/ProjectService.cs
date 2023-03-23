@@ -59,15 +59,14 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<string> AddUpdateProjectDetailService(Project projectDetail)
+        public async Task<Project> AddUpdateProjectDetailService(Project projectDetail)
         {
+            string result = string.Empty;
             this.ProjectDetailValidtion(projectDetail);
             Project project = _db.Get<Project>("sp_project_detail_getby_id", new { projectDetail.ProjectId });
             if (project == null)
             {
                 project = projectDetail;
-                project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
-                                        : JsonConvert.SerializeObject(project.TeamMemberIds);
                 project.PageIndexDetail = "[]";
                 project.KeywordDetail = "[]";
                 project.DocumentationDetail = "[]";
@@ -78,8 +77,6 @@ namespace ServiceLayer.Code
                 project.ProjectDescription = projectDetail.ProjectDescription;
                 project.PreviousProjectManagerId = projectDetail.ProjectManagerId == project.ProjectManagerId ? 0 : project.ProjectManagerId;
                 project.ProjectManagerId = projectDetail.ProjectManagerId;
-                project.TeamMemberIds = project.TeamMemberIds == null ? "[]"
-                                        : project.TeamMemberIds;
                 project.PreviousArchitectId = projectDetail.ArchitectId == project.ArchitectId ? 0 : project.ArchitectId;
                 project.ArchitectId = projectDetail.ArchitectId;
                 project.IsClientProject = projectDetail.IsClientProject;
@@ -92,34 +89,41 @@ namespace ServiceLayer.Code
             }
 
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
+            if (projectDetail.TeamMembers != null && projectDetail.TeamMembers.Count > 0)
+            {
+                var data = (from n in projectDetail.TeamMembers
+                            select new ProjectMemberDetail
+                            {
+                                ProjectMemberDetailId = n.ProjectMemberDetailId > 0 ? n.ProjectMemberDetailId : 0,
+                                ProjectId = Convert.ToInt32(DbProcedure.getParentKey(projectDetail.ProjectId)),
+                                EmployeeId = n.EmployeeId,
+                                DesignationId = n.DesignationId,
+                                FullName = n.FullName,
+                                Email = n.Email,
+                                IsActive = n.IsActive,
+                                AssignedOn = DateTime.UtcNow,
+                                LastDateOnProject = null
+                            }).ToList<object>();
+                result = await _db.BatchInsetUpdate(
+                    "sp_project_detail_insupd",
+                    project,
+                    data);
 
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Fail to Insert or Update");
 
-            var data = (from n in projectDetail.TeamMembers
-                        select new ProjectMemberDetail
-                        {
-                            ProjectMemberDetailId = n.ProjectMemberDetailId > 0 ? n.ProjectMemberDetailId : 0,
-                            ProjectId = Convert.ToInt32(DbProcedure.getParentKey(projectDetail.ProjectId)),
-                            EmployeeId = n.EmployeeId,
-                            DesignationId = n.DesignationId,
-                            FullName = n.FullName,
-                            Email = n.Email,
-                            IsActive = n.IsActive,
-                            AssignedOn = DateTime.UtcNow,
-                            LastDateOnProject = null
-                        }).ToList<object>();
+                project.TeamMembers = projectDetail.TeamMembers;
+            }
+            else
+            {
+                result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("Fail to Insert or Update");
 
-            var result = await _db.BatchInsetUpdate(
-                "sp_project_detail_insupd",
-                project,
-                data
-            );
+                project.ProjectId = Int32.Parse(result);
+            }
 
-
-            // var result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail to Insert or Update");
-
-            return result;
+            return project;
         }
 
         public Project GetAllWikiService(long ProjectId)
@@ -162,13 +166,39 @@ namespace ServiceLayer.Code
         {
             var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId });
 
-            if (result.Tables.Count != 3)
+            if (result.Tables.Count != 4)
                 throw HiringBellException.ThrowBadRequest("Project detail not found. Please contact to admin.");
 
             result.Tables[0].TableName = "Project";
             result.Tables[1].TableName = "Clients";
             result.Tables[2].TableName = "Employees";
+            result.Tables[3].TableName = "TeamMembers";
             return result;
+        }
+
+        public List<ProjectMemberDetail> DeleteTeamMemberService(int projectMemberDetailId, int projectId)
+        {
+            if (projectMemberDetailId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid team members selected. Please select a valid member");
+
+            if (projectId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid prohect selected");
+
+            var teamMembers = _db.GetList<ProjectMemberDetail>("sp_project_member_getby_projectid", new { ProjectId = projectId });
+            if (teamMembers == null || teamMembers.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Team member record not found");
+
+            var teamMember = teamMembers.Find(x => x.ProjectMemberDetailId == projectMemberDetailId);
+            if (teamMember.DesignationId == (int)EmployeesRole.ProjectManager || teamMember.DesignationId == (int)EmployeesRole.TeamLead || teamMember.DesignationId == (int)EmployeesRole.ProjectArchitect)
+                throw HiringBellException.ThrowBadRequest("You can't be deleted these member");
+
+            teamMember.IsActive = false;
+            var result = _db.Execute<ProjectMemberDetail>("sp_team_member_upd", teamMember, true);
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to delete team member");
+
+            teamMembers = teamMembers.FindAll(x => x.IsActive == true);
+            return teamMembers;
         }
     }
 }
