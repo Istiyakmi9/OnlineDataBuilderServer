@@ -26,15 +26,16 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("SendEmailRequest")]
         public ApiResponse SendEmailRequest()
         {
-            StringValues emailDetail = default(string);
-            _httpContext.Request.Form.TryGetValue("mailDetail", out emailDetail);
-            if (emailDetail.Count == 0)
-                throw new HiringBellException("No detail found. Please pass all detail.");
+            //StringValues emailDetail = default(string);
+            //_httpContext.Request.Form.TryGetValue("mailDetail", out emailDetail);
+            //if (emailDetail.Count == 0)
+            //    throw new HiringBellException("No detail found. Please pass all detail.");
 
-            EmailSenderModal emailSenderModal = JsonConvert.DeserializeObject<EmailSenderModal>(emailDetail);
-            IFormFileCollection files = _httpContext.Request.Form.Files;
-            var Result = _emailService.SendEmailRequestService(emailSenderModal, files);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            //EmailSenderModal emailSenderModal = JsonConvert.DeserializeObject<EmailSenderModal>(emailDetail);
+            //IFormFileCollection files = _httpContext.Request.Form.Files;
+            //var Result = _emailService.SendEmailRequestService(emailSenderModal, files);
+            throw HiringBellException.ThrowBadRequest("You can't access this feature right now");
+            //return BuildResponse(Result, HttpStatusCode.OK);
         }
 
         [HttpGet("GetMyMails")]
