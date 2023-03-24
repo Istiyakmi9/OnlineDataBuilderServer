@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
@@ -26,15 +27,18 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("SendEmailRequest")]
         public ApiResponse SendEmailRequest()
         {
-            StringValues emailDetail = default(string);
-            _httpContext.Request.Form.TryGetValue("mailDetail", out emailDetail);
-            if (emailDetail.Count == 0)
-                throw new HiringBellException("No detail found. Please pass all detail.");
+            // Temporary Block to send emmail from mail box.
 
-            EmailSenderModal emailSenderModal = JsonConvert.DeserializeObject<EmailSenderModal>(emailDetail);
-            IFormFileCollection files = _httpContext.Request.Form.Files;
-            var Result = _emailService.SendEmailRequestService(emailSenderModal, files);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            //StringValues emailDetail = default(string);
+            //_httpContext.Request.Form.TryGetValue("mailDetail", out emailDetail);
+            //if (emailDetail.Count == 0)
+            //    throw new HiringBellException("No detail found. Please pass all detail.");
+
+            //EmailSenderModal emailSenderModal = JsonConvert.DeserializeObject<EmailSenderModal>(emailDetail);
+            //IFormFileCollection files = _httpContext.Request.Form.Files;
+            //var Result = _emailService.SendEmailRequestService(emailSenderModal, files);
+            throw HiringBellException.ThrowBadRequest("You can't access this feature right now");
+            //return BuildResponse(Result, HttpStatusCode.OK);
         }
 
         [HttpGet("GetMyMails")]
@@ -48,14 +52,18 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetEmailSettingByCompId(int CompanyId)
         {
             var result = _emailService.GetEmailSettingByCompIdService(CompanyId);
+            //Temporary hide the password
+            result.Credentials = "************";
             return BuildResponse(result);
         }
 
         [HttpPost("InsertUpdateEmailSetting")]
         public IResponse<ApiResponse> InsertUpdateEmailSetting(EmailSettingDetail emailSettingDetail)
         {
-            var result = _emailService.InsertUpdateEmailSettingService(emailSettingDetail);
-            return BuildResponse(result);
+            // Temporary disable to update email setting
+            //var result = _emailService.InsertUpdateEmailSettingService(emailSettingDetail);
+            //return BuildResponse(result);
+            throw HiringBellException.ThrowBadRequest("You can't access this feature right now");
         }
 
         [HttpPost("InsertUpdateEmailTemplate")]

@@ -153,7 +153,10 @@ namespace ServiceLayer.Code
             leaveRequestDetail.LeaveToDay = requestDetail.LeaveToDay;
             leaveRequestDetail.Reason = requestDetail.Reason;
             leaveRequestDetail.LeaveType = requestDetail.LeaveType;
-            Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+            if (nextId == 0)
+            {
+                Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+            }
 
             await Task.CompletedTask;
         }
@@ -170,8 +173,8 @@ namespace ServiceLayer.Code
                 _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
                 _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
 
-                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new 
-                { 
+                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new
+                {
                     Year = DateTime.UtcNow.Year,
                     setting.CompanyId
                 });
