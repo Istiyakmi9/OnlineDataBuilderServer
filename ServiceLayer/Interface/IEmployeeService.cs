@@ -21,5 +21,6 @@ namespace ServiceLayer.Interface
         Task<DataSet> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
+        Task<string> ExportEmployeeService(int CompanyId, int FileType);
     }
 }
