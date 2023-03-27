@@ -157,5 +157,13 @@ namespace OnlineDataBuilder.Controllers
             var result = await _employeeService.GenerateOfferLetterService(employeeOfferLetter);
             return BuildResponse(result);
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("ExportEmployee/{CompanyId}/{FileType}")]
+        public async Task<ApiResponse> ExportEmployee([FromRoute] int CompanyId, [FromRoute] int FileType)
+        {
+            var result = await _employeeService.ExportEmployeeService(CompanyId, FileType);
+            return BuildResponse(result);
+        }
     }
 }

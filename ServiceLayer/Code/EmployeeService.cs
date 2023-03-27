@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
 using EMailService.Service;
 using Microsoft.AspNetCore.Hosting;
@@ -11,7 +12,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -40,6 +40,7 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly ITimesheetService _timesheetService;
+        private readonly ExcelWriter _excelWriter;
 
         public EmployeeService(IDb db,
             CurrentSession currentSession,
@@ -55,7 +56,8 @@ namespace ServiceLayer.Code
             IHostingEnvironment hostingEnvironment,
             ILeaveCalculation leaveCalculation,
             IEMailManager eMailManager,
-            ITimesheetService timesheetService)
+            ITimesheetService timesheetService,
+            ExcelWriter excelWriter)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
@@ -72,6 +74,7 @@ namespace ServiceLayer.Code
             _hostingEnvironment = hostingEnvironment;
             _eMailManager = eMailManager;
             _timesheetService = timesheetService;
+            _excelWriter = excelWriter;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -1084,6 +1087,38 @@ namespace ServiceLayer.Code
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
                 throw new HiringBellException("Email is invalid. Please enter a valid email");
+        }
+
+        public async Task<string> ExportEmployeeService(int companyId, int fileType)
+        {
+            if (companyId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid company. Please login again");
+
+            if (fileType == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid type selected. Please select a valid type");
+
+            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employees_Excel");
+            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+
+            var filepath = Path.Combine(folderPath, "Employee_Excel" + $".{ApplicationConstants.Excel}");
+            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, filepath);
+
+            if (File.Exists(destinationFilePath))
+                File.Delete(destinationFilePath);
+            FilterModel filterModel = new FilterModel();
+            filterModel.PageSize = 1000;
+            //filterModel.SearchString += $" and CompanyId = {companyId} ";
+            var employees = FilterActiveEmployees(filterModel);
+            if (employees.Count > 0)
+            {
+                if (fileType == 2)
+                {
+                    var datatable = Converter.ToDataTable(employees);
+                    _excelWriter.ToExcel(datatable, destinationFilePath);
+                }
+            }
+            return await Task.FromResult(filepath);
         }
     }
 }
