@@ -1101,12 +1101,13 @@ namespace ServiceLayer.Code
             if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
                 Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
 
-            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, folderPath,
-               "Employees_Excel" + $".{ApplicationConstants.Excel}");
+            var filepath = Path.Combine(folderPath, "Employee_Excel" + $".{ApplicationConstants.Excel}");
+            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, filepath);
 
             if (File.Exists(destinationFilePath))
                 File.Delete(destinationFilePath);
             FilterModel filterModel = new FilterModel();
+            filterModel.PageSize = 1000;
             //filterModel.SearchString += $" and CompanyId = {companyId} ";
             var employees = FilterActiveEmployees(filterModel);
             if (employees.Count > 0)
@@ -1117,7 +1118,7 @@ namespace ServiceLayer.Code
                     _excelWriter.ToExcel(datatable, destinationFilePath);
                 }
             }
-            return await Task.FromResult(destinationFilePath);
+            return await Task.FromResult(filepath);
         }
     }
 }
