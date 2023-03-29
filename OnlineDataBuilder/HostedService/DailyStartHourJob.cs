@@ -16,6 +16,8 @@ namespace OnlineDataBuilder.HostedService
         private readonly ILogger<DailyStartHourJob> _logger;
         private readonly CrontabSchedule _cron;
         private readonly IServiceProvider _serviceProvider;
+        private int counter = 11;
+        private int index = 1;
         DateTime _nextCron;
 
         public DailyStartHourJob(ILogger<DailyStartHourJob> logger, IConfiguration configuration, IServiceProvider serviceProvider)
@@ -33,10 +35,11 @@ namespace OnlineDataBuilder.HostedService
             {
                 int value = WaitForNextCronValue();
                 await Task.Delay(value, cancellationToken);
+                _logger.LogInformation($"Daily cron jon started. Index = {index++}   ...............");
 
                 await this.RunJobAsync();
 
-                _logger.LogInformation("Daily cron jon ran successfully");
+                _logger.LogInformation($"Daily cron jon ran successfully. Index = {index++}   .................");
                 _nextCron = _cron.GetNextOccurrence(DateTime.Now);
             }
         }
@@ -44,14 +47,14 @@ namespace OnlineDataBuilder.HostedService
         private async Task RunJobAsync()
         {
             var companySettings = await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
-
+            
             await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
 
             await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
 
-            await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
+            // await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
 
-            await PayrollCycleJob.RunPayrollAsync(_serviceProvider);
+            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter--);
         }
 
         private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);

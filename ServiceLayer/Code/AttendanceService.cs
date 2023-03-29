@@ -126,7 +126,7 @@ namespace ServiceLayer.Code
                     AttendanceDay = timezoneFirstDate.AddDays(i),
                     LogOn = officetime,
                     LogOff = logoff,
-                    PresentDayStatus = presentDayStatus,
+                    PresentDayStatus = (int)ItemStatus.Approved,
                     UserComments = string.Empty,
                     ApprovedName = String.Empty,
                     ApprovedBy = 0,
@@ -236,26 +236,16 @@ namespace ServiceLayer.Code
             DateTime workingDate = DateTime.UtcNow;
             foreach (var employee in employees)
             {
-                if (employee.CreatedOn.Year == DateTime.UtcNow.Year)
-                {
-                    workingDate = employee.CreatedOn;
+                workingDate = employee.CreatedOn;
 
-                    while (workingDate.Day != 1)
-                        workingDate = workingDate.AddDays(-1);
-                }
-                else
-                {
-                    workingDate = _timezoneConverter.FirstDayOfWeekIST();
-                    while (workingDate.Month != 1)
-                        workingDate = workingDate.AddMonths(-1);
+                if (workingDate.Day != 1)
+                    workingDate = workingDate.AddDays(-1 * workingDate.Day + 1);
 
-                    while (workingDate.Day != 1)
-                        workingDate = workingDate.AddDays(-1);
+                var presentMonth = DateTime.UtcNow.AddMonths(1);
+                if (presentMonth.Day != 1)
+                    presentMonth = presentMonth.AddDays(-1 * presentMonth.Day + 1);
 
-                    workingDate = _timezoneConverter.ToUtcTime(workingDate);
-                }
-
-                while (workingDate.Month <= DateTime.UtcNow.Month)
+                while (workingDate.Date.Subtract(presentMonth.Date).TotalDays < 0)
                 {
                     Attendance attendance = new Attendance
                     {
@@ -282,8 +272,8 @@ namespace ServiceLayer.Code
 
                         workingDate = workingDate.AddMonths(1);
 
-                        while (workingDate.Day != 1)
-                            workingDate = workingDate.AddDays(-1);
+                        if (workingDate.Day != 1)
+                            workingDate = workingDate.AddDays(-1 * workingDate.Day + 1);
                     }
                     else
                     {

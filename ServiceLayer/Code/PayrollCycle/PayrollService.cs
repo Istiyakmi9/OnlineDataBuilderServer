@@ -207,7 +207,7 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollCommonData;
         }
 
-        public async Task RunPayrollCycle()
+        public async Task RunPayrollCycle(int i)
         {
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
             foreach (var payroll in payrollCommonData.payrolls)
@@ -216,8 +216,9 @@ namespace ServiceLayer.Code.PayrollCycle
                 payrollCommonData.timeZone = _currentSession.TimeZone;
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
-                payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-                payrollCommonData.utcPresentDate = DateTime.UtcNow;
+                payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(-i);
+                _currentSession.TimeZoneNow = payrollCommonData.presentDate;
+                payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(-i); ;
                 switch (payroll.PayFrequency)
                 {
                     case "monthly":

@@ -9,7 +9,7 @@ namespace OnlineDataBuilder.HostedService.Services
     {
         public async static Task SendNotificationEmail(IServiceProvider _serviceProvider)
         {
-            IEMailManager _eMailManager = _serviceProvider.GetRequiredService<IEMailManager>();
+            // IEMailManager _eMailManager = _serviceProvider.GetRequiredService<IEMailManager>();
             // await _eMailManager.SendMailAsync(null);
             await Task.CompletedTask;
         }

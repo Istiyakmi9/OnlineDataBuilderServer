@@ -4,6 +4,6 @@ namespace ServiceLayer.Interface
 {
     public interface IPayrollService
     {
-        Task RunPayrollCycle();
+        Task RunPayrollCycle(int i);
     }
 }

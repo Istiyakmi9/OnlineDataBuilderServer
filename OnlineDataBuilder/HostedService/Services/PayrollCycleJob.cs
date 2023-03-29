@@ -7,12 +7,12 @@ namespace OnlineDataBuilder.HostedService.Services
 {
     public class PayrollCycleJob
     {
-        public async static Task RunPayrollAsync(IServiceProvider _serviceProvider)
+        public async static Task RunPayrollAsync(IServiceProvider _serviceProvider, int i)
         {
             using (IServiceScope scope = _serviceProvider.CreateScope())
             {
                 IPayrollService _payrollService = scope.ServiceProvider.GetRequiredService<IPayrollService>();
-                await _payrollService.RunPayrollCycle();
+                await _payrollService.RunPayrollCycle(i);
             }
         }
     }

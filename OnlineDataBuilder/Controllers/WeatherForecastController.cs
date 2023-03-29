@@ -138,7 +138,7 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunPayrollAsync()
         {
-            await _payrollService.RunPayrollCycle();
+            await _payrollService.RunPayrollCycle(0);
         }
 
         private async Task RunLeaveAccrualAsync()
