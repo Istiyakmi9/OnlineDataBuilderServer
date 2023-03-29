@@ -71,7 +71,7 @@ namespace ServiceLayer.Code
             {
                 declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
                 salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
-                if (salaryComponent.MaxLimit != 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
+                if (salaryComponent.MaxLimit > 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
                     throw new HiringBellException("Your declared value is greater than maximum limit");
 
                 if (salaryComponent == null)
