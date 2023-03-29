@@ -12,6 +12,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using NUnit.Framework.Internal.Execution;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
+using static ApplicationConstants;
+using static Google.Protobuf.Reflection.MessageDescriptor;
 
 namespace ServiceLayer.Code
 {
@@ -1119,6 +1122,162 @@ namespace ServiceLayer.Code
                 }
             }
             return await Task.FromResult(filepath);
+        }
+
+        public async Task<string> UploadEmployeeExcelService(List<Employee> employees)
+        {
+            string status = string.Empty;
+            if (employees.Count > 0)
+            {
+                List<EmployeeCalculation> employeeCalculations = new List<EmployeeCalculation>();
+                employees.ForEach(employee =>
+                {
+                    EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+                    employeeCalculation.employee = employee;
+                    EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+                    employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+                    employeeCalculation.Doj = DateTime.UtcNow;
+                    employeeCalculation.IsFirstYearDeclaration = true;
+                    if (employeeEmailMobileCheck.EmployeeCount > 0)
+                        throw new HiringBellException("Employee already exists. Please login first and update detail.");
+
+                    employeeCalculations.Add(employeeCalculation);
+                });
+
+                status = await RegisterBulkEmployeeDetail(employeeCalculations);
+                return status;
+            }
+            return status;
+        }
+
+        private async Task<string> RegisterBulkEmployeeDetail(List<EmployeeCalculation> empCal)
+        {
+            try
+            {
+                var status = string.Empty;
+                empCal.ForEach(async eCal =>
+                {
+                    Employee employee = eCal.employee;
+                    eCal.EmployeeId = eCal.employee.EmployeeUid;
+                    ValidateEmployee(employee);
+                    ValidateEmployeeDetails(employee);
+                    int empId = Convert.ToInt32(employee.EmployeeUid);
+                    var professionalDetail = new EmployeeProfessionDetail
+                    {
+                        AadharNo = employee.AadharNo,
+                        AccountNumber = employee.AccountNumber,
+                        BankName = employee.BankName,
+                        BranchName = employee.BranchName,
+                        CreatedBy = employee.EmployeeUid,
+                        CreatedOn = employee.CreatedOn,
+                        Domain = employee.Domain,
+                        Email = employee.Email,
+                        EmployeeUid = employee.EmployeeUid,
+                        EmpProfDetailUid = employee.EmpProfDetailUid,
+                        ExperienceInYear = employee.ExperienceInYear,
+                        FirstName = employee.FirstName,
+                        IFSCCode = employee.IFSCCode,
+                        LastCompanyName = employee.LastCompanyName,
+                        LastName = employee.LastName,
+                        Mobile = employee.Mobile,
+                        PANNo = employee.PANNo,
+                        SecomdaryMobile = employee.SecondaryMobile,
+                        Specification = employee.Specification,
+                    };
+                    await AssignReportingManager(employee);
+                    employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
+
+                    try
+                    {
+                        _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+                        await _declarationService.CalculateSalaryNDeclaration(eCal, true);
+                    }
+                    catch
+                    {
+                        _logger.LogInformation("Salary group not fount. Creating user without salary group and break up detail.");
+                    }
+
+                    if (employee.AccessLevelId != (int)RolesName.Admin)
+                        employee.UserTypeId = (int)RolesName.User;
+
+                    if (string.IsNullOrEmpty(employee.NewSalaryDetail))
+                        employee.NewSalaryDetail = "[]";
+
+                    long declarationId = CheckUpdateDeclarationComponents(eCal);
+                    eCal.employeeDeclaration.EmployeeDeclarationId = declarationId;
+                });
+                string EncreptedPassword = _authenticationService.Encrypt(
+                        _configuration.GetSection("DefaultNewEmployeePassword").Value,
+                        _configuration.GetSection("EncryptSecret").Value);
+
+                var items = (from n in empCal
+                            select new
+                            {
+                                EmployeeUid = n.employee.EmployeeUid,
+                                OrganizationId = n.employee.OrganizationId,
+                                FirstName = n.employee.FirstName,
+                                LastName = n.employee.LastName,
+                                Mobile = n.employee.Mobile,
+                                Email = n.employee.Email,
+                                LeavePlanId = n.employee.LeavePlanId,
+                                PayrollGroupId = n.employee.PayrollGroupId,
+                                SalaryGroupId = n.employee.SalaryGroupId,
+                                CompanyId = n.employee.CompanyId,
+                                NoticePeriodId = n.employee.NoticePeriodId,
+                                SecondaryMobile = n.employee.SecondaryMobile,
+                                FatherName = n.employee.FatherName,
+                                MotherName = n.employee.MotherName,
+                                SpouseName = n.employee.SpouseName,
+                                Gender = n.employee.Gender,
+                                State = n.employee.State,
+                                City = n.employee.City,
+                                Pincode = n.employee.Pincode,
+                                Address = n.employee.Address,
+                                PANNo = n.employee.PANNo,
+                                AadharNo = n.employee.AadharNo,
+                                AccountNumber = n.employee.AccountNumber,
+                                BankName = n.employee.BankName,
+                                BranchName = n.employee.BranchName,
+                                IFSCCode = n.employee.IFSCCode,
+                                Domain = n.employee.Domain,
+                                Specification = n.employee.Specification,
+                                ExperienceInYear = n.employee.ExprienceInYear,
+                                LastCompanyName = n.employee.LastCompanyName,
+                                IsPermanent = n.employee.IsPermanent,
+                                ActualPackage = n.employee.ActualPackage,
+                                FinalPackage = n.employee.FinalPackage,
+                                TakeHomeByCandidate = n.employee.TakeHomeByCandidate,
+                                ReportingManagerId = n.employee.ReportingManagerId,
+                                DesignationId = n.employee.DesignationId,
+                                ProfessionalDetail_Json = n.employee.ProfessionalDetail_Json,
+                                Password = EncreptedPassword,
+                                AccessLevelId = n.employee.AccessLevelId,
+                                UserTypeId = n.employee.UserTypeId,
+                                CTC = n.employee.CTC,
+                                GrossIncome = n.employeeSalaryDetail.GrossIncome,
+                                NetSalary = n.employeeSalaryDetail.NetSalary,
+                                CompleteSalaryDetail = n.employeeSalaryDetail.CompleteSalaryDetail,
+                                TaxDetail = n.employeeSalaryDetail.TaxDetail,
+                                DOB = n.employee.DOB,
+                                RegistrationDate = _timezoneConverter.ToUtcTimeFromMidNightTimeZone(DateTime.Now, _currentSession.TimeZone),
+                                EmployeeDeclarationId = n.employeeDeclaration.EmployeeDeclarationId,
+                                DeclarationDetail = JsonConvert.SerializeObject(n.salaryComponents),
+                                WorkShiftId = n.employee.WorkShiftId,
+                                IsPending = false,
+                                NewSalaryDetail = n.employee.NewSalaryDetail,
+                                AdminId = _currentSession.CurrentUserDetail.UserId
+                            }).ToList<Object>();
+
+                status = await _db.BatchInsetUpdate("sp_Employees_InsUpdate", items);
+                if (string.IsNullOrEmpty(status))
+                    throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Contact to admin");
+
+                return await Task.FromResult(status);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }
