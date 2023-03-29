@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -7,6 +8,7 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -163,6 +165,14 @@ namespace OnlineDataBuilder.Controllers
         public async Task<ApiResponse> ExportEmployee([FromRoute] int CompanyId, [FromRoute] int FileType)
         {
             var result = await _employeeService.ExportEmployeeService(CompanyId, FileType);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("UploadEmployeeExcel")]
+        public async Task<ApiResponse> UploadEmployeeExcel([FromBody] List<Employee> employees)
+        {
+            var result = await _employeeService.UploadEmployeeExcelService(employees);
             return BuildResponse(result);
         }
     }
