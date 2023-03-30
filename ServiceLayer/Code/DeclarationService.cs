@@ -351,6 +351,8 @@ namespace ServiceLayer.Code
                 employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
 
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
+            employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
+                employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
             if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
                 throw new HiringBellException($"Salary components not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
@@ -378,10 +380,7 @@ namespace ServiceLayer.Code
         {
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
-            var currentMonthDateTime = DateTime.UtcNow;
-            TimeZoneInfo timeZoneInfo = _currentSession.TimeZone;
-            if (timeZoneInfo != null)
-                currentMonthDateTime = _timezoneConverter.ToIstTime(currentMonthDateTime);
+            var currentMonthDateTime = _currentSession.TimeZoneNow;
             var currentMonthSalaryBreakup = completeSalaryBreakups.Find(i => i.MonthNumber == currentMonthDateTime.Month);
             if (currentMonthSalaryBreakup == null)
                 throw new HiringBellException("Unable to find salary detail. Please contact to admin.");
@@ -563,6 +562,9 @@ namespace ServiceLayer.Code
 
         private async Task UpdateEmployeeSalaryDetailChanges(long EmployeeId, EmployeeSalaryDetail salaryBreakup)
         {
+            if (string.IsNullOrEmpty(salaryBreakup.NewSalaryDetail))
+                salaryBreakup.NewSalaryDetail = "[]";
+
             var result = await _db.ExecuteAsync("sp_employee_salary_detail_InsUpd", new
             {
                 EmployeeId,
@@ -609,7 +611,7 @@ namespace ServiceLayer.Code
                     }
                     else
                     {
-                        taxdetails = GetPerMonthTaxInitialData(empCal);
+                        UpdatePerMonthTaxData(empCal, taxdetails);
                         empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                     .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
@@ -684,9 +686,44 @@ namespace ServiceLayer.Code
             return taxdetails;
         }
 
-        private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
+        private List<TaxDetails> UpdatePerMonthTaxData(EmployeeCalculation eCal, List<TaxDetails> taxDetails)
         {
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
+            DateTime startDate = eCal.PayrollStartDate;
+
+            CompanySetting companySetting = eCal.companySetting;
+            EmployeeDeclaration employeeDeclaration = eCal.employeeDeclaration;
+
+            var salary = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(eCal.employeeSalaryDetail.CompleteSalaryDetail);
+            var totalWorkingMonth = salary.Count(x => x.IsActive);
+            if (totalWorkingMonth == 0)
+                throw HiringBellException.ThrowBadRequest($"Invalid working month count found in method: {nameof(UpdatePerMonthTaxData)}");
+
+            var permonthTax = employeeDeclaration.TaxNeedToPay / totalWorkingMonth;
+            List<TaxDetails> taxdetails = new List<TaxDetails>();
+
+            var daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
+            var workingDays = daysInMonth - eCal.Doj.Day + 1;
+            var currentMonthTax = ProrateAmountOnJoiningMonth(permonthTax, daysInMonth, workingDays);
+            var remaningTaxAmount = (permonthTax * totalWorkingMonth) - currentMonthTax;
+            permonthTax = remaningTaxAmount > 0 ? remaningTaxAmount / (totalWorkingMonth - 1) : 0;
+
+
+            foreach(var x in taxDetails)
+            {
+                if(!x.IsPayrollCompleted)
+                {
+                    x.TaxDeducted = currentMonthTax;
+                    x.IsPayrollCompleted = false;
+                    x.TaxPaid = 0;
+                }
+            }
+            return taxdetails;
+        }
+
+        private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
+        {
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);            
             DateTime startDate = eCal.PayrollStartDate;
 
             CompanySetting companySetting = eCal.companySetting;

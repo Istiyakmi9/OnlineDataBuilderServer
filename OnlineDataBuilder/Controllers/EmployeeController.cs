@@ -172,7 +172,8 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("UploadEmployeeExcel")]
         public async Task<ApiResponse> UploadEmployeeExcel([FromBody] List<Employee> employees)
         {
-            var result = await _employeeService.UploadEmployeeExcelService(employees);
+            var files = new FormCollection(new Dictionary<string, StringValues>());
+            var result = await _employeeService.UploadEmployeeExcelService(employees, files.Files);
             return BuildResponse(result);
         }
     }

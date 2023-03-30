@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -7,7 +8,6 @@ using Newtonsoft.Json;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
@@ -19,10 +19,12 @@ namespace SchoolInMindServer.MiddlewareServices
         private readonly RequestDelegate _next;
         private readonly IConfiguration configuration;
         private readonly string TokenName = "Authorization";
+        private readonly ITimezoneConverter _timezoneConverter;
 
-        public RequestMiddleware(RequestDelegate next, IConfiguration configuration)
+        public RequestMiddleware(RequestDelegate next, IConfiguration configuration, ITimezoneConverter timezoneConverter)
         {
             this.configuration = configuration;
+            _timezoneConverter = timezoneConverter;
             _next = next;
         }
 
@@ -114,6 +116,7 @@ namespace SchoolInMindServer.MiddlewareServices
                                                         currentSession.CurrentUserDetail.LastName;
 
             currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
+            currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, currentSession.TimeZone);
             currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
         }
     }

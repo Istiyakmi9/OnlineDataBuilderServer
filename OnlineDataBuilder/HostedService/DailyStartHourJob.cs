@@ -16,7 +16,7 @@ namespace OnlineDataBuilder.HostedService
         private readonly ILogger<DailyStartHourJob> _logger;
         private readonly CrontabSchedule _cron;
         private readonly IServiceProvider _serviceProvider;
-        private int counter = 11;
+        private int counter = 7;
         private int index = 1;
         DateTime _nextCron;
 
@@ -39,7 +39,7 @@ namespace OnlineDataBuilder.HostedService
 
                 await this.RunJobAsync();
 
-                _logger.LogInformation($"Daily cron jon ran successfully. Index = {index++}   .................");
+                _logger.LogInformation($"Daily cron jon ran successfully. Index = {index}   .................");
                 _nextCron = _cron.GetNextOccurrence(DateTime.Now);
             }
         }
