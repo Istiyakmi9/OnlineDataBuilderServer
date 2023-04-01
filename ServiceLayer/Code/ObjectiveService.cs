@@ -105,7 +105,7 @@ namespace ServiceLayer.Code
         public List<ObjectiveDetail> GetPerformanceObjectiveService(FilterModel filterModel)
         {
             if (filterModel.CompanyId > 0)
-                filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+                filterModel.SearchString += $" and CompanyId = {filterModel.CompanyId} ";
 
             var result = _db.GetList<ObjectiveDetail>("sp_performance_objective_getby_filter", filterModel);
             return result;
