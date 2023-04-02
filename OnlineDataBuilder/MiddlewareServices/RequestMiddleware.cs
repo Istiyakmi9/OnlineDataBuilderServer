@@ -116,7 +116,7 @@ namespace SchoolInMindServer.MiddlewareServices
                                                         currentSession.CurrentUserDetail.LastName;
 
             currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
-            currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, currentSession.TimeZone);
+            currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow.AddMonths(1), currentSession.TimeZone);
             currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
         }
     }

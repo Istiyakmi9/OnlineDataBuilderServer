@@ -20,7 +20,7 @@ namespace ServiceLayer.Code
                 if (component == null)
                     throw new HiringBellException("Standard Deduction component not found. Please add standard deduction components");
 
-                if (empCal.employeeDeclaration.EmployeeCurrentRegime == 1 && empCal.employeeSalaryDetail.CTC > 250000)
+                if (empCal.employeeDeclaration.EmployeeCurrentRegime == 1 && empCal.expectedAnnualGrossIncome > 250000)
                     component.DeclaredValue = component.SectionMaxLimit;
                 else
                     component.DeclaredValue = 0;
@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
         {
             decimal ptaxAmount = 0;
             var professtionalTax = empCal.ptaxSlab;
-            var monthlyIncome = empCal.TaxableCTC / 12;
+            var monthlyIncome = empCal.expectedAnnualGrossIncome / 12;
             var maxMinimumIncome = professtionalTax.Max(i => i.MinIncome);
             PTaxSlab ptax = null;
             if (monthlyIncome >= maxMinimumIncome)
