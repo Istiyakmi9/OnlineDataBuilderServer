@@ -16,7 +16,7 @@ namespace OnlineDataBuilder.HostedService
         private readonly ILogger<DailyStartHourJob> _logger;
         private readonly CrontabSchedule _cron;
         private readonly IServiceProvider _serviceProvider;
-        private int counter = 7;
+        private int counter = 12;
         private int index = 1;
         DateTime _nextCron;
 

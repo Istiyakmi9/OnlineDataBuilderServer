@@ -78,7 +78,7 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             DateTime payrollDate = (DateTime)_currentSession.TimeZoneNow;
             int offsetindex = 0;
-            decimal totalDays = 0;
+            int daysPresnet = 0;
             int totalDaysInMonth = 0;
             int pageSize = 5;
             while (true)
@@ -98,19 +98,19 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
 
                 bool IsTaxCalculationRequired = false;
-                int daysWorked = 0;
+                int daysUsedForDeduction = totalDaysInMonth;
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
                     try
                     {
                         DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
-                        if (doj.Year == payrollDate.Year && doj.Month == payrollDate.Month)
+                        if (doj.Month == payrollDate.Month && doj.Year == payrollDate.Year)
                         {
-                            daysWorked = totalDaysInMonth - doj.Day + 1;
+                            daysUsedForDeduction = totalDaysInMonth - doj.Day + 1;
                         }
 
-                        daysWorked = totalDaysInMonth;
-                        totalDays = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
+                        daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
+
                         var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
                         if (taxDetails == null)
                             throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
@@ -121,10 +121,10 @@ namespace ServiceLayer.Code.PayrollCycle
 
                         if (!presentData.IsPayrollCompleted)
                         {
-                            UpdateSalaryBreakup(payrollDate, totalDays, daysWorked, empPayroll);
-                            if (totalDays != daysWorked)
+                            UpdateSalaryBreakup(payrollDate, totalDaysInMonth, daysPresnet, empPayroll);
+                            if (daysPresnet != daysUsedForDeduction)
                             {
-                                var newAmount = (presentData.TaxDeducted / daysWorked) * totalDays;
+                                var newAmount = (presentData.TaxDeducted / daysUsedForDeduction) * daysPresnet;
                                 presentData.TaxPaid = newAmount;
                                 presentData.TaxDeducted = newAmount;
                                 presentData.IsPayrollCompleted = true;
@@ -153,7 +153,7 @@ namespace ServiceLayer.Code.PayrollCycle
             await Task.CompletedTask;
         }
 
-        private static void UpdateSalaryBreakup(DateTime payrollDate, decimal totalDays, int totalDaysInMonth, PayrollEmployeeData empPayroll)
+        private static void UpdateSalaryBreakup(DateTime payrollDate, int daysInMonth, int daysWorked, PayrollEmployeeData empPayroll)
         {
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
             if (salaryBreakup == null)
@@ -164,7 +164,7 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
                 {
-                    item.FinalAmount = (item.FinalAmount / totalDaysInMonth) * totalDays;
+                    item.FinalAmount = (item.FinalAmount / daysInMonth) * daysWorked;
                 }
 
                 presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;

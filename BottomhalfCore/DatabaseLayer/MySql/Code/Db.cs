@@ -649,14 +649,12 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         #region BULK INSERT UPDATE SIGLE TABLE
 
-        private string PrepareQuerySingle(List<object> rows, string tableName)
+        private string PrepareQuerySingle(List<object> rows, OperationDetail operationDetail)
         {
             int i = 0;
-            var first = rows.First();
-            var properties = first.GetType().GetProperties().ToList();
+            var properties = operationDetail.props;
             StringBuilder query = new StringBuilder();
-            if (tableName != null)
-                query.AppendLine($"insert into {tableName} values ");
+            query.AppendLine($"insert into {operationDetail.tableName} values ");
 
             string delimiter = string.Empty;
             string newKeyId = "@id";
@@ -704,23 +702,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     }
                 }
 
-                if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(Nullable<DateTime>))
+                if (value != null)
                 {
-                    var datetime = Convert.ToDateTime(value);
-                    if (datetime.Year == 1)
-                        value = Convert.ToDateTime("1/1/1976").ToString("yyyy-MM-dd HH:mm:ss.fff");
-                    else
-                        value = Convert.ToDateTime(datetime).ToString("yyyy-MM-dd HH:mm:ss.fff");
 
-                    builder.Append($"{delimiter} '{value}'");
-                }
-                else if (prop.PropertyType == typeof(string))
-                {
-                    builder.Append($"{delimiter} '{value}'");
+                    if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(Nullable<DateTime>))
+                    {
+                        var datetime = Convert.ToDateTime(value);
+                        if (datetime.Year == 1)
+                            value = Convert.ToDateTime("1/1/1976").ToString("yyyy-MM-dd HH:mm:ss.fff");
+                        else
+                            value = Convert.ToDateTime(datetime).ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                        builder.Append($"{delimiter} '{value}'");
+                    }
+                    else if (prop.PropertyType == typeof(string))
+                    {
+                        builder.Append($"{delimiter} '{value}'");
+                    }
+                    else
+                    {
+                        builder.Append(delimiter + value);
+                    }
                 }
                 else
                 {
-                    builder.Append(delimiter + value);
+                    builder.Append($"{delimiter} null");
                 }
 
                 i++;
@@ -730,12 +736,25 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return builder.ToString();
         }
 
-        public async Task<string> BatchInsetUpdate(string procedureName, List<object> data, bool isDirectCall = false)
+        public async Task<string> BatchInsetUpdate(string tableName, List<object> data, bool isDirectCall = false)
         {
-            return await NativeBatchInsetUpdate(procedureName, data, isDirectCall);
+            OperationDetail operationDetail = new OperationDetail
+            {
+                tableName = tableName,
+                primaryKey = DbProcedure.getKey(tableName),
+                props = data.First().GetType().GetProperties().ToList()
+            };
+
+            return await NativeBatchInsetUpdate(data, operationDetail, isDirectCall);
         }
 
-        public async Task<string> NativeBatchInsetUpdate(string procedureName, List<object> secondQuery, bool isDirectCall = false)
+        public async Task<string> BatchInsetUpdate(List<object> data, bool isDirectCall = false)
+        {
+            OperationDetail operationDetail = SetTargetDataPropertyInfoList(data, true);
+            return await NativeBatchInsetUpdate(data, operationDetail, isDirectCall);
+        }
+
+        public async Task<string> NativeBatchInsetUpdate(List<object> secondQuery, OperationDetail operationDetail, bool isDirectCall = false)
         {
             string statusMessage = null;
             using (var connection = new MySqlConnection(_connectionString))
@@ -748,23 +767,23 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                         try
                         {
                             Utility util = new Utility();
-                            string pKey = DbProcedure.getKey(procedureName);
+                            string pKey = operationDetail.primaryKey; // DbProcedure.getKey(procedureName);
                             command.Parameters.Clear();
                             command.Connection = connection;
 
                             if (isDirectCall)
                             {
                                 command.CommandType = CommandType.Text;
-                                command.CommandText = PrepareQuerySingle(secondQuery, procedureName);
+                                command.CommandText = PrepareQuerySingle(secondQuery, operationDetail);
                             }
                             else
                             {
                                 command.CommandType = CommandType.StoredProcedure;
                                 command.CommandText = "sp_dynamic_query_ins_upd";
 
-                                command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = procedureName;
+                                command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = operationDetail.tableName;
                                 command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
-                                command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuerySingle(secondQuery, null);
+                                command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuerySingle(secondQuery, operationDetail);
                                 command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
                             }
 

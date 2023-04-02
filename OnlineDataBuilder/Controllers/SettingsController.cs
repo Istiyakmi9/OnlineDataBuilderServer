@@ -80,9 +80,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("UpdateGroupSalaryComponentDetail/{componentId}/{groupId}")]
-        public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromRoute] int groupId, [FromBody] SalaryComponents component)
+        public async Task<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromRoute] int groupId, [FromBody] SalaryComponents component)
         {
-            var result = _settingService.UpdateGroupSalaryComponentDetailService(componentId, groupId, component);
+            var result = await _settingService.UpdateGroupSalaryComponentDetailService(componentId, groupId, component);
             return BuildResponse(result);
         }
 

@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
         {
             decimal ptaxAmount = 0;
             var professtionalTax = empCal.ptaxSlab;
-            var monthlyIncome = empCal.employeeSalaryDetail.CTC / 12;
+            var monthlyIncome = empCal.TaxableCTC / 12;
             var maxMinimumIncome = professtionalTax.Max(i => i.MinIncome);
             PTaxSlab ptax = null;
             if (monthlyIncome >= maxMinimumIncome)
@@ -75,7 +75,7 @@ namespace ServiceLayer.Code
         {
             decimal value = 0;
             SalaryComponents component = null;
-            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == ComponentNames.EmployeePF);
+            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == ComponentNames.EmployerPF);
             if (component != null)
                 value = (component.DeclaredValue / 12) * totalMonths;
 
@@ -153,7 +153,7 @@ namespace ServiceLayer.Code
         public void NewTaxRegimeCalculation(EmployeeCalculation eCal, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
         {
             EmployeeDeclaration employeeDeclaration = eCal.employeeDeclaration;
-            decimal taxableIncome = eCal.expectedAmountAnnually;
+            decimal taxableIncome = eCal.expectedAnnualGrossIncome;
             if (taxableIncome < 0)
                 throw new HiringBellException("Invalid TaxableIncome");
 
@@ -203,10 +203,12 @@ namespace ServiceLayer.Code
         {
             var calculatedSalaryBreakupDetail = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);
             if (calculatedSalaryBreakupDetail == null)
+            {
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     FinalAmount = 0
                 };
+            }
 
             var basicComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Basic);
             if (basicComponent == null)
@@ -222,7 +224,7 @@ namespace ServiceLayer.Code
             else
                 HRAAmount = HRA2;
 
-            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA");
+            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == ComponentNames.HRA);
             if (hraComponent != null && hraComponent.DeclaredValue > 0)
             {
                 decimal declaredValue = hraComponent.DeclaredValue;
@@ -291,7 +293,7 @@ namespace ServiceLayer.Code
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
         }
 
-        public decimal OneAndHalfLakhsComponent(EmployeeDeclaration employeeDeclaration)
+        public decimal Get_80C_DeclaredAmount(EmployeeDeclaration employeeDeclaration)
         {
             decimal totalDeduction = 0;
             var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.OneAndHalfLakhsExemptions);
