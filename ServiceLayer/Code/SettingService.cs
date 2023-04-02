@@ -20,12 +20,14 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
-        public SettingService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IFileService fileService)
+        private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
+        public SettingService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IFileService fileService, IEvaluationPostfixExpression postfixToInfixConversion)
         {
             _db = db;
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
+            _postfixToInfixConversion = postfixToInfixConversion;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -229,7 +231,7 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(componentId))
                 throw new HiringBellException("Invalid component passed.");
-
+            var formulavalue = calculateExpressionUsingInfixDS(component.Formula, 0);
             SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = groupId });
             if (salaryGroup == null)
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
@@ -269,6 +271,7 @@ namespace ServiceLayer.Code
                     existingComponent.CalculateInPercentage = false;
                 }
                 existingComponent.Formula = component.Formula;
+                existingComponent.IncludeInPayslip = component.IncludeInPayslip;
             }
 
             salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
@@ -288,6 +291,112 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to update the record.");
 
             return status.statusMessage;
+        }
+
+        private decimal calculateExpressionUsingInfixDS(string expression, decimal declaredAmount)
+        {
+            if (string.IsNullOrEmpty(expression))
+                return declaredAmount;
+
+            if (!expression.Contains("()"))
+                expression = string.Format("({0})", expression);
+
+            List<string> operatorStact = new List<string>();
+            var expressionStact = new List<object>();
+            int index = 0;
+            var lastOp = "";
+            var ch = "";
+
+            while (index < expression.Length)
+            {
+                ch = expression[index].ToString();
+                if (ch.Trim() == "")
+                {
+                    index++;
+                    continue;
+                }
+                int number;
+                if (!int.TryParse(ch.ToString(), out number))
+                {
+                    switch (ch)
+                    {
+                        case "+":
+                        case "-":
+                        case "/":
+                        case "%":
+                        case "*":
+                            if (operatorStact.Count > 0)
+                            {
+                                lastOp = operatorStact[operatorStact.Count - 1];
+                                if (lastOp == "+" || lastOp == "-" || lastOp == "/" || lastOp == "*" || lastOp == "%")
+                                {
+                                    lastOp = operatorStact[operatorStact.Count - 1];
+                                    operatorStact.RemoveAt(operatorStact.Count - 1);
+                                    expressionStact.Add(lastOp);
+                                }
+                            }
+                            operatorStact.Add(ch);
+                            break;
+                        case ")":
+                            while (true)
+                            {
+                                lastOp = operatorStact[operatorStact.Count - 1];
+                                operatorStact.RemoveAt(operatorStact.Count - 1);
+                                if (lastOp == "(")
+                                {
+                                    break;
+                                }
+                                expressionStact.Add(lastOp);
+                            }
+                            break;
+                        case "(":
+                            operatorStact.Add(ch);
+                            break;
+                    }
+                }
+                else
+                {
+                    decimal value = 0;
+                    decimal fraction = 0;
+                    bool isFractionFound = false;
+                    while (true)
+                    {
+                        ch = expression[index].ToString();
+                        if (ch == ".")
+                        {
+                            index++;
+                            isFractionFound = true;
+                            break;
+                        }
+
+                        if (ch.Trim() == "")
+                        {
+                            expressionStact.Add($"{value}.{fraction}");
+                            break;
+                        }
+
+                        if (int.TryParse(ch.ToString(), out number))
+                        {
+                            if (!isFractionFound)
+                                value = Convert.ToDecimal(value + ch);
+                            else
+                                fraction = Convert.ToDecimal(fraction + ch);
+                            index++;
+                        }
+                        else
+                        {
+                            index--;
+                            expressionStact.Add($"{value}.{fraction}");
+                            break;
+                        }
+                    }
+                }
+
+                index++;
+            }
+
+            var exp = expressionStact.Aggregate((x, y) => x.ToString() + " " + y.ToString()).ToString();
+            return _postfixToInfixConversion.evaluatePostfix(exp);
         }
 
         public async Task<List<SalaryComponents>> ActivateCurrentComponentService(List<SalaryComponents> components)
