@@ -72,7 +72,7 @@ namespace ServiceLayer.Code
                 if (salaryComponent == null)
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
 
-                if (employeeDeclaration.DeclaredValue == 0)
+                if (employeeDeclaration.DeclaredValue < 0)
                     throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
 
                 salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
