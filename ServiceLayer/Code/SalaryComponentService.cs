@@ -778,10 +778,7 @@ namespace ServiceLayer.Code
         public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation eCal)
         {
             List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
-            DateTime startDate = _timezoneConverter.ToTimeZoneFixedDateTime(
-                    new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1),
-                    _currentSession.TimeZone
-                );
+            DateTime startDate = new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
             eCal.PayrollStartDate = startDate;
 
@@ -1013,20 +1010,6 @@ namespace ServiceLayer.Code
 
                 otherDetails.Add(calculatedSalaryBreakupDetail);
 
-                var finalMonthlyCTC = NoEntry ? eCal.CTC / 12 : ((eCal.CTC / 12) / daysInMonth) * workingDays;
-                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
-                {
-                    ComponentId = nameof(ComponentNames.CTC),
-                    Formula = null,
-                    ComponentName = ComponentNames.CTC,
-                    FinalAmount = finalMonthlyCTC,
-                    ComponentTypeId = 101,
-                    IsIncludeInPayslip = true
-                };
-
-                otherDetails.Add(calculatedSalaryBreakupDetail);
-                otherDetails.AddRange(calculatedSalaryBreakupDetails);
-
                 if (startDate.Subtract(doj).TotalDays < 0 && startDate.Month != doj.Month)
                 {
                     NoEntry = true;
@@ -1042,6 +1025,21 @@ namespace ServiceLayer.Code
                     foreach (var item in otherDetails)
                         item.FinalAmount = (item.FinalAmount / daysInMonth) * workingDays;
                 }
+
+                var finalMonthlyCTC = NoEntry ? eCal.CTC / 12 : ((eCal.CTC / 12) / daysInMonth) * workingDays;
+                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                {
+                    ComponentId = nameof(ComponentNames.CTC),
+                    Formula = null,
+                    ComponentName = ComponentNames.CTC,
+                    FinalAmount = finalMonthlyCTC,
+                    ComponentTypeId = 101,
+                    IsIncludeInPayslip = true
+                };
+
+                otherDetails.Add(calculatedSalaryBreakupDetail);
+                otherDetails.AddRange(calculatedSalaryBreakupDetails);
+
 
                 annualSalaryBreakups.Add(new AnnualSalaryBreakup
                 {

@@ -3,10 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -101,6 +98,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
 
                 bool IsTaxCalculationRequired = false;
+                int daysWorked = 0;
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
                     try
@@ -108,10 +106,10 @@ namespace ServiceLayer.Code.PayrollCycle
                         DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
                         if (doj.Year == payrollDate.Year && doj.Month == payrollDate.Month)
                         {
-                            if (doj.Year == payrollDate.Year && doj.Month == payrollDate.Month)
-                                totalDaysInMonth = totalDaysInMonth - doj.Day + 1;
+                            daysWorked = totalDaysInMonth - doj.Day + 1;
                         }
 
+                        daysWorked = totalDaysInMonth;
                         totalDays = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
                         var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
                         if (taxDetails == null)
@@ -123,11 +121,10 @@ namespace ServiceLayer.Code.PayrollCycle
 
                         if (!presentData.IsPayrollCompleted)
                         {
-                            if (totalDays != totalDaysInMonth)
+                            UpdateSalaryBreakup(payrollDate, totalDays, daysWorked, empPayroll);
+                            if (totalDays != daysWorked)
                             {
-                                UpdateSalaryBreakup(payrollDate, totalDays, totalDaysInMonth, empPayroll);
-
-                                var newAmount = (presentData.TaxDeducted / totalDaysInMonth) * totalDays;
+                                var newAmount = (presentData.TaxDeducted / daysWorked) * totalDays;
                                 presentData.TaxPaid = newAmount;
                                 presentData.TaxDeducted = newAmount;
                                 presentData.IsPayrollCompleted = true;
@@ -218,7 +215,7 @@ namespace ServiceLayer.Code.PayrollCycle
 
                 payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(-i);
                 _currentSession.TimeZoneNow = payrollCommonData.presentDate;
-                payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(-i); ;
+                payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(-i);
                 switch (payroll.PayFrequency)
                 {
                     case "monthly":
