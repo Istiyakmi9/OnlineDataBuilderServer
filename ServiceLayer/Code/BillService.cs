@@ -1110,14 +1110,16 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(generateBillFileDetail.EmailTemplateDetail.EmailTitle))
                 template.EmailTitle = generateBillFileDetail.EmailTemplateDetail.EmailTitle;
         }
+
         public async Task<dynamic> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal)
         {
             try
             {
                 if (payslipGenerationModal.EmployeeId <= 0)
                     throw new HiringBellException("Invalid employee selected. Please select a valid employee");
+                
                 // fetch and all the nessary data from database required to bill generation.
-                var resultSet = await PrepareRequestForPayslipGeneration(payslipGenerationModal);
+                await PrepareRequestForPayslipGeneration(payslipGenerationModal);
 
                 FileDetail fileDetail = new FileDetail();
                 fileDetail.FileExtension = string.Empty;
@@ -1190,7 +1192,13 @@ namespace ServiceLayer.Code
         {
             string html = string.Empty;
             var salaryDetailsHTML = string.Empty;
-            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => x.ComponentId != "ECI" && x.ComponentId != "EPER-PF" && x.ComponentId != "GRA" && x.ComponentId != "Gross" && x.ComponentId != "CTC" && x.IsIncludeInPayslip == true);
+            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => 
+                x.ComponentId != ComponentNames.GrossId && 
+                x.ComponentId != ComponentNames.CTCId &&
+                x.ComponentId != ComponentNames.EmployerPF &&
+                x.IsIncludeInPayslip == true
+            );
+
             foreach (var item in salaryDetail)
             {
                 salaryDetailsHTML += "<tr>";
@@ -1198,11 +1206,16 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "</tr>";
             }
-            var pfAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF").FinalAmount;
-            var pTaxAmount = PTaxCalculation(payslipModal.CTC, payslipModal.PTaxSlabs);
+
+            decimal employerPFAmount = 0;
+            var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF");
+            if(employerPF != null)
+                employerPFAmount = employerPF.FinalAmount;
+
+            var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
-            var totalDeduction = pfAmount + payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
-            var netSalary = totalEarning - (pfAmount + payslipModal.TaxDetail.TaxDeducted);
+            var totalDeduction = payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
+            var netSalary = totalEarning - (employerPFAmount + payslipModal.TaxDetail.TaxDeducted);
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
@@ -1238,7 +1251,7 @@ namespace ServiceLayer.Code
                 Replace("[[Month]]", payslipModal.SalaryDetail.MonthName.ToUpper()).
                 Replace("[[Year]]", payslipModal.Year.ToString()).
                 Replace("[[CompleteSalaryDetails]]", salaryDetailsHTML).
-                Replace("[[PFAmount]]", pfAmount.ToString("0.00")).
+                Replace("[[PFAmount]]", employerPFAmount.ToString("0.00")).
                 Replace("[[TotalEarnings]]", totalEarning.ToString("0.00")).
                 Replace("[[TotalIncomeTax]]", payslipModal.TaxDetail.TaxDeducted.ToString("0.00")).
                 Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
@@ -1285,7 +1298,7 @@ namespace ServiceLayer.Code
             return html;
         }
 
-        private async Task<DataSet> PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
+        private async Task PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
         {
             DataSet ds = this.db.FetchDataSet("sp_payslip_detail", new
             {
@@ -1298,7 +1311,6 @@ namespace ServiceLayer.Code
             if (ds == null || ds.Tables.Count != 7)
                 throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
 
-            payslipGenerationModal.ResultSet = ds;
             if (ds.Tables[0].Rows.Count != 1)
                 throw new HiringBellException("Fail to get company detail. Please contact to admin.");
 
@@ -1314,7 +1326,7 @@ namespace ServiceLayer.Code
             if (SalaryDetail.CompleteSalaryDetail == null)
                 throw new HiringBellException("Salary breakup not found. Please contact to admin");
 
-            payslipGenerationModal.CTC = SalaryDetail.CTC;
+            payslipGenerationModal.Gross = SalaryDetail.GrossIncome;
             var allSalaryDetails = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(SalaryDetail.CompleteSalaryDetail);
             payslipGenerationModal.SalaryDetail = allSalaryDetails.Find(x => x.MonthNumber == payslipGenerationModal.Month);
             if (payslipGenerationModal.SalaryDetail == null)
@@ -1346,7 +1358,7 @@ namespace ServiceLayer.Code
 
             var file = Converter.ToType<Files>(ds.Tables[6]);
             payslipGenerationModal.HeaderLogoPath = Path.Combine(file.FilePath, file.FileName);
-            return await Task.FromResult(ds);
+            await Task.CompletedTask;
         }
         private void GetPayslipFileDetail(PayslipGenerationModal payslipModal, FileDetail fileDetail, string fileExtension)
         {
@@ -1417,20 +1429,25 @@ namespace ServiceLayer.Code
 
             return ConvertNumber(i / 1000000000) + " Arab " + ((i % 1000000000 > 0) ? " " + ConvertNumber(i % 1000000000) : "");
         }
+
         private decimal PTaxCalculation(decimal CTC, List<PTaxSlab> pTaxSlabs)
         {
-            decimal monthlySalarry = CTC / 12;
-            if (pTaxSlabs.Count == 0)
-                throw new HiringBellException("Professional tax slab not found. Please contact to admin");
+            decimal ptaxAmount = 0;
+            var professtionalTax = pTaxSlabs;
+            var monthlyIncome = CTC / 12;
+            var maxMinimumIncome = professtionalTax.Max(i => i.MinIncome);
+            PTaxSlab ptax = null;
+            if (monthlyIncome >= maxMinimumIncome)
+                ptax = professtionalTax.OrderByDescending(i => i.MinIncome).First();
+            else
+                ptax = professtionalTax.Find(x => monthlyIncome >= x.MinIncome && monthlyIncome <= x.MaxIncome);
 
-            PTaxSlab pTaxSlab = pTaxSlabs.Find(x => x.MinIncome <= monthlySalarry && x.MaxIncome >= monthlySalarry);
-            if (monthlySalarry > pTaxSlabs[pTaxSlabs.Count - 1].MaxIncome)
-                pTaxSlab = pTaxSlabs.Last();
+            if (ptax != null)
+            {
+                ptaxAmount = ptax.TaxAmount;
+            }
 
-            if (pTaxSlab == null)
-                throw new HiringBellException($"Professional tax for {CTC} is not found. Please contact to admin");
-
-            return pTaxSlab.TaxAmount;
+            return ptaxAmount;
         }
     }
 }

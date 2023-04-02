@@ -1,23 +1,18 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Math;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using static ApplicationConstants;
 
@@ -81,11 +76,13 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
 
                 salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
+
                 var maxLimit = 150000;
                 _sections.TryGetValue(ApplicationConstants.ExemptionDeclaration, out List<string> taxexemptSection);
                 employeeDeclaration.ExemptionDeclaration = declaration.SalaryComponentItems.FindAll(i => i.Section != null && taxexemptSection.Contains(i.Section));
                 var totalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue);
                 var npsComponent = employeeDeclaration.ExemptionDeclaration.Find(x => x.Section == "80CCD(1)");
+
                 if (salaryComponent.Section == "80CCD(1)")
                     maxLimit += 50000;
                 else
@@ -294,7 +291,7 @@ namespace ServiceLayer.Code
 
                 if (FileCollection.Count > 0)
                 {
-                    
+
                     if (string.IsNullOrEmpty(declaration.DocumentPath))
                     {
                         declaration.DocumentPath = Path.Combine(
@@ -410,11 +407,9 @@ namespace ServiceLayer.Code
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
         }
 
-        private async Task<bool> CalculateAndBuildDeclarationDetail(EmployeeCalculation employeeCalculation, bool reCalculateFlag)
+        private async Task<bool> CalculateAndBuildDeclarationDetail(EmployeeCalculation employeeCalculation)
         {
             bool flag = await GetEmployeeDeclaration(employeeCalculation.employeeDeclaration, employeeCalculation.salaryComponents);
-            if (!reCalculateFlag)
-                reCalculateFlag = flag;
 
             if (employeeCalculation.salaryComponents.Count != employeeCalculation.employeeDeclaration.SalaryComponentItems.Count)
                 throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
@@ -462,41 +457,25 @@ namespace ServiceLayer.Code
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryNDeclaration(EmployeeCalculation empCal, bool reCalculateFlag)
         {
+            decimal totalDeduction = 0;
             int totalMonths = GetNumberOfSalaryMonths(empCal);
+
             empCal.employeeDeclaration.TotalMonths = totalMonths;
 
             EmployeeSalaryDetail salaryBreakup = empCal.employeeSalaryDetail;
 
-            List<AnnualSalaryBreakup> completeSalaryBreakups =
-                JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
+            var flag = await CalculateAndBuildDeclarationDetail(empCal);
+            if (!reCalculateFlag)
+                reCalculateFlag = flag;
 
-            await CalculateAndBuildDeclarationDetail(empCal, reCalculateFlag);
-            if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
-            {
-                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
-                if (completeSalaryBreakups == null || completeSalaryBreakups.Count == 0)
-                    throw new HiringBellException("Unable to build salary detail. Please contact to admin.");
-
-                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
-                reCalculateFlag = true;
-            }
-            else
-            {
-                if (empCal.salaryGroup == null || string.IsNullOrEmpty(empCal.salaryGroup.SalaryComponents)
-                    || empCal.salaryGroup.SalaryComponents == "[]")
-                    throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
-                if (empCal.salaryGroup.GroupComponents == null || empCal.salaryGroup.GroupComponents.Count <= 0)
-                    empCal.salaryGroup.GroupComponents = JsonConvert
-                        .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
-            }
-
-            decimal totalDeduction = 0;
+            // create breakup if new emp or any main setting changed
+            List<AnnualSalaryBreakup> completeSalaryBreakups = CreateBreakUp(empCal, ref reCalculateFlag, salaryBreakup);
 
             // calculate and get gross income value and salary breakup detail
             var calculatedSalaryBreakupDetails = GetPresentMonthSalaryDetail(completeSalaryBreakups);
 
             // find total sum of gross from complete salary breakup list
-            empCal.expectedAmountAnnually = CalculateTotalAmountWillBeReceived(completeSalaryBreakups);
+            empCal.expectedAnnualGrossIncome = CalculateTotalAmountWillBeReceived(completeSalaryBreakups);
 
             //check and apply standard deduction
             totalDeduction += _componentsCalculationService.StandardDeductionComponent(empCal);
@@ -508,7 +487,7 @@ namespace ServiceLayer.Code
             totalDeduction += _componentsCalculationService.EmployerProvidentFund(empCal.employeeDeclaration, empCal.salaryGroup, totalMonths);
 
             // check and apply 1.5 lakhs components
-            totalDeduction += _componentsCalculationService.OneAndHalfLakhsComponent(empCal.employeeDeclaration);
+            totalDeduction += _componentsCalculationService.Get_80C_DeclaredAmount(empCal.employeeDeclaration);
 
             // check and apply other components
             totalDeduction += _componentsCalculationService.OtherDeclarationComponent(empCal.employeeDeclaration);
@@ -516,23 +495,19 @@ namespace ServiceLayer.Code
             // check and apply tax saving components
             totalDeduction += _componentsCalculationService.TaxSavingComponent(empCal.employeeDeclaration);
 
-            // check and apply house property components
-            // totalDeduction += _componentsCalculationService.HousePropertyComponent(employeeDeclaration);
-
             decimal hraAmount = 0;
 
             // Calculate hra and apply on deduction
             _componentsCalculationService.HRAComponent(empCal.employeeDeclaration, calculatedSalaryBreakupDetails);
 
-            //Convert.ToDecimal(string.Format("{0:0.00}", employeeDeclaration.HRADeatils.TryGetValue("HRAAmount", out hraAmount)));
             if (empCal.employeeDeclaration.HRADeatils != null)
                 hraAmount = (empCal.employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
 
-            salaryBreakup.GrossIncome = empCal.expectedAmountAnnually;
+            salaryBreakup.GrossIncome = empCal.expectedAnnualGrossIncome;
 
             // final total taxable amount.
-            empCal.employeeDeclaration.TotalAmount = empCal.expectedAmountAnnually - (totalDeduction + hraAmount);
-            empCal.employeeDeclaration.TotalAmountOnNewRegim = empCal.expectedAmountAnnually;
+            empCal.employeeDeclaration.TotalAmount = empCal.expectedAnnualGrossIncome - (totalDeduction + hraAmount);
+            empCal.employeeDeclaration.TotalAmountOnNewRegim = empCal.expectedAnnualGrossIncome;
 
             //Tax regime calculation 
             if (empCal.employeeDeclaration.TotalAmount < 0)
@@ -560,10 +535,35 @@ namespace ServiceLayer.Code
             return salaryBreakup;
         }
 
+        private List<AnnualSalaryBreakup> CreateBreakUp(EmployeeCalculation empCal, ref bool reCalculateFlag, EmployeeSalaryDetail salaryBreakup)
+        {
+            List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
+            if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
+            {
+                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
+                if (completeSalaryBreakups == null || completeSalaryBreakups.Count == 0)
+                    throw new HiringBellException("Unable to build salary detail. Please contact to admin.");
+
+                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
+                reCalculateFlag = true;
+            }
+            else
+            {
+                if (empCal.salaryGroup == null || string.IsNullOrEmpty(empCal.salaryGroup.SalaryComponents)
+                    || empCal.salaryGroup.SalaryComponents == ApplicationConstants.EmptyJsonArray)
+                    throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
+                if (empCal.salaryGroup.GroupComponents == null || empCal.salaryGroup.GroupComponents.Count <= 0)
+                    empCal.salaryGroup.GroupComponents = JsonConvert
+                        .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
+            }
+
+            return completeSalaryBreakups;
+        }
+
         private async Task UpdateEmployeeSalaryDetailChanges(long EmployeeId, EmployeeSalaryDetail salaryBreakup)
         {
             if (string.IsNullOrEmpty(salaryBreakup.NewSalaryDetail))
-                salaryBreakup.NewSalaryDetail = "[]";
+                salaryBreakup.NewSalaryDetail = ApplicationConstants.EmptyJsonArray;
 
             var result = await _db.ExecuteAsync("sp_employee_salary_detail_InsUpd", new
             {
@@ -597,9 +597,6 @@ namespace ServiceLayer.Code
             {
                 // decimal totalTaxNeedToPay = 0;
                 taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
-                //if (taxdetails != null && taxdetails.Count > 0)
-                //    totalTaxNeedToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
-
                 if (reCalculateFlag)
                 {
                     if (taxNeetToPay > 0)
@@ -646,6 +643,9 @@ namespace ServiceLayer.Code
             empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                         .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empCal.Doj, _currentSession.TimeZone);
+            DateTime startDate = empCal.PayrollStartDate;
+
             decimal remaningTaxAmount = taxNeetToPay - empCal.employeeDeclaration.TaxPaid;
             int pendingMonths = taxdetails.Count(x => !x.IsPayrollCompleted);
 
@@ -654,8 +654,17 @@ namespace ServiceLayer.Code
             {
                 if (!taxDetail.IsPayrollCompleted)
                 {
-                    taxDetail.TaxDeducted = singleMonthTax;
-                    taxDetail.TaxPaid = 0M;
+                    if (taxDetail.Month == doj.Month && taxDetail.Year == doj.Year)
+                    {
+                        var daysInMonth = DateTime.DaysInMonth(doj.Year, doj.Month);
+                        taxDetail.TaxDeducted = (singleMonthTax / daysInMonth) * (daysInMonth - doj.Day + 1);
+                        taxDetail.TaxPaid = 0M;
+                    }
+                    else
+                    {
+                        taxDetail.TaxDeducted = singleMonthTax;
+                        taxDetail.TaxPaid = 0M;
+                    }
                 }
             }
         }
@@ -709,9 +718,9 @@ namespace ServiceLayer.Code
             permonthTax = remaningTaxAmount > 0 ? remaningTaxAmount / (totalWorkingMonth - 1) : 0;
 
 
-            foreach(var x in taxDetails)
+            foreach (var x in taxDetails)
             {
-                if(!x.IsPayrollCompleted)
+                if (!x.IsPayrollCompleted)
                 {
                     x.TaxDeducted = currentMonthTax;
                     x.IsPayrollCompleted = false;
@@ -723,7 +732,7 @@ namespace ServiceLayer.Code
 
         private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
         {
-            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);            
+            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
             DateTime startDate = eCal.PayrollStartDate;
 
             CompanySetting companySetting = eCal.companySetting;

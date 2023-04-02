@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using ModalLayer.MarkerInterface;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal.Accounts
 {
+    [Table(name: "salary_group")]
     public class SalaryGroup : CreationInfo
     {
-        public int CompanyId { get; set; }
+        [Primary("SalaryGroupId")]
         public int SalaryGroupId { get; set; }
         public string SalaryComponents { get; set; }
         public List<SalaryComponents> GroupComponents { get; set; }
@@ -13,5 +15,6 @@ namespace ModalLayer.Modal.Accounts
         public decimal MinAmount { set; get; }
         public decimal MaxAmount { set; get; }
         public decimal? CTC { get; set; }
+        public int CompanyId { get; set; }
     }
 }

@@ -224,9 +224,8 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public string UpdateGroupSalaryComponentDetailService(string componentId, int groupId, SalaryComponents component)
+        public async Task<string> UpdateGroupSalaryComponentDetailService(string componentId, int groupId, SalaryComponents component)
         {
-            var status = string.Empty;
             if (groupId <= 0)
                 throw new HiringBellException("Invalid groupId");
 
@@ -276,7 +275,7 @@ namespace ServiceLayer.Code
             }
 
             salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
-            status = _db.Execute<SalaryComponents>("sp_salary_group_insupd", new
+            var status = await _db.ExecuteAsync("sp_salary_group_insupd", new
             {
                 salaryGroup.SalaryGroupId,
                 salaryGroup.CompanyId,
@@ -288,10 +287,10 @@ namespace ServiceLayer.Code
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
-            if (!ApplicationConstants.IsExecuted(status))
+            if (!ApplicationConstants.IsExecuted(status.statusMessage))
                 throw new HiringBellException("Fail to update the record.");
 
-            return status;
+            return status.statusMessage;
         }
 
         private decimal calculateExpressionUsingInfixDS(string expression, decimal declaredAmount)

@@ -13,14 +13,13 @@ namespace ModalLayer.Modal
         public string CompanyLogoPath { set; get; }
         public Organization Company { set; get; }
         public FileDetail FileDetail { set; get; }
-        public DataSet ResultSet { set; get; }
         public Employee Employee { set; get; }
         public AnnualSalaryBreakup SalaryDetail { get; set; }
         public Attendance AttendanceDetail { get; set; }
         public TaxDetails TaxDetail { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
-        public decimal CTC { get; set; }
+        public decimal Gross { get; set; }
         public List<PTaxSlab> PTaxSlabs { get; set; }
         public List<EmployeeRole> EmployeeRoles { get; set; }
     }

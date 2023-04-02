@@ -229,15 +229,20 @@ public class ApplicationConstants
 public class ComponentNames
 {
     public const string Gross = "GROSS";
+    public const string GrossName = "[GROSS]";
     public const string GrossId = "Gross";
     public const string CTC = "ANNUALCTC";
+    public const string CTCId = "CTC";
     public const string StandardDeduction = "STD";
     public const string ProfessionalTax = "PTAX";
     public const string EmployeePF = "EPF";
+    public const string EmployerPF = "EPER-PF";
     public const string Special = "SPECIAL ALLOWANCE";
     public const string SpecialAllowanceId = "Special";
     public const string HRA = "HRA";
     public const string Basic = "BS";
+    public const string BasicName = "[BASIC]";
+    public const string CTCName = "[CTC]";
     public const string ESI = "ESI";
     public const string LabourWelfareFund = "LWF";
     public const string LabourWelfareFundEmployee = "LWFE";

@@ -15,7 +15,7 @@ namespace ServiceLayer.Interface
         void NewTaxRegimeCalculation(EmployeeCalculation eCal, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs);
         void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails);
         void BuildTaxDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail salaryBreakup);
-        decimal OneAndHalfLakhsComponent(EmployeeDeclaration employeeDeclaration);
+        decimal Get_80C_DeclaredAmount(EmployeeDeclaration employeeDeclaration);
         decimal OtherDeclarationComponent(EmployeeDeclaration employeeDeclaration);
         decimal TaxSavingComponent(EmployeeDeclaration employeeDeclaration);
         decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration);
