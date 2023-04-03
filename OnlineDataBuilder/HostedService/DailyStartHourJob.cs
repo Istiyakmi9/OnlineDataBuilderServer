@@ -35,11 +35,11 @@ namespace OnlineDataBuilder.HostedService
             {
                 int value = WaitForNextCronValue();
                 await Task.Delay(value, cancellationToken);
-                _logger.LogInformation($"Daily cron jon started. Index = {index++}   ...............");
+                _logger.LogInformation($"Daily cron jon started. Index = {index}   ...............");
 
                 await this.RunJobAsync();
 
-                _logger.LogInformation($"Daily cron jon ran successfully. Index = {index}   .................");
+                _logger.LogInformation($"Daily cron jon ran successfully. Index = {index++}   .................");
                 _nextCron = _cron.GetNextOccurrence(DateTime.Now);
             }
         }

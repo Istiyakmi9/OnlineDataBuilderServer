@@ -12,6 +12,7 @@ namespace ModalLayer.Modal.Accounts
         public string NewSalaryDetail { get; set; }
         public int GroupId { set; get; }
         public string TaxDetail { get; set; }
+        public int FinancialStartYear { get; set; }
         public bool IsCTCChanged { set; get; } = false;
         public DateTime DateOfJoining { set; get; }
     }

@@ -77,6 +77,111 @@ namespace ServiceLayer.Code
             return todayDate;
         }
 
+        private async Task<List<AttendanceDetailJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining)
+        {
+            List<AttendanceDetailJson> attendenceDetails = new List<AttendanceDetailJson>();
+            var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
+            int totalNumOfDaysInPresentMonth = DateTime.DaysInMonth(timezoneFirstDate.Year, timezoneFirstDate.Month);
+
+            double days = 0;
+            var barrierDate = GetBarrierDate(attendanceModal.attendanceSubmissionLimit);
+            if (timezoneFirstDate.Day > 1)
+                totalNumOfDaysInPresentMonth = totalNumOfDaysInPresentMonth - timezoneFirstDate.Day;
+
+            int weekDays = 0;
+            int totalMinute = 0;
+            int i = 0;                
+            DateTime workingDate = timezoneFirstDate;
+            while (i < totalNumOfDaysInPresentMonth)
+            {
+                workingDate = timezoneFirstDate.AddDays(i);
+                var isHoliday = CheckIsHoliday(workingDate, attendanceModal.calendars);
+                var isWeekend = CheckWeekend(attendanceModal.shiftDetail, workingDate);
+                var officetime = attendanceModal.shiftDetail.OfficeTime;
+                var logoff = CalculateLogOff(attendanceModal.shiftDetail.OfficeTime, attendanceModal.shiftDetail.LunchDuration);
+
+                days = barrierDate.Date.Subtract(workingDate.Date).TotalDays;
+                totalMinute = attendanceModal.shiftDetail.Duration;
+                var presentDayStatus = (int)DayStatus.Empty;
+                if (isHoliday || isWeekend)
+                {
+                    officetime = "00:00";
+                    logoff = "00:00";
+                    totalMinute = 0;
+                }
+
+                if (isHoliday)
+                    presentDayStatus = (int)DayStatus.Holiday;
+                else if (isWeekend)
+                    presentDayStatus = (int)DayStatus.Weekend;
+                else
+                {
+                    if (workingDate.Month == dateOfJoining.Month && workingDate.Year == dateOfJoining.Year)
+                    {
+                        if (workingDate.Day >= dateOfJoining.Day)
+                            presentDayStatus = (int)ItemStatus.Approved;
+                        else
+                            presentDayStatus = (int)ItemStatus.NotSubmitted;
+                    }
+                    else
+                    {
+                        presentDayStatus = (int)ItemStatus.Approved;
+                    }
+                }
+
+                attendenceDetails.Add(new AttendanceDetailJson
+                {
+                    AttendenceDetailId = workingDate.Day,
+                    IsHoliday = isHoliday,
+                    IsOnLeave = false,
+                    IsWeekend = isWeekend,
+                    AttendanceDay = workingDate,
+                    LogOn = officetime,
+                    LogOff = logoff,
+                    PresentDayStatus = presentDayStatus,
+                    UserComments = string.Empty,
+                    ApprovedName = String.Empty,
+                    ApprovedBy = 0,
+                    SessionType = 1,
+                    TotalMinutes = totalMinute,
+                    IsOpen = i >= days ? true : false,
+                    Emails = "[]"
+                });
+
+                i++;
+            }
+
+            var result = await _db.ExecuteAsync("sp_attendance_insupd", new
+            {
+                AttendanceId = 0,
+                AttendanceDetail = JsonConvert.SerializeObject(attendenceDetails),
+                UserTypeId = (int)UserType.Employee,
+                EmployeeId = attendanceModal.employee.EmployeeUid,
+                TotalDays = totalNumOfDaysInPresentMonth,
+                TotalWeekDays = weekDays,
+                DaysPending = totalNumOfDaysInPresentMonth,
+                TotalBurnedMinutes = 0,
+                ForYear = attendanceModal.firstDate.AddDays(1).Year,
+                ForMonth = attendanceModal.firstDate.AddDays(1).Month,
+                UserId = _currentSession.CurrentUserDetail.UserId,
+                PendingRequestCount = 0,
+                ReportingManagerId = attendanceModal.employee.ReportingManagerId,
+                ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                Mobile = attendanceModal.employee.Mobile,
+                Email = attendanceModal.employee.Email,
+                EmployeeName = attendanceModal.employee.FirstName + " " + attendanceModal.employee.LastName,
+                AttendenceStatus = (int)DayStatus.WorkFromOffice,
+                BillingHours = 0,
+                ClientId = 0,
+                LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
+            }, true);
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
+            attendanceModal.attendance.AttendanceId = Convert.ToInt64(result.statusMessage);
+            return attendenceDetails;
+        }
+
         private async Task<List<AttendanceDetailJson>> CreateAttendanceTillDate(AttendanceDetailBuildModal attendanceModal)
         {
             List<AttendanceDetailJson> attendenceDetails = new List<AttendanceDetailJson>();
@@ -91,13 +196,15 @@ namespace ServiceLayer.Code
             int weekDays = 0;
             int totalMinute = 0;
             int i = 0;
+            DateTime workingDate = timezoneFirstDate;
             while (i < totalNumOfDaysInPresentMonth)
             {
-                var isHoliday = CheckIsHoliday(timezoneFirstDate, attendanceModal.calendars);
-                var isWeekend = CheckWeekend(attendanceModal.shiftDetail, timezoneFirstDate.AddDays(i));
+                workingDate = timezoneFirstDate.AddDays(i);
+                var isHoliday = CheckIsHoliday(workingDate, attendanceModal.calendars);
+                var isWeekend = CheckWeekend(attendanceModal.shiftDetail, workingDate);
                 var officetime = attendanceModal.shiftDetail.OfficeTime;
                 var logoff = CalculateLogOff(attendanceModal.shiftDetail.OfficeTime, attendanceModal.shiftDetail.LunchDuration);
-                days = barrierDate.Date.Subtract(timezoneFirstDate.Date).TotalDays;
+                days = barrierDate.Date.Subtract(workingDate.Date).TotalDays;
                 totalMinute = attendanceModal.shiftDetail.Duration;
                 var presentDayStatus = (int)DayStatus.Empty;
                 if (isHoliday || isWeekend)
@@ -119,14 +226,14 @@ namespace ServiceLayer.Code
 
                 attendenceDetails.Add(new AttendanceDetailJson
                 {
-                    AttendenceDetailId = timezoneFirstDate.AddDays(i).Day,
+                    AttendenceDetailId = workingDate.Day,
                     IsHoliday = isHoliday,
                     IsOnLeave = false,
                     IsWeekend = isWeekend,
-                    AttendanceDay = timezoneFirstDate.AddDays(i),
+                    AttendanceDay = workingDate,
                     LogOn = officetime,
                     LogOff = logoff,
-                    PresentDayStatus = (int)ItemStatus.Approved,
+                    PresentDayStatus = presentDayStatus,
                     UserComments = string.Empty,
                     ApprovedName = String.Empty,
                     ApprovedBy = 0,
@@ -135,7 +242,7 @@ namespace ServiceLayer.Code
                     IsOpen = i >= days ? true : false,
                     Emails = "[]"
                 });
-
+                
                 i++;
             }
 
@@ -221,7 +328,7 @@ namespace ServiceLayer.Code
             return flag;
         }
 
-        public async Task GenerateAttendanceForAll()
+        public async Task GenerateAttendanceService()
         {
             List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
             {
@@ -268,7 +375,7 @@ namespace ServiceLayer.Code
                         var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
                         attendanceModal.attendanceSubmissionLimit = 2;
-                        await CreateAttendanceTillDate(attendanceModal);
+                        await BuildApprovedAttendance(attendanceModal, employee.CreatedOn);
 
                         workingDate = workingDate.AddMonths(1);
 
@@ -1041,6 +1148,11 @@ namespace ServiceLayer.Code
             var filter = new FilterModel();
             filter.SearchString = String.Empty;
             return await GetMissingAttendanceApprovalRequestService(filter);
+        }
+
+        public void PresnetAllAttendance()
+        {
+
         }
     }
 }
