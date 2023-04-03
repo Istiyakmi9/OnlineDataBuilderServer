@@ -52,7 +52,7 @@ namespace OnlineDataBuilder.HostedService
 
             await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
 
-            // await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
+            await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
 
             await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter--);
         }
