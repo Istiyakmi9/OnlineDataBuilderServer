@@ -1,7 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Code
@@ -17,7 +17,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public List<ObjectiveDetail> ObjectiveInsertUpdateService(ObjectiveDetail objectiveDetail)
+        public dynamic ObjectiveInsertUpdateService(ObjectiveDetail objectiveDetail)
         {
             validateObjectiveDetail(objectiveDetail);
             var objective = _db.Get<ObjectiveDetail>("sp_performance_objective_get_by_id", new { ObjectiveId = objectiveDetail.ObjectiveId });
@@ -30,15 +30,19 @@ namespace ServiceLayer.Code
                 objective.TargetValue = objectiveDetail.TargetValue;
                 objective.ObjSeeType = objectiveDetail.ObjSeeType;
                 objective.IsIncludeReview = objectiveDetail.IsIncludeReview;
-                objective.Tag = objectiveDetail.Tag;
                 objective.ProgressMeassureType = objectiveDetail.ProgressMeassureType;
-                objective.MetricUnits = objectiveDetail.MetricUnits;
-                objective.ProgressCalculatedAs = objectiveDetail.ProgressCalculatedAs;
                 objective.TimeFrameStart = objectiveDetail.TimeFrameStart;
                 objective.TimeFrmaeEnd = objectiveDetail.TimeFrmaeEnd;
                 objective.ObjectiveType = objectiveDetail.ObjectiveType;
                 objective.Description = objectiveDetail.Description;
+                objective.TagRole = objectiveDetail.TagRole;
             }
+
+            if (objective.TagRole.Count > 0)
+                objective.Tag = JsonConvert.SerializeObject(objective.TagRole);
+            else
+                objective.Tag = "[]";
+
             objective.AdminId = _currentSession.CurrentUserDetail.UserId;
 
             var result = _db.Execute<ObjectiveDetail>("sp_performance_objective_insupd", objective, true);
@@ -77,38 +81,52 @@ namespace ServiceLayer.Code
 
                 if (objectiveDetail.TargetValue < 0)
                     throw HiringBellException.ThrowBadRequest("Invalid target value entered");
-
-            } else if (objectiveDetail.ProgressMeassureType == 2)
-            {
-                if (objectiveDetail.StartValue < 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid start value entered");
-
-                if (objectiveDetail.TargetValue < 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid target value entered");
-
-                if (objectiveDetail.MetricUnits <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid matric unit selected");
-
-                if (objectiveDetail.ProgressCalculatedAs <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid progress calculation type selected");
-
-            } else
+            }
+            else
             {
                 objectiveDetail.StartValue = 0;
                 objectiveDetail.TargetValue = 0;
-                objectiveDetail.MetricUnits = 0;
-                objectiveDetail.ProgressCalculatedAs = 0;
             }
-
         }
 
-        public List<ObjectiveDetail> GetPerformanceObjectiveService(FilterModel filterModel)
+        public dynamic GetPerformanceObjectiveService(FilterModel filterModel)
         {
             if (filterModel.CompanyId > 0)
                 filterModel.SearchString += $" and CompanyId = {filterModel.CompanyId} ";
 
-            var result = _db.GetList<ObjectiveDetail>("sp_performance_objective_getby_filter", filterModel);
-            return result;
+            (List<ObjectiveDetail> objectiveDetails, List<EmployeeRole> empRoles) = _db.GetList<ObjectiveDetail, EmployeeRole>("sp_performance_objective_getby_filter", filterModel);
+            objectiveDetails.ForEach(x =>
+            {
+                if (!string.IsNullOrEmpty(x.Tag) && x.Tag != "[]")
+                    x.TagRole = JsonConvert.DeserializeObject<List<int>>(x.Tag);
+            });
+            return new {ObjectiveDetails = objectiveDetails, EmployeeRoles = empRoles};
+        }
+
+        public List<ObjectiveDetail> GetEmployeeObjectiveService(int designationId, int companyId)
+        {
+            var empObjective = new List<ObjectiveDetail>();
+            if (designationId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid designation selected. Please login again");
+
+            if (companyId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid company selected. Please login again");
+
+            var objectives = _db.GetList<ObjectiveDetail>("sp_emp_performance_getby_compid", new { CompanyId = companyId });
+            if (objectives != null && objectives.Count > 0)
+            {
+                objectives.ForEach(x =>
+                {
+                    if (!string.IsNullOrEmpty(x.Tag) && x.Tag != "[]")
+                    {
+                        x.TagRole = JsonConvert.DeserializeObject<List<int>>(x.Tag);
+                        var value = x.TagRole.Find(i => i == designationId);
+                        if (value > 0)
+                            empObjective.Add(x);
+                    }
+                });
+            }
+            return empObjective;
         }
     }
 }

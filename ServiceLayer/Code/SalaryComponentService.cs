@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -20,16 +21,18 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly ILogger<DeclarationService> _logger;
 
         public SalaryComponentService(IDb db, CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
-            ITimezoneConverter timezoneConverter
-        )
+            ITimezoneConverter timezoneConverter,
+            ILogger<DeclarationService> logger)
         {
             _db = db;
             _currentSession = currentSession;
             _postfixToInfixConversion = postfixToInfixConversion;
             _timezoneConverter = timezoneConverter;
+            _logger = logger;
         }
 
         public SalaryComponents GetSalaryComponentByIdService()
@@ -739,6 +742,8 @@ namespace ServiceLayer.Code
 
         private decimal GetTaxExamptedAmount(List<SalaryComponents> salaryComponents)
         {
+            _logger.LogInformation("Starting method: GetTaxExamptedAmount");
+
             decimal finalAmount = 0;
             var taxExamptedComponents = salaryComponents.FindAll(x => x.TaxExempt);
             if (taxExamptedComponents.Count > 0)
@@ -748,11 +753,15 @@ namespace ServiceLayer.Code
                     finalAmount += this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                 }
             }
+            _logger.LogInformation("Leaving method: GetTaxExamptedAmount");
+
             return finalAmount;
         }
 
         private decimal GetBaiscAmountValue(List<SalaryComponents> salaryComponents, decimal CTC)
         {
+            _logger.LogInformation("Starting method: GetBaiscAmountValue");
+
             decimal finalAmount = 0;
             var basicComponent = salaryComponents.Find(x => x.ComponentId.ToUpper() == ComponentNames.Basic);
             if (basicComponent != null)
@@ -765,6 +774,7 @@ namespace ServiceLayer.Code
 
                 finalAmount = this.calculateExpressionUsingInfixDS(basicComponent.Formula, basicComponent.DeclaredValue);
             }
+            _logger.LogInformation("Leaving method: GetBaiscAmountValue");
 
             return finalAmount;
         }
@@ -817,6 +827,8 @@ namespace ServiceLayer.Code
 
         public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation eCal)
         {
+            _logger.LogInformation("Starting method: CreateSalaryBreakupWithValue");
+
             List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
             DateTime startDate = new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -861,12 +873,15 @@ namespace ServiceLayer.Code
                 annualSalaryBreakups = UpdateSalaryBreakUp(eCal, annualSalaryBreakup);
             }
 
+            _logger.LogInformation("Leaving method: CreateSalaryBreakupWithValue");
 
             return annualSalaryBreakups;
         }
 
         private List<AnnualSalaryBreakup> UpdateSalaryBreakUp(EmployeeCalculation eCal, List<AnnualSalaryBreakup> annualSalaryBreakup)
         {
+            _logger.LogInformation("Starting method: UpdateSalaryBreakUp");
+
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
             DateTime startDate = eCal.PayrollStartDate;
 
@@ -906,7 +921,7 @@ namespace ServiceLayer.Code
                         throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
 
                     var finalSpecialAmount = (monthlyGrossIncome - taxableComponentAmount);
-                    
+
 
                     var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                     {
@@ -952,6 +967,7 @@ namespace ServiceLayer.Code
 
                 startDate = startDate.AddMonths(1);
             }
+            _logger.LogInformation("Leaving method: UpdateSalaryBreakUp");
 
             return annualSalaryBreakup;
         }
@@ -977,6 +993,8 @@ namespace ServiceLayer.Code
 
         private List<CalculatedSalaryBreakupDetail> GetComponentsDetail(EmployeeCalculation eCal, ref decimal taxableComponentAmount)
         {
+            _logger.LogInformation("Starting method: GetComponentsDetail");
+
             decimal expectedGrossIncome = 0;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
@@ -1002,11 +1020,15 @@ namespace ServiceLayer.Code
             }
 
             calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
+            _logger.LogInformation("Endning method: GetComponentsDetail");
+
             return calculatedSalaryBreakupDetails;
         }
 
         private List<AnnualSalaryBreakup> CreateFreshSalaryBreakUp(EmployeeCalculation eCal)
         {
+            _logger.LogInformation("Starting method: CreateFreshSalaryBreakUp");
+
             List<AnnualSalaryBreakup> annualSalaryBreakups = new List<AnnualSalaryBreakup>();
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
             DateTime startDate = eCal.PayrollStartDate;
@@ -1085,6 +1107,7 @@ namespace ServiceLayer.Code
                 startDate = startDate.AddMonths(1);
                 index++;
             }
+            _logger.LogInformation("Leaving method: CreateFreshSalaryBreakUp");
 
             return annualSalaryBreakups;
         }
@@ -1170,6 +1193,8 @@ namespace ServiceLayer.Code
 
         private decimal calculateExpressionUsingInfixDS(string expression, decimal declaredAmount)
         {
+            _logger.LogInformation("Starting method: calculateExpressionUsingInfixDS");
+
             if (string.IsNullOrEmpty(expression))
                 return declaredAmount;
 
@@ -1271,6 +1296,8 @@ namespace ServiceLayer.Code
             }
 
             var exp = expressionStact.Aggregate((x, y) => x.ToString() + " " + y.ToString()).ToString();
+            _logger.LogInformation("Leaving method: calculateExpressionUsingInfixDS");
+
             return _postfixToInfixConversion.evaluatePostfix(exp);
         }
 

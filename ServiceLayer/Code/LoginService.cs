@@ -223,6 +223,7 @@ namespace ServiceLayer.Code
                             UserTypeId = loginDetail.UserTypeId,
                             OrganizationId = loginDetail.OrganizationId,
                             CompanyId = loginDetail.CompanyId,
+                            DesignationId = loginDetail.DesignationId,
                             ManagerName = loginDetail.ManagerName,
                             ReportingManagerId = loginDetail.ReportingManagerId,
                             UpdatedOn = loginDetail.UpdatedOn,

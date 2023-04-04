@@ -29,5 +29,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _objectiveService.GetPerformanceObjectiveService(filterModel);
             return BuildResponse(result);
         }
+
+        [HttpGet("GetEmployeeObjective/{DesignationId}/{CompanyId}")]
+        public IResponse<ApiResponse> GetEmployeeObjective([FromRoute] int DesignationId, [FromRoute] int CompanyId)
+        {
+            var result = _objectiveService.GetEmployeeObjectiveService(DesignationId, CompanyId);
+            return BuildResponse(result);
+        }
     }
 }

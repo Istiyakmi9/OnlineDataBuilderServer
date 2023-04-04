@@ -1,12 +1,12 @@
-﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
-using ModalLayer.Modal;
+﻿using ModalLayer.Modal;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Interface
 {
     public interface IObjectiveService
     {
-        List<ObjectiveDetail> ObjectiveInsertUpdateService(ObjectiveDetail objectiveDetail);
-        List<ObjectiveDetail> GetPerformanceObjectiveService(FilterModel filterModel);
+        dynamic ObjectiveInsertUpdateService(ObjectiveDetail objectiveDetail);
+        dynamic GetPerformanceObjectiveService(FilterModel filterModel);
+        List<ObjectiveDetail> GetEmployeeObjectiveService(int designationId, int companyId);
     }
 }

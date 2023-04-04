@@ -125,6 +125,8 @@ namespace ServiceLayer.Code
 
         private async Task<bool> GetEmployeeDeclaration(EmployeeDeclaration employeeDeclaration, List<SalaryComponents> salaryComponents)
         {
+            _logger.LogInformation("Starting method: GetEmployeeDeclaration");
+
             bool reCalculateFlag = false;
 
             if (string.IsNullOrEmpty(employeeDeclaration.DeclarationDetail))
@@ -164,6 +166,7 @@ namespace ServiceLayer.Code
                     reCalculateFlag = true;
                 }
             }
+            _logger.LogInformation("Leaving method: GetEmployeeDeclaration");
 
             return await Task.FromResult(reCalculateFlag);
         }
@@ -382,6 +385,8 @@ namespace ServiceLayer.Code
 
         private List<CalculatedSalaryBreakupDetail> GetPresentMonthSalaryDetail(List<AnnualSalaryBreakup> completeSalaryBreakups)
         {
+            _logger.LogInformation("Starting method: GetPresentMonthSalaryDetail");
+
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
             var currentMonthDateTime = _currentSession.TimeZoneNow;
@@ -390,15 +395,20 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to find salary detail. Please contact to admin.");
             else
                 calculatedSalaryBreakupDetails = currentMonthSalaryBreakup.SalaryBreakupDetails;
+            _logger.LogInformation("Leaving method: GetPresentMonthSalaryDetail");
 
             return calculatedSalaryBreakupDetails;
         }
 
         private decimal CalculateTotalAmountWillBeReceived(List<AnnualSalaryBreakup> salary)
         {
+            _logger.LogInformation("Starting method: CalculateTotalAmountWillBeReceived");
+
             return salary.Where(x => x.IsActive).SelectMany(i => i.SalaryBreakupDetails)
                 .Where(x => x.ComponentName == ComponentNames.Gross)
                 .Sum(x => x.FinalAmount);
+            _logger.LogInformation("Leaving method: CalculateTotalAmountWillBeReceived");
+
         }
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false)
@@ -416,6 +426,8 @@ namespace ServiceLayer.Code
 
         private async Task<bool> CalculateAndBuildDeclarationDetail(EmployeeCalculation employeeCalculation)
         {
+            _logger.LogInformation("Starting method: CalculateAndBuildDeclarationDetail");
+
             bool flag = await GetEmployeeDeclaration(employeeCalculation.employeeDeclaration, employeeCalculation.salaryComponents);
 
             if (employeeCalculation.salaryComponents.Count != employeeCalculation.employeeDeclaration.SalaryComponentItems.Count)
@@ -423,11 +435,13 @@ namespace ServiceLayer.Code
 
             this.BuildSectionWiseComponents(employeeCalculation);
 
+            _logger.LogInformation("Leaving method: CalculateAndBuildDeclarationDetail");
             return await Task.FromResult(flag);
         }
 
         private int GetNumberOfSalaryMonths(EmployeeCalculation empCal)
         {
+            _logger.LogInformation("Starting method: GetNumberOfSalaryMonths");
             int numOfMonths = 0;
             int financialStartYear = empCal.companySetting.FinancialYear;
             int declarationStartMonth = empCal.companySetting.DeclarationStartMonth;
@@ -459,6 +473,7 @@ namespace ServiceLayer.Code
             if (numOfMonths <= 0)
                 throw HiringBellException.ThrowBadRequest("Incorrect number of month calculated based on employee date of joining.");
 
+            _logger.LogInformation("Leaving method: GetNumberOfSalaryMonths");
             return numOfMonths;
         }
 
@@ -546,6 +561,8 @@ namespace ServiceLayer.Code
 
         private List<AnnualSalaryBreakup> CreateBreakUp(EmployeeCalculation empCal, ref bool reCalculateFlag, EmployeeSalaryDetail salaryBreakup)
         {
+            _logger.LogInformation("Starting method: CreateBreakUp");
+
             List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
             if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
             {
@@ -565,12 +582,15 @@ namespace ServiceLayer.Code
                     empCal.salaryGroup.GroupComponents = JsonConvert
                         .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
             }
+            _logger.LogInformation("Leaving method: CreateBreakUp");
 
             return completeSalaryBreakups;
         }
 
         private async Task UpdateEmployeeSalaryDetailChanges(long EmployeeId, EmployeeSalaryDetail salaryBreakup)
         {
+            _logger.LogInformation("Starting method: UpdateEmployeeSalaryDetailChanges");
+
             if (string.IsNullOrEmpty(salaryBreakup.NewSalaryDetail))
                 salaryBreakup.NewSalaryDetail = ApplicationConstants.EmptyJsonArray;
 
@@ -589,6 +609,9 @@ namespace ServiceLayer.Code
 
             if (!Bot.IsSuccess(result.statusMessage))
                 throw new HiringBellException("Fail to save calculation detail. Please contact to admin.");
+
+            _logger.LogInformation("Leaving method: UpdateEmployeeSalaryDetailChanges");
+
         }
 
         private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag)
@@ -685,6 +708,8 @@ namespace ServiceLayer.Code
 
         private List<TaxDetails> GetPerMontTaxDetail(EmployeeCalculation empCal)
         {
+            _logger.LogInformation("Starting method: GetPerMontTaxDetail");
+
             var taxdetails = new List<TaxDetails>();
             DateTime financialYearMonth = _timezoneConverter.ToTimeZoneFixedDateTime(
                     new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1),
@@ -705,6 +730,7 @@ namespace ServiceLayer.Code
                 });
                 i++;
             }
+            _logger.LogInformation("Leaving method: GetPerMontTaxDetail");
 
             return taxdetails;
         }
@@ -746,6 +772,8 @@ namespace ServiceLayer.Code
 
         private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
         {
+            _logger.LogInformation("Starting method: GetPerMonthTaxInitialData");
+
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
             DateTime startDate = eCal.PayrollStartDate;
 
@@ -816,12 +844,16 @@ namespace ServiceLayer.Code
                 startDate = startDate.AddMonths(1);
                 i++;
             }
+            _logger.LogInformation("Leaving method: GetPerMonthTaxInitialData");
 
             return taxdetails;
         }
 
         private decimal ProrateAmountOnJoiningMonth(decimal monthlyTaxAmount, int numOfDaysInMonth, int workingDays)
         {
+            _logger.LogInformation("Starting method: ProrateAmountOnJoiningMonth");
+            _logger.LogInformation("Leaving method: ProrateAmountOnJoiningMonth");
+
             if (numOfDaysInMonth != workingDays)
                 return (monthlyTaxAmount / numOfDaysInMonth) * workingDays;
             else
@@ -830,6 +862,8 @@ namespace ServiceLayer.Code
 
         private void BuildSectionWiseComponents(EmployeeCalculation employeeCalculation)
         {
+            _logger.LogInformation("Starting method: BuildSectionWiseComponents");
+
             EmployeeDeclaration employeeDeclaration = employeeCalculation.employeeDeclaration;
             foreach (var x in _sections)
             {
@@ -898,6 +932,8 @@ namespace ServiceLayer.Code
                 RejectedAmount = 0,
                 TotalAmountDeclared = 0
             });
+            _logger.LogInformation("Leaving method: BuildSectionWiseComponents");
+
         }
 
         public async Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear)
