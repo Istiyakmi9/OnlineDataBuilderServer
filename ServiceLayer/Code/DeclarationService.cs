@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Modal;
@@ -28,8 +29,11 @@ namespace ServiceLayer.Code
         private readonly ISalaryComponentService _salaryComponentService;
         private readonly IComponentsCalculationService _componentsCalculationService;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly ILogger<DeclarationService> _logger;
 
-        public DeclarationService(IDb db, IFileService fileService,
+        public DeclarationService(IDb db,
+            ILogger<DeclarationService> logger,
+            IFileService fileService,
             FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             IOptions<Dictionary<string, List<string>>> options,
@@ -39,6 +43,7 @@ namespace ServiceLayer.Code
             )
         {
             _db = db;
+            _logger = logger;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _currentSession = currentSession;
@@ -459,6 +464,7 @@ namespace ServiceLayer.Code
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryNDeclaration(EmployeeCalculation empCal, bool reCalculateFlag)
         {
+            _logger.LogInformation("Starting method: CalculateSalaryNDeclaration");
             decimal totalDeduction = 0;
             int totalMonths = GetNumberOfSalaryMonths(empCal);
 
@@ -534,6 +540,7 @@ namespace ServiceLayer.Code
             //Tax Calculation for every month
             await TaxDetailsCalculation(empCal, reCalculateFlag);
 
+            _logger.LogInformation("Leaving method: CalculateSalaryNDeclaration");
             return salaryBreakup;
         }
 
@@ -586,6 +593,8 @@ namespace ServiceLayer.Code
 
         private async Task TaxDetailsCalculation(EmployeeCalculation empCal, bool reCalculateFlag)
         {
+            _logger.LogInformation("Starting method: TaxDetailsCalculation");
+
             decimal taxNeetToPay = 0;
             if (empCal.employeeDeclaration.EmployeeCurrentRegime == ApplicationConstants.OldRegim)
                 taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPay;
@@ -639,6 +648,8 @@ namespace ServiceLayer.Code
                 empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
                 await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
             }
+
+            _logger.LogInformation("Leaving method: TaxDetailsCalculation");
         }
 
         private void UpdateTaxDetail(EmployeeCalculation empCal, decimal taxNeetToPay, List<TaxDetails> taxdetails)
