@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using Microsoft.Extensions.Logging;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -10,8 +11,17 @@ namespace ServiceLayer.Code
 {
     public class ComponentsCalculationService : IComponentsCalculationService
     {
+        private readonly ILogger<ComponentsCalculationService> _logger;
+
+        public ComponentsCalculationService(ILogger<ComponentsCalculationService> logger)
+        {
+            _logger = logger;
+        }
+
         public decimal StandardDeductionComponent(EmployeeCalculation empCal)
         {
+            _logger.LogInformation("Starting method: StandardDeductionComponent");
+
             decimal amount = 0;
             SalaryComponents component = null;
             if (empCal.employeeDeclaration.SalaryComponentItems != null)
@@ -27,11 +37,15 @@ namespace ServiceLayer.Code
 
                 amount = component.DeclaredValue;
             }
+            _logger.LogInformation("Leaving method: StandardDeductionComponent");
+
             return amount;
         }
 
         private decimal GetProfessionalTaxAmount(EmployeeCalculation empCal, int totalMonths)
         {
+            _logger.LogInformation("Starting method: GetProfessionalTaxAmount");
+
             decimal ptaxAmount = 0;
             var professtionalTax = empCal.ptaxSlab;
             var monthlyIncome = empCal.expectedAnnualGrossIncome / 12;
@@ -46,12 +60,15 @@ namespace ServiceLayer.Code
             {
                 ptaxAmount = ptax.TaxAmount * totalMonths;
             }
+            _logger.LogInformation("Leaving method: GetProfessionalTaxAmount");
 
             return ptaxAmount;
         }
 
         public decimal ProfessionalTaxComponent(EmployeeCalculation empCal, List<PTaxSlab> pTaxSlabs, int totalMonths)
         {
+            _logger.LogInformation("Starting method: ProfessionalTaxComponent");
+
             decimal amount = 0;
             SalaryComponents component = null;
             if (empCal.employeeDeclaration.SalaryComponentItems != null)
@@ -68,11 +85,15 @@ namespace ServiceLayer.Code
                     amount = component.DeclaredValue;
                 }
             }
+            _logger.LogInformation("Leaving method: ProfessionalTaxComponent");
             return amount;
+
         }
 
         public decimal EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup, int totalMonths)
         {
+            _logger.LogInformation("Starting method: EmployerProvidentFund");
+
             decimal value = 0;
             SalaryComponents component = null;
             component = salaryGroup.GroupComponents.Find(x => x.ComponentId == ComponentNames.EmployerPF);
@@ -80,30 +101,41 @@ namespace ServiceLayer.Code
                 value = (component.DeclaredValue / 12) * totalMonths;
 
             return value;
+            _logger.LogInformation("Leaving method: EmployerProvidentFund");
+
         }
 
         private decimal CessOnTax(decimal GrossIncomeTax)
         {
+            _logger.LogInformation("Starting method: CessOnTax");
+
             decimal Cess = 0;
             if (GrossIncomeTax > 0)
                 Cess = (0.04M * GrossIncomeTax);
+            _logger.LogInformation("Leaving method: CessOnTax");
 
             return Cess;
         }
 
         private decimal Surcharge(decimal GrossIncomeTax, List<SurChargeSlab> surChargeSlabs)
         {
+            _logger.LogInformation("Starting method: Surcharge");
+
             decimal Surcharges = 0;
             var slab = surChargeSlabs.OrderByDescending(x => x.MinSurcahrgeSlab).First();
             if (GrossIncomeTax < slab.MinSurcahrgeSlab)
                 slab = surChargeSlabs.Find(x => GrossIncomeTax >= x.MinSurcahrgeSlab && GrossIncomeTax <= x.MaxSurchargeSlab);
             if (slab != null)
                 Surcharges = (slab.SurchargeRatePercentage * GrossIncomeTax) / 100;
+            _logger.LogInformation("Leaving method: Surcharge");
+
             return Surcharges;
         }
 
         public void TaxRegimeCalculation(EmployeeDeclaration employeeDeclaration, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
         {
+            _logger.LogInformation("Starting method: TaxRegimeCalculation");
+
             decimal taxableIncome = employeeDeclaration.TotalAmount;
             if (taxableIncome < 0)
                 throw new HiringBellException("Invalid TaxableIncome");
@@ -148,10 +180,14 @@ namespace ServiceLayer.Code
 
             taxSlab[0].Value = tax;
             employeeDeclaration.IncomeTaxSlab = taxSlab;
+            _logger.LogInformation("Leaving method: TaxRegimeCalculation");
+
         }
 
         public void NewTaxRegimeCalculation(EmployeeCalculation eCal, List<TaxRegime> taxRegimeSlabs, List<SurChargeSlab> surChargeSlabs)
         {
+            _logger.LogInformation("Starting method: NewTaxRegimeCalculation");
+
             EmployeeDeclaration employeeDeclaration = eCal.employeeDeclaration;
             decimal taxableIncome = eCal.expectedAnnualGrossIncome;
             if (taxableIncome < 0)
@@ -197,10 +233,14 @@ namespace ServiceLayer.Code
 
             taxSlab[0].Value = tax;
             employeeDeclaration.NewRegimIncomeTaxSlab = taxSlab;
+            _logger.LogInformation("Leaving method: NewTaxRegimeCalculation");
+
         }
 
         public void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails)
         {
+            _logger.LogInformation("Starting method: HRAComponent");
+
             var calculatedSalaryBreakupDetail = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);
             if (calculatedSalaryBreakupDetail == null)
             {
@@ -235,10 +275,14 @@ namespace ServiceLayer.Code
             }
 
             employeeDeclaration.HRADeatils = new EmployeeHRA { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
+            _logger.LogInformation("Leaving method: HRAComponent");
+
         }
 
         public void BuildTaxDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail salaryBreakup)
         {
+            _logger.LogInformation("Starting method: ProfessionalTaxComponent");
+
             List<TaxDetails> taxdetails = null;
             if (salaryBreakup.TaxDetail != null)
             {
@@ -291,10 +335,14 @@ namespace ServiceLayer.Code
                 employeeDeclaration.TaxPaid = 0;
             }
             salaryBreakup.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+            _logger.LogInformation("Leaving method: ProfessionalTaxComponent");
+
         }
 
         public decimal Get_80C_DeclaredAmount(EmployeeDeclaration employeeDeclaration)
         {
+            _logger.LogInformation("Starting method: Get_80C_DeclaredAmount");
+
             decimal totalDeduction = 0;
             var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.OneAndHalfLakhsExemptions);
             items.ForEach(i =>
@@ -307,42 +355,52 @@ namespace ServiceLayer.Code
 
                 totalDeduction += value;
             });
+            _logger.LogInformation("Leaving method: Get_80C_DeclaredAmount");
 
             return totalDeduction;
         }
 
         public decimal OtherDeclarationComponent(EmployeeDeclaration employeeDeclaration)
         {
+            _logger.LogInformation("Starting method: OtherDeclarationComponent");
+
             decimal totalDeduction = 0;
             var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.OtherDeclarationName);
             items.ForEach(i =>
             {
                 totalDeduction = i.TotalAmountDeclared;
             });
+            _logger.LogInformation("Leaving method: OtherDeclarationComponent");
 
             return totalDeduction;
         }
 
         public decimal TaxSavingComponent(EmployeeDeclaration employeeDeclaration)
         {
+            _logger.LogInformation("Starting method: TaxSavingComponent");
+
             decimal totalDeduction = 0;
             var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.TaxSavingAlloanceName);
             items.ForEach(i =>
             {
                 totalDeduction = i.TotalAmountDeclared;
             });
+            _logger.LogInformation("Leaving method: TaxSavingComponent");
 
             return totalDeduction;
         }
 
         public decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration)
         {
+            _logger.LogInformation("Starting method: HousePropertyComponent");
+
             decimal totalDeduction = 0;
             var items = employeeDeclaration.Declarations.FindAll(x => x.DeclarationName == ApplicationConstants.HouseProperty);
             items.ForEach(i =>
             {
                 totalDeduction = i.TotalAmountDeclared;
             });
+            _logger.LogInformation("Leaving method: HousePropertyComponent");
 
             return totalDeduction;
         }
