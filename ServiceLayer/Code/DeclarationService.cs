@@ -709,28 +709,34 @@ namespace ServiceLayer.Code
         private List<TaxDetails> GetPerMontTaxDetail(EmployeeCalculation empCal)
         {
             _logger.LogInformation("Starting method: GetPerMontTaxDetail");
-
             var taxdetails = new List<TaxDetails>();
-            DateTime financialYearMonth = _timezoneConverter.ToTimeZoneFixedDateTime(
-                    new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1),
-                    _currentSession.TimeZone
-                );
-            int i = 0;
-            while (i <= 11)
+            try
             {
-                taxdetails.Add(new TaxDetails
+                DateTime financialYearMonth = _timezoneConverter.ToTimeZoneDateTime(
+                        new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc),
+                        _currentSession.TimeZone
+                    );
+                int i = 0;
+                while (i <= 11)
                 {
-                    Index = i + 1,
-                    IsPayrollCompleted = false,
-                    Month = financialYearMonth.AddMonths(i).Month,
-                    Year = financialYearMonth.AddMonths(i).Year,
-                    EmployeeId = empCal.EmployeeId,
-                    TaxDeducted = 0,
-                    TaxPaid = 0
-                });
-                i++;
+                    taxdetails.Add(new TaxDetails
+                    {
+                        Index = i + 1,
+                        IsPayrollCompleted = false,
+                        Month = financialYearMonth.AddMonths(i).Month,
+                        Year = financialYearMonth.AddMonths(i).Year,
+                        EmployeeId = empCal.EmployeeId,
+                        TaxDeducted = 0,
+                        TaxPaid = 0
+                    });
+                    i++;
+                }
+                _logger.LogInformation("Leaving method: GetPerMontTaxDetail");
             }
-            _logger.LogInformation("Leaving method: GetPerMontTaxDetail");
+            catch
+            {
+                throw;
+            }
 
             return taxdetails;
         }
