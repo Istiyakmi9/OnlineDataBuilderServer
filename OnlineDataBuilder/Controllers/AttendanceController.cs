@@ -100,5 +100,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
             return BuildResponse(result, HttpStatusCode.OK);
         }
+
+        [HttpGet]
+        public async Task<ApiResponse> GenerateAttendance()
+        {
+            await _attendanceService.GenerateAttendanceService();
+            return BuildResponse(ApplicationConstants.Successfull, HttpStatusCode.OK);
+        }
     }
 }

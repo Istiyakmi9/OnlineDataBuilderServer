@@ -98,11 +98,12 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
 
                 bool IsTaxCalculationRequired = false;
-                int daysUsedForDeduction = totalDaysInMonth;
+                int daysUsedForDeduction = 0;
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
                     try
                     {
+                        daysUsedForDeduction = totalDaysInMonth;
                         DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
                         if (doj.Month == payrollDate.Month && doj.Year == payrollDate.Year)
                         {
@@ -204,6 +205,24 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollCommonData;
         }
 
+        private bool DoesRunPayrollCycle(int payrollDate, DateTime presentDate)
+        {
+            bool flag = false;
+
+            if (payrollDate == presentDate.Day)
+            {
+                flag = true;
+            }
+            else
+            {
+                int totalDays = DateTime.DaysInMonth(presentDate.Year, presentDate.Month);
+                if (totalDays <= payrollDate)
+                    flag = true;
+            }
+
+            return flag;
+        }
+
         public async Task RunPayrollCycle(int i)
         {
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
@@ -216,18 +235,19 @@ namespace ServiceLayer.Code.PayrollCycle
                 payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(-i);
                 _currentSession.TimeZoneNow = payrollCommonData.presentDate;
                 payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(-i);
-                switch (payroll.PayFrequency)
+
+                if (DoesRunPayrollCycle(payroll.PayCycleDayOfMonth, payrollCommonData.presentDate))
                 {
-                    case "monthly":
-                        if (payroll.PayCycleDayOfMonth == payrollCommonData.presentDate.Day)
-                        {
+                    switch (payroll.PayFrequency)
+                    {
+                        case "monthly":
                             await CalculateRunPayrollForEmployees(payroll, payrollCommonData);
-                        }
-                        break;
-                    case "daily":
-                        break;
-                    case "hourly":
-                        break;
+                            break;
+                        case "daily":
+                            break;
+                        case "hourly":
+                            break;
+                    }
                 }
             }
 

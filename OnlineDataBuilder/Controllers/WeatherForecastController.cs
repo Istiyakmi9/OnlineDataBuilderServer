@@ -112,7 +112,7 @@ namespace OnlineDataBuilder.Controllers
 
             // await LeaveLevelMigration();
 
-            // await _attendanceService.GenerateAttendanceForAll();
+            await _attendanceService.GenerateAttendanceService();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

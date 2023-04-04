@@ -351,6 +351,8 @@ namespace ServiceLayer.Code
             employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
                 employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
+            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
+
             if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
                 throw new HiringBellException($"Salary components not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
 
@@ -574,7 +576,8 @@ namespace ServiceLayer.Code
                 salaryBreakup.CompleteSalaryDetail,
                 salaryBreakup.NewSalaryDetail,
                 salaryBreakup.GroupId,
-                salaryBreakup.TaxDetail
+                salaryBreakup.TaxDetail,
+                salaryBreakup.FinancialStartYear
             }, true);
 
             if (!Bot.IsSuccess(result.statusMessage))
@@ -604,7 +607,7 @@ namespace ServiceLayer.Code
                         UpdateTaxDetail(empCal, taxNeetToPay, taxdetails);
 
                         empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                        await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
+                        await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
                     }
                     else
                     {
@@ -613,7 +616,7 @@ namespace ServiceLayer.Code
                                     .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
 
                         empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                        await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
+                        await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
                     }
                 }
                 else
@@ -634,7 +637,7 @@ namespace ServiceLayer.Code
                 }
 
                 empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                await UpdateEmployeeSalaryDetailChanges(empCal.employeeDeclaration.EmployeeId, empCal.employeeSalaryDetail);
+                await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
             }
         }
 

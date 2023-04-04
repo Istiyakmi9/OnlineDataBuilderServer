@@ -710,6 +710,8 @@ namespace ServiceLayer.Code
             employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
                 employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
+            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
+
             // got duplication email, mobile or employee id if any
             EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[5]);
 
@@ -808,6 +810,7 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(employee.NewSalaryDetail))
                     employee.NewSalaryDetail = "[]";
 
+                employee.EmployeeId = employee.EmployeeUid;
                 if (employee.EmployeeUid == 0)
                 {
                     // create employee record
@@ -983,6 +986,7 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(employee.NewSalaryDetail))
                     employee.NewSalaryDetail = "[]";
 
+                employee.EmployeeUid = employee.EmployeeId;
                 if (employee.EmployeeUid == 0)
                 {
                     // create employee record
