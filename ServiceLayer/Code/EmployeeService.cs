@@ -568,8 +568,11 @@ namespace ServiceLayer.Code
 
         public async Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
         {
+            _logger.LogInformation("Starting method: RegisterEmployeeService");
+
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
+            _logger.LogInformation("Employee file converted");
             EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
             employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
             employeeCalculation.Doj = DateTime.UtcNow;
@@ -579,6 +582,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
             var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+            _logger.LogInformation("Leaving method: RegisterEmployeeService");
+
             return result;
         }
 
@@ -750,6 +755,7 @@ namespace ServiceLayer.Code
 
             if (employeeEmailMobileCheck.MobileCount > 0)
                 throw new HiringBellException($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
+            _logger.LogInformation("Leaving method: GetEmployeeDetail");
 
             _logger.LogInformation("Leaving method: GetEmployeeDetail");
             return employeeEmailMobileCheck;
@@ -832,8 +838,11 @@ namespace ServiceLayer.Code
                     eCal.EmployeeId = employee.EmployeeId;
                     eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
                 }
+                _logger.LogInformation("starting for set current time zone");
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+                _logger.LogInformation("Leaving form set current time zone");
+
                 await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);

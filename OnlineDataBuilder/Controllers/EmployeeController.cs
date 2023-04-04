@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -21,6 +22,12 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly IEmployeeService _employeeService;
         private readonly HttpContext _httpContext;
+        private ILogger<EmployeeController> _logger;
+
+        public EmployeeController(ILogger<EmployeeController> logger)
+        {
+            _logger = logger;
+        }
 
         public EmployeeController(IEmployeeService employeeService, IHttpContextAccessor httpContext)
         {
@@ -110,8 +117,11 @@ namespace OnlineDataBuilder.Controllers
                 _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
                 if (UserInfoData.Count > 0)
                 {
+                    _logger.LogInformation("Starting method: employeeregistration controller");
                     Employee employee = JsonConvert.DeserializeObject<Employee>(UserInfoData);
+                    _logger.LogInformation("Employee converted");
                     IFormFileCollection files = _httpContext.Request.Form.Files;
+                    _logger.LogInformation("Employee file converted");
                     var resetSet = await _employeeService.RegisterEmployeeService(employee, files);
                     return BuildResponse(resetSet);
                 }
