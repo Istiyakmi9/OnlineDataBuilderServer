@@ -30,10 +30,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetEmployeeObjective/{DesignationId}/{CompanyId}")]
-        public IResponse<ApiResponse> GetEmployeeObjective([FromRoute] int DesignationId, [FromRoute] int CompanyId)
+        [HttpGet("GetEmployeeObjective/{DesignationId}/{CompanyId}/{EmployeeId}")]
+        public IResponse<ApiResponse> GetEmployeeObjective([FromRoute] int DesignationId, [FromRoute] int CompanyId, [FromRoute] long EmployeeId)
         {
-            var result = _objectiveService.GetEmployeeObjectiveService(DesignationId, CompanyId);
+            var result = _objectiveService.GetEmployeeObjectiveService(DesignationId, CompanyId, EmployeeId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("UpdateEmployeeObjective")]
+        public IResponse<ApiResponse> UpdateEmployeeObjective([FromBody] EmployeePerformance employeePerformance)
+        {
+            var result = _objectiveService.UpdateEmployeeObjectiveService(employeePerformance);
             return BuildResponse(result);
         }
     }
