@@ -24,13 +24,9 @@ namespace OnlineDataBuilder.Controllers
         private readonly HttpContext _httpContext;
         private ILogger<EmployeeController> _logger;
 
-        public EmployeeController(ILogger<EmployeeController> logger)
+        public EmployeeController(ILogger<EmployeeController> logger, IEmployeeService employeeService, IHttpContextAccessor httpContext)
         {
             _logger = logger;
-        }
-
-        public EmployeeController(IEmployeeService employeeService, IHttpContextAccessor httpContext)
-        {
             _employeeService = employeeService;
             _httpContext = httpContext.HttpContext;
         }

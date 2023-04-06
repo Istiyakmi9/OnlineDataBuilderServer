@@ -682,6 +682,7 @@ namespace ServiceLayer.Code
 
             employeeCalculation.CTC = employeeCalculation.employee.CTC;
             employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
+            _logger.LogInformation("Loading data.");
             DataSet resultSet = _db.FetchDataSet("sp_employee_getbyid_to_reg_or_upd", new
             {
                 EmployeeId = employeeCalculation.employee.EmployeeUid,
@@ -694,6 +695,7 @@ namespace ServiceLayer.Code
             if (resultSet == null || resultSet.Tables.Count != 9)
                 throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
 
+            _logger.LogInformation("[GetEmployeeDetail]: Date fetched total table: " + resultSet.Tables.Count);
             if (resultSet.Tables[4].Rows.Count != 1)
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
 
@@ -755,6 +757,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
             _logger.LogInformation("Leaving method: GetEmployeeDetail");
 
+            _logger.LogInformation("Leaving method: GetEmployeeDetail");
             return employeeEmailMobileCheck;
         }
 
