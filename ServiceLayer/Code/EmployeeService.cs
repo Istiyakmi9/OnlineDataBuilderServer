@@ -505,12 +505,13 @@ namespace ServiceLayer.Code
                 DeclarationFromYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear,
                 DeclarationToYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationToYear,
                 WorkShiftId = employeeCompleteDetailModal.EmployeeDetail.WorkShiftId,
+                AdminId = _currentSession.CurrentUserDetail.UserId,
                 LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 IsPending = false,
-                AssigneDate = employeeCompleteDetailModal.MappedClient.AssigneDate,
                 NewSalaryDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail) ? "[]" : employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail,
-                AdminId = _currentSession.CurrentUserDetail.UserId,
-            }, true); ;
+                AssigneDate = employeeCompleteDetailModal.MappedClient.AssigneDate,
+                FinancialYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear
+            }, true);
 
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to active the employee. Please contact to admin");
