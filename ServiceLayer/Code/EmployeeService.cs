@@ -521,6 +521,9 @@ namespace ServiceLayer.Code
 
         public List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive)
         {
+            if (EmployeeId == 1)
+                throw HiringBellException.ThrowBadRequest("You can't delete the admin");
+
             List<Employee> employees = null;
             var status = string.Empty;
             FilterModel filterModel = new FilterModel
