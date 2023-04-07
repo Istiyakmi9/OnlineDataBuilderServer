@@ -202,14 +202,6 @@ namespace BottomhalfCore.Services.Code
         }
 
         /// <summary>
-        /// Convert datetime into specific timezone without changing any time on it.
-        /// </summary>
-        public DateTime ToTimeZoneFixedDateTime(DateTime now, TimeZoneInfo timeZoneInfo)
-        {
-            return TimeZoneInfo.ConvertTimeBySystemTimeZoneId(now, timeZoneInfo.StandardName);
-        }
-
-        /// <summary>
         /// Get first day of the present week or specified date.
         /// </summary>
         public DateTime LastDayOfWeekUTC(Nullable<DateTime> now = null)

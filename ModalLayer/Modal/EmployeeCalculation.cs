@@ -12,6 +12,7 @@ namespace ModalLayer.Modal
         public DateTime Doj { set; get; }
         public bool IsFirstYearDeclaration { set; get; }
         public DateTime PayrollStartDate { set; get; }
+        public DateTime financialYearDateTime { set; get; }
         public Employee employee { set; get; }
         public decimal expectedAnnualGrossIncome { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }

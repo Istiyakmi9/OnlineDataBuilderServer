@@ -618,6 +618,10 @@ namespace ServiceLayer.Code
         {
             _logger.LogInformation("Starting method: TaxDetailsCalculation");
 
+            empCal.financialYearDateTime = _timezoneConverter.ToTimeZoneDateTime(
+                        new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc),
+                        _currentSession.TimeZone
+                    );
             decimal taxNeetToPay = 0;
             if (empCal.employeeDeclaration.EmployeeCurrentRegime == ApplicationConstants.OldRegim)
                 taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPay;
@@ -712,10 +716,6 @@ namespace ServiceLayer.Code
             var taxdetails = new List<TaxDetails>();
             try
             {
-                DateTime financialYearMonth = _timezoneConverter.ToTimeZoneDateTime(
-                        new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc),
-                        _currentSession.TimeZone
-                    );
                 int i = 0;
                 while (i <= 11)
                 {
@@ -723,14 +723,15 @@ namespace ServiceLayer.Code
                     {
                         Index = i + 1,
                         IsPayrollCompleted = false,
-                        Month = financialYearMonth.AddMonths(i).Month,
-                        Year = financialYearMonth.AddMonths(i).Year,
+                        Month = empCal.financialYearDateTime.AddMonths(i).Month,
+                        Year = empCal.financialYearDateTime.AddMonths(i).Year,
                         EmployeeId = empCal.EmployeeId,
                         TaxDeducted = 0,
                         TaxPaid = 0
                     });
                     i++;
                 }
+
                 _logger.LogInformation("Leaving method: GetPerMontTaxDetail");
             }
             catch
@@ -793,10 +794,6 @@ namespace ServiceLayer.Code
 
             var permonthTax = employeeDeclaration.TaxNeedToPay / totalWorkingMonth;
             List<TaxDetails> taxdetails = new List<TaxDetails>();
-            DateTime financialYearMonth = _timezoneConverter.ToTimeZoneFixedDateTime(
-                    new DateTime(companySetting.FinancialYear, companySetting.DeclarationStartMonth, 1),
-                    _currentSession.TimeZone
-                );
 
             int i = 0;
             while (i < 12)
@@ -806,8 +803,8 @@ namespace ServiceLayer.Code
                     taxdetails.Add(new TaxDetails
                     {
                         Index = i + 1,
-                        Month = financialYearMonth.AddMonths(i).Month,
-                        Year = financialYearMonth.AddMonths(i).Year,
+                        Month = eCal.financialYearDateTime.AddMonths(i).Month,
+                        Year = eCal.financialYearDateTime.AddMonths(i).Year,
                         EmployeeId = employeeDeclaration.EmployeeId,
                         TaxDeducted = 0,
                         IsPayrollCompleted = true,
@@ -825,8 +822,8 @@ namespace ServiceLayer.Code
                     taxdetails.Add(new TaxDetails
                     {
                         Index = i + 1,
-                        Month = financialYearMonth.AddMonths(i).Month,
-                        Year = financialYearMonth.AddMonths(i).Year,
+                        Month = eCal.financialYearDateTime.AddMonths(i).Month,
+                        Year = eCal.financialYearDateTime.AddMonths(i).Year,
                         EmployeeId = employeeDeclaration.EmployeeId,
                         TaxDeducted = currentMonthTax,
                         IsPayrollCompleted = false,
@@ -838,8 +835,8 @@ namespace ServiceLayer.Code
                     taxdetails.Add(new TaxDetails
                     {
                         Index = i + 1,
-                        Month = financialYearMonth.AddMonths(i).Month,
-                        Year = financialYearMonth.AddMonths(i).Year,
+                        Month = eCal.financialYearDateTime.AddMonths(i).Month,
+                        Year = eCal.financialYearDateTime.AddMonths(i).Year,
                         EmployeeId = employeeDeclaration.EmployeeId,
                         TaxDeducted = permonthTax,
                         IsPayrollCompleted = false,
