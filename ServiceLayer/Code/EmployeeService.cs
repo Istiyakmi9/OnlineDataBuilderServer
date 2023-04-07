@@ -506,9 +506,11 @@ namespace ServiceLayer.Code
                 DeclarationToYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationToYear,
                 WorkShiftId = employeeCompleteDetailModal.EmployeeDetail.WorkShiftId,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
-                LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ? "[]" : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
+                LeaveQuotaDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail) ?
+                                    ApplicationConstants.EmptyJsonArray : employeeCompleteDetailModal.LeaveRequestDetail.LeaveQuotaDetail,
                 IsPending = false,
-                NewSalaryDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail) ? "[]" : employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail,
+                NewSalaryDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail) ?
+                                    ApplicationConstants.EmptyJsonArray : employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail,
                 AssigneDate = employeeCompleteDetailModal.MappedClient.AssigneDate,
                 FinancialYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear
             }, true);
