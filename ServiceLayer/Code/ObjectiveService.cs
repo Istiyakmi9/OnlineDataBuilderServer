@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ServiceLayer.Code
 {
@@ -131,9 +132,10 @@ namespace ServiceLayer.Code
                         {
                             x.TagRole = JsonConvert.DeserializeObject<List<int>>(x.Tag);
                             var value = x.TagRole.Find(i => i == designationId);
-                            empObjective.Add(x);
+                            if (value != 0)
+                                empObjective.Add(x);
 
-                            if (empPerformance != null && empPerformance.Count > 0)
+                            if (empPerformance != null && empPerformance.Count > 0 && empObjective.Count > 0)
                             {
                                 var objetive = empPerformance.Find(i => i.ObjectiveId == x.ObjectiveId);
                                 if (objetive != null)
@@ -141,7 +143,7 @@ namespace ServiceLayer.Code
                                     x.CurrentValue = objetive.CurrentValue;
                                     x.UpdatedOn = objetive.UpdatedOn;
                                     x.Status = objetive.Status;
-                                    x.PerformanceDetail = JsonConvert.DeserializeObject<List<PerformanceDetail>>(objetive.PerformanceDetail);
+                                    x.PerformanceDetail = JsonConvert.DeserializeObject<List<PerformanceDetail>>(objetive.PerformanceDetail).OrderByDescending(x => x.UpdatedOn).ToList();
                                     x.EmployeePerformanceId = objetive.EmployeePerformanceId;
                                 }
                             }
