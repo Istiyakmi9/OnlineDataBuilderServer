@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [Authorize(Roles = Role.Admin)]
     [Route("api/[controller]")]
     [ApiController]
     public class ServiceRequestController : BaseController
@@ -19,6 +18,7 @@ namespace OnlineDataBuilder.Controllers
             _serviceRequestService = serviceRequestService;
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("GetServiceRequest")]
         public async Task<ApiResponse> GetServiceRequest(FilterModel filter)
         {
@@ -26,10 +26,18 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddUpdateServiceRequest")]
         public async Task<ApiResponse> AddUpdateServiceRequest(ServiceRequest serviceRequest)
         {
             var result = await _serviceRequestService.AddUpdateServiceRequestService(serviceRequest);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("GetServiceRequestByEmpId")]
+        public async Task<ApiResponse> GetServiceRequestByEmpId(FilterModel filter)
+        {
+            var result = await _serviceRequestService.GetServiceRequestService(filter);
             return BuildResponse(result);
         }
     }
