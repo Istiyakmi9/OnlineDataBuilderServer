@@ -22,5 +22,6 @@ namespace ModalLayer.Modal
         public long RequestedBy { set; get; }
         public DateTime RequestedOn { set; get; }
         public string AssignTo { get; set; }
+        public int Total { get; set; }
     }
 }

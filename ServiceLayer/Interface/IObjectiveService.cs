@@ -7,6 +7,7 @@ namespace ServiceLayer.Interface
     {
         dynamic ObjectiveInsertUpdateService(ObjectiveDetail objectiveDetail);
         dynamic GetPerformanceObjectiveService(FilterModel filterModel);
-        List<ObjectiveDetail> GetEmployeeObjectiveService(int designationId, int companyId);
+        List<ObjectiveDetail> GetEmployeeObjectiveService(int designationId, int companyId, long employeeId);
+        EmployeePerformance UpdateEmployeeObjectiveService(EmployeePerformance employeeObjective);
     }
 }
