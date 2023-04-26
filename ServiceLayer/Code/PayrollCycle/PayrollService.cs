@@ -80,7 +80,7 @@ namespace ServiceLayer.Code.PayrollCycle
             int offsetindex = 0;
             int daysPresnet = 0;
             int totalDaysInMonth = 0;
-            int pageSize = 5;
+            int pageSize = 15;
             while (true)
             {
                 List<PayrollEmployeeData> payrollEmployeeData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
@@ -232,9 +232,9 @@ namespace ServiceLayer.Code.PayrollCycle
                 payrollCommonData.timeZone = _currentSession.TimeZone;
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
-                payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(-i);
+                payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(+i);
                 _currentSession.TimeZoneNow = payrollCommonData.presentDate;
-                payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(-i);
+                payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(+i);
 
                 if (DoesRunPayrollCycle(payroll.PayCycleDayOfMonth, payrollCommonData.presentDate))
                 {
