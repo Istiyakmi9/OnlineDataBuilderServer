@@ -121,7 +121,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                throw new HiringBellException("Fail to get user detail. UserDetail");
+                throw new HiringBellException("Please enter a valid email address or mobile number.");
             }
 
             return encryptedPassword;
