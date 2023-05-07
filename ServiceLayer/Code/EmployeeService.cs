@@ -902,7 +902,7 @@ namespace ServiceLayer.Code
                     employee.DOB,
                     RegistrationDate = DateTime.UtcNow,
                     EmployeeDeclarationId = declarationId,
-                    DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
+                    DeclarationDetail = GetDeclarationBasicFields(eCal.salaryComponents),
                     employee.WorkShiftId,
                     IsPending = false,
                     employee.NewSalaryDetail,
@@ -953,6 +953,21 @@ namespace ServiceLayer.Code
             {
                 throw;
             }
+        }
+
+        private string GetDeclarationBasicFields(List<SalaryComponents> salaryComponents)
+        {
+            var basicFields = salaryComponents.Select(x => new
+            {
+                x.ComponentId,
+                x.DeclaredValue,
+                x.Section,
+                x.MaxLimit,
+                x.ComponentFullName,
+                x.UploadedFileIds
+            }).ToList();
+
+            return JsonConvert.SerializeObject(basicFields);
         }
 
         private async Task BulkRegistration(EmployeeCalculation eCal, IFormFileCollection fileCollection)
