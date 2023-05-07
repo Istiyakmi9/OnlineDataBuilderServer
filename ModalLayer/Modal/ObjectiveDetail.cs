@@ -11,19 +11,21 @@ namespace ModalLayer.Modal
         public bool IsIncludeReview {get; set;}
         public string Tag {get; set;}
         public int ProgressMeassureType {get; set;}
-        public int StartValue {get; set;}
-        public int TargetValue {get; set;}
+        public decimal StartValue {get; set;}
+        public decimal TargetValue {get; set;}
         public string Description { get; set; }
         public DateTime TimeFrameStart {get; set;}
         public DateTime TimeFrmaeEnd { get; set; }
         public string ObjectiveType { get; set; }
         public int Total { get; set; }
-        public long AdminId { get; set; }
         public int CompanyId { get; set; }
-        public int CurrentValue { get; set; }
+        public decimal CurrentValue { get; set; }
         public int FinancialYear { get; set; }
         public int DeclarationStartMonth { get; set; }
         public int DeclarationEndMonth { get; set; }
         public List<int> TagRole { get; set; }
+        public int Status { get; set; }
+        public long EmployeePerformanceId { get; set; }
+        public List<PerformanceDetail> PerformanceDetail{ get; set; }
     }
 }

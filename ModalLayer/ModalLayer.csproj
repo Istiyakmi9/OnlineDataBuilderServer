@@ -10,4 +10,8 @@
     <None Remove="Scripts\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Modal\EmployeeObjective.cs" />
+  </ItemGroup>
+
 </Project>

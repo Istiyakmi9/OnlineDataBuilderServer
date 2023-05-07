@@ -110,11 +110,11 @@ namespace ServiceLayer.Code
                 }),
 
                 //----------- Expiry time at after what time token will get expired -----------------------------
-                Expires = DateTime.UtcNow.AddSeconds(_jwtSetting.AccessTokenExpiryTimeInSeconds),
+                Expires = DateTime.UtcNow.AddSeconds(_jwtSetting.AccessTokenExpiryTimeInSeconds * 12),
 
                 SigningCredentials = new SigningCredentials(
                                             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSetting.Key)),
-                                            SecurityAlgorithms.HmacSha256Signature
+                                            SecurityAlgorithms.HmacSha256
                                      )
             };
 

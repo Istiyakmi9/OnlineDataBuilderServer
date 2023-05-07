@@ -2,7 +2,9 @@
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ServiceLayer.Code
 {
@@ -100,10 +102,10 @@ namespace ServiceLayer.Code
                 if (!string.IsNullOrEmpty(x.Tag) && x.Tag != "[]")
                     x.TagRole = JsonConvert.DeserializeObject<List<int>>(x.Tag);
             });
-            return new {ObjectiveDetails = objectiveDetails, EmployeeRoles = empRoles};
+            return new { ObjectiveDetails = objectiveDetails, EmployeeRoles = empRoles };
         }
 
-        public List<ObjectiveDetail> GetEmployeeObjectiveService(int designationId, int companyId)
+        public List<ObjectiveDetail> GetEmployeeObjectiveService(int designationId, int companyId, long employeeId)
         {
             var empObjective = new List<ObjectiveDetail>();
             if (designationId <= 0)
@@ -112,21 +114,108 @@ namespace ServiceLayer.Code
             if (companyId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid company selected. Please login again");
 
-            var objectives = _db.GetList<ObjectiveDetail>("sp_emp_performance_getby_compid", new { CompanyId = companyId });
+            if (employeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee. Please login again");
+
+            (List<ObjectiveDetail> objectives, List<EmployeePerformance> empPerformance) = _db.GetList<ObjectiveDetail, EmployeePerformance>("sp_objective_getby_compid", new { CompanyId = companyId, EmployeeId = employeeId });
             if (objectives != null && objectives.Count > 0)
             {
                 objectives.ForEach(x =>
                 {
                     if (!string.IsNullOrEmpty(x.Tag) && x.Tag != "[]")
                     {
-                        x.TagRole = JsonConvert.DeserializeObject<List<int>>(x.Tag);
-                        var value = x.TagRole.Find(i => i == designationId);
-                        if (value > 0)
-                            empObjective.Add(x);
+                        var isObjSee = true;
+                        if (_currentSession.CurrentUserDetail.RoleId == 2 && x.ObjSeeType)
+                            isObjSee = false;
+
+                        if (isObjSee)
+                        {
+                            x.TagRole = JsonConvert.DeserializeObject<List<int>>(x.Tag);
+                            var value = x.TagRole.Find(i => i == designationId);
+                            if (value != 0)
+                                empObjective.Add(x);
+
+                            if (empPerformance != null && empPerformance.Count > 0 && empObjective.Count > 0)
+                            {
+                                var objetive = empPerformance.Find(i => i.ObjectiveId == x.ObjectiveId);
+                                if (objetive != null)
+                                {
+                                    x.CurrentValue = objetive.CurrentValue;
+                                    x.UpdatedOn = objetive.UpdatedOn;
+                                    x.Status = objetive.Status;
+                                    x.PerformanceDetail = JsonConvert.DeserializeObject<List<PerformanceDetail>>(objetive.PerformanceDetail).OrderByDescending(x => x.UpdatedOn).ToList();
+                                    x.EmployeePerformanceId = objetive.EmployeePerformanceId;
+                                }
+                            }
+                        }
                     }
+
                 });
             }
             return empObjective;
+        }
+
+        public EmployeePerformance UpdateEmployeeObjectiveService(EmployeePerformance employeePerformance)
+        {
+            validateEmployeeObjective(employeePerformance);
+            var performanceDetails = new List<PerformanceDetail>();
+            var existEmpPerformance = _db.Get<EmployeePerformance>("sp_employee_performance_getby_id", new { EmployeePerformanceId = employeePerformance.EmployeePerformanceId });
+            if (existEmpPerformance == null)
+            {
+                existEmpPerformance = employeePerformance;
+                performanceDetails.Add(new PerformanceDetail
+                {
+                    Comments = employeePerformance.Comments,
+                    CurrentValue = employeePerformance.CurrentValue,
+                    Index = 0,
+                    Status = employeePerformance.Status,
+                    UpdatedOn = DateTime.UtcNow
+                });
+                existEmpPerformance.PerformanceDetail = JsonConvert.SerializeObject(performanceDetails);
+            }
+            else
+            {
+                performanceDetails = JsonConvert.DeserializeObject<List<PerformanceDetail>>(existEmpPerformance.PerformanceDetail);
+                var index = performanceDetails.Count;
+                existEmpPerformance.Status = employeePerformance.Status;
+                existEmpPerformance.CurrentValue = employeePerformance.CurrentValue;
+                existEmpPerformance.Comments = employeePerformance.Comments;
+                performanceDetails.Add(new PerformanceDetail
+                {
+                    Comments = employeePerformance.Comments,
+                    CurrentValue = employeePerformance.CurrentValue,
+                    Status = employeePerformance.Status,
+                    UpdatedOn = DateTime.UtcNow,
+                    Index = index
+                });
+                existEmpPerformance.PerformanceDetail = JsonConvert.SerializeObject(performanceDetails);
+            }
+            existEmpPerformance.Admin = _currentSession.CurrentUserDetail.UserId;
+
+            var result = _db.Execute<EmployeePerformance>("sp_employee_performance_insupd", existEmpPerformance, true);
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to update employee objective");
+
+            existEmpPerformance.EmployeePerformanceId = Convert.ToInt64(result);
+            return existEmpPerformance;
+        }
+
+        private void validateEmployeeObjective(EmployeePerformance employeePerformance)
+        {
+            if (employeePerformance.EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee. Please login again");
+
+            if (employeePerformance.CompanyId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid company. Please login again");
+
+            if (employeePerformance.Status <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid status. Please select a valid status");
+
+            if (employeePerformance.CurrentValue < 0)
+                throw HiringBellException.ThrowBadRequest("Invalid value entered. Please select a valid status");
+
+            if (employeePerformance.ObjectiveId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid objective selected. Please select a valid objective");
         }
     }
 }
