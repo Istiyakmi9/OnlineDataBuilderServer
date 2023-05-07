@@ -636,6 +636,9 @@ namespace ServiceLayer.Code
             {
                 // decimal totalTaxNeedToPay = 0;
                 taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
+                if (empCal.financialYearDateTime.Year != DateTime.UtcNow.Year && DateTime.UtcNow.Month == 1 && DateTime.UtcNow.Day == 1)
+                    reCalculateFlag = true;
+
                 if (reCalculateFlag)
                 {
                     if (taxNeetToPay > 0)
@@ -683,6 +686,9 @@ namespace ServiceLayer.Code
         {
             empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                         .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+            taxNeetToPay = Convert.ToDecimal(taxdetails
+                                        .Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
+            empCal.employeeDeclaration.TaxNeedToPay = taxNeetToPay;
 
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empCal.Doj, _currentSession.TimeZone);
             DateTime startDate = empCal.PayrollStartDate;
@@ -780,7 +786,6 @@ namespace ServiceLayer.Code
         private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
         {
             _logger.LogInformation("Starting method: GetPerMonthTaxInitialData");
-
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
             DateTime startDate = eCal.PayrollStartDate;
 
@@ -791,6 +796,9 @@ namespace ServiceLayer.Code
             var totalWorkingMonth = salary.Count(x => x.IsActive);
             if (totalWorkingMonth == 0)
                 throw HiringBellException.ThrowBadRequest($"Invalid working month count found in method: {nameof(GetPerMonthTaxInitialData)}");
+
+            if (doj.Year == DateTime.UtcNow.Year && doj.Month >= eCal.companySetting.DeclarationStartMonth && doj.Month < 12)
+                totalWorkingMonth = totalWorkingMonth - companySetting.DeclarationEndMonth;
 
             var permonthTax = employeeDeclaration.TaxNeedToPay / totalWorkingMonth;
             List<TaxDetails> taxdetails = new List<TaxDetails>();
@@ -832,16 +840,32 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    taxdetails.Add(new TaxDetails
+                    if (i < 9 || doj.Year != eCal.financialYearDateTime.Year)
                     {
-                        Index = i + 1,
-                        Month = eCal.financialYearDateTime.AddMonths(i).Month,
-                        Year = eCal.financialYearDateTime.AddMonths(i).Year,
-                        EmployeeId = employeeDeclaration.EmployeeId,
-                        TaxDeducted = permonthTax,
-                        IsPayrollCompleted = false,
-                        TaxPaid = 0
-                    });
+                        taxdetails.Add(new TaxDetails
+                        {
+                            Index = i + 1,
+                            Month = eCal.financialYearDateTime.AddMonths(i).Month,
+                            Year = eCal.financialYearDateTime.AddMonths(i).Year,
+                            EmployeeId = employeeDeclaration.EmployeeId,
+                            TaxDeducted = permonthTax,
+                            IsPayrollCompleted = false,
+                            TaxPaid = 0
+                        });
+                    }
+                    else
+                    {
+                        taxdetails.Add(new TaxDetails
+                        {
+                            Index = i + 1,
+                            Month = eCal.financialYearDateTime.AddMonths(i).Month,
+                            Year = eCal.financialYearDateTime.AddMonths(i).Year,
+                            EmployeeId = employeeDeclaration.EmployeeId,
+                            TaxDeducted = 0,
+                            IsPayrollCompleted = false,
+                            TaxPaid = 0
+                        });
+                    }
                 }
 
                 startDate = startDate.AddMonths(1);
