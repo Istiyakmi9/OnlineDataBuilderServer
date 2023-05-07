@@ -879,8 +879,6 @@ namespace ServiceLayer.Code
                             DeclarationName = ApplicationConstants.OneAndHalfLakhsExemptions,
                             NumberOfProofSubmitted = 0,
                             Declarations = employeeDeclaration.ExemptionDeclaration.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
-                            AcceptedAmount = employeeDeclaration.ExemptionDeclaration.Sum(a => a.AcceptedAmount),
-                            RejectedAmount = employeeDeclaration.ExemptionDeclaration.Sum(a => a.RejectedAmount),
                             TotalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue),
                             MaxAmount = 150000
                         });
@@ -892,8 +890,6 @@ namespace ServiceLayer.Code
                             DeclarationName = ApplicationConstants.OtherDeclarationName,
                             NumberOfProofSubmitted = 0,
                             Declarations = employeeDeclaration.OtherDeclaration.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
-                            AcceptedAmount = employeeDeclaration.OtherDeclaration.Sum(a => a.AcceptedAmount),
-                            RejectedAmount = employeeDeclaration.OtherDeclaration.Sum(a => a.RejectedAmount),
                             TotalAmountDeclared = employeeDeclaration.OtherDeclaration.Sum(a => a.DeclaredValue)
                         });
                         break;
@@ -904,8 +900,6 @@ namespace ServiceLayer.Code
                             DeclarationName = ApplicationConstants.TaxSavingAlloanceName,
                             NumberOfProofSubmitted = 0,
                             Declarations = employeeDeclaration.TaxSavingAlloance.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
-                            AcceptedAmount = employeeDeclaration.TaxSavingAlloance.Sum(a => a.AcceptedAmount),
-                            RejectedAmount = employeeDeclaration.TaxSavingAlloance.Sum(a => a.RejectedAmount),
                             TotalAmountDeclared = employeeDeclaration.TaxSavingAlloance.Sum(a => a.DeclaredValue)
                         });
                         break;
@@ -921,8 +915,6 @@ namespace ServiceLayer.Code
                 DeclarationName = ComponentNames.HRA,
                 NumberOfProofSubmitted = 0,
                 Declarations = employeeDeclaration.TaxSavingAlloance.Where(x => x.DeclaredValue > 0).Select(i => i.Section).ToList(),
-                AcceptedAmount = houseProperty.Sum(a => a.AcceptedAmount),
-                RejectedAmount = houseProperty.Sum(a => a.RejectedAmount),
                 TotalAmountDeclared = houseProperty.Sum(a => a.DeclaredValue)
             });
 
@@ -931,8 +923,6 @@ namespace ServiceLayer.Code
                 DeclarationName = ApplicationConstants.IncomeFromOtherSources,
                 NumberOfProofSubmitted = 0,
                 Declarations = new List<string>(),
-                AcceptedAmount = 0,
-                RejectedAmount = 0,
                 TotalAmountDeclared = 0
             });
             _logger.LogInformation("Leaving method: BuildSectionWiseComponents");

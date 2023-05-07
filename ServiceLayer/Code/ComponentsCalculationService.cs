@@ -100,8 +100,8 @@ namespace ServiceLayer.Code
             if (component != null)
                 value = (component.DeclaredValue / 12) * totalMonths;
 
-            return value;
             _logger.LogInformation("Leaving method: EmployerProvidentFund");
+            return value;
 
         }
 
