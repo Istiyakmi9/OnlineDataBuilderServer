@@ -964,13 +964,13 @@ namespace ServiceLayer.Code
                 TotalAmountDeclared = houseProperty.Sum(a => a.DeclaredValue)
             });
 
-            employeeDeclaration.Declarations.Add(new DeclarationReport
-            {
-                DeclarationName = ApplicationConstants.IncomeFromOtherSources,
-                NumberOfProofSubmitted = 0,
-                Declarations = new List<string>(),
-                TotalAmountDeclared = 0
-            });
+            //employeeDeclaration.Declarations.Add(new DeclarationReport
+            //{
+            //    DeclarationName = ApplicationConstants.IncomeFromOtherSources,
+            //    NumberOfProofSubmitted = 0,
+            //    Declarations = new List<string>(),
+            //    TotalAmountDeclared = 0
+            //});
             _logger.LogInformation("Leaving method: BuildSectionWiseComponents");
 
         }
@@ -1236,12 +1236,10 @@ namespace ServiceLayer.Code
                                 case ComponentNames.SpecialAllowanceId:
                                     elem.FinalAmount = workingMonth.LWF;
                                     break;
-                                case ComponentNames.IncomeTax:
-                                    taxDetail.TaxPaid = workingMonth.IncomeTax;
-                                    taxDetail.TaxDeducted = workingMonth.IncomeTax;
-                                    break;
                             }
                         }
+                        taxDetail.TaxPaid = workingMonth.IncomeTax;
+                        taxDetail.TaxDeducted = workingMonth.IncomeTax;
                     }
                 }
             }
@@ -1273,7 +1271,7 @@ namespace ServiceLayer.Code
                             UpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")
                         }).ToList<object>();
 
-            var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item);
+            var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item, true);
             if (string.IsNullOrEmpty(result))
             {
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update previous employement details");

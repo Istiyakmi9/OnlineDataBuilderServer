@@ -187,6 +187,7 @@ namespace ServiceLayer.Code
                     IsExcludeWeeklyOffs = payroll.IsExcludeWeeklyOffs,
                     IsExcludeHolidays = payroll.IsExcludeHolidays,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
+                    DeclarationEndMonth = payroll.PayCycleMonth == 1 ? 12 : payroll.PayCycleMonth -1
                 },
                 true
             );
