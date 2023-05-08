@@ -512,7 +512,7 @@ namespace ServiceLayer.Code
                 NewSalaryDetail = string.IsNullOrEmpty(employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail) ?
                                     ApplicationConstants.EmptyJsonArray : employeeCompleteDetailModal.SalaryDetail.NewSalaryDetail,
                 AssigneDate = employeeCompleteDetailModal.MappedClient.AssigneDate,
-                FinancialYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear
+                FinancialStartYear = employeeCompleteDetailModal.EmployeeDeclarations.DeclarationFromYear
             }, true);
 
             if (string.IsNullOrEmpty(result))
@@ -535,7 +535,7 @@ namespace ServiceLayer.Code
                 PageIndex = 1,
                 PageSize = 10
             };
-            if (!IsActive)
+            if (IsActive)
             {
                 status = DeActivateEmployee(EmployeeId);
                 employees = FilterInActiveEmployees(filterModel);

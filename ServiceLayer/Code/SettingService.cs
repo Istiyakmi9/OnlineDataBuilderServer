@@ -90,7 +90,7 @@ namespace ServiceLayer.Code
 
         private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
         {
-            var ds = _db.GetDataSet("sp_salary_group_and_components_get");
+            var ds = _db.GetDataSet("sp_salary_group_and_components_get", new {CompanyId = pfesiSetting.CompanyId});
 
             if (!ds.IsValidDataSet(ds))
                 throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
@@ -110,7 +110,6 @@ namespace ServiceLayer.Code
                 component.EmployerContribution = pfesiSetting.EmployerPFLimit;
                 component.Formula = pfesiSetting.EmployerPFLimit.ToString();
                 component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-                component.IsActive = pfesiSetting.PFEnable;
 
                 component = salaryComponents.Find(x => x.ComponentId == "ECI");
                 if (component == null)
@@ -119,7 +118,6 @@ namespace ServiceLayer.Code
                 component.DeclaredValue = 0;
                 component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
                 component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-                component.IsActive = pfesiSetting.EsiEnable;
                 component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
                 component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
 
