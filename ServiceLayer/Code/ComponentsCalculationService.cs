@@ -31,7 +31,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Standard Deduction component not found. Please add standard deduction components");
 
                 if (empCal.employeeDeclaration.EmployeeCurrentRegime == 1 && empCal.expectedAnnualGrossIncome > 250000)
-                    component.DeclaredValue = component.SectionMaxLimit;
+                    component.DeclaredValue = component.MaxLimit;
                 else
                     component.DeclaredValue = 0;
 

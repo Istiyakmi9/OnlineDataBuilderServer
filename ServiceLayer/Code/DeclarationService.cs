@@ -254,7 +254,7 @@ namespace ServiceLayer.Code
                 }
 
                 salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
-                declaration.DeclarationDetail = JsonConvert.SerializeObject(declaration.SalaryComponentItems);
+                declaration.DeclarationDetail = GetDeclarationBasicFields(declaration.SalaryComponentItems);
 
                 Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
                 {
@@ -277,6 +277,21 @@ namespace ServiceLayer.Code
                 _fileService.DeleteFiles(files);
                 throw;
             }
+        }
+
+        private string GetDeclarationBasicFields(List<SalaryComponents> salaryComponents)
+        {
+            var basicFields = salaryComponents.Select(x => new
+            {
+                x.ComponentId,
+                x.DeclaredValue,
+                x.Section,
+                x.MaxLimit,
+                x.ComponentFullName,
+                x.UploadedFileIds
+            }).ToList();
+
+            return JsonConvert.SerializeObject(basicFields);
         }
 
         public async Task<EmployeeDeclaration> HouseRentDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> files)
@@ -635,15 +650,19 @@ namespace ServiceLayer.Code
             if (!string.IsNullOrEmpty(empCal.employeeSalaryDetail.TaxDetail) && empCal.employeeSalaryDetail.TaxDetail != "[]")
             {
                 // decimal totalTaxNeedToPay = 0;
+                var calculationOnRemainingMonth = false;
                 taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
                 if (empCal.financialYearDateTime.Year != DateTime.UtcNow.Year && DateTime.UtcNow.Month == 1 && DateTime.UtcNow.Day == 1)
+                {
                     reCalculateFlag = true;
+                    calculationOnRemainingMonth = true;
+                }
 
                 if (reCalculateFlag)
                 {
                     if (taxNeetToPay > 0)
                     {
-                        UpdateTaxDetail(empCal, taxNeetToPay, taxdetails);
+                        UpdateTaxDetail(empCal, taxNeetToPay, taxdetails, calculationOnRemainingMonth);
 
                         empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
                         await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
@@ -682,12 +701,13 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Leaving method: TaxDetailsCalculation");
         }
 
-        private void UpdateTaxDetail(EmployeeCalculation empCal, decimal taxNeetToPay, List<TaxDetails> taxdetails)
+        private void UpdateTaxDetail(EmployeeCalculation empCal, decimal taxNeetToPay, List<TaxDetails> taxdetails, bool calculationOnRemainingMonth)
         {
             empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
                                         .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
-            taxNeetToPay = Convert.ToDecimal(taxdetails
-                                        .Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
+            if (calculationOnRemainingMonth)
+                taxNeetToPay = Convert.ToDecimal(taxdetails.Select(x => x.TaxDeducted).Aggregate((i, k) => i + k));
+
             empCal.employeeDeclaration.TaxNeedToPay = taxNeetToPay;
 
             DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empCal.Doj, _currentSession.TimeZone);
@@ -706,6 +726,8 @@ namespace ServiceLayer.Code
                         var daysInMonth = DateTime.DaysInMonth(doj.Year, doj.Month);
                         taxDetail.TaxDeducted = (singleMonthTax / daysInMonth) * (daysInMonth - doj.Day + 1);
                         taxDetail.TaxPaid = 0M;
+                        if (pendingMonths > 1)
+                            singleMonthTax = (remaningTaxAmount - taxDetail.TaxDeducted) / (pendingMonths - 1);
                     }
                     else
                     {
