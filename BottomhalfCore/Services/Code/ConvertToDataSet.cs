@@ -37,4 +37,16 @@ namespace BottomhalfCore.Services.Code
             return ds;
         }
     }
+
+    public static class DataSetValidator
+    {
+        public static bool IsValidDataSet(this DataSet dataSet, DataSet ds)
+        {
+            if (ds == null || ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+            {
+                return false;
+            }
+            return true;
+        }
+    }
 }

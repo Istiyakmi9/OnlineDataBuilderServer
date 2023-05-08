@@ -90,64 +90,51 @@ namespace ServiceLayer.Code
 
         private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
         {
-            var salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get");
-            var component = salaryComponents.Find(x => x.ComponentId == "EPER-PF");
-            if (component == null)
-                throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
+            var ds = _db.GetDataSet("sp_salary_group_and_components_get");
 
-            component.DeclaredValue = pfesiSetting.EmployerPFLimit;
-            component.EmployerContribution = pfesiSetting.EmployerPFLimit;
-            component.Formula = pfesiSetting.EmployerPFLimit.ToString();
-            component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-            component.IsActive = pfesiSetting.PFEnable;
+            if (!ds.IsValidDataSet(ds))
+                throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
 
-            component = salaryComponents.Find(x => x.ComponentId == "ECI");
-            if (component == null)
-                throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
+            // var salaryComponents = Converter.ToList<SalaryComponents>(ds.Tables[1]);
+            var groups = Converter.ToList<SalaryGroup>(ds.Tables[0]);
 
-            component.DeclaredValue = 0;
-            component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
-            component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-            component.IsActive = pfesiSetting.EsiEnable;
-            component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
-            component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
+            foreach (var gp in groups)
+            {
+                var salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(gp.SalaryComponents);
 
-            var updateComponents = (from n in salaryComponents
-                                    select new
-                                    {
-                                        n.ComponentId,
-                                        n.ComponentFullName,
-                                        n.ComponentDescription,
-                                        n.CalculateInPercentage,
-                                        n.TaxExempt,
-                                        n.ComponentTypeId,
-                                        n.ComponentCatagoryId,
-                                        n.PercentageValue,
-                                        n.MaxLimit,
-                                        n.DeclaredValue,
-                                        n.RejectedAmount,
-                                        n.AcceptedAmount,
-                                        UploadedFileIds = string.IsNullOrEmpty(n.UploadedFileIds) ? "[]" : n.UploadedFileIds,
-                                        n.Formula,
-                                        n.EmployeeContribution,
-                                        n.EmployerContribution,
-                                        n.IncludeInPayslip,
-                                        n.IsAdHoc,
-                                        n.AdHocId,
-                                        n.Section,
-                                        n.SectionMaxLimit,
-                                        n.IsAffectInGross,
-                                        n.RequireDocs,
-                                        n.IsOpted,
-                                        n.IsActive,
-                                        CreatedOn = DateTime.UtcNow,
-                                        n.UpdatedOn,
-                                        n.CreatedBy,
-                                        UpdatedBy = _currentSession.CurrentUserDetail.UserId
-                                    }).ToList<object>();
-            var result = await _db.BatchInsetUpdate(DbProcedure.SalaryGroup, updateComponents);
-            if (string.IsNullOrEmpty(result))
-                throw HiringBellException.ThrowBadRequest("Fail to update salary group. Please contact to admin");
+                var component = salaryComponents.Find(x => x.ComponentId == "EPER-PF");
+                if (component == null)
+                    throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
+
+                component.DeclaredValue = pfesiSetting.EmployerPFLimit;
+                component.EmployerContribution = pfesiSetting.EmployerPFLimit;
+                component.Formula = pfesiSetting.EmployerPFLimit.ToString();
+                component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
+                component.IsActive = pfesiSetting.PFEnable;
+
+                component = salaryComponents.Find(x => x.ComponentId == "ECI");
+                if (component == null)
+                    throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
+
+                component.DeclaredValue = 0;
+                component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
+                component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
+                component.IsActive = pfesiSetting.EsiEnable;
+                component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
+                component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
+
+                gp.SalaryComponents = JsonConvert.SerializeObject(component);
+                _db.Execute("sp_salary_group_insupd", new
+                {
+                    gp.SalaryGroupId,
+                    gp.CompanyId,
+                    gp.SalaryComponents,
+                    gp.GroupName,
+                    gp.GroupDescription,
+                    gp.MinAmount,
+                    gp.MaxAmount,
+                }, true);
+            }
 
             await Task.CompletedTask;
         }
