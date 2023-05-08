@@ -1251,7 +1251,7 @@ namespace ServiceLayer.Code
                             UpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")
                         }).ToList<object>();
 
-            var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item);
+            var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item, true);
             if (string.IsNullOrEmpty(result))
             {
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update previous employement details");
