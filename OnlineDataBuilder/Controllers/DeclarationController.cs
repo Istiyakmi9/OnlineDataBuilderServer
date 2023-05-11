@@ -122,5 +122,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _declarationService.GetPreviousEmployemntService(EmployeeId);
             return BuildResponse(result);
         }
+
+        [HttpGet("EmptyEmpDeclaration")]
+        public async Task<ApiResponse> EmptyEmpDeclaration()
+        {
+            var result = await _declarationService.EmptyEmpDeclarationService();
+            return BuildResponse(result);
+        }
     }
 }

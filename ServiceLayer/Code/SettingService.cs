@@ -115,9 +115,9 @@ namespace ServiceLayer.Code
                 if (component == null)
                     throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
 
-                component.DeclaredValue = 0;
+                component.DeclaredValue = pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution;
                 component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
-                component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
+                component.IncludeInPayslip = pfesiSetting.IsHideEsiEmployer;
                 component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
                 component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
 
