@@ -964,13 +964,13 @@ namespace ServiceLayer.Code
                 TotalAmountDeclared = houseProperty.Sum(a => a.DeclaredValue)
             });
 
-            employeeDeclaration.Declarations.Add(new DeclarationReport
-            {
-                DeclarationName = ApplicationConstants.IncomeFromOtherSources,
-                NumberOfProofSubmitted = 0,
-                Declarations = new List<string>(),
-                TotalAmountDeclared = 0
-            });
+            //employeeDeclaration.Declarations.Add(new DeclarationReport
+            //{
+            //    DeclarationName = ApplicationConstants.IncomeFromOtherSources,
+            //    NumberOfProofSubmitted = 0,
+            //    Declarations = new List<string>(),
+            //    TotalAmountDeclared = 0
+            //});
             _logger.LogInformation("Leaving method: BuildSectionWiseComponents");
 
         }
@@ -1236,12 +1236,10 @@ namespace ServiceLayer.Code
                                 case ComponentNames.SpecialAllowanceId:
                                     elem.FinalAmount = workingMonth.LWF;
                                     break;
-                                case ComponentNames.IncomeTax:
-                                    taxDetail.TaxPaid = workingMonth.IncomeTax;
-                                    taxDetail.TaxDeducted = workingMonth.IncomeTax;
-                                    break;
                             }
                         }
+                        taxDetail.TaxPaid = workingMonth.IncomeTax;
+                        taxDetail.TaxDeducted = workingMonth.IncomeTax;
                     }
                 }
             }
@@ -1323,6 +1321,163 @@ namespace ServiceLayer.Code
 
             var employementDetails = _db.GetList<PreviousEmployementDetail>("sp_previous_employement_details_by_empid", new { EmployeeId = EmployeeId });
             return await Task.FromResult(employementDetails);
+        }
+
+        public async Task<string> EmptyEmpDeclarationService()
+        {
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            employeeCalculation.employee = new Employee();
+            this.GetEmployeeDetail(employeeCalculation);
+            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+            employeeCalculation.Doj = DateTime.UtcNow;
+            employeeCalculation.IsFirstYearDeclaration = true;
+            employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeUid;
+            await CalculateSalaryNDeclaration(employeeCalculation, true);
+
+            var Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+            {
+                EmployeeDeclarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId,
+                EmployeeId = employeeCalculation.EmployeeId,
+                DocumentPath = "",
+                DeclarationDetail = employeeCalculation.employeeDeclaration.DeclarationDetail,
+                HouseRentDetail = employeeCalculation.employeeDeclaration.HouseRentDetail,
+                TotalDeclaredAmount = 0,
+                TotalApprovedAmount = 0,
+                TotalRejectedAmount = 0,
+                EmployeeCurrentRegime = employeeCalculation.employeeDeclaration.EmployeeCurrentRegime
+            }, true);
+
+            if (!Bot.IsSuccess(Result))
+                throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+            return await Task.FromResult("");
+        }
+
+        private void GetEmployeeDetail(EmployeeCalculation employeeCalculation)
+        {
+            employeeCalculation.employee.EmployeeUid = 22;
+            employeeCalculation.employee.Mobile = "8978777777";
+            employeeCalculation.employee.Email = "atif@mail.com";
+            employeeCalculation.employee.CompanyId = 1;
+            employeeCalculation.employee.CTC = 2200000;
+            employeeCalculation.CTC = employeeCalculation.employee.CTC;
+            employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
+            DataSet resultSet = _db.FetchDataSet("sp_employee_getbyid_to_reg_or_upd", new
+            {
+                EmployeeId = employeeCalculation.employee.EmployeeUid,
+                employeeCalculation.employee.Mobile,
+                employeeCalculation.employee.Email,
+                employeeCalculation.employee.CompanyId,
+                employeeCalculation.employee.CTC
+            });
+
+            if (resultSet == null || resultSet.Tables.Count != 9)
+                throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
+
+            if (resultSet.Tables[4].Rows.Count != 1)
+                throw new HiringBellException("Company setting not found. Please contact to admin.");
+
+            Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
+            employeeCalculation.employee = employeeDetail;
+            if (employeeDetail.EmployeeUid > 0)
+                employeeCalculation.Doj = employeeDetail.CreatedOn;
+            else
+                employeeCalculation.Doj = DateTime.UtcNow;
+
+            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
+
+            // build and bind compnay setting
+            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
+            employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
+                employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // check and get Declaration object
+            employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee, employeeCalculation.companySetting);
+            employeeCalculation.employeeDeclaration.HouseRentDetail = "{}";
+
+            // check and get employee salary detail object
+            employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2]);
+            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
+            employeeCalculation.employeeSalaryDetail.TaxDetail = "[]";
+            employeeCalculation.employeeSalaryDetail.CompleteSalaryDetail = "[]";
+
+            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[6]);
+
+            // getting professional tax detail based on company id
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[7]);
+
+            if (employeeCalculation.ptaxSlab.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
+
+            // getting surcharges slab detail based on company id
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[8]);
+
+            if (employeeCalculation.surchargeSlabs.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
+
+            if (employeeDetail != null)
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+            else
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+        }
+
+        private EmployeeDeclaration GetDeclarationInstance(DataTable declarationTable, Employee employee, CompanySetting companySetting)
+        {
+            EmployeeDeclaration employeeDeclaration = null;
+            if (declarationTable.Rows.Count == 1)
+            {
+                employeeDeclaration = Converter.ToType<EmployeeDeclaration>(declarationTable);
+                if (employeeDeclaration.SalaryDetail == null)
+                {
+                    employeeDeclaration.SalaryDetail = new EmployeeSalaryDetail();
+                }
+                var declarationComponent = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeDeclaration.DeclarationDetail);
+                if (declarationComponent.Count <= 0)
+                    throw new Exception("Declaration details not found");
+
+                declarationComponent.ForEach(x =>
+                {
+                    x.DeclaredValue = 0;
+                });
+                employeeDeclaration.DeclarationDetail = GetDeclarationBasicFields(declarationComponent);
+                employeeDeclaration.SalaryDetail.CTC = employee.CTC;
+                employeeDeclaration.EmployeeDeclarationId = 0;
+            }
+            else
+            {
+                employeeDeclaration = new EmployeeDeclaration
+                {
+                    SalaryDetail = new EmployeeSalaryDetail
+                    {
+                        CTC = employee.CTC
+                    }
+                };
+            }
+            employeeDeclaration.DeclarationEndMonth = companySetting.DeclarationEndMonth;
+            employeeDeclaration.DeclarationFromYear = companySetting.FinancialYear;
+            employeeDeclaration.DeclarationToYear = companySetting.FinancialYear + 1;
+            employeeDeclaration.DeclarationStartMonth = companySetting.DeclarationStartMonth;
+            return employeeDeclaration;
+        }
+
+        private EmployeeSalaryDetail GetEmployeeSalaryDetailInstance(DataTable salaryDetailTable)
+        {
+            EmployeeSalaryDetail employeeSalaryDetail = null;
+            if (salaryDetailTable.Rows.Count == 1)
+            {
+                employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(salaryDetailTable);
+            }
+            else
+            {
+                employeeSalaryDetail = new EmployeeSalaryDetail
+                {
+                    GrossIncome = 0,
+                    NetSalary = 0,
+                    CompleteSalaryDetail = "[]",
+                    TaxDetail = "[]"
+                };
+            }
+            
+            return employeeSalaryDetail;
         }
     }
 }

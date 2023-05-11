@@ -25,5 +25,6 @@ namespace ServiceLayer.Interface
         Task<string> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail);
         Task<dynamic> GetPreviousEmployemntandEmpService(int EmployeeId);
         Task<List<PreviousEmployementDetail>> GetPreviousEmployemntService(int EmployeeId);
+        Task<string> EmptyEmpDeclarationService();
     }
 }

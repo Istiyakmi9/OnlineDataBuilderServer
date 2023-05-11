@@ -90,7 +90,7 @@ namespace ServiceLayer.Code
 
         private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
         {
-            var ds = _db.GetDataSet("sp_salary_group_and_components_get");
+            var ds = _db.GetDataSet("sp_salary_group_and_components_get", new {CompanyId = pfesiSetting.CompanyId});
 
             if (!ds.IsValidDataSet(ds))
                 throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
@@ -110,16 +110,14 @@ namespace ServiceLayer.Code
                 component.EmployerContribution = pfesiSetting.EmployerPFLimit;
                 component.Formula = pfesiSetting.EmployerPFLimit.ToString();
                 component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-                component.IsActive = pfesiSetting.PFEnable;
 
                 component = salaryComponents.Find(x => x.ComponentId == "ECI");
                 if (component == null)
                     throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
 
-                component.DeclaredValue = 0;
+                component.DeclaredValue = pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution;
                 component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
-                component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-                component.IsActive = pfesiSetting.EsiEnable;
+                component.IncludeInPayslip = pfesiSetting.IsHideEsiEmployer;
                 component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
                 component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
 
@@ -174,6 +172,7 @@ namespace ServiceLayer.Code
                     IsExcludeWeeklyOffs = payroll.IsExcludeWeeklyOffs,
                     IsExcludeHolidays = payroll.IsExcludeHolidays,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
+                    DeclarationEndMonth = payroll.PayCycleMonth == 1 ? 12 : payroll.PayCycleMonth -1
                 },
                 true
             );
