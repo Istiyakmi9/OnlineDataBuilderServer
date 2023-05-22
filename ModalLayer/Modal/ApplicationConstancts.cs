@@ -331,6 +331,13 @@ public enum EmployeesRole
     TeamMember = 21
 }
 
+public enum AdhocType
+{
+    Allowance = 1,
+    Bonus = 2,
+    Deduction = 3
+}
+
 public static class Bot
 {
     public static bool IsSuccess(string Result)

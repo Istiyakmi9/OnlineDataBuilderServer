@@ -8,7 +8,6 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -123,7 +122,7 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("AddBonusComponents")]
-        public IResponse<ApiResponse> AddBonusComponents(SalaryStructure salaryStructure)
+        public IResponse<ApiResponse> AddBonusComponents(SalaryComponents salaryStructure)
         {
             var result = _salaryComponentService.AddBonusComponents(salaryStructure);
             return BuildResponse(result);
@@ -168,6 +167,14 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetSalaryGroupByCTC(decimal CTC, long EmployeeId)
         {
             var result = _salaryComponentService.GetSalaryGroupByCTC(CTC, EmployeeId);
+            return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("GetBonusComponents")]
+        public IResponse<ApiResponse> GetBonusComponents()
+        {
+            var result = _salaryComponentService.GetBonusComponentsService();
             return BuildResponse(result);
         }
     }
