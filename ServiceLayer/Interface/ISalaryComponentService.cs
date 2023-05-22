@@ -21,12 +21,13 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC);
         Task<List<SalaryComponents>> AddUpdateRecurringComponents(SalaryStructure salaryStructure);
         List<SalaryComponents> AddAdhocComponents(SalaryStructure salaryStructure);
-        List<SalaryComponents> AddBonusComponents(SalaryStructure salaryStructure);
+        List<SalaryComponents> AddBonusComponents(SalaryComponents salaryStructure);
         List<SalaryComponents> AddDeductionComponents(SalaryStructure salaryStructure);
         string SalaryDetailService(long EmployeeId, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, int PresentMonth, int PresentYear);
         Task<List<AnnualSalaryBreakup>> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually);
         EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId);
         SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId);
         List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation empCal);
+        List<SalaryComponents> GetBonusComponentsService();
     }
 }

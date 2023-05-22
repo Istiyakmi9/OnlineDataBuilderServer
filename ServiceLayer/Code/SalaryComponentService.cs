@@ -463,34 +463,56 @@ namespace ServiceLayer.Code
             return this.GetSalaryComponentsDetailService();
         }
 
-        public List<SalaryComponents> AddBonusComponents(SalaryStructure bonusComponent)
+        public List<SalaryComponents> AddBonusComponents(SalaryComponents bonusComponent)
         {
-            if (string.IsNullOrEmpty(bonusComponent.ComponentName))
+            if (string.IsNullOrEmpty(bonusComponent.ComponentId))
                 throw new HiringBellException("Invalid component name.");
-            if (bonusComponent.AdHocId <= 0)
-                throw new HiringBellException("Invalid AdHoc type component.");
 
-            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("sp_salary_components_get");
-            var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentName);
-            if (value == null)
-            {
-                value = new SalaryComponents();
-                value.ComponentId = bonusComponent.ComponentName;
-                value.ComponentFullName = bonusComponent.ComponentFullName;
-                value.ComponentDescription = bonusComponent.ComponentDescription;
-                value.AdHocId = Convert.ToInt32(bonusComponent.AdHocId);
-                value.MaxLimit = bonusComponent.MaxLimit;
-                value.DeclaredValue = bonusComponent.DeclaredValue;
-                value.AcceptedAmount = bonusComponent.AcceptedAmount;
-                value.RejectedAmount = bonusComponent.RejectedAmount;
-                value.UploadedFileIds = bonusComponent.UploadedFileIds;
-                value.IsAdHoc = bonusComponent.IsAdHoc;
-                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            else
+            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("sp_adhoc_detail_get");
+            var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentId);
+            if (value != null)
                 throw new HiringBellException("Bonus Component already exist.");
 
-            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
+            value = new SalaryComponents();
+            value.ComponentId = bonusComponent.ComponentId;
+            value.ComponentFullName = bonusComponent.ComponentFullName;
+            value.ComponentDescription = bonusComponent.ComponentDescription;
+            value.DeclaredValue = bonusComponent.DeclaredValue;
+            value.UploadedFileIds = "[]";
+            value.IsAdHoc = true;
+            value.AdHocId = (int)AdhocType.Bonus;
+            value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+
+            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
+            {
+                value.ComponentId,
+                value.ComponentFullName,
+                value.ComponentDescription,
+                value.CalculateInPercentage,
+                value.TaxExempt,
+                value.ComponentTypeId,
+                value.AcceptedAmount,
+                value.RejectedAmount,
+                value.UploadedFileIds,
+                value.ComponentCatagoryId,
+                value.PercentageValue,
+                value.MaxLimit,
+                value.DeclaredValue,
+                value.Formula,
+                value.EmployeeContribution,
+                value.EmployerContribution,
+                value.IncludeInPayslip,
+                value.IsAdHoc,
+                value.AdHocId,
+                value.Section,
+                value.SectionMaxLimit,
+                value.IsAffectInGross,
+                value.RequireDocs,
+                value.IsOpted,
+                value.IsActive,
+                value.AdminId,
+            }, true);
+
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail insert salary component.");
 
@@ -1301,5 +1323,11 @@ namespace ServiceLayer.Code
             return _postfixToInfixConversion.evaluatePostfix(exp);
         }
 
+        public List<SalaryComponents> GetBonusComponentsService()
+        {
+            List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            result = result.FindAll(x => x.IsAdHoc == true && x.AdHocId == (int)AdhocType.Bonus);
+            return result;
+        }
     }
 }
