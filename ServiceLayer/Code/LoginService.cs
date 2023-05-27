@@ -230,7 +230,8 @@ namespace ServiceLayer.Code
                             EmployeeCurrentRegime = loginDetail.EmployeeCurrentRegime,
                             DOB = loginDetail.DOB,
                             CreatedOn = loginDetail.CreatedOn,
-                            WorkShiftId = loginDetail.WorkShiftId
+                            WorkShiftId = loginDetail.WorkShiftId,
+                            RoleId = loginDetail.RoleId,
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);
