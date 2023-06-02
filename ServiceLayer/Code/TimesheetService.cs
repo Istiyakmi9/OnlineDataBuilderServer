@@ -310,9 +310,9 @@ namespace ServiceLayer.Code
         public List<DailyTimesheetDetail> GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail)
         {
             var now = DateTime.UtcNow;
-            int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, now.Month);
-            var lastDate = new DateTime(timesheetDetail.ForYear, now.Month, daysInMonth);
-            var firstDate = new DateTime(timesheetDetail.ForYear, now.Month, 1);
+            int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, timesheetDetail.ForMonth);
+            var lastDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, daysInMonth);
+            var firstDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, 1);
             List<TimesheetDetail> currentTimesheetDetail = _db.GetList<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
             {
                 timesheetDetail.EmployeeId,

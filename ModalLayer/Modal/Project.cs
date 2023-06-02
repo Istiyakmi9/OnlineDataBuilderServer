@@ -38,6 +38,8 @@ namespace ModalLayer.Modal
         public string FullName { set; get; }
         public string Email { set; get; }
         public bool IsActive { set; get; }
+        public string Grade { get; set; }
+        public int MemberType { get; set; }
         public DateTime AssignedOn { set; get; }
         public DateTime? LastDateOnProject { set; get; }
     }

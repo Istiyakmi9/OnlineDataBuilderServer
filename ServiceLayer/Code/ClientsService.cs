@@ -124,7 +124,7 @@ namespace ServiceLayer.Code
                                     {
                                         FileId = n.FileUid,
                                         FileOwnerId = organization.ClientId,
-                                        FileName = n.FileName,
+                                        FileName = n.FileName.Contains(".") ? n.FileName : n.FileName+"."+n.FileExtension,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Client,
@@ -134,7 +134,7 @@ namespace ServiceLayer.Code
 
                     var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }
-
+                organization.GSTNo = client.GSTNo;
                 return organization;
             }
             catch (Exception)

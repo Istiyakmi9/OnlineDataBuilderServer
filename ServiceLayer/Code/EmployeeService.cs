@@ -12,8 +12,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
-using NUnit.Framework.Internal.Execution;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -22,8 +20,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
-using static ApplicationConstants;
-using static Google.Protobuf.Reflection.MessageDescriptor;
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
 
 namespace ServiceLayer.Code
 {
@@ -83,7 +81,9 @@ namespace ServiceLayer.Code
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
         {
+            filterModel.PageSize = 100;
             List<Employee> employees = GetEmployees(filterModel);
+            employees = employees.FindAll(x => x.EmployeeUid != 1);
             List<Organization> organizations = _db.GetList<Organization>("sp_company_get");
 
             if (employees.Count == 0 || organizations.Count == 0)
@@ -930,13 +930,13 @@ namespace ServiceLayer.Code
 
                     var ownerPath = Path.Combine(_fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
                     _fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
-
+ 
                     var fileInfo = (from n in files
                                     select new
                                     {
                                         FileId = n.FileUid,
                                         FileOwnerId = eCal.EmployeeId,
-                                        FileName = n.FileName,
+                                        FileName = n.FileName.Contains(".") ? n.FileName : n.FileName+"."+n.FileExtension,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Employee,

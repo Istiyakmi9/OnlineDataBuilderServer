@@ -1215,7 +1215,7 @@ namespace ServiceLayer.Code
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
             var totalDeduction = payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
-            var netSalary = totalEarning - (employerPFAmount + payslipModal.TaxDetail.TaxDeducted);
+            var netSalary = totalEarning - (employerPFAmount + totalDeduction);
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);

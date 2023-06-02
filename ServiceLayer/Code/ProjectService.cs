@@ -101,6 +101,8 @@ namespace ServiceLayer.Code
                                 FullName = n.FullName,
                                 Email = n.Email,
                                 IsActive = n.IsActive,
+                                Grade = n.Grade,
+                                MemberType = n.MemberType,
                                 AssignedOn = DateTime.UtcNow,
                                 LastDateOnProject = null
                             }).ToList<object>();

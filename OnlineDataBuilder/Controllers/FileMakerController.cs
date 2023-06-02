@@ -103,7 +103,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, System.Net.HttpStatusCode.OK);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("GetDocxHtml")]
         public IResponse<ApiResponse> GetDocxHtml(FileDetail fileDetail)
