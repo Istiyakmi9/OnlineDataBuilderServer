@@ -457,6 +457,7 @@ namespace ServiceLayer.Code
                 {
                     if (FileCollection.Count > 0 && fileDetail.Count > 0)
                     {
+                        var ownerPath = string.Empty;
                         string userEmail = null;
                         if (file.UserTypeId == UserType.Employee)
                         {
@@ -467,11 +468,14 @@ namespace ServiceLayer.Code
                             });
 
                             userEmail = employee.Email;
+                            ownerPath = Path.Combine(_fileLocationDetail.UserFolder, file.FilePath);
                         }
                         else if (file.UserTypeId == UserType.Client)
                         {
-                            var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
-                            userEmail = userDetail.EmailId;
+                            //var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
+                            //userEmail = userDetail.EmailId;
+                            userEmail = file.Email;
+                            ownerPath = Path.Combine(_fileLocationDetail.UserFolder, file.FilePath);
                         }
 
                         if (!string.IsNullOrEmpty(userEmail))
@@ -490,9 +494,8 @@ namespace ServiceLayer.Code
                                 }
                             });
 
-
-                            string FolderPath = _fileLocationDetail.UserFolder;
-                            List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, file.UserId.ToString());
+                            //string FolderPath = _fileLocationDetail.UserFolder;
+                            List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
                             if (files != null && files.Count > 0)
                             {
                                 Result = InsertFileDetails(fileDetail);

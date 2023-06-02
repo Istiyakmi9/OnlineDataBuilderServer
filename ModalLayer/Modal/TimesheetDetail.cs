@@ -16,6 +16,7 @@ namespace ModalLayer.Modal
         public DateTime TimesheetEndDate { get; set; }
         public string UserComments { set; get; }
         public int ForYear { get; set; }
+        public int ForMonth { get; set; }
         public DateTime SubmittedOn { get; set; }
         public DateTime? UpdatedOn { get; set; }
         public long SubmittedBy { get; set; }
