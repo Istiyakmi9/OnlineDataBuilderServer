@@ -22,7 +22,7 @@ namespace ServiceLayer.Interface
         Task<EmployeeDeclaration> DeleteDeclaredHRAService(long DeclarationId);
         Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId);
         Task<EmployeeSalaryDetail> CalculateSalaryNDeclaration(EmployeeCalculation empCal, bool reCalculateFlag);
-        Task<string> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail);
+        Task<List<PreviousEmployementDetail>> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail);
         Task<dynamic> GetPreviousEmployemntandEmpService(int EmployeeId);
         Task<List<PreviousEmployementDetail>> GetPreviousEmployemntService(int EmployeeId);
         Task<string> EmptyEmpDeclarationService();

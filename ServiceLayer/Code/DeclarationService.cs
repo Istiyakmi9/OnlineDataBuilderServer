@@ -1163,7 +1163,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<string> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail)
+        public async Task<List<PreviousEmployementDetail>> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail)
         {
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
@@ -1271,7 +1271,7 @@ namespace ServiceLayer.Code
                             UpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")
                         }).ToList<object>();
 
-            var result = await _db.BatchInsetUpdate(DbProcedure.PreviousEmpDetail, item, true);
+            var result = await _db.BatchInsetUpdate<PreviousEmployementDetail>(item);
             if (string.IsNullOrEmpty(result))
             {
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update previous employement details");
@@ -1290,7 +1290,7 @@ namespace ServiceLayer.Code
                     throw HiringBellException.ThrowBadRequest("Fail to update employement salary details");
             }
 
-            return result;
+            return await GetPreviousEmployemntService(employementDetails.First().EmployeeId);
         }
 
         public async Task<dynamic> GetPreviousEmployemntandEmpService(int EmployeeId)

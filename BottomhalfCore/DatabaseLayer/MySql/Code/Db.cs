@@ -6,6 +6,8 @@ using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
 using System.Reflection;
@@ -18,7 +20,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
     public class Db : IDb
     {
         private readonly string _connectionString;
-        private static readonly object _lock = new object();
 
         public Db(string ConnectionString)
         {
@@ -279,34 +280,31 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                 object userType = Parameters;
                 List<PropertyInfo> properties = userType.GetType().GetProperties().ToList();
 
-                lock (_lock)
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    using (MySqlCommand command = new MySqlCommand())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        Utility util = new Utility();
+
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = ProcedureName;
+                        connection.Open();
+                        command.Connection = connection;
+
+                        if (Parameters != null)
                         {
-                            Utility util = new Utility();
-
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = ProcedureName;
-                            connection.Open();
-                            command.Connection = connection;
-
-                            if (Parameters != null)
-                            {
-                                util.BindParametersWithValue(Parameters, properties, command, OutParam);
-                            }
-
-                            var dataReader = command.ExecuteReader();
-                            var firstResult = this.ReadAndConvertToType<T>(dataReader);
-                            genericReaderData.ResultSet.Add(firstResult);
-
-                            if (!dataReader.NextResult())
-                                throw new HiringBellException("[DB Query] getting error while trying to read data.");
-
-                            var secondResult = this.ReadAndConvertToType<Q>(dataReader);
-                            genericReaderData.ResultSet.Add(secondResult);
+                            util.BindParametersWithValue(Parameters, properties, command, OutParam);
                         }
+
+                        var dataReader = command.ExecuteReader();
+                        var firstResult = this.ReadAndConvertToType<T>(dataReader);
+                        genericReaderData.ResultSet.Add(firstResult);
+
+                        if (!dataReader.NextResult())
+                            throw new HiringBellException("[DB Query] getting error while trying to read data.");
+
+                        var secondResult = this.ReadAndConvertToType<Q>(dataReader);
+                        genericReaderData.ResultSet.Add(secondResult);
                     }
                 }
             }
@@ -651,52 +649,47 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         private string PrepareQuerySingle(List<object> rows, OperationDetail operationDetail)
         {
-            int i = 0;
-            var properties = operationDetail.props;
             StringBuilder query = new StringBuilder();
-            query.AppendLine($"insert into {operationDetail.tableName} values ");
-
             string delimiter = string.Empty;
-            string newKeyId = "@id";
-            var update = CreateUpdateQuery(properties);
+            var update = CreateUpdateQuery(operationDetail.props);
 
+            int i = 0;
             rows.ForEach(x =>
             {
                 if (i != 0)
                     delimiter = ",";
 
-                query.AppendLine(CreateQuerySingleTableRows(x, properties, delimiter, $"{newKeyId} + {(i + 1)}"));
+                query.AppendLine(BuildInsertQuery(x, operationDetail, i));
                 i++;
             });
 
             return string.Concat(query.ToString(), "On duplicate key update ", update.ToString());
         }
 
-        private string CreateQuerySingleTableRows(object x, List<PropertyInfo> properties, string rowDelimiter, string newKey)
+        private string BuildInsertQuery(object x, OperationDetail operationDetail, int rowIndex)
         {
+            List<PropertyInfo> properties = operationDetail.props;
             string delimiter = "";
             object value = null;
             StringBuilder builder = new StringBuilder();
 
-            builder.Append($"{rowDelimiter}(");
+            if (rowIndex != 0)
+                builder.Append($",(");
+            else
+                builder.Append($"(");
 
             int i = 0;
-
             PropertyInfo prop = null;
             while (i < properties.Count)
             {
                 prop = x.GetType().GetProperty(properties[i].Name);
                 value = prop.GetValue(x, null);
 
-                if (i > 0)
+                if (prop.Name == operationDetail.primaryKey)
                 {
-                    delimiter = ",";
-                }
-                else
-                {
-                    if (value.ToString() == "0")
+                    if (value == null && value.ToString() == "" || value.ToString() == "0")
                     {
-                        builder.Append(newKey);
+                        builder.Append($"@id + {rowIndex + 1},");
                         i++;
                         continue;
                     }
@@ -704,7 +697,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
                 if (value != null)
                 {
-
                     if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(Nullable<DateTime>))
                     {
                         var datetime = Convert.ToDateTime(value);
@@ -729,6 +721,8 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     builder.Append($"{delimiter} null");
                 }
 
+
+                delimiter = ",";
                 i++;
             }
 
@@ -736,23 +730,114 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return builder.ToString();
         }
 
-        public async Task<string> BatchInsetUpdate(string tableName, List<object> data, bool isDirectCall = false)
+
+        private static OperationDetail FindTableKeyDetail(List<object> data, Type tableType)
         {
+            if (tableType == null)
+                throw new HiringBellException("Table model should not be null.");
+
             OperationDetail operationDetail = new OperationDetail
             {
-                tableName = tableName,
-                primaryKey = DbProcedure.getKey(tableName),
+                tableName = null,
+                primaryKey = null,
                 props = data.First().GetType().GetProperties().ToList()
             };
 
-            return await NativeBatchInsetUpdate(data, operationDetail, isDirectCall);
+            var tableAttr = tableType.GetCustomAttribute<TableAttribute>(false);
+            if (tableAttr == null)
+                throw new HiringBellException("Table name is not defined.");
+
+            operationDetail.tableName = tableAttr.Name;
+            PropertyInfo[] props = tableType.GetProperties();
+
+            int i = 0;
+            while (i < props.Length)
+            {
+                var prop = props.ElementAt(i);
+                var keyAttribute = prop.GetCustomAttribute<KeyAttribute>(false);
+                if (keyAttribute == null)
+                {
+                    throw new HiringBellException("Primary key is not defined.");
+                }
+                else
+                {
+                    operationDetail.primaryKey = prop.Name;
+                    break;
+                }
+
+                i++;
+            }
+
+            return operationDetail;
         }
 
-        public async Task<string> BatchInsetUpdate(List<object> data, bool isDirectCall = false)
+        public async Task<string> BatchInsetUpdate<T>(List<object> data)
         {
-            OperationDetail operationDetail = SetTargetDataPropertyInfoList(data, true);
-            return await NativeBatchInsetUpdate(data, operationDetail, isDirectCall);
+            Type tableType = typeof(T);
+            OperationDetail operationDetail = FindTableKeyDetail(data, tableType);
+            operationDetail.isInsertOperation = true;
+            return await NativeInsetUpdate(data, operationDetail);
         }
+
+        public async Task<string> NativeInsetUpdate(List<object> secondQuery, OperationDetail operationDetail)
+        {
+            string statusMessage = null;
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (MySqlTransaction transaction = connection.BeginTransaction())
+                {
+                    using (MySqlCommand command = new MySqlCommand())
+                    {
+                        try
+                        {
+                            Utility util = new Utility();
+                            string pKey = operationDetail.primaryKey;
+                            command.Parameters.Clear();
+                            command.Connection = connection;
+
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.CommandText = "sp_dynamic_query_ins_upd";
+
+                            command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = operationDetail.tableName;
+                            command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
+                            command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuerySingle(secondQuery, operationDetail);
+                            command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+
+                            int rowsAffected = await command.ExecuteNonQueryAsync();
+                            if (rowsAffected > 0)
+                            {
+                                statusMessage = rowsAffected.ToString();
+                                await transaction.CommitAsync();
+                            }
+                            else
+                            {
+                                await transaction.RollbackAsync();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            throw ex;
+                        }
+                    }
+                }
+
+                return statusMessage;
+            }
+        }
+
+
+        //public async Task<string> BatchInsetUpdate(string tableName, List<object> data, bool isDirectCall = false)
+        //{
+        //    OperationDetail operationDetail = new OperationDetail
+        //    {
+        //        tableName = tableName,
+        //        primaryKey = DbProcedure.getKey(tableName),
+        //        props = data.First().GetType().GetProperties().ToList()
+        //    };
+
+        //    return await NativeBatchInsetUpdate(data, operationDetail, isDirectCall);
+        //}
 
         public async Task<string> NativeBatchInsetUpdate(List<object> secondQuery, OperationDetail operationDetail, bool isDirectCall = false)
         {
@@ -830,28 +915,25 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             List<T> result = null;
             try
             {
-                lock (_lock)
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    using (MySqlCommand command = new MySqlCommand())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        Utility util = new Utility();
+
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = ProcedureName;
+                        connection.Open();
+                        command.Connection = connection;
+
+                        if (Parameters != null)
                         {
-                            Utility util = new Utility();
-
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = ProcedureName;
-                            connection.Open();
-                            command.Connection = connection;
-
-                            if (Parameters != null)
-                            {
-                                object userType = Parameters;
-                                var properties = userType.GetType().GetProperties().ToList();
-                                util.BindParametersWithValue(Parameters, properties, command, OutParam);
-                            }
-                            var dataReader = command.ExecuteReader();
-                            result = this.ReadAndConvertToType<T>(dataReader);
+                            object userType = Parameters;
+                            var properties = userType.GetType().GetProperties().ToList();
+                            util.BindParametersWithValue(Parameters, properties, command, OutParam);
                         }
+                        var dataReader = command.ExecuteReader();
+                        result = this.ReadAndConvertToType<T>(dataReader);
                     }
                 }
             }
@@ -890,29 +972,26 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             DataSet dataSet = new DataSet();
             try
             {
-                lock (_lock)
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    using (MySqlCommand command = new MySqlCommand())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        Utility util = new Utility();
+                        if (Parameters != null)
                         {
-                            Utility util = new Utility();
-                            if (Parameters != null)
-                            {
-                                object userType = Parameters;
-                                var properties = userType.GetType().GetProperties().ToList();
-                                util.BindParametersWithValue(Parameters, properties, command);
-                            }
+                            object userType = Parameters;
+                            var properties = userType.GetType().GetProperties().ToList();
+                            util.BindParametersWithValue(Parameters, properties, command);
+                        }
 
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = ProcedureName;
-                            command.Connection = connection;
-                            using (MySqlDataAdapter dataAdapter = new MySqlDataAdapter())
-                            {
-                                connection.Open();
-                                dataAdapter.SelectCommand = command;
-                                dataAdapter.Fill(dataSet);
-                            }
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = ProcedureName;
+                        command.Connection = connection;
+                        using (MySqlDataAdapter dataAdapter = new MySqlDataAdapter())
+                        {
+                            connection.Open();
+                            dataAdapter.SelectCommand = command;
+                            dataAdapter.Fill(dataSet);
                         }
                     }
                 }
@@ -930,32 +1009,29 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             DbResult dbResult = new DbResult();
             try
             {
-                lock (_lock)
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    using (MySqlCommand command = new MySqlCommand())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        Utility util = new Utility();
+                        if (Parameters == null)
                         {
-                            Utility util = new Utility();
-                            if (Parameters == null)
-                            {
-                                throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
-                            }
-
-                            object userType = Parameters;
-                            var properties = userType.GetType().GetProperties().ToList();
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = ProcedureName;
-                            connection.Open();
-                            command.Connection = connection;
-
-                            util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
-                            dbResult.rowsEffected = command.ExecuteNonQuery();
-                            if (IsOutParam)
-                                dbResult.statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
-                            else
-                                dbResult.statusMessage = dbResult.rowsEffected.ToString();
+                            throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
                         }
+
+                        object userType = Parameters;
+                        var properties = userType.GetType().GetProperties().ToList();
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = ProcedureName;
+                        connection.Open();
+                        command.Connection = connection;
+
+                        util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
+                        dbResult.rowsEffected = command.ExecuteNonQuery();
+                        if (IsOutParam)
+                            dbResult.statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                        else
+                            dbResult.statusMessage = dbResult.rowsEffected.ToString();
                     }
                 }
             }
@@ -977,36 +1053,33 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             int rowsAffected = 0;
             try
             {
-                lock (_lock)
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    using (MySqlCommand command = new MySqlCommand())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        Utility util = new Utility();
+                        if (Parameters == null)
                         {
-                            Utility util = new Utility();
-                            if (Parameters == null)
-                            {
-                                throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
-                            }
+                            throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
+                        }
 
-                            command.Parameters.Clear();
-                            object userType = Parameters.First();
-                            var properties = userType.GetType().GetProperties().ToList();
-                            util.Addarameters(properties, command, IsOutParam);
+                        command.Parameters.Clear();
+                        object userType = Parameters.First();
+                        var properties = userType.GetType().GetProperties().ToList();
+                        util.Addarameters(properties, command, IsOutParam);
 
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = ProcedureName;
-                            connection.Open();
-                            command.Connection = connection;
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = ProcedureName;
+                        connection.Open();
+                        command.Connection = connection;
 
-                            int i = 0;
-                            while (i < Parameters.Count)
-                            {
-                                dynamic data = Parameters.ElementAt(i);
-                                util.BindParametersValue(data, properties, command, false);
-                                rowsAffected += command.ExecuteNonQuery();
-                                i++;
-                            }
+                        int i = 0;
+                        while (i < Parameters.Count)
+                        {
+                            dynamic data = Parameters.ElementAt(i);
+                            util.BindParametersValue(data, properties, command, false);
+                            rowsAffected += command.ExecuteNonQuery();
+                            i++;
                         }
                     }
                 }
@@ -1036,33 +1109,30 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             int rowsAffected = 0;
             try
             {
-                lock (_lock)
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    using (MySqlCommand command = new MySqlCommand())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        Utility util = new Utility();
+                        if (Parameters == null)
                         {
-                            Utility util = new Utility();
-                            if (Parameters == null)
-                            {
-                                throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
-                            }
-
-                            object userType = Parameters;
-                            var properties = userType.GetType().GetProperties().ToList();
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = ProcedureName;
-                            connection.Open();
-                            command.Connection = connection;
-
-                            util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
-                            rowsAffected = command.ExecuteNonQuery();
-                            if (IsOutParam)
-                                state = command.Parameters["_ProcessingResult"].Value.ToString();
-                            else
-                                state = rowsAffected.ToString();
-                            return state;
+                            throw HiringBellException.ThrowBadRequest("Passed parameter is null. Please supply proper collection of data.");
                         }
+
+                        object userType = Parameters;
+                        var properties = userType.GetType().GetProperties().ToList();
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = ProcedureName;
+                        connection.Open();
+                        command.Connection = connection;
+
+                        util.BindParametersWithValue(Parameters, properties, command, IsOutParam);
+                        rowsAffected = command.ExecuteNonQuery();
+                        if (IsOutParam)
+                            state = command.Parameters["_ProcessingResult"].Value.ToString();
+                        else
+                            state = rowsAffected.ToString();
+                        return state;
                     }
                 }
             }
@@ -1083,5 +1153,7 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
         public List<PropertyInfo> props { set; get; }
         public string tableName { set; get; }
         public string primaryKey { set; get; }
+        public bool isInsertOperation { set; get; }
+        public string latestKeyQuery { set; get; }
     }
 }

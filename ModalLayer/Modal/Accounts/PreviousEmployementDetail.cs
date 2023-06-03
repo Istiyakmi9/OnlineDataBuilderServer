@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ModalLayer.Modal.Accounts
 {
-    public class PreviousEmployementDetail:CreationInfo
+    [Table(name: "previous_employement_details")]
+    public class PreviousEmployementDetail : CreationInfo
     {
+        [Key]
         public long PreviousEmpDetailId { get; set; }
         public int EmployeeId { get; set; }
         public string Month { get; set; }

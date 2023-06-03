@@ -436,7 +436,7 @@ namespace ServiceLayer.Code
                                             UpdatedBy = _currentSession.CurrentUserDetail.UserId
                                         }).ToList<object>();
 
-                var status = await _db.BatchInsetUpdate(DbProcedure.SalaryComponents, updateComponents);
+                var status = await _db.BatchInsetUpdate<SalaryComponents>(updateComponents);
                 if (string.IsNullOrEmpty(status))
                     throw new HiringBellException("Unable to update detail");
             }

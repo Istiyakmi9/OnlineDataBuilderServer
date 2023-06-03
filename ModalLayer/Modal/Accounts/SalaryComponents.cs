@@ -1,7 +1,12 @@
-﻿namespace ModalLayer.Modal.Accounts
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ModalLayer.Modal.Accounts
 {
+    [Table(name: "salary_components")]
     public class SalaryComponents : SalaryCommon
     {
+        [Key]
         public string ComponentId { set; get; }
         public int ComponentTypeId { get; set; }
         public decimal PercentageValue { set; get; }
