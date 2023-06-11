@@ -203,7 +203,7 @@ namespace ServiceLayer.Code
                 PageSize = 1000
             });
 
-            if (ds != null && ds.Tables.Count == 4)
+            if (ds != null && ds.Tables.Count == 5)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -244,15 +244,16 @@ namespace ServiceLayer.Code
 
                         loginResponse.Menu = ds.Tables[1];
                         loginResponse.Department = ds.Tables[3];
+                        loginResponse.Roles = ds.Tables[4];
                         loginResponse.UserDetail = userDetail;
                         loginResponse.UserTypeId = authUser.UserTypeId;
                         loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
                         loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
                                                        .Select(x => new AutoCompleteEmployees
                                                        {
-                                                           value = x.Field<long>("EmployeeUid"),
-                                                           text = x.Field<string>("Name"),
-                                                           email = x.Field<string>("Email")
+                                                           value = x.Field<long>("I"),
+                                                           text = x.Field<string>("N"),
+                                                           email = x.Field<string>("E")
                                                        }).ToList<AutoCompleteEmployees>();
                     }
                 }
