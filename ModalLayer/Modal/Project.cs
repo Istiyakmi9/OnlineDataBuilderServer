@@ -7,10 +7,6 @@ namespace ModalLayer.Modal
     public class Project : ProjectMemberDetail
     {
         public string ProjectName { set; get; }
-        public long ProjectManagerId { set; get; }
-        public long PreviousProjectManagerId { set; get; }
-        public long ArchitectId { set; get; }
-        public long PreviousArchitectId { set; get; }
         public string ProjectDescription { set; get; }
         public DateTime? ProjectStartedOn { set; get; }
         public DateTime? ProjectEndedOn { set; get; }

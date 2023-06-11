@@ -75,10 +75,6 @@ namespace ServiceLayer.Code
             {
                 project.ProjectName = projectDetail.ProjectName;
                 project.ProjectDescription = projectDetail.ProjectDescription;
-                project.PreviousProjectManagerId = projectDetail.ProjectManagerId == project.ProjectManagerId ? 0 : project.ProjectManagerId;
-                project.ProjectManagerId = projectDetail.ProjectManagerId;
-                project.PreviousArchitectId = projectDetail.ArchitectId == project.ArchitectId ? 0 : project.ArchitectId;
-                project.ArchitectId = projectDetail.ArchitectId;
                 project.IsClientProject = projectDetail.IsClientProject;
                 project.ClientId = projectDetail.ClientId;
                 project.HomePageUrl = projectDetail.HomePageUrl;
