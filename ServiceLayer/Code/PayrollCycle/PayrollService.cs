@@ -1,9 +1,11 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Service;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -19,16 +21,21 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IDeclarationService _declarationService;
-
+        private readonly IEMailManager _eMailManager;
+        private readonly IBillService _billService;
         public PayrollService(ITimezoneConverter timezoneConverter,
             IDb db,
             IDeclarationService declarationService,
-            CurrentSession currentSession)
+            CurrentSession currentSession,
+            IEMailManager eMailManager,
+            IBillService billService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _declarationService = declarationService;
+            _eMailManager = eMailManager;
+            _billService = billService;
         }
 
         private List<PayrollEmployeeData> GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
@@ -101,56 +108,60 @@ namespace ServiceLayer.Code.PayrollCycle
                 int daysUsedForDeduction = 0;
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
-                    try
+                    if (empPayroll.EmployeeId == 8 || empPayroll.EmployeeId == 11)
                     {
-                        daysUsedForDeduction = totalDaysInMonth;
-                        DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
-                        if (doj.Month == payrollDate.Month && doj.Year == payrollDate.Year)
+                        try
                         {
-                            daysUsedForDeduction = totalDaysInMonth - doj.Day + 1;
-                        }
-
-                        daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
-
-                        var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
-                        if (taxDetails == null)
-                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
-
-                        var presentData = taxDetails.Find(x => x.Month == payrollDate.Month);
-                        if (presentData == null)
-                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
-
-                        if (!presentData.IsPayrollCompleted)
-                        {
-                            UpdateSalaryBreakup(payrollDate, totalDaysInMonth, daysPresnet, empPayroll);
-                            if (daysPresnet != daysUsedForDeduction)
+                            daysUsedForDeduction = totalDaysInMonth;
+                            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
+                            if (doj.Month == payrollDate.Month && doj.Year == payrollDate.Year)
                             {
-                                var newAmount = (presentData.TaxDeducted / daysUsedForDeduction) * daysPresnet;
-                                presentData.TaxPaid = newAmount;
-                                presentData.TaxDeducted = newAmount;
-                                presentData.IsPayrollCompleted = true;
-                                IsTaxCalculationRequired = true;
-                            }
-                            else
-                            {
-                                presentData.TaxPaid = presentData.TaxDeducted;
-                                presentData.IsPayrollCompleted = true;
+                                daysUsedForDeduction = totalDaysInMonth - doj.Day + 1;
                             }
 
-                            empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
-                            await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
-                            IsTaxCalculationRequired = false;
+                            daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
+
+                            var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
+                            if (taxDetails == null)
+                                throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                            var presentData = taxDetails.Find(x => x.Month == payrollDate.Month);
+                            if (presentData == null)
+                                throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                            if (!presentData.IsPayrollCompleted)
+                            {
+                                UpdateSalaryBreakup(payrollDate, totalDaysInMonth, daysPresnet, empPayroll);
+                                if (daysPresnet != daysUsedForDeduction)
+                                {
+                                    var newAmount = (presentData.TaxDeducted / daysUsedForDeduction) * daysPresnet;
+                                    presentData.TaxPaid = newAmount;
+                                    presentData.TaxDeducted = newAmount;
+                                    presentData.IsPayrollCompleted = true;
+                                    IsTaxCalculationRequired = true;
+                                }
+                                else
+                                {
+                                    presentData.TaxPaid = presentData.TaxDeducted;
+                                    presentData.IsPayrollCompleted = true;
+                                }
+
+                                empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
+                                await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
+                                IsTaxCalculationRequired = false;
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
+
+                        Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
                     }
                 }
 
                 offsetindex = offsetindex + pageSize;
             }
-
             await Task.CompletedTask;
         }
 
@@ -252,6 +263,34 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             await Task.CompletedTask;
+        }
+
+        private async Task SendPayrollGeneratedEmail(DateTime presentDate, long empId)
+        {
+            PayslipGenerationModal payslipGenerationModal = new PayslipGenerationModal
+            {
+                Year = presentDate.Year,
+                Month = presentDate.Month,
+                EmployeeId = empId
+            };
+            var generatedfile = await _billService.GeneratePayslipService(payslipGenerationModal);
+            var file = new FileDetail
+            {
+                FileName = generatedfile.FileDetail.FileName,
+                FilePath = generatedfile.FileDetail.FilePath
+            };
+            EmailSenderModal emailSenderModal = new EmailSenderModal
+            {
+                To = new List<string> { "istiyaq.mi9@gmail.com", "marghub12@gmail.com" },
+                CC = new List<string>(),
+                BCC = new List<string>(),
+                FileDetails = new List<FileDetail> { file },
+                Subject = "Monthly Payslip",
+                Body = $"Payslip of the month {presentDate}",
+                Title = "Payslp"
+            };
+
+            await _eMailManager.SendMailAsync(emailSenderModal);
         }
     }
 }
