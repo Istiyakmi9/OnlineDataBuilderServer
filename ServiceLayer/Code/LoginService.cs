@@ -253,7 +253,8 @@ namespace ServiceLayer.Code
                                                        {
                                                            value = x.Field<long>("I"),
                                                            text = x.Field<string>("N"),
-                                                           email = x.Field<string>("E")
+                                                           email = x.Field<string>("E"),
+                                                           selected = false
                                                        }).ToList<AutoCompleteEmployees>();
                     }
                 }
