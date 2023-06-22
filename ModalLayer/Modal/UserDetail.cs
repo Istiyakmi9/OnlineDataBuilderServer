@@ -50,7 +50,7 @@ namespace ModalLayer.Modal
     {
         public UserDetail UserDetail { set; get; }
         public DataTable Menu { set; get; }
-        public DataTable Companies { set; get; }
+        public List<Organization> Companies { set; get; }
         public int UserTypeId { set; get; }
         public DataTable Department { set; get; }
         public DataTable Roles { set; get; }
