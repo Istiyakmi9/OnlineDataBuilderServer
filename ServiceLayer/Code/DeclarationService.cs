@@ -533,18 +533,13 @@ namespace ServiceLayer.Code
             // check and apply tax saving components
             totalDeduction += _componentsCalculationService.TaxSavingComponent(empCal.employeeDeclaration);
 
-            decimal hraAmount = 0;
-
-            // Calculate hra and apply on deduction
-            _componentsCalculationService.HRAComponent(empCal.employeeDeclaration, calculatedSalaryBreakupDetails);
-
-            if (empCal.employeeDeclaration.HRADeatils != null)
-                hraAmount = (empCal.employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
+            // check and apply HRA
+            totalDeduction += _componentsCalculationService.HRACalculation(empCal.employeeDeclaration, calculatedSalaryBreakupDetails, totalMonths);
 
             salaryBreakup.GrossIncome = empCal.expectedAnnualGrossIncome;
 
             // final total taxable amount.
-            empCal.employeeDeclaration.TotalAmount = empCal.expectedAnnualGrossIncome - (totalDeduction + hraAmount);
+            empCal.employeeDeclaration.TotalAmount = empCal.expectedAnnualGrossIncome - totalDeduction;
             empCal.employeeDeclaration.TotalAmountOnNewRegim = empCal.expectedAnnualGrossIncome;
 
             //Tax regime calculation 
@@ -579,6 +574,9 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Starting method: CreateBreakUp");
 
             List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
+
+            // this is only for testing, comments below line once testing completed.
+            empCal.employee.IsCTCChanged = true;
             if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
@@ -597,6 +595,7 @@ namespace ServiceLayer.Code
                     empCal.salaryGroup.GroupComponents = JsonConvert
                         .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
             }
+
             _logger.LogInformation("Leaving method: CreateBreakUp");
 
             return completeSalaryBreakups;
@@ -1367,7 +1366,8 @@ namespace ServiceLayer.Code
                 employeeCalculation.employee.Mobile,
                 employeeCalculation.employee.Email,
                 employeeCalculation.employee.CompanyId,
-                employeeCalculation.employee.CTC
+                employeeCalculation.employee.CTC,
+                employeeCalculation.employee.SalaryGroupId
             });
 
             if (resultSet == null || resultSet.Tables.Count != 9)
@@ -1476,7 +1476,7 @@ namespace ServiceLayer.Code
                     TaxDetail = "[]"
                 };
             }
-            
+
             return employeeSalaryDetail;
         }
     }

@@ -717,7 +717,8 @@ namespace ServiceLayer.Code
                 employeeCalculation.employee.Mobile,
                 employeeCalculation.employee.Email,
                 employeeCalculation.employee.CompanyId,
-                employeeCalculation.employee.CTC
+                employeeCalculation.employee.CTC,
+                employeeCalculation.employee.SalaryGroupId
             });
 
             if (resultSet == null || resultSet.Tables.Count != 9)
@@ -733,6 +734,10 @@ namespace ServiceLayer.Code
                 employeeCalculation.Doj = employeeDetail.CreatedOn;
             else
                 employeeCalculation.Doj = DateTime.UtcNow;
+
+            // check if salary group changed
+            if (employeeDetail.SalaryGroupId != employeeCalculation.employee.SalaryGroupId)
+                employeeCalculation.employee.IsCTCChanged = true;
 
             // check and get Declaration object
             employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);
@@ -1260,12 +1265,13 @@ namespace ServiceLayer.Code
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
                 throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
-        
+
             if (!employee.IsPayrollOnCTC)
             {
                 if (employee.SalaryGroupId <= 0)
                     throw HiringBellException.ThrowBadRequest("Please select salary group");
-            } else
+            }
+            else
             {
                 employee.SalaryGroupId = 0;
             }

@@ -19,5 +19,6 @@ namespace ServiceLayer.Interface
         decimal OtherDeclarationComponent(EmployeeDeclaration employeeDeclaration);
         decimal TaxSavingComponent(EmployeeDeclaration employeeDeclaration);
         decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration);
+        decimal HRACalculation(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails, int totalMonths);
     }
 }

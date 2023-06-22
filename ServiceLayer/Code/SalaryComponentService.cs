@@ -886,7 +886,7 @@ namespace ServiceLayer.Code
                 annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(eCal.employeeSalaryDetail.CompleteSalaryDetail);
 
             // create salary brackup freshelly
-            if (annualSalaryBreakup == null || annualSalaryBreakup.Count == 0)
+            if (eCal.employee.IsCTCChanged || annualSalaryBreakup == null || annualSalaryBreakup.Count == 0)
             {
                 annualSalaryBreakups = CreateFreshSalaryBreakUp(eCal);
             }
@@ -942,23 +942,30 @@ namespace ServiceLayer.Code
                     if (monthlyGrossIncome < taxableComponentAmount)
                         throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
 
-                    var finalSpecialAmount = (monthlyGrossIncome - taxableComponentAmount);
 
-
-                    var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                    var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+                    if (component != null)
                     {
-                        ComponentId = nameof(ComponentNames.Special),
-                        Formula = null,
-                        ComponentName = ComponentNames.Special,
-                        FinalAmount = finalSpecialAmount,
-                        ComponentTypeId = 102,
-                        IsIncludeInPayslip = true
-                    };
+                        component.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
+                    }
 
-                    otherDetail.Add(calculatedSalaryBreakupDetail);
+                    //var finalSpecialAmount = (monthlyGrossIncome - taxableComponentAmount);
+
+
+                    //var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                    //{
+                    //    ComponentId = nameof(ComponentNames.Special),
+                    //    Formula = null,
+                    //    ComponentName = ComponentNames.Special,
+                    //    FinalAmount = finalSpecialAmount,
+                    //    ComponentTypeId = 102,
+                    //    IsIncludeInPayslip = true
+                    //};
+
+                    //otherDetail.Add(calculatedSalaryBreakupDetail);
 
                     var finalMonthlyAmount = IsWorkingDayNotMatchedWithActual ? monthlyGrossIncome : (monthlyGrossIncome / daysInMonth) * workingDays;
-                    calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                    var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                     {
                         ComponentId = nameof(ComponentNames.Gross),
                         Formula = null,
@@ -1020,28 +1027,29 @@ namespace ServiceLayer.Code
             decimal expectedGrossIncome = 0;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
+            decimal amount = 0;
             var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
             foreach (var item in taxableComponents)
             {
-                if (!string.IsNullOrEmpty(item.ComponentId))
-                {
-                    decimal amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
+                    amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                else
+                    amount = 0;
 
-                    CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
-                    calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
-                    calculatedSalaryBreakupDetail.Formula = item.Formula;
-                    calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
-                    calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
-                    expectedGrossIncome += amount;
-                    calculatedSalaryBreakupDetail.FinalAmount = amount / 12;
-                    calculatedSalaryBreakupDetail.IsIncludeInPayslip = item.IncludeInPayslip;
+                CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
+                calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
+                calculatedSalaryBreakupDetail.Formula = item.Formula;
+                calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
+                calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
+                expectedGrossIncome += amount;
+                calculatedSalaryBreakupDetail.FinalAmount = amount > 0 ? amount / 12 : 0;
+                calculatedSalaryBreakupDetail.IsIncludeInPayslip = item.IncludeInPayslip;
 
-                    taxableComponentAmount += calculatedSalaryBreakupDetail.FinalAmount;
-                    calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
-                }
+                taxableComponentAmount += calculatedSalaryBreakupDetail.FinalAmount;
+                calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
             }
 
-            calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
+            // calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
             _logger.LogInformation("Endning method: GetComponentsDetail");
 
             return calculatedSalaryBreakupDetails;
@@ -1077,20 +1085,26 @@ namespace ServiceLayer.Code
                 if (monthlyGrossIncome < taxableComponentAmount)
                     throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
 
-                var finalSpecialAmount = (monthlyGrossIncome - taxableComponentAmount);
-
-                var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+                if (component != null)
                 {
-                    ComponentId = nameof(ComponentNames.Special),
-                    Formula = null,
-                    ComponentName = ComponentNames.Special,
-                    FinalAmount = finalSpecialAmount,
-                    ComponentTypeId = 102,
-                    IsIncludeInPayslip = true
-                };
+                    component.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
+                }
 
-                otherDetails.Add(calculatedSalaryBreakupDetail);
-                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                //var finalSpecialAmount = (monthlyGrossIncome - taxableComponentAmount);
+
+                //var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+                //{
+                //    ComponentId = nameof(ComponentNames.Special),
+                //    Formula = null,
+                //    ComponentName = ComponentNames.Special,
+                //    FinalAmount = finalSpecialAmount,
+                //    ComponentTypeId = 102,
+                //    IsIncludeInPayslip = true
+                //};
+
+                //otherDetails.Add(calculatedSalaryBreakupDetail);
+                var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,

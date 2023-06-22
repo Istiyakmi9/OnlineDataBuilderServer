@@ -20,10 +20,14 @@ namespace ServiceLayer.Code.PayrollCycle.Code
     {
         private readonly IDb _db;
         private readonly IEmployeeService _employeeService;
-        public UploadPayrollDataService(IDb db, IEmployeeService employeeService)
+        private readonly CurrentSession _currentSession;
+
+        public UploadPayrollDataService(IDb db, IEmployeeService employeeService, CurrentSession currentSession)
         {
             _db = db;
             _employeeService = employeeService;
+            _currentSession = currentSession;
+
         }
 
         public async Task<List<UploadedPayrollData>> ReadPayrollDataService(IFormFileCollection files)
@@ -66,7 +70,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                     }
                     else
                     {
-                        await RegisterNewEmployee(e);                        
+                        await RegisterNewEmployee(e);
                     }
                 }
 
@@ -100,8 +104,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 OrganizationId = 1,
                 LeavePlanId = 1,
                 PayrollGroupId = 0,
-                SalaryGroupId = 0,
-                CompanyId = 1,
+                SalaryGroupId = 1,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 NoticePeriodId = 0,
                 FatherName = "NA",
                 MotherName = "NA",
@@ -123,8 +127,20 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 DateOfJoining = emp.DOJ,
                 DOB = new DateTime(1990, 5, 16),
                 WorkShiftId = 1,
-                IsCTCChanged = true
+                IsCTCChanged = true,               
             };
+
+            var Names = emp.EmployeeName.Split(' ');
+            if (Names.Length > 1)
+            {
+                employee.FirstName = Names[0];
+                employee.LastName = string.Join(" ", Names.Skip(1).ToList());
+            }
+            else
+            {
+                employee.FirstName = Names[0];
+                employee.LastName = "NA";
+            }
 
             await _employeeService.RegisterEmployeeByExcelService(employee, null);
         }

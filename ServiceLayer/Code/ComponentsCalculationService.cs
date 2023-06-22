@@ -390,6 +390,36 @@ namespace ServiceLayer.Code
             return totalDeduction;
         }
 
+        public decimal HRACalculation(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails, int totalMonths)
+        {
+            _logger.LogInformation("Starting method: HRA component calculation");
+
+            decimal totalDeduction = 0;
+
+            var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+            if (component == null)
+            {
+                component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
+                if (component != null)
+                {
+                    // Calculate hra and apply on deduction
+                    HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+
+                    if (employeeDeclaration.HRADeatils != null)
+                        totalDeduction = (employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
+                }
+            }
+            else
+            {
+                component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
+                if (component != null)
+                    totalDeduction = component.FinalAmount * totalMonths;
+            }
+
+
+            return totalDeduction;
+        }
+
         public decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration)
         {
             _logger.LogInformation("Starting method: HousePropertyComponent");

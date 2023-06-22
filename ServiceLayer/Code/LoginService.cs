@@ -203,7 +203,7 @@ namespace ServiceLayer.Code
                 PageSize = 1000
             });
 
-            if (ds != null && ds.Tables.Count == 5)
+            if (ds != null && ds.Tables.Count == 6)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
