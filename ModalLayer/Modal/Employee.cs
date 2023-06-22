@@ -47,7 +47,7 @@ namespace ModalLayer.Modal
         public string OldFileName { get; set; }
         public int AttendanceSubmissionLimit { get; set; }
         public int WorkShiftId { get; set; }
-
+        public bool IsPayrollOnCTC { get; set; }
         public DateTime AssigneDate { set; get; }
         public string LeaveTypeBriefJson { set; get; }
     }

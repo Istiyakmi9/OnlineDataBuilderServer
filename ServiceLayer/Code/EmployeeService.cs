@@ -242,7 +242,7 @@ namespace ServiceLayer.Code
                 _currentSession.CurrentUserDetail.OrganizationId,
             });
 
-            if (resultset.Tables.Count == 10)
+            if (resultset.Tables.Count == 11)
             {
                 resultset.Tables[0].TableName = "Employee";
                 resultset.Tables[1].TableName = "AllocatedClients";
@@ -254,6 +254,7 @@ namespace ServiceLayer.Code
                 resultset.Tables[7].TableName = "LeavePlans";
                 resultset.Tables[8].TableName = "Companies";
                 resultset.Tables[9].TableName = "WorkShift";
+                resultset.Tables[10].TableName = "SalaryGroup";
             }
 
             return resultset;
@@ -1238,6 +1239,15 @@ namespace ServiceLayer.Code
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
                 throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
+        
+            if (!employee.IsPayrollOnCTC)
+            {
+                if (employee.SalaryGroupId <= 0)
+                    throw HiringBellException.ThrowBadRequest("Please select salary group");
+            } else
+            {
+                employee.SalaryGroupId = 0;
+            }
         }
 
         public async Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter)
