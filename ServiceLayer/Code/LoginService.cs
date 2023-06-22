@@ -247,7 +247,8 @@ namespace ServiceLayer.Code
                         loginResponse.Roles = ds.Tables[4];
                         loginResponse.UserDetail = userDetail;
                         loginResponse.UserTypeId = authUser.UserTypeId;
-                        loginResponse.Companies = _cacheManager.Get(CacheTable.Company);
+                        var companies = Converter.ToList<Organization>(ds.Tables[5]);
+                        loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);
                         loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
                                                        .Select(x => new AutoCompleteEmployees
                                                        {

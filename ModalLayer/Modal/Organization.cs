@@ -40,6 +40,7 @@ namespace ModalLayer.Modal
         public int CompanyId { get; set; }
         public string CompanyName { get; set; }
         public string OrganizationName { get; set; }
+        public int OrganizationId { get; set; }
         public string CompantDetail { get; set; }
         public int SectorType { get; set; }
         public string FullAddress { get; set; }
