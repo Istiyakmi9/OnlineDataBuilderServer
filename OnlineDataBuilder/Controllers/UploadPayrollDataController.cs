@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using System;
 using System.Threading.Tasks;
 
@@ -13,9 +14,11 @@ namespace OnlineDataBuilder.Controllers
     public class UploadPayrollDataController : BaseController
     {
         private readonly HttpContext _httpContext;
-        public UploadPayrollDataController(IHttpContextAccessor httpContext)
+        private readonly IUploadPayrollDataService _uploadPayrollDataService;
+        public UploadPayrollDataController(IHttpContextAccessor httpContext, IUploadPayrollDataService uploadPayrollDataService)
         {
             _httpContext = httpContext.HttpContext;
+            _uploadPayrollDataService = uploadPayrollDataService;
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -24,8 +27,8 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                //var result = await _employeeService.UpdateEmployeeService(files);
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                await _uploadPayrollDataService.ReadPayrollDataService(file);
                 return BuildResponse("file found");
 
             }

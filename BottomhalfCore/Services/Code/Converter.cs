@@ -1,8 +1,12 @@
-﻿using System;
+﻿using ModalLayer.Modal;
+using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI.Relational;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using Ubiety.Dns.Core;
 
 namespace BottomhalfCore.Services.Code
 {
@@ -186,6 +190,129 @@ namespace BottomhalfCore.Services.Code
                 dt.Rows.Add(dr);
             }
             return dt;
+        }
+
+        private static List<string> ValidateHeaders(DataTable table, List<PropertyInfo> fileds)
+        {
+            List<string> header = new List<string>();
+            List<string> columnList = new List<string>();
+
+            foreach (DataColumn column in table.Columns)
+            {
+                if (!columnList.Contains(column.ColumnName))
+                {
+                    columnList.Add(column.ColumnName);
+                }
+                else
+                {
+                    throw HiringBellException.ThrowBadRequest($"Multiple header found \"{column.ColumnName}\" field.");
+                }
+            }
+
+            foreach (PropertyInfo pinfo in fileds)
+            {
+                var field = columnList.Find(x => x == pinfo.Name);
+                if (field == null)
+                {
+                    throw HiringBellException.ThrowBadRequest($"Excel doesn't contain \"{field}\" field.");
+                }
+                else
+                {
+                    header.Add(pinfo.Name);
+                }
+            }
+
+            return header;
+        }
+
+        public static List<T> MapToList<T>(DataTable table) where T : new()
+        {
+            string TypeName = string.Empty;
+            DateTime date = DateTime.Now;
+            DateTime defaultDate = Convert.ToDateTime("1976-01-01");
+            List<T> items = new List<T>();
+
+            try
+            {
+                List<PropertyInfo> props = typeof(T).GetProperties().ToList();
+                List<string> fieldNames = ValidateHeaders(table, props);
+
+                if (table.Rows.Count > 0)
+                {
+                    int i = 0;
+                    DataRow dr = null;
+                    while (i < table.Rows.Count)
+                    {
+                        dr = table.Rows[i];
+
+                        T t = new T();
+                        props.ForEach(x =>
+                        {
+                            if (fieldNames.Contains(x.Name))
+                            {
+                                try
+                                {
+                                    if (x.PropertyType.IsGenericType)
+                                        TypeName = x.PropertyType.GenericTypeArguments.First().Name;
+                                    else
+                                        TypeName = x.PropertyType.Name;
+
+                                    switch (TypeName)
+                                    {
+                                        case nameof(Boolean):
+                                            x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            break;
+                                        case nameof(Int32):
+                                            x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            break;
+                                        case nameof(Int64):
+                                            x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            break;
+                                        case nameof(Decimal):
+                                            x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            break;
+                                        case nameof(String):
+                                            x.SetValue(t, dr[x.Name].ToString());
+                                            break;
+                                        case nameof(DateTime):
+                                            if (dr[x.Name].ToString() != null)
+                                            {
+                                                date = Convert.ToDateTime(dr[x.Name].ToString());
+                                                date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                                                x.SetValue(t, date);
+                                            }
+                                            else
+                                            {
+                                                x.SetValue(t, defaultDate);
+                                            }
+                                            break;
+                                        default:
+                                            x.SetValue(t, dr[x.Name]);
+                                            break;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw ex;
+                                }
+                            }
+                        });
+
+                        items.Add(t);
+                        i++;
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return items;
         }
     }
 }

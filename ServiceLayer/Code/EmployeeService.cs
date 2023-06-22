@@ -593,6 +593,27 @@ namespace ServiceLayer.Code
             return result;
         }
 
+        public async Task<DataSet> RegisterEmployeeByExcelService(Employee employee, IFormFileCollection fileCollection)
+        {
+            _logger.LogInformation("Starting method: RegisterEmployeeService");
+
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            employeeCalculation.employee = employee;
+            _logger.LogInformation("Employee file converted");
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+            employeeCalculation.Doj = employee.DateOfJoining;
+            employeeCalculation.IsFirstYearDeclaration = true;
+
+            if (employeeEmailMobileCheck.EmployeeCount > 0)
+                throw new HiringBellException("Employee already exists. Please login first and update detail.");
+
+            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+            _logger.LogInformation("Leaving method: RegisterEmployeeService");
+
+            return result;
+        }
+
         public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
         {
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
@@ -918,7 +939,7 @@ namespace ServiceLayer.Code
                 }
 
                 eCal.EmployeeId = Convert.ToInt64(employeeId);
-                if (fileCollection.Count > 0)
+                if (fileCollection != null && fileCollection.Count > 0)
                 {
                     var files = fileCollection.Select(x => new Files
                     {
@@ -930,13 +951,13 @@ namespace ServiceLayer.Code
 
                     var ownerPath = Path.Combine(_fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
                     _fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
- 
+
                     var fileInfo = (from n in files
                                     select new
                                     {
                                         FileId = n.FileUid,
                                         FileOwnerId = eCal.EmployeeId,
-                                        FileName = n.FileName.Contains(".") ? n.FileName : n.FileName+"."+n.FileExtension,
+                                        FileName = n.FileName.Contains(".") ? n.FileName : n.FileName + "." + n.FileExtension,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Employee,

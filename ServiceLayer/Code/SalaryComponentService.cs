@@ -246,7 +246,7 @@ namespace ServiceLayer.Code
                 salaryGrp.GroupDescription,
                 salaryGroup.MinAmount,
                 salaryGrp.MaxAmount,
-                salaryGroup.AdminId
+                AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");

@@ -18,6 +18,7 @@ public class ApplicationConstants
     public const int InNoticePeriod = 1;
     public const int InProbationPeriod = 2;
 
+    public static string AutoCalculation = "[AUTO]";
     public static string LastInsertedKey = "__PLACEHOLDER__";
     public static string LastInsertedNumericKey = "-999";
     public static string OrganizationId = "OrganizationId";

@@ -18,6 +18,7 @@ namespace ServiceLayer.Interface
         Employee GetEmployeeByIdService(int EmployeeId, int IsActive);
         List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive);
         Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
+        Task<DataSet> RegisterEmployeeByExcelService(Employee employee, IFormFileCollection fileCollection);
         Task<DataSet> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);

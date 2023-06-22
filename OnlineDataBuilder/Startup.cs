@@ -26,6 +26,8 @@ using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Code.PayrollCycle;
+using ServiceLayer.Code.PayrollCycle.Code;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using SocialMediaServices;
@@ -202,6 +204,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IPayrollService, PayrollService>();
             services.AddScoped<IShiftService, ShiftService>();
             services.AddScoped<WorkFlowChain>();
+            services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

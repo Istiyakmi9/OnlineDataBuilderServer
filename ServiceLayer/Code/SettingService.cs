@@ -90,7 +90,7 @@ namespace ServiceLayer.Code
 
         private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
         {
-            var ds = _db.GetDataSet("sp_salary_group_and_components_get", new {CompanyId = pfesiSetting.CompanyId});
+            var ds = _db.GetDataSet("sp_salary_group_and_components_get", new { CompanyId = pfesiSetting.CompanyId });
 
             if (!ds.IsValidDataSet(ds))
                 throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
@@ -172,7 +172,7 @@ namespace ServiceLayer.Code
                     IsExcludeWeeklyOffs = payroll.IsExcludeWeeklyOffs,
                     IsExcludeHolidays = payroll.IsExcludeHolidays,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
-                    DeclarationEndMonth = payroll.PayCycleMonth == 1 ? 12 : payroll.PayCycleMonth -1
+                    DeclarationEndMonth = payroll.PayCycleMonth == 1 ? 12 : payroll.PayCycleMonth - 1
                 },
                 true
             );
@@ -217,7 +217,11 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(componentId))
                 throw new HiringBellException("Invalid component passed.");
-            var formulavalue = calculateExpressionUsingInfixDS(component.Formula, 0);
+
+            decimal formulavalue = 0;
+            if (component.Formula != ApplicationConstants.AutoCalculation)
+                formulavalue = calculateExpressionUsingInfixDS(component.Formula, 0);
+
             SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = groupId });
             if (salaryGroup == null)
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
@@ -382,7 +386,8 @@ namespace ServiceLayer.Code
             }
 
             var exp = expressionStact.Aggregate((x, y) => x.ToString() + " " + y.ToString()).ToString();
-            return _postfixToInfixConversion.evaluatePostfix(exp);
+            // return _postfixToInfixConversion.evaluatePostfix(exp);
+            return declaredAmount;
         }
 
         public async Task<List<SalaryComponents>> ActivateCurrentComponentService(List<SalaryComponents> components)
