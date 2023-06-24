@@ -20,7 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 using File = System.IO.File;
 
 namespace ServiceLayer.Code
@@ -958,7 +957,7 @@ namespace ServiceLayer.Code
                     eCal.employeeSalaryDetail.CompleteSalaryDetail,
                     eCal.employeeSalaryDetail.TaxDetail,
                     employee.DOB,
-                    RegistrationDate = DateTime.UtcNow,
+                    RegistrationDate = eCal.Doj,
                     EmployeeDeclarationId = declarationId,
                     DeclarationDetail = GetDeclarationBasicFields(eCal.salaryComponents),
                     employee.WorkShiftId,

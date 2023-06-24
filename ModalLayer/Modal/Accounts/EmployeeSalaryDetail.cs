@@ -15,5 +15,6 @@ namespace ModalLayer.Modal.Accounts
         public int FinancialStartYear { get; set; }
         public bool IsCTCChanged { set; get; } = false;
         public DateTime DateOfJoining { set; get; }
+        public DateTime UpdatedOn { set; get; }
     }
 }

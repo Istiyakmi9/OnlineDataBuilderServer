@@ -1,6 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocMaker.ExcelMaker;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,7 +32,8 @@ namespace ServiceLayer.Code
         private readonly IComponentsCalculationService _componentsCalculationService;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILogger<DeclarationService> _logger;
-
+        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly ExcelWriter _excelWriter;
         public DeclarationService(IDb db,
             ILogger<DeclarationService> logger,
             IFileService fileService,
@@ -39,8 +42,9 @@ namespace ServiceLayer.Code
             IOptions<Dictionary<string, List<string>>> options,
             ISalaryComponentService salaryComponentService,
             IComponentsCalculationService componentsCalculationService,
-            ITimezoneConverter timezoneConverter
-            )
+            ITimezoneConverter timezoneConverter, 
+            IHostingEnvironment hostingEnvironment, 
+            ExcelWriter excelWriter)
         {
             _db = db;
             _logger = logger;
@@ -51,6 +55,8 @@ namespace ServiceLayer.Code
             _salaryComponentService = salaryComponentService;
             _componentsCalculationService = componentsCalculationService;
             _timezoneConverter = timezoneConverter;
+            _hostingEnvironment = hostingEnvironment;
+            _excelWriter = excelWriter;
         }
 
         public EmployeeDeclaration GetDeclarationByEmployee(long EmployeeId)
@@ -592,7 +598,7 @@ namespace ServiceLayer.Code
             List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
 
             // this is only for testing, comments below line once testing completed.
-            empCal.employee.IsCTCChanged = true;
+            // empCal.employee.IsCTCChanged = true;
             if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
@@ -856,7 +862,7 @@ namespace ServiceLayer.Code
                         TaxPaid = 0
                     });
                 }
-                else if (startDate.Month == doj.Month)
+                else if (startDate.Month == doj.Month && startDate.Year == doj.Year)
                 {
                     var daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
                     var workingDays = daysInMonth - eCal.Doj.Day + 1;
@@ -1494,6 +1500,38 @@ namespace ServiceLayer.Code
             }
 
             return employeeSalaryDetail;
+        }
+
+        public async Task<string> ExportDeclarationService(long EmployeeId)
+        {
+            if (EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee selected");
+
+            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, $"Employees_{EmployeeId}_Declaration_Excel");
+            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+
+            var filepath = Path.Combine(folderPath, $"Employees_{EmployeeId}_Declaration_Excel" + $".{ApplicationConstants.Excel}");
+            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, filepath);
+
+            if (File.Exists(destinationFilePath))
+                File.Delete(destinationFilePath);
+
+            var result = _db.Get<EmployeeDeclaration>("sp_employee_declaration_detail_get", new { EmployeeId = EmployeeId });
+            var declarationDetail = JsonConvert.DeserializeObject<List< SalaryComponents >>(result.DeclarationDetail);
+            List<string> header = new List<string>();
+            List<object> excelData = new List<object>();
+            header.Add("EmployeeId");
+            header.Add("Email");
+            excelData.Add(result.EmployeeId);
+            excelData.Add(result.Email);
+            declarationDetail.ForEach(n =>
+            {
+                header.Add(n.ComponentId + $" ({n.ComponentFullName})");
+                excelData.Add(n.DeclaredValue);
+            });
+            _excelWriter.ToExcelWithHeaderAnddata(header, excelData, destinationFilePath);
+            return await Task.FromResult(filepath);
         }
     }
 }
