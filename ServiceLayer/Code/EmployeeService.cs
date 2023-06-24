@@ -548,7 +548,7 @@ namespace ServiceLayer.Code
             return employees;
         }
 
-        public async Task<DataSet> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection)
+        public async Task<string> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection)
         {
             if (employee.EmployeeUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
@@ -572,7 +572,7 @@ namespace ServiceLayer.Code
             return await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
         }
 
-        public async Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
+        public async Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
 
@@ -587,13 +587,13 @@ namespace ServiceLayer.Code
             if (employeeEmailMobileCheck.EmployeeCount > 0)
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
-            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
-            _logger.LogInformation("Leaving method: RegisterEmployeeService");
+            await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
 
-            return result;
+            _logger.LogInformation("Leaving method: RegisterEmployeeService");
+            return ApplicationConstants.Successfull;
         }
 
-        public async Task<DataSet> RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
+        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
 
@@ -610,39 +610,39 @@ namespace ServiceLayer.Code
 
             var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
 
-            string componentId = string.Empty;
-            Employee temp = Converter.ToType<Employee>(result.Tables[0]);
-            Employee emp = _db.Get<Employee>("sp_employee_and_declaration_get_byid", new { EmployeeId = temp.EmployeeUid });
-
-            foreach (var item in uploaded.Investments)
+            if (!string.IsNullOrEmpty(result))
             {
-                var values = item.Key.Split(" (");
-                if (values.Length > 0)
-                {
-                    componentId = values[0].Trim();
-                    EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
-                    {
-                        ComponentId = componentId,
-                        DeclaredValue = item.Value,
-                        Email = emp.Email,
-                        EmployeeId = emp.EmployeeUid
-                    };
+                string componentId = string.Empty;
+                long employeeId = Convert.ToInt64(result);
+                Employee emp = _db.Get<Employee>("sp_employee_and_declaration_get_byid", new { EmployeeId = employeeId });
 
-                    try
+                foreach (var item in uploaded.Investments)
+                {
+                    var values = item.Key.Split(" (");
+                    if (values.Length > 0)
                     {
-                        await _declarationService.UpdateDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclaration, null, null);
-                    }
-                    catch
-                    {
-                        _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
+                        componentId = values[0].Trim();
+                        EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+                        {
+                            ComponentId = componentId,
+                            DeclaredValue = item.Value,
+                            Email = emp.Email,
+                            EmployeeId = emp.EmployeeUid
+                        };
+
+                        try
+                        {
+                            await _declarationService.UpdateDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclaration, null, null);
+                        }
+                        catch
+                        {
+                            _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
+                        }
                     }
                 }
             }
 
-
             _logger.LogInformation("Leaving method: RegisterEmployeeService");
-
-            return result;
         }
 
         public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
@@ -834,7 +834,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task<DataSet> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection)
+        private async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection)
         {
             try
             {
@@ -1003,8 +1003,8 @@ namespace ServiceLayer.Code
                     var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }
 
-                var ResultSet = this.GetManageEmployeeDetailService(eCal.EmployeeId);
-                return ResultSet;
+                // var ResultSet = this.GetManageEmployeeDetailService(eCal.EmployeeId);
+                return employeeId;
             }
             catch
             {

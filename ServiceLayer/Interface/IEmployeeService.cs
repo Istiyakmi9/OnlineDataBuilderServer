@@ -17,9 +17,9 @@ namespace ServiceLayer.Interface
         DataSet UpdateEmployeeMappedClientDetailService(EmployeeMappedClient employeeMappedClient, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, int IsActive);
         List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive);
-        Task<DataSet> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
-        Task<DataSet> RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp, IFormFileCollection fileCollection);
-        Task<DataSet> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
+        Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
+        Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp, IFormFileCollection fileCollection);
+        Task<string> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
         Task<string> ExportEmployeeService(int CompanyId, int FileType);
