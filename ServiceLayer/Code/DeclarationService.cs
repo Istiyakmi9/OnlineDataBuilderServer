@@ -576,7 +576,7 @@ namespace ServiceLayer.Code
             List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
 
             // this is only for testing, comments below line once testing completed.
-            empCal.employee.IsCTCChanged = true;
+            // empCal.employee.IsCTCChanged = true;
             if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
@@ -840,7 +840,7 @@ namespace ServiceLayer.Code
                         TaxPaid = 0
                     });
                 }
-                else if (startDate.Month == doj.Month)
+                else if (startDate.Month == doj.Month && startDate.Year == doj.Year)
                 {
                     var daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
                     var workingDays = daysInMonth - eCal.Doj.Day + 1;

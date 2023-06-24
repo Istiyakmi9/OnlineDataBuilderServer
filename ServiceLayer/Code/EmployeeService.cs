@@ -927,7 +927,7 @@ namespace ServiceLayer.Code
                     eCal.employeeSalaryDetail.CompleteSalaryDetail,
                     eCal.employeeSalaryDetail.TaxDetail,
                     employee.DOB,
-                    RegistrationDate = DateTime.UtcNow,
+                    RegistrationDate = eCal.Doj,
                     EmployeeDeclarationId = declarationId,
                     DeclarationDetail = GetDeclarationBasicFields(eCal.salaryComponents),
                     employee.WorkShiftId,

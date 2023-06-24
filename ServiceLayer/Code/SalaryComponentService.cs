@@ -1213,10 +1213,10 @@ namespace ServiceLayer.Code
             return annualSalaryBreakups;
         }
 
-        public EmployeeSalaryDetail GetSalaryBreakupByEmpIdService(long EmployeeId)
+        public dynamic GetSalaryBreakupByEmpIdService(long EmployeeId)
         {
-            EmployeeSalaryDetail completeSalaryBreakup = _db.Get<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId });
-            return completeSalaryBreakup;
+            (EmployeeSalaryDetail completeSalaryBreakup, UserDetail userDetail) = _db.GetMulti<EmployeeSalaryDetail, UserDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId });
+            return new { completeSalaryBreakup, userDetail };
         }
 
         public SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId)
