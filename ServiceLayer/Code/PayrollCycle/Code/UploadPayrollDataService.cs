@@ -3,7 +3,6 @@ using BottomhalfCore.Services.Code;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
@@ -59,6 +58,12 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 foreach (UploadedPayrollData e in emps)
                 {
                     var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
+                    if (emps.FindAll(x => x.Email == e.Email).Count > 1)
+                        throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is duplicate.");
+
+                    if (emps.FindAll(x => x.Mobile == e.Mobile).Count > 1)
+                        throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is duplicate.");
+
                     if (em != null)
                     {
                         if (e.CTC > 0)
@@ -70,6 +75,18 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                     }
                     else
                     {
+                        EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
+                        {
+                            Mobile = e.Mobile,
+                            Email = e.Email
+                        });
+
+                        if (employeeEmailMobileCheck.MobileCount > 0)
+                            throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is already exist.");
+
+                        if (employeeEmailMobileCheck.EmailCount > 0)
+                            throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
+
                         await RegisterNewEmployee(e);
                     }
                 }
