@@ -49,6 +49,71 @@ namespace DocMaker.ExcelMaker
             spreadsheetDocument.Close();
         }
 
+        public void ToExcelWithHeaderAnddata(List<string> header, List<object> data, string filepath, string sheetName = null)
+        {
+            // Create a spreadsheet document by supplying the filepath.
+            // By default, AutoSave = true, Editable = true, and Type = xlsx.
+            SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.
+                Create(filepath, SpreadsheetDocumentType.Workbook);
+
+            // Add a WorkbookPart to the document.
+            WorkbookPart workbookpart = spreadsheetDocument.AddWorkbookPart();
+            workbookpart.Workbook = new Workbook();
+
+            // Add a WorksheetPart to the WorkbookPart.
+            WorksheetPart worksheetPart = workbookpart.AddNewPart<WorksheetPart>();
+            var sheetData = new SheetData();
+            worksheetPart.Worksheet = new Worksheet(sheetData);
+
+            // Add Sheets to the Workbook.
+            Sheets sheets = spreadsheetDocument.WorkbookPart.Workbook.
+                AppendChild<Sheets>(new Sheets());
+
+            // Append a new worksheet and associate it with the workbook.
+            Sheet sheet = new Sheet()
+            {
+                Id = spreadsheetDocument.WorkbookPart.
+                GetIdOfPart(worksheetPart),
+                SheetId = 1,
+                Name = sheetName == null ? "mySheet" : sheetName
+            };
+            sheets.Append(sheet);
+
+            BuildExcelRowsWithHeader(sheetData, header, data);
+
+            workbookpart.Workbook.Save();
+
+            // Close the document.
+            spreadsheetDocument.Close();
+        }
+
+        private void BuildExcelRowsWithHeader(SheetData sheetData, List<string> header, List<object> data)
+        {
+            Row headerRow = new Row();
+
+            List<String> columns = new List<string>();
+            foreach (var column in header)
+            {
+                columns.Add(column);
+
+                Cell cell = new Cell();
+                cell.DataType = CellValues.String;
+                cell.CellValue = new CellValue(column);
+                headerRow.AppendChild(cell);
+            }
+
+            sheetData.AppendChild(headerRow);
+            Row newRow = new Row();
+            foreach (var dsrow in data)
+            {
+                Cell cell = new Cell();
+                cell.DataType = CellValues.String;
+                cell.CellValue = new CellValue(dsrow.ToString());
+                newRow.AppendChild(cell);
+            }
+            sheetData.AppendChild(newRow);
+        }
+
         private void BuildExcelRows(SheetData sheetData, DataTable table)
         {
             Row headerRow = new Row();
