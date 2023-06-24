@@ -4,6 +4,7 @@ using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.PayrollCycle.Code
@@ -104,7 +106,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 OrganizationId = 1,
                 LeavePlanId = 1,
                 PayrollGroupId = 0,
-                SalaryGroupId = 1,
+                SalaryGroupId = 6,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 NoticePeriodId = 0,
                 FatherName = "NA",
@@ -127,7 +129,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 DateOfJoining = emp.DOJ,
                 DOB = new DateTime(1990, 5, 16),
                 WorkShiftId = 1,
-                IsCTCChanged = true,               
+                IsCTCChanged = true,
             };
 
             var Names = emp.EmployeeName.Split(' ');
@@ -142,7 +144,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 employee.LastName = "NA";
             }
 
-            await _employeeService.RegisterEmployeeByExcelService(employee, null);
+            await _employeeService.RegisterEmployeeByExcelService(employee, emp, null);
         }
 
         private async Task<List<UploadedPayrollData>> ReadPayrollExcelData(IFormFileCollection files)
@@ -171,11 +173,11 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                                 }
                             });
 
-                            dataTable = result.Tables[0];
+                            dataTable = result.Tables[1];
 
                             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-                            uploadedPayrollList = Converter.MapToList<UploadedPayrollData>(dataTable);
+                            uploadedPayrollList = MapEmployeePayAndInvestment(dataTable);
                         }
                     }
                     else
@@ -186,6 +188,145 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             }
 
             return uploadedPayrollList;
+        }
+
+        public static List<UploadedPayrollData> MapEmployeePayAndInvestment(DataTable table)
+        {
+            string TypeName = string.Empty;
+            DateTime date = DateTime.Now;
+            DateTime defaultDate = Convert.ToDateTime("1976-01-01");
+            List<UploadedPayrollData> items = new List<UploadedPayrollData>();
+
+            try
+            {
+                List<PropertyInfo> props = typeof(UploadedPayrollData).GetProperties().ToList();
+                List<string> fieldNames = ValidateHeaders(table, props);
+                Dictionary<string, decimal> investments = null;
+
+                if (table.Rows.Count > 0)
+                {
+                    int i = 0;
+                    DataRow dr = null;
+                    while (i < table.Rows.Count)
+                    {
+                        dr = table.Rows[i];
+
+                        investments = new Dictionary<string, decimal>();
+                        UploadedPayrollData t = new UploadedPayrollData();
+                        fieldNames.ForEach(n =>
+                        {
+                            var x = props.Find(i => i.Name == n);
+                            if (x != null)
+                            {
+                                try
+                                {
+                                    if (x.PropertyType.IsGenericType)
+                                        TypeName = x.PropertyType.GenericTypeArguments.First().Name;
+                                    else
+                                        TypeName = x.PropertyType.Name;
+
+                                    switch (TypeName)
+                                    {
+                                        case nameof(Boolean):
+                                            x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            break;
+                                        case nameof(Int32):
+                                            x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            break;
+                                        case nameof(Int64):
+                                            x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            break;
+                                        case nameof(Decimal):
+                                            x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            break;
+                                        case nameof(String):
+                                            x.SetValue(t, dr[x.Name].ToString());
+                                            break;
+                                        case nameof(DateTime):
+                                            if (dr[x.Name].ToString() != null)
+                                            {
+                                                date = Convert.ToDateTime(dr[x.Name].ToString());
+                                                date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                                                x.SetValue(t, date);
+                                            }
+                                            else
+                                            {
+                                                x.SetValue(t, defaultDate);
+                                            }
+                                            break;
+                                        default:
+                                            x.SetValue(t, dr[x.Name]);
+                                            break;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw ex;
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    var value = Convert.ToDecimal(dr[n]);
+                                    investments.Add(n, value);
+                                }
+                                catch
+                                {
+                                    investments.Add(n, 0);
+                                }
+                            }
+                        });
+
+                        t.Investments = investments;
+                        items.Add(t);
+                        i++;
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return items;
+        }
+
+        private static List<string> ValidateHeaders(DataTable table, List<PropertyInfo> fileds)
+        {
+            List<string> header = new List<string>();
+            List<string> columnList = new List<string>();
+
+            foreach (DataColumn column in table.Columns)
+            {
+                if (!column.ColumnName.ToLower().Contains("column"))
+                {
+                    if (!columnList.Contains(column.ColumnName))
+                    {
+                        columnList.Add(column.ColumnName);
+                    }
+                    else
+                    {
+                        throw HiringBellException.ThrowBadRequest($"Multiple header found \"{column.ColumnName}\" field.");
+                    }
+                }
+            }
+
+            foreach (PropertyInfo pinfo in fileds)
+            {
+                if (pinfo.Name != "Investments")
+                {
+                    var field = columnList.Find(x => x == pinfo.Name);
+                    if (field == null)
+                        throw HiringBellException.ThrowBadRequest($"Excel doesn't contain \"{field}\" field.");
+                }
+            }
+
+            return columnList;
         }
     }
 }

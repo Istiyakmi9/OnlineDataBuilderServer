@@ -71,11 +71,12 @@ namespace ServiceLayer.Code
             {
                 declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
                 salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
-                if (salaryComponent.MaxLimit > 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
-                    throw new HiringBellException("Your declared value is greater than maximum limit");
-
+                
                 if (salaryComponent == null)
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
+
+                if (salaryComponent.MaxLimit > 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
+                    throw new HiringBellException("Your declared value is greater than maximum limit");
 
                 if (employeeDeclaration.DeclaredValue < 0)
                     throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
@@ -203,6 +204,21 @@ namespace ServiceLayer.Code
             return await Task.FromResult(employeeDeclaration);
         }
 
+        public async Task<EmployeeDeclaration> GetEmployeeIncomeDetailService(FilterModel filterModel)
+        {
+            EmployeeDeclaration employees = null;
+            if (string.IsNullOrEmpty(filterModel.SearchString))
+                filterModel.SearchString = "1=1";
+
+
+            if (filterModel.CompanyId > 0)
+                filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+            else
+                filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
+
+            return await Task.FromResult(employees);
+        }
+
         private async Task UpdateDeclarationDetail(List<Files> files, EmployeeDeclaration declaration, IFormFileCollection FileCollection, HousingDeclartion housingDeclartion)
         {
             SalaryComponents salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == housingDeclartion.ComponentId);
@@ -220,7 +236,7 @@ namespace ServiceLayer.Code
             {
                 DbResult Result = null;
                 List<int> fileIds = new List<int>();
-                if (FileCollection.Count > 0)
+                if (FileCollection != null && FileCollection.Count > 0)
                 {
                     if (string.IsNullOrEmpty(declaration.DocumentPath))
                     {

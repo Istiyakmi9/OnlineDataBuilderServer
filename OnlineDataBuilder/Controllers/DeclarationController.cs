@@ -129,5 +129,12 @@ namespace OnlineDataBuilder.Controllers
             var result = await _declarationService.EmptyEmpDeclarationService();
             return BuildResponse(result);
         }
+
+        [HttpGet("GetEmployeeIncomeDetail")]
+        public async Task<ApiResponse> GetEmployeeIncomeDetail([FromBody] FilterModel filterModel)
+        {
+            var result = await _declarationService.GetEmployeeIncomeDetailService(filterModel);
+            return BuildResponse(result);
+        }
     }
 }

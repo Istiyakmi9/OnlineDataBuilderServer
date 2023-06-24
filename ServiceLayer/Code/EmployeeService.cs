@@ -594,7 +594,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<DataSet> RegisterEmployeeByExcelService(Employee employee, IFormFileCollection fileCollection)
+        public async Task<DataSet> RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
 
@@ -610,6 +610,37 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Employee already exists. Please login first and update detail.");
 
             var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+
+            string componentId = string.Empty;
+            Employee temp = Converter.ToType<Employee>(result.Tables[0]);
+            Employee emp = _db.Get<Employee>("sp_employee_and_declaration_get_byid", new { EmployeeId = temp.EmployeeUid });
+
+            foreach (var item in uploaded.Investments)
+            {
+                var values = item.Key.Split(" (");
+                if (values.Length > 0)
+                {
+                    componentId = values[0].Trim();
+                    EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+                    {
+                        ComponentId = componentId,
+                        DeclaredValue = item.Value,
+                        Email = emp.Email,
+                        EmployeeId = emp.EmployeeUid
+                    };
+
+                    try
+                    {
+                        await _declarationService.UpdateDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclaration, null, null);
+                    }
+                    catch
+                    {
+                        _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
+                    }
+                }
+            }
+
+
             _logger.LogInformation("Leaving method: RegisterEmployeeService");
 
             return result;
