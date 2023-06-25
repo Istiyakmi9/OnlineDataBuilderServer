@@ -1,6 +1,7 @@
 ﻿using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
@@ -29,5 +30,6 @@ namespace ServiceLayer.Interface
         SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId);
         List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation empCal);
         List<SalaryComponents> GetBonusComponentsService();
+        DataSet GetAllSalaryDetailService(FilterModel filterModel);
     }
 }

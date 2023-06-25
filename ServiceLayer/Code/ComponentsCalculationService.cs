@@ -412,6 +412,7 @@ namespace ServiceLayer.Code
             else
             {
                 component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
+                HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
                 if (component != null)
                     totalDeduction = component.FinalAmount * totalMonths;
             }

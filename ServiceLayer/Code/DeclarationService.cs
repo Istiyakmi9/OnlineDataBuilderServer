@@ -79,13 +79,13 @@ namespace ServiceLayer.Code
                 salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
                 
                 if (salaryComponent == null)
-                    throw new HiringBellException("Requested component not found. Please contact to admin.");
+                    throw HiringBellException.ThrowBadRequest("Requested component not found. Please contact to admin.");
 
                 if (salaryComponent.MaxLimit > 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
-                    throw new HiringBellException("Your declared value is greater than maximum limit");
+                    throw HiringBellException.ThrowBadRequest("Your declared value is greater than maximum limit");
 
                 if (employeeDeclaration.DeclaredValue < 0)
-                    throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
+                    throw HiringBellException.ThrowBadRequest("Declaration value must be greater than 0. Please check your detail once.");
 
                 salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
 
@@ -105,7 +105,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                throw new HiringBellException("Requested component not found. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Requested component not found. Please contact to admin.");
             }
 
             await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
@@ -182,7 +182,7 @@ namespace ServiceLayer.Code
         {
             List<Files> files = default;
             if (EmployeeId <= 0)
-                throw new HiringBellException("Invalid employee selected. Please select a valid employee");
+                throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a valid employee");
 
             if (_currentSession.TimeZoneNow == null)
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
@@ -194,7 +194,7 @@ namespace ServiceLayer.Code
             });
 
             if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
-                throw new HiringBellException("Unable to get the detail");
+                throw HiringBellException.ThrowBadRequest("Unable to get the detail");
 
             EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
             if (employeeDeclaration == null)
@@ -269,7 +269,7 @@ namespace ServiceLayer.Code
                         }, true);
 
                         if (Result.rowsEffected < 0)
-                            throw new HiringBellException("Fail to update documents. Please contact to admin.");
+                            throw HiringBellException.ThrowBadRequest("Fail to update documents. Please contact to admin.");
 
                         fileIds.Add(Convert.ToInt32(Result.statusMessage));
                     }
@@ -292,7 +292,7 @@ namespace ServiceLayer.Code
                 }, true);
 
                 if (!Bot.IsSuccess(Result))
-                    throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+                    throw HiringBellException.ThrowBadRequest("Fail to update housing property document detail. Please contact to admin.");
             }
             catch
             {
@@ -1184,7 +1184,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<List<PreviousEmployementDetail>> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail)
+        public async Task<DataSet> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail)
         {
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
@@ -1335,13 +1335,18 @@ namespace ServiceLayer.Code
             });
         }
 
-        public async Task<List<PreviousEmployementDetail>> GetPreviousEmployemntService(int EmployeeId)
+        public async Task<DataSet> GetPreviousEmployemntService(int EmployeeId)
         {
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var employementDetails = _db.GetList<PreviousEmployementDetail>("sp_previous_employement_details_by_empid", new { EmployeeId = EmployeeId });
-            return await Task.FromResult(employementDetails);
+            var result = _db.FetchDataSet("sp_previous_employement_details_by_empid", new { 
+                EmployeeId = EmployeeId , 
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                });
+            result.Tables[0].TableName = "PreviousSalary";
+            result.Tables[1].TableName = "Employee";
+            return await Task.FromResult(result) ;
         }
 
         public async Task<string> EmptyEmpDeclarationService()

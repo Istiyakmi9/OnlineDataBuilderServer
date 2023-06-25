@@ -177,5 +177,13 @@ namespace OnlineDataBuilder.Controllers
             var result = _salaryComponentService.GetBonusComponentsService();
             return BuildResponse(result);
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("GetAllSalaryDetail")]
+        public IResponse<ApiResponse> GetAllSalaryDetail([FromBody] FilterModel filterModel)
+        {
+            var result = _salaryComponentService.GetAllSalaryDetailService(filterModel);
+            return BuildResponse(result);
+        }
     }
 }
