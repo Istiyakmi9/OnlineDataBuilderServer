@@ -3,6 +3,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
@@ -23,9 +24,9 @@ namespace ServiceLayer.Interface
         Task<EmployeeDeclaration> DeleteDeclaredHRAService(long DeclarationId);
         Task<EmployeeDeclaration> DeleteDeclarationFileService(long DeclarationId, int FileId, string ComponentId);
         Task<EmployeeSalaryDetail> CalculateSalaryNDeclaration(EmployeeCalculation empCal, bool reCalculateFlag);
-        Task<List<PreviousEmployementDetail>> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail);
+        Task<DataSet> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail);
         Task<dynamic> GetPreviousEmployemntandEmpService(int EmployeeId);
-        Task<List<PreviousEmployementDetail>> GetPreviousEmployemntService(int EmployeeId);
+        Task<DataSet> GetPreviousEmployemntService(int EmployeeId);
         Task<string> EmptyEmpDeclarationService();
         Task<string> ExportDeclarationService(long EmployeeId);
     }
