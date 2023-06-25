@@ -73,7 +73,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                         {
                             em.CTC = e.CTC;
                             em.IsCTCChanged = true;
-                            await _employeeService.UpdateEmployeeService(em, null);
+                            await _employeeService.UpdateEmployeeByExcelService(em, null, null);
                         }
                     }
                     else

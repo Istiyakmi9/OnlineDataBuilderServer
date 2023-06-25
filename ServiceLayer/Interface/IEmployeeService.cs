@@ -20,6 +20,7 @@ namespace ServiceLayer.Interface
         Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
         Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp, IFormFileCollection fileCollection);
         Task<string> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
+        Task<string> UpdateEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
         Task<string> ExportEmployeeService(int CompanyId, int FileType);

@@ -18,6 +18,9 @@ public class ApplicationConstants
     public const int InNoticePeriod = 1;
     public const int InProbationPeriod = 2;
 
+    public static int Limit_80C = 150000;
+    public static string NPS_Section = "80CCD(1)";
+    public static int NPS_Allowed_Limit = 50000;
     public static string AutoCalculation = "[AUTO]";
     public static string LastInsertedKey = "__PLACEHOLDER__";
     public static string LastInsertedNumericKey = "-999";

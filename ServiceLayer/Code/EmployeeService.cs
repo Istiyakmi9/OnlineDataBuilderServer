@@ -593,58 +593,6 @@ namespace ServiceLayer.Code
             return ApplicationConstants.Successfull;
         }
 
-        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
-        {
-            _logger.LogInformation("Starting method: RegisterEmployeeService");
-
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            employeeCalculation.employee = employee;
-            _logger.LogInformation("Employee file converted");
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            employeeCalculation.Doj = employee.DateOfJoining;
-            employeeCalculation.IsFirstYearDeclaration = true;
-
-            if (employeeEmailMobileCheck.EmployeeCount > 0)
-                throw new HiringBellException("Employee already exists. Please login first and update detail.");
-
-            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
-
-            if (!string.IsNullOrEmpty(result))
-            {
-                string componentId = string.Empty;
-                long employeeId = Convert.ToInt64(result);
-                Employee emp = _db.Get<Employee>("sp_employee_and_declaration_get_byid", new { EmployeeId = employeeId });
-
-                foreach (var item in uploaded.Investments)
-                {
-                    var values = item.Key.Split(" (");
-                    if (values.Length > 0)
-                    {
-                        componentId = values[0].Trim();
-                        EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
-                        {
-                            ComponentId = componentId,
-                            DeclaredValue = item.Value,
-                            Email = emp.Email,
-                            EmployeeId = emp.EmployeeUid
-                        };
-
-                        try
-                        {
-                            await _declarationService.UpdateDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclaration, null, null);
-                        }
-                        catch
-                        {
-                            _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
-                        }
-                    }
-                }
-            }
-
-            _logger.LogInformation("Leaving method: RegisterEmployeeService");
-        }
-
         public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
         {
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
@@ -1464,6 +1412,107 @@ namespace ServiceLayer.Code
             }
 
             return await Task.FromResult(status);
+        }
+
+        public async Task<string> UpdateEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
+        {
+            if (employee.EmployeeUid <= 0)
+                throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
+
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            employeeCalculation.employee = employee;
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+            employeeCalculation.Doj = employee.DateOfJoining;
+            employeeCalculation.IsFirstYearDeclaration = false;
+
+            if (employeeEmailMobileCheck.EmployeeCount == 0)
+                throw new HiringBellException("Employee record not found. Please contact to admin.");
+
+            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+
+            if (!string.IsNullOrEmpty(result))
+            {
+                List<EmployeeDeclaration> employeeDeclarations = new List<EmployeeDeclaration>();
+                string componentId = string.Empty;
+                foreach (var item in uploaded.Investments)
+                {
+                    var values = item.Key.Split(" (");
+                    if (values.Length > 0)
+                    {
+                        componentId = values[0].Trim();
+                        EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+                        {
+                            ComponentId = componentId,
+                            DeclaredValue = item.Value,
+                            Email = employee.Email,
+                            EmployeeId = employee.EmployeeUid
+                        };
+                    }
+                }
+                try
+                {
+                    await _declarationService.UpdateBulkDeclarationDetail(employee.EmployeeDeclarationId, employeeDeclarations);
+                }
+                catch
+                {
+                    _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {employee.EmployeeDeclarationId}");
+                }
+            }
+            return null;
+        }
+
+        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
+        {
+            _logger.LogInformation("Starting method: RegisterEmployeeService");
+
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            employeeCalculation.employee = employee;
+            _logger.LogInformation("Employee file converted");
+            this.GetEmployeeDetail(employeeCalculation);
+            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+            employeeCalculation.Doj = employee.DateOfJoining;
+            employeeCalculation.IsFirstYearDeclaration = true;
+
+            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+
+            if (!string.IsNullOrEmpty(result))
+            {
+                string componentId = string.Empty;
+                long employeeId = Convert.ToInt64(result);
+
+                List<EmployeeDeclaration> employeeDeclarations = new List<EmployeeDeclaration>();
+                Employee emp = _db.Get<Employee>("sp_employee_and_declaration_get_byid", new { EmployeeId = employeeId });
+
+                foreach (var item in uploaded.Investments)
+                {
+                    var values = item.Key.Split(" (");
+                    if (values.Length > 0)
+                    {
+                        componentId = values[0].Trim();
+                        EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
+                        {
+                            ComponentId = componentId,
+                            DeclaredValue = item.Value,
+                            Email = emp.Email,
+                            EmployeeId = emp.EmployeeUid,
+                            EmployeeDeclarationId = emp.EmployeeDeclarationId
+                        };
+                        employeeDeclarations.Add(employeeDeclaration);
+                    }
+                }
+
+
+                try
+                {
+                    await _declarationService.UpdateBulkDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclarations);
+                }
+                catch
+                {
+                    _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
+                }
+            }
+
+            _logger.LogInformation("Leaving method: RegisterEmployeeService");
         }
     }
 }

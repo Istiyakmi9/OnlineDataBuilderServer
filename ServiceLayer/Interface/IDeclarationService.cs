@@ -12,6 +12,7 @@ namespace ServiceLayer.Interface
         EmployeeDeclaration GetDeclarationByEmployee(long EmployeeId);
         EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId);
         Task<EmployeeDeclaration> UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> fileDetail);
+        Task UpdateBulkDeclarationDetail(long EmployeeDeclarationId, List<EmployeeDeclaration> employeeDeclaration);
         Task<EmployeeDeclaration> HouseRentDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> fileDetail);
         Task<EmployeeDeclaration> GetEmployeeDeclarationDetail(long EmployeeId, bool reCalculateFlag = false);
         Task<EmployeeDeclaration> GetEmployeeIncomeDetailService(FilterModel filterModel);

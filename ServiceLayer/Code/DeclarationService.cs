@@ -42,8 +42,8 @@ namespace ServiceLayer.Code
             IOptions<Dictionary<string, List<string>>> options,
             ISalaryComponentService salaryComponentService,
             IComponentsCalculationService componentsCalculationService,
-            ITimezoneConverter timezoneConverter, 
-            IHostingEnvironment hostingEnvironment, 
+            ITimezoneConverter timezoneConverter,
+            IHostingEnvironment hostingEnvironment,
             ExcelWriter excelWriter)
         {
             _db = db;
@@ -77,7 +77,7 @@ namespace ServiceLayer.Code
             {
                 declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
                 salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
-                
+
                 if (salaryComponent == null)
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
 
@@ -1518,7 +1518,7 @@ namespace ServiceLayer.Code
                 File.Delete(destinationFilePath);
 
             var result = _db.Get<EmployeeDeclaration>("sp_employee_declaration_detail_get", new { EmployeeId = EmployeeId });
-            var declarationDetail = JsonConvert.DeserializeObject<List< SalaryComponents >>(result.DeclarationDetail);
+            var declarationDetail = JsonConvert.DeserializeObject<List<SalaryComponents>>(result.DeclarationDetail);
             List<string> header = new List<string>();
             List<object> excelData = new List<object>();
             header.Add("EmployeeId");
@@ -1532,6 +1532,80 @@ namespace ServiceLayer.Code
             });
             _excelWriter.ToExcelWithHeaderAnddata(header, excelData, destinationFilePath);
             return await Task.FromResult(filepath);
+        }
+
+        public async Task UpdateBulkDeclarationDetail(long EmployeeDeclarationId, List<EmployeeDeclaration> employeeDeclarationList)
+        {
+            IFormFileCollection FileCollection = null;
+            List<Files> files = null;
+            EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
+            SalaryComponents salaryComponent = null;
+
+            EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            if (declaration.EmployeeCurrentRegime != 1)
+                throw HiringBellException.ThrowBadRequest("You can't submit the declration because you selected new tax regime");
+
+            _sections.TryGetValue(ApplicationConstants.ExemptionDeclaration, out List<string> taxexemptSection);
+            bool isExtara_50k_Allowed = false; 
+            declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
+            foreach (var employeeDeclaration in employeeDeclarationList)
+            {
+                try
+                {
+                    declaration.Email = employeeDeclaration.Email;
+                    if (declaration != null && !string.IsNullOrEmpty(declaration.DeclarationDetail))
+                    {
+                        salaryComponent = declaration.SalaryComponentItems.Find(x => x.ComponentId == employeeDeclaration.ComponentId);
+
+                        if (salaryComponent == null)
+                            throw new HiringBellException("Requested component not found. Please contact to admin.");
+
+                        if (salaryComponent.MaxLimit > 0 && employeeDeclaration.DeclaredValue > salaryComponent.MaxLimit)
+                            throw new HiringBellException("Your declared value is greater than maximum limit");
+
+                        if (employeeDeclaration.DeclaredValue < 0)
+                            throw new HiringBellException("Declaration value must be greater than 0. Please check your detail once.");
+
+                        salaryComponent.DeclaredValue = employeeDeclaration.DeclaredValue;
+
+                        if (salaryComponent.DeclaredValue > 0)
+                        {
+                            var maxLimit = ApplicationConstants.Limit_80C;
+                            employeeDeclaration.ExemptionDeclaration = declaration.SalaryComponentItems
+                                .FindAll(i => i.Section != null && taxexemptSection.Contains(i.Section));
+                            var totalAmountDeclared = employeeDeclaration.ExemptionDeclaration.Sum(a => a.DeclaredValue);
+                            var npsComponent = employeeDeclaration.ExemptionDeclaration.Find(x => x.Section == ApplicationConstants.NPS_Section);
+
+                            if (salaryComponent.Section == ApplicationConstants.NPS_Section && !isExtara_50k_Allowed)
+                            {
+                                maxLimit += ApplicationConstants.NPS_Allowed_Limit;
+                                isExtara_50k_Allowed = true;
+                            }
+                            else
+                            {
+                                totalAmountDeclared = totalAmountDeclared - npsComponent.DeclaredValue;
+                            }
+
+                            if (totalAmountDeclared > maxLimit)
+                            {
+                                salaryComponent.DeclaredValue = 0;
+                                throw HiringBellException.ThrowBadRequest("Your limit for this section is exceed from maximum limit");
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Requested component: {employeeDeclaration.ComponentId} found. Please contact to admin.");
+                    }
+                }
+                catch
+                {
+                    _logger.LogInformation($"Requested component: {employeeDeclaration.ComponentId} found.");
+                }
+            }
+
+            await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
         }
     }
 }
