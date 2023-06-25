@@ -1352,7 +1352,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                filterModel.SearchString += $"and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
+                filterModel.SearchString += $" and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
             }
 
             var result = _db.FetchDataSet("sp_employee_salary_detail_getbyFilter", filterModel);
