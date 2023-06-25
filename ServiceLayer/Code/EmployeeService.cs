@@ -86,7 +86,7 @@ namespace ServiceLayer.Code
             List<Organization> organizations = _db.GetList<Organization>("sp_company_get");
 
             if (employees.Count == 0 || organizations.Count == 0)
-                throw new HiringBellException("Unable to get employee and company detail. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Unable to get employee and company detail. Please contact to admin.");
 
             return new { Employees = employees, Organizations = organizations };
         }
@@ -192,7 +192,7 @@ namespace ServiceLayer.Code
             });
 
             if (employees == null)
-                throw new HiringBellException("Unable to load employee list data.");
+                throw HiringBellException.ThrowBadRequest("Unable to load employee list data.");
 
             return employees;
         }
@@ -205,7 +205,7 @@ namespace ServiceLayer.Code
             });
 
             if (result == null || result.Tables.Count != 2)
-                throw new HiringBellException("Unable to get data.");
+                throw HiringBellException.ThrowBadRequest("Unable to get data.");
             else
             {
                 result.Tables[0].TableName = "Employees";
@@ -223,7 +223,7 @@ namespace ServiceLayer.Code
             });
 
             if (result == null || result.Tables.Count != 1)
-                throw new HiringBellException("Unable to get data.");
+                throw HiringBellException.ThrowBadRequest("Unable to get data.");
             else
             {
                 result.Tables[0].TableName = "AllocatedClients";
@@ -342,7 +342,7 @@ namespace ServiceLayer.Code
         {
             DataSet ds = _db.FetchDataSet("sp_Employee_GetCompleteDetail", new { EmployeeId = EmployeeId });
             if (ds.Tables.Count != 10)
-                throw new HiringBellException("Unable to get employee completed detail");
+                throw HiringBellException.ThrowBadRequest("Unable to get employee completed detail");
 
             EmployeeCompleteDetailModal employeeCompleteDetailModal = new EmployeeCompleteDetailModal
             {
@@ -384,7 +384,7 @@ namespace ServiceLayer.Code
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to dea-active the employee. Please contact to admin");
+                throw HiringBellException.ThrowBadRequest("Unable to dea-active the employee. Please contact to admin");
 
             return result;
         }
@@ -393,7 +393,7 @@ namespace ServiceLayer.Code
         {
             EmployeeArchiveModal employeeArchiveDetail = GetEmployeeArcheiveCompleteDetail(EmployeeId);
             if (employeeArchiveDetail == null)
-                throw new HiringBellException("No record found");
+                throw HiringBellException.ThrowBadRequest("No record found");
 
             string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
             EmployeeCompleteDetailModal employeeCompleteDetailModal = JsonConvert.DeserializeObject<EmployeeCompleteDetailModal>(employeeArchiveDetail.EmployeeCompleteJsonData);
@@ -516,7 +516,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Unable to active the employee. Please contact to admin");
+                throw HiringBellException.ThrowBadRequest("Unable to active the employee. Please contact to admin");
 
             return result;
         }
@@ -567,7 +567,7 @@ namespace ServiceLayer.Code
                 employeeCalculation.IsFirstYearDeclaration = false;
 
             if (employeeEmailMobileCheck.EmployeeCount == 0)
-                throw new HiringBellException("Employee record not found. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Employee record not found. Please contact to admin.");
 
             return await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
         }
@@ -585,7 +585,7 @@ namespace ServiceLayer.Code
             employeeCalculation.IsFirstYearDeclaration = true;
 
             if (employeeEmailMobileCheck.EmployeeCount > 0)
-                throw new HiringBellException("Employee already exists. Please login first and update detail.");
+                throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
 
             await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
 
@@ -603,7 +603,7 @@ namespace ServiceLayer.Code
             employeeCalculation.IsFirstYearDeclaration = true;
 
             if (employeeEmailMobileCheck.EmployeeCount > 0)
-                throw new HiringBellException("Employee already exists. Please login first and update detail.");
+                throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
 
             await BulkRegistration(employeeCalculation, fileCollection);
         }
@@ -700,11 +700,11 @@ namespace ServiceLayer.Code
             });
 
             if (resultSet == null || resultSet.Tables.Count != 9)
-                throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Fail to get employee relevent data. Please contact to admin.");
 
             _logger.LogInformation("[GetEmployeeDetail]: Date fetched total table: " + resultSet.Tables.Count);
             if (resultSet.Tables[4].Rows.Count != 1)
-                throw new HiringBellException("Company setting not found. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin.");
 
             Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
 
@@ -762,10 +762,10 @@ namespace ServiceLayer.Code
             }
 
             if (employeeEmailMobileCheck.EmailCount > 0)
-                throw new HiringBellException($"Email id: {employeeCalculation.employee.Email} already exists.");
+                throw HiringBellException.ThrowBadRequest($"Email id: {employeeCalculation.employee.Email} already exists.");
 
             if (employeeEmailMobileCheck.MobileCount > 0)
-                throw new HiringBellException($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
+                throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
             _logger.LogInformation("Leaving method: GetEmployeeDetail");
 
             _logger.LogInformation("Leaving method: GetEmployeeDetail");
@@ -919,7 +919,7 @@ namespace ServiceLayer.Code
 
                 if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
                 {
-                    throw new HiringBellException("Fail to insert or update record. Contact to admin.");
+                    throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Contact to admin.");
                 }
 
                 eCal.EmployeeId = Convert.ToInt64(employeeId);
@@ -1110,7 +1110,7 @@ namespace ServiceLayer.Code
 
                 if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
                 {
-                    throw new HiringBellException("Fail to insert or update record. Contact to admin.");
+                    throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Contact to admin.");
                 }
 
                 eCal.EmployeeId = Convert.ToInt64(employeeId);

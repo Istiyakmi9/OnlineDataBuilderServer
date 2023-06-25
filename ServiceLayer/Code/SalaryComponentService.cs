@@ -1343,5 +1343,12 @@ namespace ServiceLayer.Code
             result = result.FindAll(x => x.IsAdHoc == true && x.AdHocId == (int)AdhocType.Bonus);
             return result;
         }
+
+        public DataSet GetAllSalaryDetailService(FilterModel filterModel)
+        {
+            var result = _db.FetchDataSet("sp_employee_salary_detail_getbyFilter", filterModel);
+            result.Tables[0].TableName = "SalaryDetail";
+            return result;
+        }
     }
 }

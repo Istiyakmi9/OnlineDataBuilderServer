@@ -191,7 +191,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                                 }
                             });
 
-                            dataTable = result.Tables[1];
+                            dataTable = result.Tables[0];
 
                             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
@@ -340,7 +340,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 {
                     var field = columnList.Find(x => x == pinfo.Name);
                     if (field == null)
-                        throw HiringBellException.ThrowBadRequest($"Excel doesn't contain \"{field}\" field.");
+                        throw HiringBellException.ThrowBadRequest($"Excel doesn't contain \"{pinfo.Name}\" field.");
                 }
             }
 
