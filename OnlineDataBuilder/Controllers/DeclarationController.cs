@@ -130,17 +130,17 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("ExportDeclaration/{EmployeeId}")]
-        public async Task<ApiResponse> ExportDeclaration([FromRoute] long EmployeeId)
-        {
-            var result = await _declarationService.ExportDeclarationService(EmployeeId);
-            return BuildResponse(result);
-        }
-
         [HttpGet("GetEmployeeIncomeDetail")]
         public async Task<ApiResponse> GetEmployeeIncomeDetail([FromBody] FilterModel filterModel)
         {
             var result = await _declarationService.GetEmployeeIncomeDetailService(filterModel);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("ExportEmployeeDeclaration")]
+        public async Task<ApiResponse> ExportEmployeeDeclaration([FromBody] List<int> EmployeeIds)
+        {
+            var result = await _declarationService.ExportEmployeeDeclarationService(EmployeeIds);
             return BuildResponse(result);
         }
     }

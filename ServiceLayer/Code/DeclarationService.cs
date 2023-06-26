@@ -10,6 +10,7 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -1507,38 +1508,6 @@ namespace ServiceLayer.Code
             return employeeSalaryDetail;
         }
 
-        public async Task<string> ExportDeclarationService(long EmployeeId)
-        {
-            if (EmployeeId <= 0)
-                throw HiringBellException.ThrowBadRequest("Invalid employee selected");
-
-            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, $"Employees_{EmployeeId}_Declaration_Excel");
-            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
-                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
-
-            var filepath = Path.Combine(folderPath, $"Employees_{EmployeeId}_Declaration_Excel" + $".{ApplicationConstants.Excel}");
-            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, filepath);
-
-            if (File.Exists(destinationFilePath))
-                File.Delete(destinationFilePath);
-
-            var result = _db.Get<EmployeeDeclaration>("sp_employee_declaration_detail_get", new { EmployeeId = EmployeeId });
-            var declarationDetail = JsonConvert.DeserializeObject<List<SalaryComponents>>(result.DeclarationDetail);
-            List<string> header = new List<string>();
-            List<object> excelData = new List<object>();
-            header.Add("EmployeeId");
-            header.Add("Email");
-            excelData.Add(result.EmployeeId);
-            excelData.Add(result.Email);
-            declarationDetail.ForEach(n =>
-            {
-                header.Add(n.ComponentId + $" ({n.ComponentFullName})");
-                excelData.Add(n.DeclaredValue);
-            });
-            _excelWriter.ToExcelWithHeaderAnddata(header, excelData, destinationFilePath);
-            return await Task.FromResult(filepath);
-        }
-
         public async Task UpdateBulkDeclarationDetail(long EmployeeDeclarationId, List<EmployeeDeclaration> employeeDeclarationList)
         {
             IFormFileCollection FileCollection = null;
@@ -1611,6 +1580,60 @@ namespace ServiceLayer.Code
             }
 
             await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
+        }
+
+        public async Task<string> ExportEmployeeDeclarationService(List<int> EmployeeIds)
+        {
+            if (EmployeeIds.Count <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employees id");
+
+            var filepath = string.Empty;
+            var empIds = JsonConvert.SerializeObject(EmployeeIds);
+            empIds = empIds.Replace("[", "").Replace("]", "");
+            var result = _db.GetList<EmployeeDeclaration>("sp_declaration_get_filter_by_empid", new { searchString = empIds });
+            if (result.Count > 0)
+            {
+                var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employees_Declaration_Excel");
+                if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
+                    Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+
+                filepath = Path.Combine(folderPath, "Employees_Declaration_Excel" + $".{ApplicationConstants.Excel}");
+                var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, filepath);
+
+                if (File.Exists(destinationFilePath))
+                    File.Delete(destinationFilePath);
+
+                List<string> header = new List<string>();
+                List<dynamic> data = new List<dynamic>();
+                int index = 0;
+                while(index < result.Count)
+                {
+                    var declarationDetail = JsonConvert.DeserializeObject<List<SalaryComponents>>(result[index].DeclarationDetail);
+
+                    List<object> excelData = new List<object>();
+                    if (index == 0)
+                    {
+                        header.Add("EmployeeId");
+                        header.Add("EmployeeName");
+                        header.Add("Email");
+                    }
+
+                    excelData.Add(result[index].EmployeeId);
+                    excelData.Add(result[index].FullName);
+                    excelData.Add(result[index].Email);
+                    declarationDetail.ForEach(n =>
+                    {
+                        if (index == 0)
+                            header.Add(n.ComponentId + $" ({n.ComponentFullName})");
+
+                        excelData.Add(n.DeclaredValue);
+                    });
+                    data.Add(excelData);
+                    index++;
+                }
+                _excelWriter.ToExcelWithHeaderAnddata(header, data, destinationFilePath);
+            }
+            return await Task.FromResult(filepath);
         }
     }
 }
