@@ -169,8 +169,6 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         {
             DataTable dataTable = null;
             List<UploadedPayrollData> uploadedPayrollList = new List<UploadedPayrollData>();
-            List<string> header = new List<string>();
-            List<object> excelData = new List<object>();
 
             using (var ms = new MemoryStream())
             {
@@ -203,9 +201,33 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                         throw HiringBellException.ThrowBadRequest("Please select a valid excel file");
                     }
                 }
+                validateExcelValue(uploadedPayrollList);
             }
 
             return uploadedPayrollList;
+        }
+
+        private void validateExcelValue(List<UploadedPayrollData> uploadedPayrollList)
+        {
+            if (uploadedPayrollList.Count > 0)
+            {
+                var data = uploadedPayrollList[0];
+                if (string.IsNullOrEmpty(data.EmployeeName))
+                    throw HiringBellException.ThrowBadRequest("Employee name is null");
+
+                if (string.IsNullOrEmpty(data.Email))
+                    throw HiringBellException.ThrowBadRequest("Email is null");
+
+                if (string.IsNullOrEmpty(data.Mobile))
+                    throw HiringBellException.ThrowBadRequest("Mobile is null");
+
+                if (data.CTC <= 0)
+                    throw HiringBellException.ThrowBadRequest("CTC is zero");
+
+                if (data.DOJ == null)
+                    throw HiringBellException.ThrowBadRequest("DOJ is invalid");
+
+            }
         }
 
         public static List<UploadedPayrollData> MapEmployeePayAndInvestment(DataTable table)
@@ -316,7 +338,6 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
         private static List<string> ValidateHeaders(DataTable table, List<PropertyInfo> fileds)
         {
-            List<string> header = new List<string>();
             List<string> columnList = new List<string>();
 
             foreach (DataColumn column in table.Columns)
@@ -333,6 +354,21 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                     }
                 }
             }
+
+            if (string.IsNullOrEmpty(columnList.Find(x => x == "EmployeeName")))
+                throw HiringBellException.ThrowBadRequest("EmployeeName column is not found");
+
+            if (string.IsNullOrEmpty(columnList.Find(x => x == "Email")))
+                throw HiringBellException.ThrowBadRequest("Email column is not found");
+
+            if (string.IsNullOrEmpty(columnList.Find(x => x == "Mobile")))
+                throw HiringBellException.ThrowBadRequest("Mobile column is not found");
+
+            if (string.IsNullOrEmpty(columnList.Find(x => x == "DOJ")))
+                throw HiringBellException.ThrowBadRequest("DOJ column is not found");
+
+            if (string.IsNullOrEmpty(columnList.Find(x => x == "CTC")))
+                throw HiringBellException.ThrowBadRequest("CTC column is not found");
 
             foreach (PropertyInfo pinfo in fileds)
             {
