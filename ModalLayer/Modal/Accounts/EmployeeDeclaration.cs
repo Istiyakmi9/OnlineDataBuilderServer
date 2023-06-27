@@ -43,6 +43,7 @@ namespace ModalLayer.Modal.Accounts
         public int DeclarationToYear { set; get; }
         public string DefaultSlaryGroupMessage { get; set; }
         public int TotalMonths { get; set; }
+        public string FullName { get; set; }
     }
 
     public class EmployeeHRA

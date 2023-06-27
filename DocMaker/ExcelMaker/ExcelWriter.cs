@@ -49,7 +49,7 @@ namespace DocMaker.ExcelMaker
             spreadsheetDocument.Close();
         }
 
-        public void ToExcelWithHeaderAnddata(List<string> header, List<object> data, string filepath, string sheetName = null)
+        public void ToExcelWithHeaderAnddata(List<string> header, dynamic data, string filepath, string sheetName = null)
         {
             // Create a spreadsheet document by supplying the filepath.
             // By default, AutoSave = true, Editable = true, and Type = xlsx.
@@ -87,7 +87,7 @@ namespace DocMaker.ExcelMaker
             spreadsheetDocument.Close();
         }
 
-        private void BuildExcelRowsWithHeader(SheetData sheetData, List<string> header, List<object> data)
+        private void BuildExcelRowsWithHeader(SheetData sheetData, List<string> header, dynamic data)
         {
             Row headerRow = new Row();
 
@@ -103,15 +103,31 @@ namespace DocMaker.ExcelMaker
             }
 
             sheetData.AppendChild(headerRow);
-            Row newRow = new Row();
-            foreach (var dsrow in data)
+            //Row newRow = new Row();
+            //foreach (var dsrow in data)
+            //{
+            //    Cell cell = new Cell();
+            //    cell.DataType = CellValues.String;
+            //    cell.CellValue = new CellValue(dsrow.ToString());
+            //    newRow.AppendChild(cell);
+            //}
+            //sheetData.AppendChild(newRow);
+            foreach (List<Object> dsrow in data)
             {
-                Cell cell = new Cell();
-                cell.DataType = CellValues.String;
-                cell.CellValue = new CellValue(dsrow.ToString());
-                newRow.AppendChild(cell);
+                Row newRow = new Row();
+                foreach (var value in dsrow)
+                {
+                    Cell cell = new Cell();
+                    cell.DataType = CellValues.String;
+                    if (value != null)
+                        cell.CellValue = new CellValue(value.ToString());
+                    else
+                        cell.CellValue = new CellValue(null);
+                    newRow.AppendChild(cell);
+                }
+
+                sheetData.AppendChild(newRow);
             }
-            sheetData.AppendChild(newRow);
         }
 
         private void BuildExcelRows(SheetData sheetData, DataTable table)
