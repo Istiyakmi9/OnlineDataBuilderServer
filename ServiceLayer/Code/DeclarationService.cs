@@ -591,15 +591,28 @@ namespace ServiceLayer.Code
             return salaryBreakup;
         }
 
+        private void ValidateCurrentSalaryGroupNComponents(EmployeeCalculation empCal)
+        {
+            if (empCal.salaryGroup == null || string.IsNullOrEmpty(empCal.salaryGroup.SalaryComponents)
+                    || empCal.salaryGroup.SalaryComponents == ApplicationConstants.EmptyJsonArray)
+                throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
+            if (empCal.salaryGroup.GroupComponents == null || empCal.salaryGroup.GroupComponents.Count <= 0)
+                empCal.salaryGroup.GroupComponents = JsonConvert
+                    .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
+        }
+
         private List<AnnualSalaryBreakup> CreateBreakUp(EmployeeCalculation empCal, ref bool reCalculateFlag, EmployeeSalaryDetail salaryBreakup)
         {
             _logger.LogInformation("Starting method: CreateBreakUp");
 
             List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
 
-            // this is only for testing, comments below line once testing completed.
-            // empCal.employee.IsCTCChanged = true;
-            if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
+            if (empCal.employee.IsCTCChanged)
+            {
+
+            }
+
+            if (completeSalaryBreakups.Count == 0)
             {
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
                 if (completeSalaryBreakups == null || completeSalaryBreakups.Count == 0)
@@ -610,12 +623,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                if (empCal.salaryGroup == null || string.IsNullOrEmpty(empCal.salaryGroup.SalaryComponents)
-                    || empCal.salaryGroup.SalaryComponents == ApplicationConstants.EmptyJsonArray)
-                    throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
-                if (empCal.salaryGroup.GroupComponents == null || empCal.salaryGroup.GroupComponents.Count <= 0)
-                    empCal.salaryGroup.GroupComponents = JsonConvert
-                        .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
+                ValidateCurrentSalaryGroupNComponents(empCal);
             }
 
             _logger.LogInformation("Leaving method: CreateBreakUp");
@@ -1340,13 +1348,14 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var result = _db.FetchDataSet("sp_previous_employement_details_by_empid", new { 
-                EmployeeId = EmployeeId , 
+            var result = _db.FetchDataSet("sp_previous_employement_details_by_empid", new
+            {
+                EmployeeId = EmployeeId,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                });
+            });
             result.Tables[0].TableName = "PreviousSalary";
             result.Tables[1].TableName = "Employee";
-            return await Task.FromResult(result) ;
+            return await Task.FromResult(result);
         }
 
         public async Task<string> EmptyEmpDeclarationService()
@@ -1551,7 +1560,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("You can't submit the declration because you selected new tax regime");
 
             _sections.TryGetValue(ApplicationConstants.ExemptionDeclaration, out List<string> taxexemptSection);
-            bool isExtara_50k_Allowed = false; 
+            bool isExtara_50k_Allowed = false;
             declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
             foreach (var employeeDeclaration in employeeDeclarationList)
             {
