@@ -530,7 +530,7 @@ namespace ServiceLayer.Code
                 reCalculateFlag = flag;
 
             // create breakup if new emp or any main setting changed
-            List<AnnualSalaryBreakup> completeSalaryBreakups = CreateBreakUp(empCal, ref reCalculateFlag, salaryBreakup);
+             List<AnnualSalaryBreakup> completeSalaryBreakups = CreateBreakUp(empCal, ref reCalculateFlag, salaryBreakup);
 
             // calculate and get gross income value and salary breakup detail
             var calculatedSalaryBreakupDetails = GetPresentMonthSalaryDetail(completeSalaryBreakups);
@@ -619,7 +619,8 @@ namespace ServiceLayer.Code
 
             if (empCal.employee.IsCTCChanged)
             {
-                _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
+                completeSalaryBreakups = _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
+                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
             }
 
             _logger.LogInformation("Leaving method: CreateBreakUp");
