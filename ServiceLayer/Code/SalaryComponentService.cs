@@ -4,16 +4,13 @@ using BottomhalfCore.Services.Interface;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -258,7 +255,7 @@ namespace ServiceLayer.Code
 
         private void ValidateSalaryGroup(SalaryGroup salaryGroup)
         {
-            if (salaryGroup.CompanyId <= 0)
+            if (salaryGroup.CompanyId < 0)
                 throw new HiringBellException("Invalid data selected to create group. Please contact to admin.");
 
             if (string.IsNullOrEmpty(salaryGroup.GroupName))
@@ -524,7 +521,7 @@ namespace ServiceLayer.Code
         public List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup)
         {
             List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
-            salaryGroups = salaryGroups.Where(x => x.SalaryGroupId != salaryGroup.SalaryGroupId).ToList();
+            salaryGroups = salaryGroups.Where(x => x.SalaryGroupId != salaryGroup.SalaryGroupId && x.CompanyId == _currentSession.CurrentUserDetail.CompanyId).ToList();
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
             {
                 if ((salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
@@ -618,7 +615,8 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc", new { SalaryGroupId = salaryGroupId, CTC });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc", 
+                new { SalaryGroupId = salaryGroupId, CTC, CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             if (salaryGroup == null)
             {
                 salaryGroup = GetDefaultSalaryGroup();
@@ -1453,6 +1451,51 @@ namespace ServiceLayer.Code
 
             result.Tables[1].TableName = "CompanySetting";
             return result;
+        }
+
+        public List<SalaryGroup> CloneSalaryGroupService(SalaryGroup salaryGroup)
+        {
+            if (salaryGroup.SalaryGroupId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid salary group selected");
+
+            ValidateSalaryGroup(salaryGroup);
+
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_get_if_exists", new
+            {
+                salaryGroup.CompanyId,
+                salaryGroup.MinAmount,
+                salaryGroup.MaxAmount
+            });
+
+            if (salaryGrp != null)
+                throw new HiringBellException("Salary group limit already exist");
+
+            salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            if (salaryGrp == null)
+                throw new HiringBellException("Salary Group not exist.");
+            else
+            {
+                if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
+                    salaryGrp.SalaryComponents = "[]";
+                //else
+                //    if (salaryGroup.GroupComponents == null && salaryGroup.SalaryComponents == null)
+                //        salaryGroup.SalaryComponents = "[]";
+                //    else
+                //        salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
+                salaryGrp.SalaryGroupId = 0;
+                salaryGrp.GroupName = salaryGroup.GroupName;
+                salaryGrp.GroupDescription = salaryGroup.GroupDescription;
+                salaryGrp.MinAmount = salaryGroup.MinAmount;
+                salaryGrp.MaxAmount = salaryGroup.MaxAmount;
+                salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
+            }
+
+            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to insert or update.");
+
+            List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
+            return value;
         }
     }
 }

@@ -185,5 +185,13 @@ namespace OnlineDataBuilder.Controllers
             var result = _salaryComponentService.GetAllSalaryDetailService(filterModel);
             return BuildResponse(result);
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("CloneSalaryGroup")]
+        public IResponse<ApiResponse> CloneSalaryGroup(SalaryGroup salaryGroup)
+        {
+            var result = _salaryComponentService.CloneSalaryGroupService(salaryGroup);
+            return BuildResponse(result);
+        }
     }
 }

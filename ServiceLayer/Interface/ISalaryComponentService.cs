@@ -31,8 +31,8 @@ namespace ServiceLayer.Interface
         List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation empCal);
         List<SalaryComponents> GetBonusComponentsService();
         DataSet GetAllSalaryDetailService(FilterModel filterModel);
-
         List<AnnualSalaryBreakup> UpdateSalaryBreakUp(EmployeeCalculation eCal, EmployeeSalaryDetail salaryBreakup);
         List<AnnualSalaryBreakup> CreateNewJoineeSalaryBreakUp(EmployeeCalculation eCal);
+        List<SalaryGroup> CloneSalaryGroupService(SalaryGroup salaryGroup);
     }
 }
