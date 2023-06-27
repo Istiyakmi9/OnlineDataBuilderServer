@@ -28,7 +28,7 @@ namespace ServiceLayer.Interface
         Task<DataSet> ManagePreviousEmployemntService(int EmployeeId, List<PreviousEmployementDetail> previousEmployementDetail);
         Task<dynamic> GetPreviousEmployemntandEmpService(int EmployeeId);
         Task<DataSet> GetPreviousEmployemntService(int EmployeeId);
-        Task<string> EmptyEmpDeclarationService();
+        // Task<string> EmptyEmpDeclarationService();
         Task<string> ExportEmployeeDeclarationService(List<int> EmployeeIds);
 
     }

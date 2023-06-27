@@ -592,31 +592,34 @@ namespace ServiceLayer.Code
             return salaryBreakup;
         }
 
+        private void ValidateCurrentSalaryGroupNComponents(EmployeeCalculation empCal)
+        {
+            if (empCal.salaryGroup == null || string.IsNullOrEmpty(empCal.salaryGroup.SalaryComponents)
+                    || empCal.salaryGroup.SalaryComponents == ApplicationConstants.EmptyJsonArray)
+                throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
+
+            if (empCal.salaryGroup.GroupComponents == null || empCal.salaryGroup.GroupComponents.Count <= 0)
+                empCal.salaryGroup.GroupComponents = JsonConvert
+                    .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
+        }
+
         private List<AnnualSalaryBreakup> CreateBreakUp(EmployeeCalculation empCal, ref bool reCalculateFlag, EmployeeSalaryDetail salaryBreakup)
         {
             _logger.LogInformation("Starting method: CreateBreakUp");
 
             List<AnnualSalaryBreakup> completeSalaryBreakups = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(salaryBreakup.CompleteSalaryDetail);
 
-            // this is only for testing, comments below line once testing completed.
-            // empCal.employee.IsCTCChanged = true;
-            if (completeSalaryBreakups.Count == 0 || empCal.employee.IsCTCChanged)
+            ValidateCurrentSalaryGroupNComponents(empCal);
+            if (completeSalaryBreakups.Count == 0)
             {
-                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
-                if (completeSalaryBreakups == null || completeSalaryBreakups.Count == 0)
-                    throw new HiringBellException("Unable to build salary detail. Please contact to admin.");
-
+                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);                
                 salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
                 reCalculateFlag = true;
             }
-            else
+
+            if (empCal.employee.IsCTCChanged)
             {
-                if (empCal.salaryGroup == null || string.IsNullOrEmpty(empCal.salaryGroup.SalaryComponents)
-                    || empCal.salaryGroup.SalaryComponents == ApplicationConstants.EmptyJsonArray)
-                    throw new HiringBellException("Salary group or its component not defined. Please contact to admin.");
-                if (empCal.salaryGroup.GroupComponents == null || empCal.salaryGroup.GroupComponents.Count <= 0)
-                    empCal.salaryGroup.GroupComponents = JsonConvert
-                        .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
+                _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
             }
 
             _logger.LogInformation("Leaving method: CreateBreakUp");
@@ -1341,112 +1344,113 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var result = _db.FetchDataSet("sp_previous_employement_details_by_empid", new { 
-                EmployeeId = EmployeeId , 
+            var result = _db.FetchDataSet("sp_previous_employement_details_by_empid", new
+            {
+                EmployeeId = EmployeeId,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                });
+            });
             result.Tables[0].TableName = "PreviousSalary";
             result.Tables[1].TableName = "Employee";
-            return await Task.FromResult(result) ;
+            return await Task.FromResult(result);
         }
 
-        public async Task<string> EmptyEmpDeclarationService()
-        {
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            employeeCalculation.employee = new Employee();
-            this.GetEmployeeDetail(employeeCalculation);
-            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            employeeCalculation.Doj = DateTime.UtcNow;
-            employeeCalculation.IsFirstYearDeclaration = true;
-            employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeUid;
-            await CalculateSalaryNDeclaration(employeeCalculation, true);
+        //public async Task<string> EmptyEmpDeclarationService()
+        //{
+        //    EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+        //    employeeCalculation.employee = new Employee();
+        //    this.GetEmployeeDetail(employeeCalculation);
+        //    employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+        //    employeeCalculation.Doj = DateTime.UtcNow;
+        //    employeeCalculation.IsFirstYearDeclaration = true;
+        //    employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeUid;
+        //    await CalculateSalaryNDeclaration(employeeCalculation, true);
 
-            var Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
-            {
-                EmployeeDeclarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId,
-                EmployeeId = employeeCalculation.EmployeeId,
-                DocumentPath = "",
-                DeclarationDetail = employeeCalculation.employeeDeclaration.DeclarationDetail,
-                HouseRentDetail = employeeCalculation.employeeDeclaration.HouseRentDetail,
-                TotalDeclaredAmount = 0,
-                TotalApprovedAmount = 0,
-                TotalRejectedAmount = 0,
-                EmployeeCurrentRegime = employeeCalculation.employeeDeclaration.EmployeeCurrentRegime
-            }, true);
+        //    var Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+        //    {
+        //        EmployeeDeclarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId,
+        //        EmployeeId = employeeCalculation.EmployeeId,
+        //        DocumentPath = "",
+        //        DeclarationDetail = employeeCalculation.employeeDeclaration.DeclarationDetail,
+        //        HouseRentDetail = employeeCalculation.employeeDeclaration.HouseRentDetail,
+        //        TotalDeclaredAmount = 0,
+        //        TotalApprovedAmount = 0,
+        //        TotalRejectedAmount = 0,
+        //        EmployeeCurrentRegime = employeeCalculation.employeeDeclaration.EmployeeCurrentRegime
+        //    }, true);
 
-            if (!Bot.IsSuccess(Result))
-                throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
-            return await Task.FromResult("");
-        }
+        //    if (!Bot.IsSuccess(Result))
+        //        throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+        //    return await Task.FromResult("");
+        //}
 
-        private void GetEmployeeDetail(EmployeeCalculation employeeCalculation)
-        {
-            employeeCalculation.employee.EmployeeUid = 22;
-            employeeCalculation.employee.Mobile = "8978777777";
-            employeeCalculation.employee.Email = "atif@mail.com";
-            employeeCalculation.employee.CompanyId = 1;
-            employeeCalculation.employee.CTC = 2200000;
-            employeeCalculation.CTC = employeeCalculation.employee.CTC;
-            employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
-            DataSet resultSet = _db.FetchDataSet("sp_employee_getbyid_to_reg_or_upd", new
-            {
-                EmployeeId = employeeCalculation.employee.EmployeeUid,
-                employeeCalculation.employee.Mobile,
-                employeeCalculation.employee.Email,
-                employeeCalculation.employee.CompanyId,
-                employeeCalculation.employee.CTC,
-                employeeCalculation.employee.SalaryGroupId
-            });
+        //private void GetEmployeeDetail(EmployeeCalculation employeeCalculation)
+        //{
+        //    employeeCalculation.employee.EmployeeUid = 22;
+        //    employeeCalculation.employee.Mobile = "8978777777";
+        //    employeeCalculation.employee.Email = "atif@mail.com";
+        //    employeeCalculation.employee.CompanyId = 1;
+        //    employeeCalculation.employee.CTC = 2200000;
+        //    employeeCalculation.CTC = employeeCalculation.employee.CTC;
+        //    employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
+        //    DataSet resultSet = _db.FetchDataSet("sp_employee_getbyid_to_reg_or_upd", new
+        //    {
+        //        EmployeeId = employeeCalculation.employee.EmployeeUid,
+        //        employeeCalculation.employee.Mobile,
+        //        employeeCalculation.employee.Email,
+        //        employeeCalculation.employee.CompanyId,
+        //        employeeCalculation.employee.CTC,
+        //        employeeCalculation.employee.SalaryGroupId
+        //    });
 
-            if (resultSet == null || resultSet.Tables.Count != 9)
-                throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
+        //    if (resultSet == null || resultSet.Tables.Count != 9)
+        //        throw new HiringBellException("Fail to get employee relevent data. Please contact to admin.");
 
-            if (resultSet.Tables[4].Rows.Count != 1)
-                throw new HiringBellException("Company setting not found. Please contact to admin.");
+        //    if (resultSet.Tables[4].Rows.Count != 1)
+        //        throw new HiringBellException("Company setting not found. Please contact to admin.");
 
-            Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
-            employeeCalculation.employee = employeeDetail;
-            if (employeeDetail.EmployeeUid > 0)
-                employeeCalculation.Doj = employeeDetail.CreatedOn;
-            else
-                employeeCalculation.Doj = DateTime.UtcNow;
+        //    Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
+        //    employeeCalculation.employee = employeeDetail;
+        //    if (employeeDetail.EmployeeUid > 0)
+        //        employeeCalculation.Doj = employeeDetail.CreatedOn;
+        //    else
+        //        employeeCalculation.Doj = DateTime.UtcNow;
 
-            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
+        //    employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
 
-            // build and bind compnay setting
-            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
-            employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
-                employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+        //    // build and bind compnay setting
+        //    employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
+        //    employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
+        //        employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            // check and get Declaration object
-            employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee, employeeCalculation.companySetting);
-            employeeCalculation.employeeDeclaration.HouseRentDetail = "{}";
+        //    // check and get Declaration object
+        //    employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee, employeeCalculation.companySetting);
+        //    employeeCalculation.employeeDeclaration.HouseRentDetail = "{}";
 
-            // check and get employee salary detail object
-            employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2]);
-            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
-            employeeCalculation.employeeSalaryDetail.TaxDetail = "[]";
-            employeeCalculation.employeeSalaryDetail.CompleteSalaryDetail = "[]";
+        //    // check and get employee salary detail object
+        //    employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2]);
+        //    employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
+        //    employeeCalculation.employeeSalaryDetail.TaxDetail = "[]";
+        //    employeeCalculation.employeeSalaryDetail.CompleteSalaryDetail = "[]";
 
-            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[6]);
+        //    employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[6]);
 
-            // getting professional tax detail based on company id
-            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[7]);
+        //    // getting professional tax detail based on company id
+        //    employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[7]);
 
-            if (employeeCalculation.ptaxSlab.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
+        //    if (employeeCalculation.ptaxSlab.Count == 0)
+        //        throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
 
-            // getting surcharges slab detail based on company id
-            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[8]);
+        //    // getting surcharges slab detail based on company id
+        //    employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[8]);
 
-            if (employeeCalculation.surchargeSlabs.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
+        //    if (employeeCalculation.surchargeSlabs.Count == 0)
+        //        throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
 
-            if (employeeDetail != null)
-                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-            else
-                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-        }
+        //    if (employeeDetail != null)
+        //        employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+        //    else
+        //        employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+        //}
 
         private EmployeeDeclaration GetDeclarationInstance(DataTable declarationTable, Employee employee, CompanySetting companySetting)
         {
@@ -1520,7 +1524,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("You can't submit the declration because you selected new tax regime");
 
             _sections.TryGetValue(ApplicationConstants.ExemptionDeclaration, out List<string> taxexemptSection);
-            bool isExtara_50k_Allowed = false; 
+            bool isExtara_50k_Allowed = false;
             declaration.SalaryComponentItems = JsonConvert.DeserializeObject<List<SalaryComponents>>(declaration.DeclarationDetail);
             foreach (var employeeDeclaration in employeeDeclarationList)
             {
@@ -1606,7 +1610,7 @@ namespace ServiceLayer.Code
                 List<string> header = new List<string>();
                 List<dynamic> data = new List<dynamic>();
                 int index = 0;
-                while(index < result.Count)
+                while (index < result.Count)
                 {
                     var declarationDetail = JsonConvert.DeserializeObject<List<SalaryComponents>>(result[index].DeclarationDetail);
 

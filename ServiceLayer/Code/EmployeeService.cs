@@ -1421,12 +1421,11 @@ namespace ServiceLayer.Code
 
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+            this.GetEmployeeDetail(employeeCalculation);
+            
             employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = false;
-
-            if (employeeEmailMobileCheck.EmployeeCount == 0)
-                throw new HiringBellException("Employee record not found. Please contact to admin.");
+            employeeCalculation.employee.IsCTCChanged = true;
 
             var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
 
@@ -1468,10 +1467,13 @@ namespace ServiceLayer.Code
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
             _logger.LogInformation("Employee file converted");
+            
             this.GetEmployeeDetail(employeeCalculation);
+
             employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
             employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = true;
+            employeeCalculation.employee.IsCTCChanged = true;
 
             var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
 
