@@ -619,7 +619,7 @@ namespace ServiceLayer.Code
 
             if (empCal.employee.IsCTCChanged)
             {
-                _salaryComponentService.UpdateSalaryBreakUp(empCal);
+                _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
             }
 
             _logger.LogInformation("Leaving method: CreateBreakUp");
