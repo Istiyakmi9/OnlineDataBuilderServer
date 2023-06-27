@@ -11,7 +11,11 @@ namespace ModalLayer.Modal
         public long EmployeeId { set; get; }
         public DateTime Doj { set; get; }
         public bool IsFirstYearDeclaration { set; get; }
+
+        // Till date always be 1st of the financial year and month
+        // e.g. let financial year and monthe is April, 2023 then date = 1st of April, 2023        
         public DateTime PayrollStartDate { set; get; }
+
         public DateTime financialYearDateTime { set; get; }
         public Employee employee { set; get; }
         public decimal expectedAnnualGrossIncome { set; get; }
