@@ -1347,16 +1347,16 @@ namespace ServiceLayer.Code
         public DataSet GetAllSalaryDetailService(FilterModel filterModel)
         {
             if (string.IsNullOrEmpty(filterModel.SearchString))
-            {
                 filterModel.SearchString = $"1=1 and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
-            }
             else
-            {
                 filterModel.SearchString += $" and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
-            }
-
+            filterModel.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
             var result = _db.FetchDataSet("sp_employee_salary_detail_getbyFilter", filterModel);
             result.Tables[0].TableName = "SalaryDetail";
+            if (result.Tables[1].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin.");
+
+            result.Tables[1].TableName = "CompanySetting";
             return result;
         }
     }
