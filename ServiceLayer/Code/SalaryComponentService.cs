@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -953,9 +954,9 @@ namespace ServiceLayer.Code
 
                     UpdateMonthSalaryCalculatedStructure(salary.SalaryBreakupDetails, eCal);
 
-                    decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
-                    if (monthlyGrossIncome < taxableComponentAmount)
-                        throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
+                    //decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
+                    //if (monthlyGrossIncome < taxableComponentAmount)
+                    //    throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
                 }
             }
 
@@ -1113,9 +1114,7 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Starting method: GetComponentsDetail");
 
             decimal amount = 0;
-            var taxableComponentAmount = calculatedSalaryBreakupDetail.Sum(x => x.FinalAmount);
             decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
-
             var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
             foreach (var item in taxableComponents)
             {
@@ -1127,10 +1126,17 @@ namespace ServiceLayer.Code
                 var component = calculatedSalaryBreakupDetail.Find(x => x.ComponentId == item.ComponentId);
 
                 if (component.Formula != ApplicationConstants.AutoCalculation)
+                {
+                    component.Formula = item.Formula;
                     component.FinalAmount = amount > 0 ? amount / 12 : 0;
+                }
                 else
-                    component.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
+                    component.FinalAmount = 0;
             }
+            var taxableComponentAmount = calculatedSalaryBreakupDetail.FindAll(x => x.ComponentId != nameof(ComponentNames.Gross) && x.ComponentId != nameof(ComponentNames.CTC)).Sum(x => x.FinalAmount);
+            var autoComponent = calculatedSalaryBreakupDetail.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+            if (autoComponent != null)
+                autoComponent.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
 
             if (monthlyGrossIncome < taxableComponentAmount)
                 throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
