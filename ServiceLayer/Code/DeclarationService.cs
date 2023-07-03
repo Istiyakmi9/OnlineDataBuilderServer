@@ -10,7 +10,6 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,6 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -360,67 +358,6 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task GetEmployeeSalaryDetail(EmployeeCalculation employeeCalculation)
-        {
-            var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
-                new { employeeCalculation.EmployeeId });
-            if (ResultSet == null || ResultSet.Tables.Count != 6)
-                throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
-
-            if (ResultSet.Tables[1].Rows.Count == 0)
-                throw new HiringBellException($"Salary detail not found for employee Id: [{employeeCalculation.EmployeeId}]");
-
-            if (ResultSet.Tables[2].Rows.Count == 0)
-                throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
-
-            if (ResultSet.Tables[3].Rows.Count == 0)
-                throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
-
-            if (ResultSet.Tables[4].Rows.Count == 0)
-                throw new Exception("Surcharge data not found. Please contact to admin");
-
-            if (ResultSet.Tables[5].Rows.Count == 0)
-                throw new Exception("Professional tax data not found. Please contact to admin");
-
-            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
-            employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
-            employeeCalculation.Doj = employeeCalculation.employeeSalaryDetail.DateOfJoining;
-            employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
-            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
-            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(ResultSet.Tables[4]);
-            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(ResultSet.Tables[5]);
-
-            if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
-                employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
-
-            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
-            employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
-                employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
-
-            if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
-                throw new HiringBellException($"Salary components not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
-
-            employeeCalculation.salaryGroup.GroupComponents = JsonConvert
-                .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
-
-            if (employeeCalculation.employeeDeclaration.SalaryDetail != null)
-                employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
-
-            var numOfYears = employeeCalculation.Doj.Year - employeeCalculation.companySetting.FinancialYear;
-            if ((numOfYears == 0 || numOfYears == 1)
-                &&
-                employeeCalculation.Doj.Month >= employeeCalculation.companySetting.DeclarationStartMonth
-                &&
-                employeeCalculation.Doj.Month <= employeeCalculation.companySetting.DeclarationEndMonth)
-                employeeCalculation.IsFirstYearDeclaration = true;
-            else
-                employeeCalculation.IsFirstYearDeclaration = false;
-
-            await Task.CompletedTask;
-        }
-
         private List<CalculatedSalaryBreakupDetail> GetPresentMonthSalaryDetail(List<AnnualSalaryBreakup> completeSalaryBreakups)
         {
             _logger.LogInformation("Starting method: GetPresentMonthSalaryDetail");
@@ -445,8 +382,6 @@ namespace ServiceLayer.Code
             return salary.Where(x => x.IsActive).SelectMany(i => i.SalaryBreakupDetails)
                 .Where(x => x.ComponentName == ComponentNames.Gross)
                 .Sum(x => x.FinalAmount);
-            _logger.LogInformation("Leaving method: CalculateTotalAmountWillBeReceived");
-
         }
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false)
@@ -458,7 +393,7 @@ namespace ServiceLayer.Code
                 employee = new Employee { EmployeeUid = EmployeeId }
             };
 
-            await GetEmployeeSalaryDetail(employeeCalculation);
+            await _salaryComponentService.GetEmployeeSalaryDetail(employeeCalculation);
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
         }
 
@@ -530,7 +465,7 @@ namespace ServiceLayer.Code
                 reCalculateFlag = flag;
 
             // create breakup if new emp or any main setting changed
-             List<AnnualSalaryBreakup> completeSalaryBreakups = CreateBreakUp(empCal, ref reCalculateFlag, salaryBreakup);
+            List<AnnualSalaryBreakup> completeSalaryBreakups = CreateBreakUp(empCal, ref reCalculateFlag, salaryBreakup);
 
             // calculate and get gross income value and salary breakup detail
             var calculatedSalaryBreakupDetails = GetPresentMonthSalaryDetail(completeSalaryBreakups);
@@ -559,11 +494,20 @@ namespace ServiceLayer.Code
             // check and apply HRA
             totalDeduction += _componentsCalculationService.HRACalculation(empCal.employeeDeclaration, calculatedSalaryBreakupDetails, totalMonths);
 
-            salaryBreakup.GrossIncome = empCal.expectedAnnualGrossIncome;
+
+            // update salary if previous employer income if present
+            if (empCal.previousEmployerDetail != null)
+            {
+                totalDeduction += UpdatePreviousEmployerIncome(empCal, completeSalaryBreakups);
+                empCal.expectedAnnualGrossIncome = ((empCal.CTC / 12) * totalMonths) + empCal.previousEmployerDetail.TotalIncome;
+            }
 
             // final total taxable amount.
             empCal.employeeDeclaration.TotalAmount = empCal.expectedAnnualGrossIncome - totalDeduction;
             empCal.employeeDeclaration.TotalAmountOnNewRegim = empCal.expectedAnnualGrossIncome;
+
+            salaryBreakup.GrossIncome = empCal.expectedAnnualGrossIncome;
+            salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
 
             //Tax regime calculation 
             if (empCal.employeeDeclaration.TotalAmount < 0)
@@ -603,6 +547,29 @@ namespace ServiceLayer.Code
                     .DeserializeObject<List<SalaryComponents>>(empCal.salaryGroup.SalaryComponents);
         }
 
+        private decimal UpdatePreviousEmployerIncome(EmployeeCalculation empCal, List<AnnualSalaryBreakup> completeSalaryBreakups)
+        {
+            var previousEmployerDetail = empCal.previousEmployerDetail;
+            var settings = empCal.companySetting;
+
+            var doj = empCal.Doj;
+            if (doj.Year == settings.FinancialYear
+                || (doj.Year == settings.FinancialYear + 1 && doj.Month <= settings.DeclarationEndMonth))
+            {
+                foreach (var elem in completeSalaryBreakups)
+                {
+                    if (elem.MonthNumber < doj.Month)
+                    {
+                        elem.IsPayrollExecutedForThisMonth = true;
+                        elem.IsPreviouEmployer = true;
+                        elem.SalaryBreakupDetails.ForEach(i => i.FinalAmount = 0);
+                    }
+                }
+            }
+
+            return previousEmployerDetail.TDS;
+        }
+
         private List<AnnualSalaryBreakup> CreateBreakUp(EmployeeCalculation empCal, ref bool reCalculateFlag, EmployeeSalaryDetail salaryBreakup)
         {
             _logger.LogInformation("Starting method: CreateBreakUp");
@@ -612,15 +579,13 @@ namespace ServiceLayer.Code
             ValidateCurrentSalaryGroupNComponents(empCal);
             if (completeSalaryBreakups.Count == 0)
             {
-                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);                
-                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
+                completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
                 reCalculateFlag = true;
             }
 
             if (empCal.employee.IsCTCChanged)
             {
                 completeSalaryBreakups = _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
-                salaryBreakup.CompleteSalaryDetail = JsonConvert.SerializeObject(completeSalaryBreakups);
             }
 
             _logger.LogInformation("Leaving method: CreateBreakUp");

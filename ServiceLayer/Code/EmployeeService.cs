@@ -1422,7 +1422,7 @@ namespace ServiceLayer.Code
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
             this.GetEmployeeDetail(employeeCalculation);
-            
+
             employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = false;
             employeeCalculation.employee.IsCTCChanged = true;
@@ -1460,22 +1460,40 @@ namespace ServiceLayer.Code
             return null;
         }
 
-        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
+        private void SetupPreviousEmployerIncome(EmployeeCalculation employeeCalculation, UploadedPayrollData uploaded)
+        {
+            var pemp = new PreviousEmployerDetail
+            {
+                TotalIncome = uploaded.PR_EPER_TotalIncome,
+                PF_with_80C = uploaded.PR_EPER_PF_80C,
+                ProfessionalTax = uploaded.PR_EPER_PT,
+                TDS = uploaded.PR_EPER_TDS
+            };
+
+            employeeCalculation.previousEmployerDetail = pemp;
+        }
+
+        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded)
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
+
+            int currentRegimeId = string.IsNullOrEmpty(uploaded.Regime) && uploaded.Regime.ToLower().Contains("new")
+                ? ApplicationConstants.NewRegim : ApplicationConstants.OldRegim;
 
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
             _logger.LogInformation("Employee file converted");
-            
+
             this.GetEmployeeDetail(employeeCalculation);
 
             employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
             employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = true;
-            employeeCalculation.employee.IsCTCChanged = true;
+            employeeCalculation.employee.IsCTCChanged = false;
+            employeeCalculation.employeeDeclaration.TaxRegimeDescId = currentRegimeId;
 
-            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+            SetupPreviousEmployerIncome(employeeCalculation, uploaded);
+            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, null);
 
             if (!string.IsNullOrEmpty(result))
             {
