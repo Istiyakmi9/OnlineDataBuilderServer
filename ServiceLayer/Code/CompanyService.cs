@@ -441,6 +441,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.AttendanceSubmissionLimit = companySetting.AttendanceSubmissionLimit;
                 companySettingDetail.LeaveAccrualRunCronDayOfMonth = companySetting.LeaveAccrualRunCronDayOfMonth;
                 companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
+                companySettingDetail.IsJoiningBerierDayPassed = companySetting.IsJoiningBerierDayPassed;
             }
 
             var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
