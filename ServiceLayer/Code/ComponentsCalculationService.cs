@@ -60,8 +60,8 @@ namespace ServiceLayer.Code
             {
                 ptaxAmount = ptax.TaxAmount * totalMonths;
             }
-            _logger.LogInformation("Leaving method: GetProfessionalTaxAmount");
 
+            _logger.LogInformation("Leaving method: GetProfessionalTaxAmount");
             return ptaxAmount;
         }
 
@@ -85,6 +85,7 @@ namespace ServiceLayer.Code
                     amount = component.DeclaredValue;
                 }
             }
+
             _logger.LogInformation("Leaving method: ProfessionalTaxComponent");
             return amount;
 

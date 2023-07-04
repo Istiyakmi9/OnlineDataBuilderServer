@@ -30,7 +30,6 @@ namespace ModalLayer.Modal.Accounts
         public decimal FinalAmount { set; get; }
         public decimal ComponentTypeId { set; get; }
         public bool IsIncludeInPayslip { get; set; }
-
     }
 
     public class AnnualSalaryBreakup
@@ -38,10 +37,13 @@ namespace ModalLayer.Modal.Accounts
         public string MonthName { set; get; }
         public bool IsPayrollExecutedForThisMonth { set; get; }
         public int MonthNumber { set; get; }
-        public DateTime MonthFirstDate { set; get; }
+        public bool IsArrearMonth { set; get; }
+        public DateTime PresentMonthDate { set; get; }
+
         // this flag indicate whether the candidate if eligible for the salary or not,
-        // e.g. if join in this and onword month is eligible but not for previous month of current financial year.
+        // e.g. if joined, then current and onword month's he/she is eligible but not for previous month of current financial year.
         public bool IsActive { set; get; }
+        public bool IsPreviouEmployer { get; set; } = false;
         public List<CalculatedSalaryBreakupDetail> SalaryBreakupDetails { get; set; }
     }
 }

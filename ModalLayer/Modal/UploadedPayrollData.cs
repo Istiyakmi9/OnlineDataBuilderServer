@@ -21,5 +21,11 @@ namespace ModalLayer.Modal
         public bool Status { set; get; }
         public string Regime { set; get; }
         public Dictionary<string, decimal> Investments { set; get; }
+
+        // previous employer properties
+        public decimal PR_EPER_PF_80C { set; get; }
+        public decimal PR_EPER_PT { set; get; }
+        public decimal PR_EPER_TDS { set; get; }
+        public decimal PR_EPER_TotalIncome { set; get; }
     }
 }

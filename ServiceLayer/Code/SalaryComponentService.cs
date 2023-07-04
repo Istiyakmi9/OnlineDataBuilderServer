@@ -21,16 +21,19 @@ namespace ServiceLayer.Code
         private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILogger<DeclarationService> _logger;
+        private readonly IUtilityService _utilityService;
 
         public SalaryComponentService(IDb db, CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
             ITimezoneConverter timezoneConverter,
-            ILogger<DeclarationService> logger)
+            IUtilityService utilityService,
+        ILogger<DeclarationService> logger)
         {
             _db = db;
             _currentSession = currentSession;
             _postfixToInfixConversion = postfixToInfixConversion;
             _timezoneConverter = timezoneConverter;
+            _utilityService = utilityService;
             _logger = logger;
         }
 
@@ -682,7 +685,7 @@ namespace ServiceLayer.Code
             if (_currentSession.TimeZone != null)
                 present = _timezoneConverter.ToIstTime(present);
 
-            AnnualSalaryBreakup matchedSalaryBreakups = annualSalaryBreakups.Where(x => x.MonthFirstDate.Subtract(present).TotalDays >= 0).FirstOrDefault<AnnualSalaryBreakup>();
+            AnnualSalaryBreakup matchedSalaryBreakups = annualSalaryBreakups.Where(x => x.PresentMonthDate.Subtract(present).TotalDays >= 0).FirstOrDefault<AnnualSalaryBreakup>();
             if (matchedSalaryBreakups == null)
                 throw new HiringBellException("Invalid data found in salary detail. Please contact to admin.");
             else
@@ -801,45 +804,52 @@ namespace ServiceLayer.Code
             return finalAmount;
         }
 
-        private async Task<EmployeeCalculation> GetEmployeeSalaryDetail(long EmployeeId, decimal CTCAnnually)
-        {
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+        //private async Task<EmployeeCalculation> GetEmployeeSalaryDetail(long EmployeeId, decimal CTCAnnually)
+        //{
+        //    EmployeeCalculation employeeCalculation = new EmployeeCalculation();
 
-            employeeCalculation.EmployeeId = EmployeeId;
-            employeeCalculation.CTC = CTCAnnually;
+        //    employeeCalculation.EmployeeId = EmployeeId;
+        //    employeeCalculation.CTC = CTCAnnually;
 
-            var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
-                new { employeeCalculation.EmployeeId });
-            if (ResultSet == null || ResultSet.Tables.Count != 4)
-                throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
+        //    var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
+        //        new { employeeCalculation.EmployeeId });
 
-            if (ResultSet.Tables[0].Rows.Count == 0)
-                throw new HiringBellException($"Salary group not found for salary: [{CTCAnnually}]");
+        //    if (ResultSet == null || ResultSet.Tables.Count != 4)
+        //        throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
-            if (ResultSet.Tables[1].Rows.Count == 0)
-                throw new HiringBellException($"Salary detail not found for employee Id: [{EmployeeId}]");
+        //    if (ResultSet.Tables[0].Rows.Count == 0)
+        //        throw new HiringBellException($"Salary group not found for salary: [{CTCAnnually}]");
 
-            if (ResultSet.Tables[2].Rows.Count == 0)
-                throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
+        //    if (ResultSet.Tables[1].Rows.Count == 0)
+        //        throw new HiringBellException($"Salary detail not found for employee Id: [{EmployeeId}]");
 
-            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
+        //    if (ResultSet.Tables[2].Rows.Count == 0)
+        //        throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
 
-            employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
+        //    employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
 
-            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
+        //    employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
 
-            if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
-                throw new HiringBellException($"Salary components not found for salary: [{CTCAnnually}]");
+        //    employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
 
-            return await Task.FromResult(employeeCalculation);
-        }
+        //    if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
+        //        throw new HiringBellException($"Salary components not found for salary: [{CTCAnnually}]");
+
+        //    return await Task.FromResult(employeeCalculation);
+        //}
 
         public async Task<List<AnnualSalaryBreakup>> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
         {
             if (EmployeeId < 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
-            EmployeeCalculation employeeCalculation = await GetEmployeeSalaryDetail(EmployeeId, CTCAnnually);
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation
+            {
+                EmployeeId = EmployeeId,
+                employee = new Employee { EmployeeUid = EmployeeId }
+            };
+
+            await GetEmployeeSalaryDetail(employeeCalculation);
             ValidateCurrentSalaryGroupNComponents(employeeCalculation);
 
             if (CTCAnnually <= 0)
@@ -944,110 +954,12 @@ namespace ServiceLayer.Code
 
             ReplaceFormulaToActual(eCal);
 
-            decimal taxableComponentAmount = 0;
             foreach (var salary in annualSalaryBreakup)
             {
                 if (!salary.IsPayrollExecutedForThisMonth)
-                {
-
-                    UpdateMonthSalaryCalculatedStructure(salary.SalaryBreakupDetails, eCal);
-
-                    //decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
-                    //if (monthlyGrossIncome < taxableComponentAmount)
-                    //    throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
-                }
+                    UpdateMonthSalaryCalculatedStructure(salary, eCal);
             }
 
-            _logger.LogInformation("Leaving method: UpdateSalaryBreakUp");
-
-            return annualSalaryBreakup;
-        }
-
-        public List<AnnualSalaryBreakup> CreateNewJoineeSalaryBreakUp(EmployeeCalculation eCal)
-        {
-            _logger.LogInformation("Starting method: UpdateSalaryBreakUp");
-
-            List<AnnualSalaryBreakup> annualSalaryBreakup =
-                JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(eCal.employeeSalaryDetail.CompleteSalaryDetail);
-
-            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(eCal.Doj, _currentSession.TimeZone);
-            DateTime startDate = eCal.PayrollStartDate;
-
-            decimal taxableComponentAmount = 0;
-            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = CreateMonthlySalaryCalculatedStructure(eCal, ref taxableComponentAmount);
-
-            bool IsWorkingDayNotMatchedWithActual = false;
-            int daysInMonth = 0;
-            int workingDays = 0;
-            decimal monthlyGrossIncome = 0;
-
-            foreach (var salary in annualSalaryBreakup)
-            {
-                if (!salary.IsPayrollExecutedForThisMonth)
-                {
-                    List<CalculatedSalaryBreakupDetail> otherDetail = new List<CalculatedSalaryBreakupDetail>();
-
-                    monthlyGrossIncome = 0;
-                    daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
-                    workingDays = daysInMonth;
-
-                    if (startDate.Subtract(doj).TotalDays < 0 && startDate.Month != doj.Month)
-                    {
-                        IsWorkingDayNotMatchedWithActual = true;
-                    }
-                    else if (startDate.Month == doj.Month)
-                    {
-                        workingDays = daysInMonth - doj.Day + 1;
-                        IsWorkingDayNotMatchedWithActual = false;
-                    }
-                    else
-                    {
-                        IsWorkingDayNotMatchedWithActual = false;
-                    }
-
-                    monthlyGrossIncome = eCal.TaxableCTC / 12;
-                    if (monthlyGrossIncome < taxableComponentAmount)
-                        throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
-
-
-                    var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
-                    if (component != null)
-                    {
-                        component.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
-                    }
-
-                    var finalMonthlyAmount = IsWorkingDayNotMatchedWithActual ? monthlyGrossIncome : (monthlyGrossIncome / daysInMonth) * workingDays;
-                    var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
-                    {
-                        ComponentId = nameof(ComponentNames.Gross),
-                        Formula = null,
-                        ComponentName = ComponentNames.Gross,
-                        FinalAmount = finalMonthlyAmount,
-                        ComponentTypeId = 100,
-                        IsIncludeInPayslip = true
-                    };
-
-                    otherDetail.Add(calculatedSalaryBreakupDetail);
-
-                    var finalMonthlyCTC = IsWorkingDayNotMatchedWithActual ? eCal.CTC / 12 : ((eCal.CTC / 12) / daysInMonth) * workingDays;
-                    calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
-                    {
-                        ComponentId = nameof(ComponentNames.CTC),
-                        Formula = null,
-                        ComponentName = ComponentNames.CTC,
-                        FinalAmount = finalMonthlyCTC,
-                        ComponentTypeId = 101,
-                        IsIncludeInPayslip = true
-                    };
-
-                    otherDetail.Add(calculatedSalaryBreakupDetail);
-                    otherDetail.AddRange(calculatedSalaryBreakupDetails);
-
-                    salary.SalaryBreakupDetails = otherDetail;
-                }
-
-                startDate = startDate.AddMonths(1);
-            }
             _logger.LogInformation("Leaving method: UpdateSalaryBreakUp");
 
             return annualSalaryBreakup;
@@ -1072,33 +984,64 @@ namespace ServiceLayer.Code
             return calculatedSalaryBreakupDetail;
         }
 
-        private List<CalculatedSalaryBreakupDetail> CreateMonthlySalaryCalculatedStructure(EmployeeCalculation eCal, ref decimal taxableComponentAmount)
+        private List<CalculatedSalaryBreakupDetail> ResolveFormula(EmployeeCalculation eCal, DateTime currentDate, decimal calculatedMontlyGross)
         {
             _logger.LogInformation("Starting method: GetComponentsDetail");
 
-            decimal expectedGrossIncome = 0;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
 
             decimal amount = 0;
+            decimal taxableComponentAmount = 0;
             var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
+
             foreach (var item in taxableComponents)
             {
-                if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
-                    amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                else
-                    amount = 0;
-
                 CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
+
+                if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
+                {
+                    amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                    amount = amount / 12;
+
+                    eCal.companySetting.IsJoiningBerierDayPassed = false;
+
+                    if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
+                    {
+                        eCal.companySetting.IsJoiningBerierDayPassed = true;
+                        int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                        int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                        if (daysWorked <= 0)
+                        {
+                            amount = 0;
+                        }
+                        else
+                        {
+                            amount = (amount / numberOfDays) * daysWorked;
+                        }
+                    }
+                }
+                else
+                {
+                    amount = 0;
+                }
+
                 calculatedSalaryBreakupDetail.ComponentId = item.ComponentId;
                 calculatedSalaryBreakupDetail.Formula = item.Formula;
                 calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
                 calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
-                expectedGrossIncome += amount;
-                calculatedSalaryBreakupDetail.FinalAmount = amount > 0 ? amount / 12 : 0;
+                calculatedSalaryBreakupDetail.FinalAmount = amount;
                 calculatedSalaryBreakupDetail.IsIncludeInPayslip = item.IncludeInPayslip;
-
                 taxableComponentAmount += calculatedSalaryBreakupDetail.FinalAmount;
                 calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
+            }
+
+            if (calculatedMontlyGross < taxableComponentAmount)
+                throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
+
+            var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+            if (component != null)
+            {
+                component.FinalAmount = (calculatedMontlyGross - taxableComponentAmount);
             }
 
             // calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
@@ -1107,31 +1050,56 @@ namespace ServiceLayer.Code
             return calculatedSalaryBreakupDetails;
         }
 
-        private void UpdateMonthSalaryCalculatedStructure(List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail, EmployeeCalculation eCal)
+        private void UpdateMonthSalaryCalculatedStructure(AnnualSalaryBreakup annualSalaryBreakup, EmployeeCalculation eCal)
         {
             _logger.LogInformation("Starting method: GetComponentsDetail");
 
+            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetail = annualSalaryBreakup.SalaryBreakupDetails;
+
             decimal amount = 0;
             decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
+            DateTime currentDate = annualSalaryBreakup.PresentMonthDate;
+
             var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
             foreach (var item in taxableComponents)
             {
                 if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
+                {
                     amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                    amount = (amount / 12);
+
+                    if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
+                    {
+                        int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                        int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                        if (daysWorked <= 0)
+                        {
+                            amount = 0;
+                        }
+                        else
+                        {
+                            amount = (amount / numberOfDays) * daysWorked;
+                        }
+                    }
+                }
                 else
+                {
                     amount = 0;
+                }
 
                 var component = calculatedSalaryBreakupDetail.Find(x => x.ComponentId == item.ComponentId);
 
                 if (component.Formula != ApplicationConstants.AutoCalculation)
                 {
                     component.Formula = item.Formula;
-                    component.FinalAmount = amount > 0 ? amount / 12 : 0;
+                    component.FinalAmount = amount;
                 }
                 else
                     component.FinalAmount = 0;
             }
+
             var taxableComponentAmount = calculatedSalaryBreakupDetail.FindAll(x => x.ComponentId != nameof(ComponentNames.Gross) && x.ComponentId != nameof(ComponentNames.CTC)).Sum(x => x.FinalAmount);
+
             var autoComponent = calculatedSalaryBreakupDetail.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (autoComponent != null)
                 autoComponent.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
@@ -1148,6 +1116,22 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Endning method: GetComponentsDetail");
         }
 
+        private decimal GetExpectedMonthSalary(EmployeeCalculation eCal, DateTime currentDate, decimal monthlyGross)
+        {
+            if (eCal.Doj.Year == currentDate.Year && eCal.Doj.Month == currentDate.Month)
+            {
+                int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                var numberOfDaysInPresentMonth = numberOfDays - eCal.Doj.Day + 1;
+
+                if (numberOfDaysInPresentMonth <= 0)
+                    return 0;
+
+                monthlyGross = (monthlyGross / numberOfDays) * numberOfDaysInPresentMonth;
+            }
+
+            return monthlyGross;
+        }
+
         private List<AnnualSalaryBreakup> CreateFreshSalaryBreakUp(EmployeeCalculation eCal)
         {
             _logger.LogInformation("Starting method: CreateFreshSalaryBreakUp");
@@ -1158,9 +1142,15 @@ namespace ServiceLayer.Code
 
             int index = 0;
             bool IsJoinedInMiddleOfCalendar = false;
-            decimal taxableComponentAmount = 0;
+
+            decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
+            decimal calculatedMontlyGross = 0;
+
+            List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = null;
+
             while (index < 12)
             {
+                calculatedMontlyGross = GetExpectedMonthSalary(eCal, startDate, monthlyGrossIncome);
                 List<CalculatedSalaryBreakupDetail> otherDetails = new List<CalculatedSalaryBreakupDetail>();
 
                 IsJoinedInMiddleOfCalendar = false;
@@ -1171,38 +1161,14 @@ namespace ServiceLayer.Code
                     IsJoinedInMiddleOfCalendar = true;
                 }
 
-                taxableComponentAmount = 0;
-                List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = CreateMonthlySalaryCalculatedStructure(eCal, ref taxableComponentAmount);
+                calculatedSalaryBreakupDetails = ResolveFormula(eCal, startDate, calculatedMontlyGross);
 
-                decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
-                if (monthlyGrossIncome < taxableComponentAmount)
-                    throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
-
-                var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
-                if (component != null)
-                {
-                    component.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
-                }
-
-                //var finalSpecialAmount = (monthlyGrossIncome - taxableComponentAmount);
-
-                //var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
-                //{
-                //    ComponentId = nameof(ComponentNames.Special),
-                //    Formula = null,
-                //    ComponentName = ComponentNames.Special,
-                //    FinalAmount = finalSpecialAmount,
-                //    ComponentTypeId = 102,
-                //    IsIncludeInPayslip = true
-                //};
-
-                //otherDetails.Add(calculatedSalaryBreakupDetail);
                 var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
-                    FinalAmount = monthlyGrossIncome,
+                    FinalAmount = calculatedMontlyGross,
                     ComponentTypeId = 100,
                     IsIncludeInPayslip = true
                 };
@@ -1227,7 +1193,8 @@ namespace ServiceLayer.Code
                     MonthName = startDate.ToString("MMM"),
                     IsPayrollExecutedForThisMonth = IsJoinedInMiddleOfCalendar,
                     MonthNumber = startDate.Month,
-                    MonthFirstDate = startDate,
+                    IsArrearMonth = eCal.companySetting.IsJoiningBerierDayPassed,
+                    PresentMonthDate = startDate,
                     IsActive = !IsJoinedInMiddleOfCalendar,
                     SalaryBreakupDetails = otherDetails
                 });
@@ -1236,6 +1203,7 @@ namespace ServiceLayer.Code
                 startDate = startDate.AddMonths(1);
                 index++;
             }
+
             _logger.LogInformation("Leaving method: CreateFreshSalaryBreakUp");
 
             return annualSalaryBreakups;
@@ -1496,6 +1464,71 @@ namespace ServiceLayer.Code
 
             List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
+        }
+
+        public async Task GetEmployeeSalaryDetail(EmployeeCalculation employeeCalculation)
+        {
+            var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
+                new { employeeCalculation.EmployeeId });
+            if (ResultSet == null || ResultSet.Tables.Count != 7)
+                throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
+
+            if (ResultSet.Tables[1].Rows.Count == 0)
+                throw new HiringBellException($"Salary detail not found for employee Id: [{employeeCalculation.EmployeeId}]");
+
+            if (ResultSet.Tables[2].Rows.Count == 0)
+                throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
+
+            if (ResultSet.Tables[3].Rows.Count == 0)
+                throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
+
+            if (ResultSet.Tables[4].Rows.Count == 0)
+                throw new Exception("Surcharge data not found. Please contact to admin");
+
+            if (ResultSet.Tables[5].Rows.Count == 0)
+                throw new Exception("Professional tax data not found. Please contact to admin");
+
+            if (ResultSet.Tables[6].Rows.Count == 0)
+                throw new Exception("Company Shift data not found. Please contact to admin");
+
+            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
+            employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
+            employeeCalculation.Doj = employeeCalculation.employeeSalaryDetail.DateOfJoining;
+            employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
+            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(ResultSet.Tables[4]);
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(ResultSet.Tables[5]);
+            employeeCalculation.shiftDetail = Converter.ToType<ShiftDetail>(ResultSet.Tables[6]);
+
+            if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
+                employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
+
+            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
+            employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
+                employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
+
+            if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
+                throw new HiringBellException($"Salary components not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
+
+            employeeCalculation.salaryGroup.GroupComponents = JsonConvert
+                .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
+
+            if (employeeCalculation.employeeDeclaration.SalaryDetail != null)
+                employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
+
+            var numOfYears = employeeCalculation.Doj.Year - employeeCalculation.companySetting.FinancialYear;
+            if ((numOfYears == 0 || numOfYears == 1)
+                &&
+                employeeCalculation.Doj.Month >= employeeCalculation.companySetting.DeclarationStartMonth
+                &&
+                employeeCalculation.Doj.Month <= employeeCalculation.companySetting.DeclarationEndMonth)
+                employeeCalculation.IsFirstYearDeclaration = true;
+            else
+                employeeCalculation.IsFirstYearDeclaration = false;
+
+            await Task.CompletedTask;
         }
     }
 }

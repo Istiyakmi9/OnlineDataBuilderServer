@@ -17,6 +17,7 @@ namespace ModalLayer.Modal
         public DateTime PayrollStartDate { set; get; }
 
         public DateTime financialYearDateTime { set; get; }
+        public DateTime presentDate { set; get; }
         public Employee employee { set; get; }
         public decimal expectedAnnualGrossIncome { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
@@ -27,6 +28,16 @@ namespace ModalLayer.Modal
         public CompanySetting companySetting { set; get; }
         public List<SurChargeSlab> surchargeSlabs { set; get; }
         public List<PTaxSlab> ptaxSlab { set; get; }
+        public PreviousEmployerDetail previousEmployerDetail { set; get; }
+        public ShiftDetail shiftDetail { set; get; }
+    }
+
+    public class PreviousEmployerDetail
+    {
+        public decimal ProfessionalTax { set; get; }
+        public decimal PF_with_80C { set; get; }
+        public decimal TDS { set; get; }
+        public decimal TotalIncome { set; get; }
     }
 
     public class PayrollCommonData

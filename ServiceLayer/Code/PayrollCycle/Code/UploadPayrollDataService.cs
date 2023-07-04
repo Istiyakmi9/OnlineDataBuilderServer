@@ -147,7 +147,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 DateOfJoining = emp.DOJ,
                 DOB = new DateTime(1990, 5, 16),
                 WorkShiftId = 1,
-                IsCTCChanged = true,
+                IsCTCChanged = false
             };
 
             var Names = emp.EmployeeName.Split(' ');
@@ -162,7 +162,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 employee.LastName = "NA";
             }
 
-            await _employeeService.RegisterEmployeeByExcelService(employee, emp, null);
+            await _employeeService.RegisterEmployeeByExcelService(employee, emp);
         }
 
         private async Task<List<UploadedPayrollData>> ReadPayrollExcelData(IFormFileCollection files)
@@ -201,6 +201,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                         throw HiringBellException.ThrowBadRequest("Please select a valid excel file");
                     }
                 }
+
                 validateExcelValue(uploadedPayrollList);
             }
 
