@@ -194,6 +194,7 @@ namespace ServiceLayer.Code
             {
                 ValidatePTaxSlab(pTaxSlabs);
                 int companyId = pTaxSlabs.FirstOrDefault().CompanyId;
+
                 List<PTaxSlab> oldPtaxSlab = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new { CompanyId = companyId });
                 foreach (var slab in pTaxSlabs)
                 {
@@ -207,7 +208,6 @@ namespace ServiceLayer.Code
                             ptax.MaxIncome = slab.MaxIncome;
                             ptax.TaxAmount = slab.TaxAmount;
                             ptax.Gender = slab.Gender;
-                            ptax.CompanyId = slab.CompanyId;
                         }
                     }
                     else
@@ -224,7 +224,6 @@ namespace ServiceLayer.Code
                                     n.MaxIncome,
                                     n.TaxAmount,
                                     n.Gender,
-                                    n.CompanyId
                                 }).ToList();
 
                 var status = await _db.BulkExecuteAsync("sp_ptax_slab_insupd", allSlabs, true);
