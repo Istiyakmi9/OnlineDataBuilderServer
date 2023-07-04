@@ -37,5 +37,9 @@ namespace ModalLayer.Modal
         public bool UserDefaultCredentials { set; get; }
         public string Credentials { set; get; }
         public bool IsPrimary { set; get; }
+        public int DeclarationStartMonth {set; get;}
+        public int DeclarationEndMonth {set; get;}
+        public int FinancialYear {set; get;}
+        public int AttendanceSubmissionLimit { set; get; }
     }
 }

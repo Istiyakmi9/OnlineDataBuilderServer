@@ -1445,11 +1445,7 @@ namespace ServiceLayer.Code
             {
                 if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
                     salaryGrp.SalaryComponents = "[]";
-                //else
-                //    if (salaryGroup.GroupComponents == null && salaryGroup.SalaryComponents == null)
-                //        salaryGroup.SalaryComponents = "[]";
-                //    else
-                //        salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
+               
                 salaryGrp.SalaryGroupId = 0;
                 salaryGrp.GroupName = salaryGroup.GroupName;
                 salaryGrp.GroupDescription = salaryGroup.GroupDescription;

@@ -51,6 +51,10 @@ namespace ServiceLayer.Code
                 companyDetail.DeliveryMethod,
                 companyDetail.IsPrimary,
                 companyDetail.Mobile,
+                companyDetail.DeclarationStartMonth,
+                companyDetail.DeclarationEndMonth,
+                companyDetail.FinancialYear,
+                companyDetail.AttendanceSubmissionLimit,
                 Password = newEncryptedPassword
             }, true);
             if (string.IsNullOrEmpty(result))
@@ -98,6 +102,9 @@ namespace ServiceLayer.Code
             if (companyDetail.PortNo <= 0)
                 throw new HiringBellException("Invalid port number");
 
+            if (companyDetail.FinancialYear <= 0)
+                throw new HiringBellException("Please enter a valid financial year");
+
             if (string.IsNullOrEmpty(companyDetail.GSTNo))
                 throw new HiringBellException("GST No is null or empty");
 
@@ -118,6 +125,9 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(companyDetail.SecondAddress))
                 throw new HiringBellException("IFSC code is null or empty");
+
+            if (string.IsNullOrEmpty(companyDetail.State))
+                throw new HiringBellException("State is null or empty");
 
             var mail = new MailAddress(companyDetail.EmailId);
             bool isValidEmail = mail.Host.Contains(".");

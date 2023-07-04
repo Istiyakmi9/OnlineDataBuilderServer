@@ -33,7 +33,6 @@ namespace ServiceLayer.Interface
         DataSet GetAllSalaryDetailService(FilterModel filterModel);
         List<AnnualSalaryBreakup> UpdateSalaryBreakUp(EmployeeCalculation eCal, EmployeeSalaryDetail salaryBreakup);
         Task GetEmployeeSalaryDetail(EmployeeCalculation employeeCalculation);
-        List<AnnualSalaryBreakup> CreateNewJoineeSalaryBreakUp(EmployeeCalculation eCal);
         List<SalaryGroup> CloneSalaryGroupService(SalaryGroup salaryGroup);
     }
 }
