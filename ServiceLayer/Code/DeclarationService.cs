@@ -810,7 +810,10 @@ namespace ServiceLayer.Code
             if (totalWorkingMonth == 0)
                 throw HiringBellException.ThrowBadRequest($"Invalid working month count found in method: {nameof(GetPerMonthTaxInitialData)}");
 
-            if (doj.Year == DateTime.UtcNow.Year && doj.Month >= eCal.companySetting.DeclarationStartMonth && doj.Month < 12)
+            //if (doj.Year == DateTime.UtcNow.Year && doj.Month >= eCal.companySetting.DeclarationStartMonth && doj.Month < 12)
+            //    totalWorkingMonth = totalWorkingMonth - companySetting.DeclarationEndMonth;
+
+            if ((doj.Year == eCal.companySetting.FinancialYear && doj.Month < 12) || doj.Year < eCal.companySetting.FinancialYear)
                 totalWorkingMonth = totalWorkingMonth - companySetting.DeclarationEndMonth;
 
             var permonthTax = employeeDeclaration.TaxNeedToPay / totalWorkingMonth;
@@ -853,7 +856,7 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    if (i < 9 || doj.Year != eCal.financialYearDateTime.Year)
+                    if (i < 9)
                     {
                         taxdetails.Add(new TaxDetails
                         {

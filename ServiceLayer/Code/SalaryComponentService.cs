@@ -1003,11 +1003,11 @@ namespace ServiceLayer.Code
                     amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                     amount = amount / 12;
 
-                    eCal.companySetting.IsJoiningBarrierDayPassed = false;
+                    //eCal.companySetting.IsJoiningBarrierDayPassed = false;
 
                     if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
                     {
-                        eCal.companySetting.IsJoiningBarrierDayPassed = true;
+                        //eCal.companySetting.IsJoiningBarrierDayPassed = true;
                         int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
                         int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
                         if (daysWorked <= 0)
