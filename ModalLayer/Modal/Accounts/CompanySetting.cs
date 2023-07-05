@@ -36,6 +36,6 @@ namespace ModalLayer.Modal.Accounts
         public int AttendanceSubmissionLimit { set; get; } = 2;
         public int LeaveAccrualRunCronDayOfMonth { set; get; }
         public string TimezoneName { set; get; }
-        public bool IsJoiningBerierDayPassed { set; get; }
+        public bool IsJoiningBarrierDayPassed { set; get; }
     }
 }
