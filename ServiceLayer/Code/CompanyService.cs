@@ -441,7 +441,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.AttendanceSubmissionLimit = companySetting.AttendanceSubmissionLimit;
                 companySettingDetail.LeaveAccrualRunCronDayOfMonth = companySetting.LeaveAccrualRunCronDayOfMonth;
                 companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
-                companySettingDetail.IsJoiningBerierDayPassed = companySetting.IsJoiningBerierDayPassed;
+                companySettingDetail.IsJoiningBarrierDayPassed = companySetting.IsJoiningBarrierDayPassed;
             }
 
             var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
@@ -458,6 +458,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.LeaveAccrualRunCronDayOfMonth,
                 companySettingDetail.EveryMonthLastDayOfDeclaration,
                 companySettingDetail.TimezoneName,
+                companySetting.IsJoiningBarrierDayPassed,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 

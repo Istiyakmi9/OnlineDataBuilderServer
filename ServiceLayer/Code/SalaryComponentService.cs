@@ -1003,11 +1003,11 @@ namespace ServiceLayer.Code
                     amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                     amount = amount / 12;
 
-                    eCal.companySetting.IsJoiningBerierDayPassed = false;
+                    eCal.companySetting.IsJoiningBarrierDayPassed = false;
 
                     if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
                     {
-                        eCal.companySetting.IsJoiningBerierDayPassed = true;
+                        eCal.companySetting.IsJoiningBarrierDayPassed = true;
                         int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
                         int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
                         if (daysWorked <= 0)
@@ -1193,7 +1193,7 @@ namespace ServiceLayer.Code
                     MonthName = startDate.ToString("MMM"),
                     IsPayrollExecutedForThisMonth = IsJoinedInMiddleOfCalendar,
                     MonthNumber = startDate.Month,
-                    IsArrearMonth = eCal.companySetting.IsJoiningBerierDayPassed,
+                    IsArrearMonth = eCal.companySetting.IsJoiningBarrierDayPassed,
                     PresentMonthDate = startDate,
                     IsActive = !IsJoinedInMiddleOfCalendar,
                     SalaryBreakupDetails = otherDetails
