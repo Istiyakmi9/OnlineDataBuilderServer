@@ -33,6 +33,8 @@ namespace ServiceLayer.Code
         private readonly ILogger<DeclarationService> _logger;
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly ExcelWriter _excelWriter;
+        private readonly IUtilityService _utilityService;
+
         public DeclarationService(IDb db,
             ILogger<DeclarationService> logger,
             IFileService fileService,
@@ -43,6 +45,7 @@ namespace ServiceLayer.Code
             IComponentsCalculationService componentsCalculationService,
             ITimezoneConverter timezoneConverter,
             IHostingEnvironment hostingEnvironment,
+            IUtilityService utilityService,
             ExcelWriter excelWriter)
         {
             _db = db;
@@ -55,6 +58,7 @@ namespace ServiceLayer.Code
             _componentsCalculationService = componentsCalculationService;
             _timezoneConverter = timezoneConverter;
             _hostingEnvironment = hostingEnvironment;
+            _utilityService = utilityService;
             _excelWriter = excelWriter;
         }
 
@@ -553,12 +557,11 @@ namespace ServiceLayer.Code
             var settings = empCal.companySetting;
 
             var doj = empCal.Doj;
-            if (doj.Year == settings.FinancialYear
-                || (doj.Year == settings.FinancialYear + 1 && doj.Month <= settings.DeclarationEndMonth))
+            if (_utilityService.CheckIsJoinedInCurrentFinancialYear(doj, settings))
             {
                 foreach (var elem in completeSalaryBreakups)
                 {
-                    if (elem.MonthNumber < doj.Month)
+                    if (doj.Subtract(elem.PresentMonthDate).TotalDays > 0 && !elem.IsArrearMonth)
                     {
                         elem.IsPayrollExecutedForThisMonth = true;
                         elem.IsPreviouEmployer = true;
