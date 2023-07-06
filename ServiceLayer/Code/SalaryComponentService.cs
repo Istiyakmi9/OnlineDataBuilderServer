@@ -618,7 +618,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc", 
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc",
                 new { SalaryGroupId = salaryGroupId, CTC, CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             if (salaryGroup == null)
             {
@@ -984,7 +984,7 @@ namespace ServiceLayer.Code
             return calculatedSalaryBreakupDetail;
         }
 
-        private List<CalculatedSalaryBreakupDetail> ResolveFormula(EmployeeCalculation eCal, DateTime currentDate, decimal calculatedMontlyGross)
+        private List<CalculatedSalaryBreakupDetail> ResolveFormula(EmployeeCalculation eCal, DateTime currentDate, decimal calculatedMontlyGross, bool currentYearMonthFlag)
         {
             _logger.LogInformation("Starting method: GetComponentsDetail");
 
@@ -1003,11 +1003,11 @@ namespace ServiceLayer.Code
                     amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                     amount = amount / 12;
 
-                    eCal.companySetting.IsJoiningBarrierDayPassed = false;
+                    //eCal.companySetting.IsJoiningBarrierDayPassed = false;
 
-                    if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
+                    if (currentYearMonthFlag)
                     {
-                        eCal.companySetting.IsJoiningBarrierDayPassed = true;
+                        //eCal.companySetting.IsJoiningBarrierDayPassed = true;
                         int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
                         int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
                         if (daysWorked <= 0)
@@ -1146,6 +1146,7 @@ namespace ServiceLayer.Code
             decimal monthlyGrossIncome = eCal.TaxableCTC / 12;
             decimal calculatedMontlyGross = 0;
 
+            bool currentYearMonthFlag = false;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = null;
 
             while (index < 12)
@@ -1161,7 +1162,11 @@ namespace ServiceLayer.Code
                     IsJoinedInMiddleOfCalendar = true;
                 }
 
-                calculatedSalaryBreakupDetails = ResolveFormula(eCal, startDate, calculatedMontlyGross);
+                currentYearMonthFlag = false;
+                if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == startDate.Month)
+                    currentYearMonthFlag = true;
+
+                calculatedSalaryBreakupDetails = ResolveFormula(eCal, startDate, calculatedMontlyGross, currentYearMonthFlag);
 
                 var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
@@ -1193,7 +1198,7 @@ namespace ServiceLayer.Code
                     MonthName = startDate.ToString("MMM"),
                     IsPayrollExecutedForThisMonth = IsJoinedInMiddleOfCalendar,
                     MonthNumber = startDate.Month,
-                    IsArrearMonth = eCal.companySetting.IsJoiningBarrierDayPassed,
+                    IsArrearMonth = (eCal.companySetting.IsJoiningBarrierDayPassed && currentYearMonthFlag),
                     PresentMonthDate = startDate,
                     IsActive = !IsJoinedInMiddleOfCalendar,
                     SalaryBreakupDetails = otherDetails
@@ -1445,7 +1450,7 @@ namespace ServiceLayer.Code
             {
                 if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
                     salaryGrp.SalaryComponents = "[]";
-               
+
                 salaryGrp.SalaryGroupId = 0;
                 salaryGrp.GroupName = salaryGroup.GroupName;
                 salaryGrp.GroupDescription = salaryGroup.GroupDescription;
