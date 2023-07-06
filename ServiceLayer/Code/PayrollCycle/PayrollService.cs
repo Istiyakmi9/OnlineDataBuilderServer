@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using DocumentFormat.OpenXml.Wordprocessing;
 using EMailService.Service;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -9,7 +10,9 @@ using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -23,11 +26,14 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly IDeclarationService _declarationService;
         private readonly IEMailManager _eMailManager;
         private readonly IBillService _billService;
+        private readonly FileLocationDetail _fileLocationDetail;
+
         public PayrollService(ITimezoneConverter timezoneConverter,
             IDb db,
             IDeclarationService declarationService,
             CurrentSession currentSession,
             IEMailManager eMailManager,
+            FileLocationDetail fileLocationDetail,
             IBillService billService)
         {
             _db = db;
@@ -36,6 +42,7 @@ namespace ServiceLayer.Code.PayrollCycle
             _declarationService = declarationService;
             _eMailManager = eMailManager;
             _billService = billService;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         private List<PayrollEmployeeData> GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
@@ -279,6 +286,13 @@ namespace ServiceLayer.Code.PayrollCycle
                 FileName = generatedfile.FileDetail.FileName,
                 FilePath = generatedfile.FileDetail.FilePath
             };
+            StringBuilder builder = new StringBuilder();
+            builder.Append("<div style=\"border-bottom:1px solid black; margin-top: 14px; margin-bottom:5px\">" + "" + "</div>");
+            var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
+            if (File.Exists(logoPath))
+            {
+                builder.Append($"<div><img src=\"cid:{ApplicationConstants.LogoContentId}\" style=\"width: 10rem;margin-top: 1rem;\"></div>");
+            }
             EmailSenderModal emailSenderModal = new EmailSenderModal
             {
                 To = new List<string> { "istiyaq.mi9@gmail.com", "marghub12@gmail.com" },
@@ -286,8 +300,8 @@ namespace ServiceLayer.Code.PayrollCycle
                 BCC = new List<string>(),
                 FileDetails = new List<FileDetail> { file },
                 Subject = "Monthly Payslip",
-                Body = $"Payslip of the month {presentDate}",
-                Title = "Payslp"
+                Body = string.Concat($"Payslip of the month {presentDate}", builder.ToString()) ,
+                Title = "Payslip"
             };
 
             await _eMailManager.SendMailAsync(emailSenderModal);
