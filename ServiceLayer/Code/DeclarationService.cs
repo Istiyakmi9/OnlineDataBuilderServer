@@ -559,6 +559,7 @@ namespace ServiceLayer.Code
             var doj = empCal.Doj;
             if (_utilityService.CheckIsJoinedInCurrentFinancialYear(doj, settings))
             {
+                doj = new DateTime(doj.Year, doj.Month, 1);
                 foreach (var elem in completeSalaryBreakups)
                 {
                     if (doj.Subtract(elem.PresentMonthDate).TotalDays > 0 && !elem.IsArrearMonth)
