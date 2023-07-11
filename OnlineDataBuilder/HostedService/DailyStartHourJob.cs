@@ -70,7 +70,7 @@ namespace OnlineDataBuilder.HostedService
 
             await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
 
-            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter--);
+            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter++);
         }
 
         private void EnableLoggin()
