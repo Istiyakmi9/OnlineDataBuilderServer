@@ -115,56 +115,53 @@ namespace ServiceLayer.Code.PayrollCycle
                 int daysUsedForDeduction = 0;
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
-                    if (empPayroll.EmployeeId == 8 || empPayroll.EmployeeId == 11)
+                    try
                     {
-                        try
+                        daysUsedForDeduction = totalDaysInMonth;
+                        DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
+                        if (doj.Month == payrollDate.Month && doj.Year == payrollDate.Year)
                         {
-                            daysUsedForDeduction = totalDaysInMonth;
-                            DateTime doj = _timezoneConverter.ToTimeZoneDateTime(empPayroll.Doj, _currentSession.TimeZone);
-                            if (doj.Month == payrollDate.Month && doj.Year == payrollDate.Year)
-                            {
-                                daysUsedForDeduction = totalDaysInMonth - doj.Day + 1;
-                            }
-
-                            daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
-
-                            var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
-                            if (taxDetails == null)
-                                throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
-
-                            var presentData = taxDetails.Find(x => x.Month == payrollDate.Month);
-                            if (presentData == null)
-                                throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
-
-                            if (!presentData.IsPayrollCompleted)
-                            {
-                                UpdateSalaryBreakup(payrollDate, totalDaysInMonth, daysPresnet, empPayroll);
-                                if (daysPresnet != daysUsedForDeduction)
-                                {
-                                    var newAmount = (presentData.TaxDeducted / daysUsedForDeduction) * daysPresnet;
-                                    presentData.TaxPaid = newAmount;
-                                    presentData.TaxDeducted = newAmount;
-                                    presentData.IsPayrollCompleted = true;
-                                    IsTaxCalculationRequired = true;
-                                }
-                                else
-                                {
-                                    presentData.TaxPaid = presentData.TaxDeducted;
-                                    presentData.IsPayrollCompleted = true;
-                                }
-
-                                empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
-                                await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
-                                IsTaxCalculationRequired = false;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
+                            daysUsedForDeduction = totalDaysInMonth - doj.Day + 1;
                         }
 
-                        Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
+                        daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
+
+                        var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
+                        if (taxDetails == null)
+                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                        var presentData = taxDetails.Find(x => x.Month == payrollDate.Month);
+                        if (presentData == null)
+                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                        if (!presentData.IsPayrollCompleted)
+                        {
+                            UpdateSalaryBreakup(payrollDate, totalDaysInMonth, daysPresnet, empPayroll);
+                            if (daysPresnet != daysUsedForDeduction)
+                            {
+                                var newAmount = (presentData.TaxDeducted / daysUsedForDeduction) * daysPresnet;
+                                presentData.TaxPaid = newAmount;
+                                presentData.TaxDeducted = newAmount;
+                                presentData.IsPayrollCompleted = true;
+                                IsTaxCalculationRequired = true;
+                            }
+                            else
+                            {
+                                presentData.TaxPaid = presentData.TaxDeducted;
+                                presentData.IsPayrollCompleted = true;
+                            }
+
+                            empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
+                            await _declarationService.UpdateTaxDetailsService(empPayroll, payrollCommonData, IsTaxCalculationRequired);
+                            IsTaxCalculationRequired = false;
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+
+                    Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
                 }
 
                 offsetindex = offsetindex + pageSize;
