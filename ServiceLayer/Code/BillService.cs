@@ -1166,7 +1166,7 @@ namespace ServiceLayer.Code
 
             if (!File.Exists(payslipModal.PdfTemplatePath))
                 throw new HiringBellException("PDF template not found. Please contact to admin.");
-            _logger.LogError($"PayslipModal: {payslipModal.ToString()}");
+            _logger.LogError($"Template path: {payslipModal.PdfTemplatePath}");
 
             _logger.LogError($"Logo Path: {payslipModal.HeaderLogoPath}");
             if (!File.Exists(payslipModal.HeaderLogoPath))
