@@ -37,7 +37,6 @@ namespace ServiceLayer.Code.PayrollCycle
             CurrentSession currentSession,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            IBillService billService)
             IBillService billService,
             Logger<PayrollService> logger
             )
@@ -170,9 +169,8 @@ namespace ServiceLayer.Code.PayrollCycle
                         Console.WriteLine(ex.Message);
                     }
 
-                        _logger.LogInformation($"[CalculateRunPayrollForEmployees] method: generating and sending payroll email");
-                        Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
-                    }
+                    _logger.LogInformation($"[CalculateRunPayrollForEmployees] method: generating and sending payroll email");
+                    Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
                 }
 
                 offsetindex = offsetindex + pageSize;
@@ -320,7 +318,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 BCC = new List<string>(),
                 FileDetails = new List<FileDetail> { file },
                 Subject = "Monthly Payslip",
-                Body = string.Concat($"Payslip of the month {presentDate}", builder.ToString()) ,
+                Body = string.Concat($"Payslip of the month {presentDate}", builder.ToString()),
                 Title = "Payslip"
             };
 
