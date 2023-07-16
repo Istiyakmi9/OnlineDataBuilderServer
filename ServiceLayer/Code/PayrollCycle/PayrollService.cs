@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Service;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -23,12 +24,16 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly IDeclarationService _declarationService;
         private readonly IEMailManager _eMailManager;
         private readonly IBillService _billService;
+        private readonly ILogger<PayrollService> _logger;
+
         public PayrollService(ITimezoneConverter timezoneConverter,
             IDb db,
             IDeclarationService declarationService,
             CurrentSession currentSession,
             IEMailManager eMailManager,
-            IBillService billService)
+            IBillService billService,
+            Logger<PayrollService> logger
+            )
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -36,6 +41,7 @@ namespace ServiceLayer.Code.PayrollCycle
             _declarationService = declarationService;
             _eMailManager = eMailManager;
             _billService = billService;
+            _logger = logger;
         }
 
         private List<PayrollEmployeeData> GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
@@ -83,6 +89,8 @@ namespace ServiceLayer.Code.PayrollCycle
 
         private async Task CalculateRunPayrollForEmployees(Payroll payroll, PayrollCommonData payrollCommonData)
         {
+            _logger.LogInformation($"[CalculateRunPayrollForEmployees] method started");
+
             DateTime payrollDate = (DateTime)_currentSession.TimeZoneNow;
             int offsetindex = 0;
             int daysPresnet = 0;
@@ -156,12 +164,15 @@ namespace ServiceLayer.Code.PayrollCycle
                             Console.WriteLine(ex.Message);
                         }
 
+                        _logger.LogInformation($"[CalculateRunPayrollForEmployees] method: generating and sending payroll email");
                         Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
                     }
                 }
 
                 offsetindex = offsetindex + pageSize;
             }
+
+            _logger.LogInformation($"[CalculateRunPayrollForEmployees] method ended");
             await Task.CompletedTask;
         }
 
@@ -236,6 +247,8 @@ namespace ServiceLayer.Code.PayrollCycle
 
         public async Task RunPayrollCycle(int i)
         {
+            _logger.LogInformation($"[RunPayrollCycle] method started");
+
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
             foreach (var payroll in payrollCommonData.payrolls)
             {
@@ -252,6 +265,7 @@ namespace ServiceLayer.Code.PayrollCycle
                     switch (payroll.PayFrequency)
                     {
                         case "monthly":
+                            _logger.LogInformation($"[RunPayrollCycle] method: runnig monthly payroll");
                             await CalculateRunPayrollForEmployees(payroll, payrollCommonData);
                             break;
                         case "daily":
@@ -262,18 +276,25 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
             }
 
+            _logger.LogInformation($"[RunPayrollCycle] method ended");
             await Task.CompletedTask;
         }
 
         private async Task SendPayrollGeneratedEmail(DateTime presentDate, long empId)
         {
+            _logger.LogInformation($"[SendPayrollGeneratedEmail] method started");
             PayslipGenerationModal payslipGenerationModal = new PayslipGenerationModal
             {
                 Year = presentDate.Year,
                 Month = presentDate.Month,
                 EmployeeId = empId
             };
+
+            _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Generating payslip");
+
             var generatedfile = await _billService.GeneratePayslipService(payslipGenerationModal);
+
+            _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Payslip generated");
             var file = new FileDetail
             {
                 FileName = generatedfile.FileDetail.FileName,
@@ -290,7 +311,9 @@ namespace ServiceLayer.Code.PayrollCycle
                 Title = "Payslp"
             };
 
+            _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Sending email");
             await _eMailManager.SendMailAsync(emailSenderModal);
+            _logger.LogInformation($"[SendPayrollGeneratedEmail] method ended");
         }
     }
 }
