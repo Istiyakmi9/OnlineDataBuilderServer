@@ -23,7 +23,7 @@ namespace OnlineDataBuilder.HostedService
         private readonly ApplicationConfiguration _applicationConfiguration;
         private readonly FileLocationDetail _fileLocationDetail;
 
-        private int counter = 12;
+        private int counter = 0;
         private int index = 1;
         DateTime _nextCron;
 
@@ -51,26 +51,36 @@ namespace OnlineDataBuilder.HostedService
             {
                 int value = WaitForNextCronValue();
                 await Task.Delay(value, cancellationToken);
-                _logger.LogInformation($"Daily cron jon started. Index = {index}   ...............");
+                _logger.LogInformation($"Daily cron job started. Index = {index} at {DateTime.Now} (utc time: {DateTime.UtcNow})   ...............");
 
                 await this.RunJobAsync();
 
-                _logger.LogInformation($"Daily cron jon ran successfully. Index = {index++}   .................");
+                _logger.LogInformation($"Daily cron job ran successfully. Index = {index++} at {DateTime.Now} (utc time: {DateTime.UtcNow})   .................");
                 _nextCron = _cron.GetNextOccurrence(DateTime.Now);
             }
         }
 
         private async Task RunJobAsync()
         {
+            _logger.LogInformation("Leave Accrual cron job started.");
             var companySettings = await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
-            
+            _logger.LogInformation("Leave Accrual cron job ran successfully.");
+
+            _logger.LogInformation("Timesheet creation cron job started.");
             await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
+            _logger.LogInformation("Timesheet creation cron job ran successfully.");
 
+            _logger.LogInformation("Send Email notification cron job started.");
             await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
+            _logger.LogInformation("Send Email notification cron job ran successfully.");
 
+            _logger.LogInformation("Update request cron job started.");
             await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
+            _logger.LogInformation("Update request cron job ran successfully.");
 
-            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter--);
+            _logger.LogInformation("Payroll cron job started.");
+            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter++);
+            _logger.LogInformation("Payroll cron job ran successfully.");
         }
 
         private void EnableLoggin()

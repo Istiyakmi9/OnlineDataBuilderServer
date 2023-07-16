@@ -1166,7 +1166,9 @@ namespace ServiceLayer.Code
 
             if (!File.Exists(payslipModal.PdfTemplatePath))
                 throw new HiringBellException("PDF template not found. Please contact to admin.");
+            _logger.LogError($"Template path: {payslipModal.PdfTemplatePath}");
 
+            _logger.LogError($"Logo Path: {payslipModal.HeaderLogoPath}");
             if (!File.Exists(payslipModal.HeaderLogoPath))
                 throw new HiringBellException("Logo image not found. Please contact to admin.");
 
@@ -1195,7 +1197,7 @@ namespace ServiceLayer.Code
             var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => 
                 x.ComponentId != ComponentNames.GrossId && 
                 x.ComponentId != ComponentNames.CTCId &&
-                x.ComponentId != ComponentNames.EmployerPF &&
+                //x.ComponentId != ComponentNames.EmployerPF &&
                 x.IsIncludeInPayslip == true
             );
 
@@ -1219,7 +1221,7 @@ namespace ServiceLayer.Code
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
-            var TotalWorkingDays = payslipModal.AttendanceDetail.TotalDays;
+            var TotalWorkingDays = GetWorkingDays(payslipModal.AttendanceDetail);
             var LossOfPayDays = ActualPayableDays - TotalWorkingDays;
             using (FileStream stream = File.Open(templatePath, FileMode.Open))
             {
@@ -1296,6 +1298,13 @@ namespace ServiceLayer.Code
                 }
             }
             return html;
+        }
+
+        private int GetWorkingDays(Attendance AttendanceDetail)
+        {
+            List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(AttendanceDetail.AttendanceDetail);
+            int totalDays = attendanceDetailJsons.Count(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+            return totalDays;
         }
 
         private async Task PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
