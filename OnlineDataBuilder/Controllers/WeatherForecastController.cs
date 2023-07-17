@@ -107,7 +107,7 @@ namespace OnlineDataBuilder.Controllers
 
             //await RunDailyTimesheetCreationJob();
 
-            // await RunPayrollAsync();
+            await RunPayrollAsync();
 
 
             // await LeaveLevelMigration();

@@ -448,8 +448,6 @@ namespace ServiceLayer.Code
             if (!File.Exists(billModal.BillTemplatePath))
                 throw new HiringBellException("Billing template not found. Please contact to admin.");
 
-
-
             billModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
                 Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
@@ -1117,7 +1115,7 @@ namespace ServiceLayer.Code
             {
                 if (payslipGenerationModal.EmployeeId <= 0)
                     throw new HiringBellException("Invalid employee selected. Please select a valid employee");
-                
+
                 // fetch and all the nessary data from database required to bill generation.
                 await PrepareRequestForPayslipGeneration(payslipGenerationModal);
 
@@ -1146,6 +1144,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException(ex.Message, ex);
             }
         }
+
         private async Task CapturePayslipFileFolderLocations(PayslipGenerationModal payslipModal)
         {
             payslipModal.PayslipTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
@@ -1166,11 +1165,12 @@ namespace ServiceLayer.Code
 
             if (!File.Exists(payslipModal.PdfTemplatePath))
                 throw new HiringBellException("PDF template not found. Please contact to admin.");
-            _logger.LogError($"Template path: {payslipModal.PdfTemplatePath}");
+            _logger.LogInformation($"Template path: {payslipModal.PdfTemplatePath}");
 
-            _logger.LogError($"Logo Path: {payslipModal.HeaderLogoPath}");
+
             if (!File.Exists(payslipModal.HeaderLogoPath))
                 throw new HiringBellException("Logo image not found. Please contact to admin.");
+            _logger.LogInformation($"Logo Path: {payslipModal.HeaderLogoPath}");
 
             await Task.CompletedTask;
         }
@@ -1194,8 +1194,8 @@ namespace ServiceLayer.Code
         {
             string html = string.Empty;
             var salaryDetailsHTML = string.Empty;
-            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x => 
-                x.ComponentId != ComponentNames.GrossId && 
+            var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x =>
+                x.ComponentId != ComponentNames.GrossId &&
                 x.ComponentId != ComponentNames.CTCId &&
                 //x.ComponentId != ComponentNames.EmployerPF &&
                 x.IsIncludeInPayslip == true
@@ -1211,7 +1211,7 @@ namespace ServiceLayer.Code
 
             decimal employerPFAmount = 0;
             var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF");
-            if(employerPF != null)
+            if (employerPF != null)
                 employerPFAmount = employerPF.FinalAmount;
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
@@ -1366,7 +1366,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Company primary logo not found. Please contact to admin.");
 
             var file = Converter.ToType<Files>(ds.Tables[6]);
-            payslipGenerationModal.HeaderLogoPath = Path.Combine(file.FilePath, file.FileName);
+
+            payslipGenerationModal.HeaderLogoPath = Path.Combine(
+                _fileLocationDetail.RootPath,
+                file.FilePath,
+                file.FileName
+            );
+
             await Task.CompletedTask;
         }
         private void GetPayslipFileDetail(PayslipGenerationModal payslipModal, FileDetail fileDetail, string fileExtension)
