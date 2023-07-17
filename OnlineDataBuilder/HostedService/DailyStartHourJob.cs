@@ -23,7 +23,7 @@ namespace OnlineDataBuilder.HostedService
         private readonly ApplicationConfiguration _applicationConfiguration;
         private readonly FileLocationDetail _fileLocationDetail;
 
-        private int counter = 0;
+        private int counter = 1;
         private int index = 1;
         DateTime _nextCron;
 
