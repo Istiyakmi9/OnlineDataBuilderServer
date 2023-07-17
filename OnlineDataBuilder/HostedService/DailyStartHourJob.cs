@@ -43,7 +43,7 @@ namespace OnlineDataBuilder.HostedService
 
             _cron = CrontabSchedule.Parse(configuration.GetSection("DailyEarlyHourJob").Value,
                 new CrontabSchedule.ParseOptions { IncludingSeconds = true });
-            _nextCron = _cron.GetNextOccurrence(DateTime.Now);
+            _nextCron = _cron.GetNextOccurrence(DateTime.UtcNow);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -54,7 +54,7 @@ namespace OnlineDataBuilder.HostedService
             while (!cancellationToken.IsCancellationRequested)
             {
                 int value = WaitForNextCronValue();
-                _logger.LogInformation($"Cron job will run: {_nextCron}. Wait time in ms: {value}");
+                _logger.LogInformation($"Cron job will run: {_nextCron}. Utc time: {DateTime.UtcNow} Wait time in ms: {value}");
 
                 await Task.Delay(value, cancellationToken);
                 _logger.LogInformation($"Daily cron job started. Index = {index} at {DateTime.Now} (utc time: {DateTime.UtcNow})   ...............");
@@ -108,7 +108,7 @@ namespace OnlineDataBuilder.HostedService
             }
         }
 
-        private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.Now).TotalMilliseconds);
+        private int WaitForNextCronValue() => Math.Max(0, (int)_nextCron.Subtract(DateTime.UtcNow).TotalMilliseconds);
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
