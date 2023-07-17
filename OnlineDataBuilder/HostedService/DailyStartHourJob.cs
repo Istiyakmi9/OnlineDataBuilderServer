@@ -38,6 +38,9 @@ namespace OnlineDataBuilder.HostedService
             _fileLocationDetail = fileLocationDetail;
             _applicationConfiguration = applicationConfiguration;
             _serviceProvider = serviceProvider;
+
+            _logger.LogInformation($"Cron value: {configuration.GetSection("DailyEarlyHourJob").Value}");
+
             _cron = CrontabSchedule.Parse(configuration.GetSection("DailyEarlyHourJob").Value,
                 new CrontabSchedule.ParseOptions { IncludingSeconds = true });
             _nextCron = _cron.GetNextOccurrence(DateTime.Now);
@@ -51,7 +54,7 @@ namespace OnlineDataBuilder.HostedService
             while (!cancellationToken.IsCancellationRequested)
             {
                 int value = WaitForNextCronValue();
-                _logger.LogInformation($"Cron job will run: {new DateTime(value)}");
+                _logger.LogInformation($"Cron job will run: {_nextCron}");
 
                 await Task.Delay(value, cancellationToken);
                 _logger.LogInformation($"Daily cron job started. Index = {index} at {DateTime.Now} (utc time: {DateTime.UtcNow})   ...............");
