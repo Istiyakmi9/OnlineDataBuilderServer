@@ -1163,14 +1163,14 @@ namespace ServiceLayer.Code
                 _fileLocationDetail.PaysliplTemplate
             );
 
+            _logger.LogInformation($"Template path: {payslipModal.PdfTemplatePath}");
             if (!File.Exists(payslipModal.PdfTemplatePath))
                 throw new HiringBellException("PDF template not found. Please contact to admin.");
-            _logger.LogInformation($"Template path: {payslipModal.PdfTemplatePath}");
 
 
+            _logger.LogInformation($"Logo Path: {payslipModal.HeaderLogoPath}");
             if (!File.Exists(payslipModal.HeaderLogoPath))
                 throw new HiringBellException("Logo image not found. Please contact to admin.");
-            _logger.LogInformation($"Logo Path: {payslipModal.HeaderLogoPath}");
 
             await Task.CompletedTask;
         }
