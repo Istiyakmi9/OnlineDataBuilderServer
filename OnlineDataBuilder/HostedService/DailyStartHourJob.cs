@@ -45,11 +45,14 @@ namespace OnlineDataBuilder.HostedService
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Enabling the logging.");
             EnableLoggin();
 
             while (!cancellationToken.IsCancellationRequested)
             {
                 int value = WaitForNextCronValue();
+                _logger.LogInformation($"Cron job will run: {value}");
+
                 await Task.Delay(value, cancellationToken);
                 _logger.LogInformation($"Daily cron job started. Index = {index} at {DateTime.Now} (utc time: {DateTime.UtcNow})   ...............");
 
