@@ -38,7 +38,7 @@ namespace ServiceLayer.Code.PayrollCycle
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
             IBillService billService,
-            Logger<PayrollService> logger
+            ILogger<PayrollService> logger
             )
         {
             _db = db;
