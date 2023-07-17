@@ -54,7 +54,7 @@ namespace OnlineDataBuilder.HostedService
             while (!cancellationToken.IsCancellationRequested)
             {
                 int value = WaitForNextCronValue();
-                _logger.LogInformation($"Cron job will run: {_nextCron}");
+                _logger.LogInformation($"Cron job will run: {_nextCron}. Wait time in ms: {value}");
 
                 await Task.Delay(value, cancellationToken);
                 _logger.LogInformation($"Daily cron job started. Index = {index} at {DateTime.Now} (utc time: {DateTime.UtcNow})   ...............");
