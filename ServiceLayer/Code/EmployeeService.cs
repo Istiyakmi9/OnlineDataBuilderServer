@@ -832,24 +832,19 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(employee.NewSalaryDetail))
                     employee.NewSalaryDetail = "[]";
 
+                bool IsNewRegistration = false;
                 employee.EmployeeId = employee.EmployeeUid;
                 if (employee.EmployeeUid == 0)
                 {
                     // create employee record
-                    var result = _db.Execute("sp_employee_lastId", new { IsActive = true }, true);
-                    if (string.IsNullOrEmpty(result.statusMessage))
-                        throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
+                    employee.EmployeeId = RegisterNewEmployee(employee, eCal.Doj);
+                    IsNewRegistration = true;
 
-                    long id = Convert.ToInt64(result.statusMessage);
-                    if (id <= 0)
-                        throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
-
-                    employee.EmployeeId = id + 1;
                     employee.EmployeeUid = employee.EmployeeId;
                     eCal.EmployeeId = employee.EmployeeId;
+                    eCal.employee.IsCTCChanged = false;
                     eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
                 }
-                _logger.LogInformation("starting for set current time zone");
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                 _logger.LogInformation("Leaving form set current time zone");
@@ -911,6 +906,7 @@ namespace ServiceLayer.Code
                     employee.WorkShiftId,
                     IsPending = false,
                     employee.NewSalaryDetail,
+                    IsNewRegistration,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
@@ -958,6 +954,35 @@ namespace ServiceLayer.Code
             {
                 throw;
             }
+        }
+
+        private long RegisterNewEmployee(Employee employee, DateTime doj)
+        {
+            var result = _db.Execute("sp_employees_create_employee", new
+            {
+                employee.FirstName,
+                employee.LastName,
+                employee.Mobile,
+                employee.Email,
+                employee.LeavePlanId,
+                employee.PayrollGroupId,
+                employee.SalaryGroupId,
+                employee.CompanyId,
+                employee.NoticePeriodId,
+                employee.ReportingManagerId,
+                employee.DesignationId,
+                employee.UserTypeId,
+                RegistrationDate = doj,
+                employee.WorkShiftId,
+            }, true);
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+            long employeeId = Convert.ToInt64(result.statusMessage);
+            if (employeeId == 0)
+                throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+            return employeeId;
         }
 
         private string GetDeclarationBasicFields(List<SalaryComponents> salaryComponents)
