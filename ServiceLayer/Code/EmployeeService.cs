@@ -784,6 +784,8 @@ namespace ServiceLayer.Code
 
         private async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection)
         {
+            bool IsNewRegistration = false;
+
             try
             {
                 Employee employee = eCal.employee;
@@ -832,7 +834,6 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(employee.NewSalaryDetail))
                     employee.NewSalaryDetail = "[]";
 
-                bool IsNewRegistration = false;
                 employee.EmployeeId = employee.EmployeeUid;
                 if (employee.EmployeeUid == 0)
                 {
@@ -952,6 +953,9 @@ namespace ServiceLayer.Code
             }
             catch
             {
+                if (IsNewRegistration && eCal.employee.EmployeeId > 0)
+                    _db.Execute("sp_employee_delete_by_EmpId", new { EmployeeId = eCal.employee.EmployeeId }, false);
+                
                 throw;
             }
         }
@@ -967,13 +971,14 @@ namespace ServiceLayer.Code
                 employee.LeavePlanId,
                 employee.PayrollGroupId,
                 employee.SalaryGroupId,
-                employee.CompanyId,
-                employee.NoticePeriodId,
                 employee.ReportingManagerId,
                 employee.DesignationId,
-                employee.UserTypeId,
                 RegistrationDate = doj,
+                employee.CompanyId,
+                employee.NoticePeriodId,
                 employee.WorkShiftId,
+                employee.UserTypeId,
+                AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
