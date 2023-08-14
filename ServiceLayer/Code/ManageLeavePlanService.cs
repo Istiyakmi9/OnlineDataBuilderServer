@@ -121,7 +121,7 @@ namespace ServiceLayer.Code
             var result = _db.Execute<ManagementLeave>("sp_leave_from_management_insupd", new
             {
                 managementLeave.LeaveManagementId,
-                managementLeave.LeavePlanTypeId,
+                leavePlanTypeId,
                 managementLeave.CanManagerAwardCausalLeave,
                 managementLeave.LeavePlanId
             }, true);
