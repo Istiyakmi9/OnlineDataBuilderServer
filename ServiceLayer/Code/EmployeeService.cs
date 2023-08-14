@@ -838,7 +838,7 @@ namespace ServiceLayer.Code
                 if (employee.EmployeeUid == 0)
                 {
                     // create employee record
-                    employee.EmployeeId = RegisterNewEmployee(employee, eCal.Doj);
+                    employee.EmployeeId = await RegisterNewEmployee(employee, eCal.Doj);
                     IsNewRegistration = true;
 
                     employee.EmployeeUid = employee.EmployeeId;
@@ -960,9 +960,9 @@ namespace ServiceLayer.Code
             }
         }
 
-        private long RegisterNewEmployee(Employee employee, DateTime doj)
+        private async Task<long> RegisterNewEmployee(Employee employee, DateTime doj)
         {
-            var result = _db.Execute("sp_employees_create_employee", new
+            var result = await _db.ExecuteAsync("sp_employees_create", new
             {
                 employee.FirstName,
                 employee.LastName,
@@ -980,6 +980,7 @@ namespace ServiceLayer.Code
                 employee.UserTypeId,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
+
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
 

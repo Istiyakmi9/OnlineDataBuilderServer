@@ -46,7 +46,7 @@ namespace OnlineDataBuilder
             {
                 var config = new ConfigurationBuilder()
                     .SetBasePath(env.ContentRootPath)
-                    .AddJsonFile("appsettings.json", false, false)
+                    .AddJsonFile($"appsettings.json", false, false)
                     .AddJsonFile("staffingbill.json", false, false)
                     .AddEnvironmentVariables();
                 //AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: false, reloadOnChange: false);

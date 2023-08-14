@@ -461,72 +461,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
             return builder.ToString();
         }
 
-        public async Task<int> ConsicutiveBatchInset(string firstProcedure, dynamic parameters, string secondProcedure, List<object> secondQuery)
-        {
-            try
-            {
-                int rowsAffected = 0;
-                using (var connection = new MySqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    using (MySqlTransaction transaction = connection.BeginTransaction())
-                    {
-                        using (MySqlCommand command = new MySqlCommand())
-                        {
-                            Utility util = new Utility();
-
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = firstProcedure;
-                            command.Connection = connection;
-
-                            object userType = parameters;
-                            var properties = userType.GetType().GetProperties().ToList();
-                            util.BindParametersWithValue(parameters, properties, command, true);
-                            int pRowAffected = await command.ExecuteNonQueryAsync();
-                            if (pRowAffected > 0)
-                            {
-                                var statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
-                                if (statusMessage != "0" && statusMessage != "")
-                                {
-                                    string pKey = DbProcedure.getKey(secondProcedure);
-                                    command.Parameters.Clear();
-                                    command.CommandType = CommandType.Text;
-                                    command.CommandText = $"select {pKey} from {secondProcedure} order by {pKey} desc limit 1;";
-                                    var lastKey = await command.ExecuteScalarAsync();
-                                    long lastValue = 0;
-                                    if (lastKey == null)
-                                        lastValue = 0;
-                                    else
-                                        lastValue = Convert.ToInt64(lastKey);
-
-                                    var rows = PrepareQuery(secondQuery, statusMessage, secondProcedure, lastValue);
-                                    command.Parameters.Clear();
-                                    command.CommandType = CommandType.Text;
-                                    command.CommandText = rows;
-
-                                    rowsAffected = await command.ExecuteNonQueryAsync();
-                                    if (rowsAffected > 0)
-                                        await transaction.CommitAsync();
-                                    else
-                                        await transaction.RollbackAsync();
-                                }
-                                else
-                                {
-                                    await transaction.RollbackAsync();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return rowsAffected;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         private OperationDetail SetTargetDataPropertyInfoList(List<object> data, bool findKeys = false)
         {
             OperationDetail operationDetail = new OperationDetail();
@@ -587,49 +521,57 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
                     connection.Open();
                     using (MySqlTransaction transaction = connection.BeginTransaction())
                     {
-                        using (MySqlCommand command = new MySqlCommand())
+                        try
                         {
-                            Utility util = new Utility();
-
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.CommandText = firstProcedure;
-                            command.Connection = connection;
-
-                            object userType = parameters;
-                            var properties = userType.GetType().GetProperties().ToList();
-                            util.BindParametersWithValue(parameters, properties, command, true);
-                            int pRowsAffected = await command.ExecuteNonQueryAsync();
-                            statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
-                            if (pRowsAffected > 0 || (statusMessage != "0" && !string.IsNullOrEmpty(statusMessage)))
+                            using (MySqlCommand command = new MySqlCommand())
                             {
-                                if (statusMessage != "0" && statusMessage != "")
+                                Utility util = new Utility();
+
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.CommandText = firstProcedure;
+                                command.Connection = connection;
+
+                                object userType = parameters;
+                                var properties = userType.GetType().GetProperties().ToList();
+                                util.BindParametersWithValue(parameters, properties, command, true);
+                                int pRowsAffected = await command.ExecuteNonQueryAsync();
+                                statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                                if (pRowsAffected > 0 || (statusMessage != "0" && !string.IsNullOrEmpty(statusMessage)))
                                 {
-                                    string pKey = operationDetail.primaryKey;
-                                    command.Parameters.Clear();
-                                    command.CommandType = CommandType.StoredProcedure;
-                                    command.CommandText = "sp_dynamic_query_ins_upd";
-
-                                    command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = operationDetail.tableName;
-                                    command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
-                                    command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuery(operationDetail, secondQuery, statusMessage);
-                                    command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-
-                                    int rowsAffected = await command.ExecuteNonQueryAsync();
-                                    if (rowsAffected > 0)
+                                    if (statusMessage != "0" && statusMessage != "")
                                     {
-                                        statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
-                                        await transaction.CommitAsync();
+                                        string pKey = operationDetail.primaryKey;
+                                        command.Parameters.Clear();
+                                        command.CommandType = CommandType.StoredProcedure;
+                                        command.CommandText = "sp_dynamic_query_ins_upd";
+
+                                        command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = operationDetail.tableName;
+                                        command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
+                                        command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuery(operationDetail, secondQuery, statusMessage);
+                                        command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+
+                                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                                        if (rowsAffected > 0)
+                                        {
+                                            statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
+                                            await transaction.CommitAsync();
+                                        }
+                                        else
+                                        {
+                                            await transaction.RollbackAsync();
+                                        }
                                     }
                                     else
                                     {
                                         await transaction.RollbackAsync();
                                     }
                                 }
-                                else
-                                {
-                                    await transaction.RollbackAsync();
-                                }
                             }
+                        }
+                        catch
+                        {
+                            await transaction.RollbackAsync();
+                            throw;
                         }
                     }
                 }
@@ -838,65 +780,6 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 
         //    return await NativeBatchInsetUpdate(data, operationDetail, isDirectCall);
         //}
-
-        public async Task<string> NativeBatchInsetUpdate(List<object> secondQuery, OperationDetail operationDetail, bool isDirectCall = false)
-        {
-            string statusMessage = null;
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                connection.Open();
-                using (MySqlTransaction transaction = connection.BeginTransaction())
-                {
-                    using (MySqlCommand command = new MySqlCommand())
-                    {
-                        try
-                        {
-                            Utility util = new Utility();
-                            string pKey = operationDetail.primaryKey; // DbProcedure.getKey(procedureName);
-                            command.Parameters.Clear();
-                            command.Connection = connection;
-
-                            if (isDirectCall)
-                            {
-                                command.CommandType = CommandType.Text;
-                                command.CommandText = PrepareQuerySingle(secondQuery, operationDetail);
-                            }
-                            else
-                            {
-                                command.CommandType = CommandType.StoredProcedure;
-                                command.CommandText = "sp_dynamic_query_ins_upd";
-
-                                command.Parameters.Add("_TableName", MySqlDbType.VarChar, 50).Value = operationDetail.tableName;
-                                command.Parameters.Add("_PrimaryKey", MySqlDbType.VarChar, 50).Value = pKey;
-                                command.Parameters.Add("_Rows", MySqlDbType.VarChar, 50).Value = PrepareQuerySingle(secondQuery, operationDetail);
-                                command.Parameters.Add("_ProcessingResult", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
-                            }
-
-                            int rowsAffected = await command.ExecuteNonQueryAsync();
-                            if (rowsAffected > 0)
-                            {
-                                if (!isDirectCall)
-                                    statusMessage = command.Parameters["_ProcessingResult"].Value.ToString();
-                                else
-                                    statusMessage = rowsAffected.ToString();
-
-                                await transaction.CommitAsync();
-                            }
-                            else
-                            {
-                                await transaction.RollbackAsync();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            throw ex;
-                        }
-                    }
-                }
-
-                return statusMessage;
-            }
-        }
 
         #endregion
 

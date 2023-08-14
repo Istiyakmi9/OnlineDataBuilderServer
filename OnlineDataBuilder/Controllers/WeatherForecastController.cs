@@ -60,8 +60,28 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        [Route("/api/test")]
+        public async Task<IEnumerable<WeatherForecast>> GetTest()
+        {
+            var rng = new Random();
+            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = DateTime.Now.AddDays(index),
+                TemperatureC = rng.Next(-20, 55),
+                Summary = Summaries[rng.Next(Summaries.Length)]
+            })
+            .ToArray();
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
+            var scheme = Request.Scheme; // will get http, https, etc.
+            var host = Request.Host; // will get www.mywebsite.com
+            var Port = host.Port;
+            var Address = host.Value;
+
             // _eMailManager.ReadMails(null);
             // _leaveCalculation.RunLeaveCalculationCycle();
 
