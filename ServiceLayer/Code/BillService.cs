@@ -13,7 +13,6 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing.Imaging;
 using System.IO;
@@ -368,7 +367,7 @@ namespace ServiceLayer.Code
                 ForMonth = billGenerationModal.PdfModal.billingMonth.Month,
                 ForYear = billGenerationModal.PdfModal.billYear,
                 BillTypeUid = 1,
-                CompanyId = 0
+                CompanyId = 1
             });
 
             if (ds == null || ds.Tables.Count != 6)

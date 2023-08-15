@@ -1,11 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.ExtendedProperties;
 using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
-using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;

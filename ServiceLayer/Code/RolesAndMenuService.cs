@@ -12,11 +12,9 @@ namespace ServiceLayer.Code
     public class RolesAndMenuService : IRolesAndMenuService
     {
         private readonly IDb _db;
-        private readonly ICacheManager _cacheManager;
-        public RolesAndMenuService(IDb db, ICacheManager cacheManager)
+        public RolesAndMenuService(IDb db)
         {
             _db = db;
-            _cacheManager = cacheManager;
         }
         public async Task<string> AddUpdatePermission(RolesAndMenu rolesAndMenus)
         {
@@ -72,10 +70,6 @@ namespace ServiceLayer.Code
             };
 
             var result = _db.FetchDataSet("sp_AccessLevel_InsUpd", dbParams, true);
-            if (result != null && result.Tables.Count > 0)
-            {
-                _cacheManager.LoadApplicationData(true);
-            }
             return result;
         }
     }

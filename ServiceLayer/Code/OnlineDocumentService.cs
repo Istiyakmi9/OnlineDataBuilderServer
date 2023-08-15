@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -27,7 +26,6 @@ namespace ServiceLayer.Code
         private readonly IAuthenticationService _authenticationService;
         private readonly ITimesheetService _timesheetService;
         private readonly IFileMaker _iFileMaker;
-        private readonly ICacheManager _cacheManager;
         private readonly CurrentSession _currentSession;
         private readonly IBillService _billService;
         private readonly FileLocationDetail _fileLocationDetail;
@@ -42,14 +40,12 @@ namespace ServiceLayer.Code
             IAuthenticationService authenticationService,
             ITimesheetService timesheetService,
             CurrentSession currentSession,
-            ICacheManager cacheManager,
             FileLocationDetail fileLocationDetail,
             IBillService billService)
         {
             this.db = db;
             _excelWriter = excelWriter;
             _logger = logger;
-            _cacheManager = cacheManager;
             _currentSession = currentSession;
             _fileService = fileService;
             _commonFilterService = commonFilterService;
