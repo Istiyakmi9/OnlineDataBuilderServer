@@ -15,7 +15,7 @@ namespace ServiceLayer.Caching
         {
             _cache = Cache.GetInstance();
             _connectionString = connectionString;
-            this.LoadApplicationData();
+            // this.LoadApplicationData();
         }
 
         public static CacheManager GetInstance(string connectionString)
@@ -68,7 +68,7 @@ namespace ServiceLayer.Caching
         {
             if (IsEmpty() || isReload)
             {
-                var _db = new Db(_connectionString);
+                var _db = new Db();
                 DataSet Result = _db.FetchDataSet("SP_ApplicationData_Get");
                 if (Result.Tables.Count == 3)
                 {

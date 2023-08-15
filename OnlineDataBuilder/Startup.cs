@@ -95,8 +95,16 @@ namespace OnlineDataBuilder
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
             });
 
+            services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
+            services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
+            services.Configure<Dictionary<string, DbConfigModal>>(o => Configuration.GetSection("CompanyCodeMapping").Bind(o));
+
             string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
-            services.AddSingleton<IDb, Db>(x => new Db(connectionString));
+            services.AddScoped<IDb, Db>();
+
+            services.AddSingleton<AppUtilityService>();
+            services.AddSingleton<IUtilityService, UtilityService>();
+
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IEvaluationPostfixExpression, EvaluationPostfixExpression>();
             services.AddScoped<IEmailService, EmailService>();
@@ -107,8 +115,6 @@ namespace OnlineDataBuilder
             services.AddScoped<ILiveUrlService, LiveUrlService>();
             services.AddScoped<IUserService, UserService>();
 
-            services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
-            services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
 
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>();
@@ -130,10 +136,6 @@ namespace OnlineDataBuilder
             services.AddScoped<ExcelWriter>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IObjectiveService, ObjectiveService>();
-            services.AddSingleton<IUtilityService, UtilityService>(x =>
-            {
-                return UtilityService.GetInstance();
-            });
 
             services.AddScoped<IInitialRegistrationService, InitialRegistrationService>();
             services.AddSingleton<FileLocationDetail>(service =>
@@ -158,10 +160,11 @@ namespace OnlineDataBuilder
                 return locationDetail;
             });
 
-            services.AddSingleton<IEMailManager, EMailManager>(x =>
+            services.AddScoped<IEMailManager, EMailManager>(x =>
                 EMailManager.GetInstance(
                     x.GetRequiredService<FileLocationDetail>(),
-                    x.GetRequiredService<IDb>())
+                    x.GetRequiredService<IDb>()
+                )
             );
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();

@@ -47,7 +47,7 @@ namespace ServiceLayer.Code
                         ValidateIssuer = false,
                         ValidateAudience = false,
                         ValidateLifetime = false,
-                        ValidateIssuerSigningKey = true,                        
+                        ValidateIssuerSigningKey = true,
                         ValidIssuer = _jwtSetting.Issuer, //_configuration["jwtSetting:Issuer"],
                         ValidAudience = _jwtSetting.Issuer, //_configuration["jwtSetting:Issuer"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSetting.Key))
@@ -103,6 +103,7 @@ namespace ServiceLayer.Code
                     new Claim(ClaimTypes.Role, role),
                     new Claim(JwtRegisteredClaimNames.Aud, num.ToString()),
                     new Claim(ClaimTypes.Version, "1.0.0"),
+                    new Claim(ApplicationConstants.CompanyCode, userDetail.CompanyCode),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new Claim(ApplicationConstants.JBot, JsonConvert.SerializeObject(userDetail))
                 }),

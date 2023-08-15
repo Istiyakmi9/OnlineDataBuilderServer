@@ -16,5 +16,6 @@ namespace ModalLayer.Modal
         public UserDetail CurrentUserDetail { set; get; }
         public TimeZoneInfo TimeZone { set; get; }
         public DateTime TimeZoneNow { set; get; }
+        public string CompanyCode { set; get; }
     }
 }

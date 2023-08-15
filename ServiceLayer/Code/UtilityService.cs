@@ -6,20 +6,6 @@ namespace ServiceLayer.Code
 {
     public class UtilityService : IUtilityService
     {
-        private static Object _lock = new object();
-        private static UtilityService _instance;
-
-        private UtilityService() { }
-
-        public static UtilityService GetInstance()
-        {
-            if (_instance == null)
-                lock (_lock)
-                    if (_instance == null)
-                        _instance = new UtilityService();
-            return _instance;
-        }
-
         public bool CheckIsJoinedInCurrentFinancialYear(DateTime doj, CompanySetting companySetting)
         {
             if (doj.Year == companySetting.FinancialYear)

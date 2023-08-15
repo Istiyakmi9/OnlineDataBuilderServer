@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using ServiceLayer.Code;
+using ServiceLayer.Interface;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -20,11 +22,16 @@ namespace SchoolInMindServer.MiddlewareServices
         private readonly IConfiguration configuration;
         private readonly string TokenName = "Authorization";
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly AppUtilityService _appUtilityService;
 
-        public RequestMiddleware(RequestDelegate next, IConfiguration configuration, ITimezoneConverter timezoneConverter)
+        public RequestMiddleware(RequestDelegate next,
+            IConfiguration configuration,
+            ITimezoneConverter timezoneConverter,
+            AppUtilityService appUtilityService)
         {
             this.configuration = configuration;
             _timezoneConverter = timezoneConverter;
+            _appUtilityService = appUtilityService;
             _next = next;
         }
 
@@ -80,6 +87,7 @@ namespace SchoolInMindServer.MiddlewareServices
         {
             var userId = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sid).Value;
             var userDetail = securityToken.Claims.FirstOrDefault(x => x.Type == ApplicationConstants.JBot).Value;
+            currentSession.CompanyCode = securityToken.Claims.FirstOrDefault(x => x.Type == ApplicationConstants.CompanyCode).Value;
             currentSession.CurrentUserDetail = JsonConvert.DeserializeObject<UserDetail>(userDetail);
             var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
             switch (roleName)
@@ -103,6 +111,11 @@ namespace SchoolInMindServer.MiddlewareServices
 
             if (currentSession.CurrentUserDetail == null)
                 throw new HiringBellException("Invalid token found. Please contact to admin.");
+
+            if (string.IsNullOrEmpty(currentSession.CompanyCode))
+                throw new HiringBellException("Invalid company provided. Please provide correct Company code or contact to admin.");
+            else
+                _appUtilityService.ConfigureDatabase(currentSession.CompanyCode);
 
             if (currentSession.CurrentUserDetail.OrganizationId <= 0
                 || currentSession.CurrentUserDetail.CompanyId <= 0)

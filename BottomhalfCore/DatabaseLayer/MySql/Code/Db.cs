@@ -19,9 +19,11 @@ namespace BottomhalfCore.DatabaseLayer.MySql.Code
 {
     public class Db : IDb
     {
-        private readonly string _connectionString;
+        private static string _connectionString;
 
-        public Db(string ConnectionString)
+        public Db() { }
+
+        public static void SetupConnectionString(string ConnectionString)
         {
             _connectionString = ConnectionString;
         }
