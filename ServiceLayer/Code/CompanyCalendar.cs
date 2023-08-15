@@ -28,20 +28,22 @@ namespace ServiceLayer
             _db = db;
             _session = session;
             _currentSession = currentSession;
-            LoadHolidayCalendar();
             _timezoneConverter = timezoneConverter;
         }
 
         public void LoadHolidayCalendar()
         {
             if (_calendars == null)
+            {
                 _calendars = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _session.CurrentUserDetail.CompanyId });
+            }
         }
 
         public async Task<bool> IsHoliday(DateTime date)
         {
             bool flag = false;
 
+            LoadHolidayCalendar();
             var records = _calendars.FirstOrDefault(x => x.StartDate.Date.Subtract(date.Date).TotalDays <= 0
                             && x.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
             if (records != null)
@@ -94,6 +96,7 @@ namespace ServiceLayer
             int totalDays = 0;
             date = date.AddDays(-1);
 
+            LoadHolidayCalendar();
             var holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
             while (holiday != null)
             {
@@ -119,6 +122,7 @@ namespace ServiceLayer
             int totalDays = 0;
             date = date.AddDays(1);
 
+            LoadHolidayCalendar();
             var holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
             while (holiday != null)
             {
@@ -143,6 +147,7 @@ namespace ServiceLayer
         {
             bool flag = false;
 
+            LoadHolidayCalendar();
             var records = _calendars.Where(x => x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= toDate.Date);
             if (records.Any())
                 flag = true;
@@ -152,6 +157,7 @@ namespace ServiceLayer
 
         public async Task<int> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
         {
+            LoadHolidayCalendar();
             var holidays = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date));
 
             return await Task.FromResult(holidays);

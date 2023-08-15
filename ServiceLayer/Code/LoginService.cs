@@ -33,6 +33,7 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly ForgotPasswordEmailService _forgotPasswordEmailService;
         private readonly CurrentSession _currentSession;
+        private readonly AppUtilityService _appUtilityService;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             IMediaService mediaService,
@@ -40,8 +41,10 @@ namespace ServiceLayer.Code
             ICacheManager cacheManager,
             IEMailManager emailManager,
             ICommonService commonService,
-            IConfiguration configuration, 
-            ForgotPasswordEmailService forgotPasswordEmailService, CurrentSession currentSession)
+            IConfiguration configuration,
+            ForgotPasswordEmailService forgotPasswordEmailService,
+            CurrentSession currentSession,
+            AppUtilityService appUtilityService)
         {
             this.db = db;
             _configuration = configuration;
@@ -53,6 +56,7 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _forgotPasswordEmailService = forgotPasswordEmailService;
             _currentSession = currentSession;
+            _appUtilityService = appUtilityService;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -78,7 +82,7 @@ namespace ServiceLayer.Code
             if (googleResponseModal != null)
             {
                 userDetail.EmailId = googleResponseModal.email;
-               
+
                 var ResultSet = this.db.Execute("sp_UserDetail_Ins", new
                 {
                     UserId = userDetail.UserId,
@@ -173,11 +177,23 @@ namespace ServiceLayer.Code
             return loginResponse;
         }
 
+        private void ValidateConfigureCompanyCode(UserDetail authUser)
+        {
+            if (string.IsNullOrEmpty(authUser.CompanyCode))
+            {
+                throw HiringBellException.ThrowBadRequest("Invalid company code.");
+            }
+
+            _appUtilityService.ConfigureDatabase(authUser.CompanyCode);
+        }
+
         public async Task<LoginResponse> AuthenticateUser(UserDetail authUser)
         {
             LoginResponse loginResponse = default;
+
             if ((!string.IsNullOrEmpty(authUser.EmailId) || !string.IsNullOrEmpty(authUser.Mobile)) && !string.IsNullOrEmpty(authUser.Password))
             {
+                ValidateConfigureCompanyCode(authUser);
                 var encryptedPassword = this.GetUserLoginDetail(authUser);
                 encryptedPassword = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
                 if (encryptedPassword.CompareTo(authUser.Password) != 0)
@@ -232,6 +248,7 @@ namespace ServiceLayer.Code
                             CreatedOn = loginDetail.CreatedOn,
                             WorkShiftId = loginDetail.WorkShiftId,
                             RoleId = loginDetail.RoleId,
+                            CompanyCode = authUser.CompanyCode
                         };
 
                         var _token = _authenticationService.Authenticate(userDetail);

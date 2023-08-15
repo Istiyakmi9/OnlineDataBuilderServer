@@ -31,6 +31,7 @@ public class ApplicationConstants
     public static string EmployeeName = "EmployeeName";
     public static string EmployeeId = "EmployeeId";
     public static string JBot = "JBot";
+    public static string CompanyCode = "CompanyCode";
     public static string HiringBellTransparentLogo = "hb-logo.png";
     public static string HiringBellLogoSmall = "hb-logo-low.png";
     public static string HiringBellLogo = "hb-t-logo.png";

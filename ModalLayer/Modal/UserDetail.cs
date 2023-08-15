@@ -12,6 +12,7 @@ namespace ModalLayer.Modal
         public string Token { set; get; }
         public DateTime? TokenExpiryDuration { set; get; }
         public string RefreshToken { set; get; }
+        public string CompanyCode { set; get; }
         public string MediaName { set; get; }
         public string AccessToken { set; get; }
         public int AdminId { get; set; }
