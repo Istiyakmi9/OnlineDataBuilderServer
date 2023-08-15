@@ -1,6 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -100,6 +99,7 @@ namespace ServiceLayer.Code
                     BankName = client.BankName,
                     BranchName = client.BranchName,
                     client.WorkShiftId,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                 }, true);
 

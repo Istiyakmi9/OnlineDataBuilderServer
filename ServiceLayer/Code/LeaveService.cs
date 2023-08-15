@@ -1,11 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
@@ -21,7 +19,6 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
-        private readonly ICacheManager _cacheManager;
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly LeaveEmailService _leaveEmailService;
         private readonly ILeaveRequestService _leaveRequestService;
@@ -30,14 +27,12 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             ICommonService commonService,
             LeaveEmailService leaveEmailService,
-            ICacheManager cacheManager,
             ILeaveCalculation leaveCalculation,
             ILeaveRequestService leaveRequestService)
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
-            _cacheManager = cacheManager;
             _leaveCalculation = leaveCalculation;
             _leaveEmailService = leaveEmailService;
             _leaveRequestService = leaveRequestService;
@@ -80,7 +75,6 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to add or update leave plan");
 
             leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
-            _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<LeavePlan>(leavePlans));
             return leavePlans;
         }
 

@@ -5,19 +5,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using SocialMediaServices;
 using SocialMediaServices.Modal;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
-using CacheTable = ServiceLayer.Caching.CacheTable;
 
 namespace ServiceLayer.Code
 {
@@ -27,7 +24,6 @@ namespace ServiceLayer.Code
         private readonly JwtSetting _jwtSetting;
         private readonly IMediaService _mediaService;
         private readonly IAuthenticationService _authenticationService;
-        private readonly ICacheManager _cacheManager;
         private readonly IConfiguration _configuration;
         private readonly IEMailManager _emailManager;
         private readonly ICommonService _commonService;
@@ -37,7 +33,6 @@ namespace ServiceLayer.Code
         public LoginService(IDb db, IOptions<JwtSetting> options,
             IMediaService mediaService,
             IAuthenticationService authenticationService,
-            ICacheManager cacheManager,
             IEMailManager emailManager,
             ICommonService commonService,
             IConfiguration configuration, 
@@ -48,7 +43,6 @@ namespace ServiceLayer.Code
             _jwtSetting = options.Value;
             _mediaService = mediaService;
             _authenticationService = authenticationService;
-            _cacheManager = cacheManager;
             _emailManager = emailManager;
             _commonService = commonService;
             _forgotPasswordEmailService = forgotPasswordEmailService;

@@ -3,7 +3,6 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using ServiceLayer.Caching;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
@@ -18,18 +17,15 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        private readonly ICacheManager _cacheManager;
         private readonly TimesheetEmailService _timesheetEmailService;
 
         public TimesheetService(
             IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            ICacheManager cacheManager,
             TimesheetEmailService timesheetEmailService)
         {
             _db = db;
-            _cacheManager = cacheManager;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _timesheetEmailService = timesheetEmailService;
@@ -376,7 +372,6 @@ namespace ServiceLayer.Code
             
             List<TimesheetDetail> currentTimesheetDetail = Converter.ToList<TimesheetDetail>(Result.Tables[2]);
             billingDetail.TimesheetDetails = BuildFinalTimesheet(currentTimesheetDetail);
-            var companies = _cacheManager.Get(CacheTable.Company);
             billingDetail.Organizations = Result.Tables[3];
 
             return billingDetail;
