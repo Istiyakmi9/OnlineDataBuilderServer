@@ -586,8 +586,7 @@ namespace ServiceLayer.Code
                 completeSalaryBreakups = _salaryComponentService.CreateSalaryBreakupWithValue(empCal);
                 reCalculateFlag = true;
             }
-
-            if (empCal.employee.IsCTCChanged)
+            else if (empCal.employee.IsCTCChanged)
             {
                 completeSalaryBreakups = _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
             }

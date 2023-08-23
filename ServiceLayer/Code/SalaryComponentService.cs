@@ -874,9 +874,10 @@ namespace ServiceLayer.Code
             DateTime startDate = new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
             eCal.PayrollStartDate = startDate;
 
-            decimal taxExamptedComponents = GetTaxExamptedAmount(eCal.salaryGroup.GroupComponents);
-            eCal.TaxableCTC = Convert.ToDecimal(eCal.CTC - taxExamptedComponents);
-            decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.TaxableCTC);
+            //decimal taxExamptedComponents = GetTaxExamptedAmount(eCal.salaryGroup.GroupComponents);
+            //eCal.TaxableCTC = Convert.ToDecimal(eCal.CTC - taxExamptedComponents);
+            eCal.TaxableCTC = eCal.CTC ;
+            decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
 
             int i = 0;
             while (i < eCal.salaryGroup.GroupComponents.Count)
@@ -887,7 +888,7 @@ namespace ServiceLayer.Code
                     if (item.Formula.Contains(ComponentNames.BasicName))
                         item.Formula = item.Formula.Replace(ComponentNames.BasicName, basicAmountValue.ToString());
                     else if (item.Formula.Contains(ComponentNames.CTCName))
-                        item.Formula = item.Formula.Replace(ComponentNames.CTCName, (Convert.ToDecimal(eCal.TaxableCTC)).ToString());
+                        item.Formula = item.Formula.Replace(ComponentNames.CTCName, (Convert.ToDecimal(eCal.CTC)).ToString());
                 }
 
                 i++;
