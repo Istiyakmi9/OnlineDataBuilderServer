@@ -8,6 +8,8 @@ namespace BottomhalfCore.DatabaseLayer.Common.Code
 {
     public interface IDb
     {
+        void SetupConnectionString(string ConnectionString);
+
         /*===========================================  GetDataSet =============================================================*/
         Task<int> ExecuteListAsync(string ProcedureName, List<dynamic> Parameters, bool IsOutParam = false);
 

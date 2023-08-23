@@ -99,10 +99,15 @@ namespace OnlineDataBuilder
             services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
             services.Configure<Dictionary<string, DbConfigModal>>(o => Configuration.GetSection("CompanyCodeMapping").Bind(o));
 
-            string connectionString = Configuration.GetConnectionString("OnlinedatabuilderDb");
+            string connectionString = Configuration.GetConnectionString("EmsMasterCS");
             services.AddScoped<IDb, Db>();
+            services.AddSingleton<ICacheManager, CacheManager>(x =>
+            {
+                return CacheManager.GetInstance(connectionString);
+            });
 
-            services.AddSingleton<AppUtilityService>();
+
+            // services.AddSingleton<AppUtilityService>();
             services.AddSingleton<IUtilityService, UtilityService>();
 
             services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -168,11 +173,7 @@ namespace OnlineDataBuilder
             );
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
-            services.AddScoped<HtmlToPdfConverter>();
-            services.AddSingleton<ICacheManager, CacheManager>(x =>
-            {
-                return CacheManager.GetInstance(connectionString);
-            });
+            services.AddScoped<HtmlToPdfConverter>();            
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<ISalaryComponentService, SalaryComponentService>();
             services.AddScoped<ICompanyService, CompanyService>();

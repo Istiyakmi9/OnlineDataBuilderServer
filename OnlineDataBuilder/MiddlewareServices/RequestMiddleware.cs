@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.Services.Code;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace SchoolInMindServer.MiddlewareServices
 {
@@ -22,29 +24,31 @@ namespace SchoolInMindServer.MiddlewareServices
         private readonly IConfiguration configuration;
         private readonly string TokenName = "Authorization";
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly AppUtilityService _appUtilityService;
+        private IDb _db;
 
         public RequestMiddleware(RequestDelegate next,
             IConfiguration configuration,
-            ITimezoneConverter timezoneConverter,
-            AppUtilityService appUtilityService)
+            ITimezoneConverter timezoneConverter)
         {
             this.configuration = configuration;
             _timezoneConverter = timezoneConverter;
-            _appUtilityService = appUtilityService;
             _next = next;
         }
 
-        public async Task Invoke(HttpContext context, CurrentSession currentSession)
+        public async Task Invoke(HttpContext context, CurrentSession currentSession, IDb db)
         {
             try
             {
+                DbConfigModal dbConfig = null;
                 Parallel.ForEach(context.Request.Headers, header =>
                 {
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
                             currentSession.Authorization = header.Value.FirstOrDefault();
+
+                        if (header.Key == "database")
+                            dbConfig = JsonConvert.DeserializeObject<DbConfigModal>(header.Value);
                     }
                 });
 
@@ -68,6 +72,14 @@ namespace SchoolInMindServer.MiddlewareServices
 
                         JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
                         ReadToken(securityToken, currentSession);
+
+                        var cs = @$"server={dbConfig.Server};port={dbConfig.Port};database={dbConfig.Database};User Id={dbConfig.UserId};password={dbConfig.Password};Connection Timeout={dbConfig.ConnectionTimeout};Connection Lifetime={dbConfig.ConnectionLifetime};Min Pool Size={dbConfig.MinPoolSize};Max Pool Size={dbConfig.MaxPoolSize};Pooling={dbConfig.Pooling};";
+                        db.SetupConnectionString(cs);
+                    }
+                    else if (dbConfig != null)
+                    {
+                        var cs = @$"server={dbConfig.Server};port={dbConfig.Port};database={dbConfig.Database};User Id={dbConfig.UserId};password={dbConfig.Password};Connection Timeout={dbConfig.ConnectionTimeout};Connection Lifetime={dbConfig.ConnectionLifetime};Min Pool Size={dbConfig.MinPoolSize};Max Pool Size={dbConfig.MaxPoolSize};Pooling={dbConfig.Pooling};";
+                        db.SetupConnectionString(cs);
                     }
                 }
 
@@ -82,55 +94,27 @@ namespace SchoolInMindServer.MiddlewareServices
                 throw;
             }
         }
-
         private void ReadToken(JwtSecurityToken securityToken, CurrentSession currentSession)
         {
-            var userId = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sid).Value;
             var userDetail = securityToken.Claims.FirstOrDefault(x => x.Type == ApplicationConstants.JBot).Value;
             currentSession.CompanyCode = securityToken.Claims.FirstOrDefault(x => x.Type == ApplicationConstants.CompanyCode).Value;
             currentSession.CurrentUserDetail = JsonConvert.DeserializeObject<UserDetail>(userDetail);
-            var roleName = securityToken.Claims.FirstOrDefault(x => x.Type == "role").Value;
-            switch (roleName)
-            {
-                case nameof(Role.Admin):
-                    currentSession.CurrentUserDetail.RoleId = 1;
-                    break;
-                case nameof(Role.Employee):
-                    currentSession.CurrentUserDetail.RoleId = 2;
-                    break;
-                case nameof(Role.Candidate):
-                    currentSession.CurrentUserDetail.RoleId = 3;
-                    break;
-                case nameof(Role.Client):
-                    currentSession.CurrentUserDetail.RoleId = 4;
-                    break;
-                default:
-                    currentSession.CurrentUserDetail.RoleId = 5;
-                    break;
-            }
+
+            currentSession.CurrentUserDetail.RoleId = currentSession.CurrentUserDetail.UserTypeId;
 
             if (currentSession.CurrentUserDetail == null)
                 throw new HiringBellException("Invalid token found. Please contact to admin.");
 
-            if (string.IsNullOrEmpty(currentSession.CompanyCode))
-                throw new HiringBellException("Invalid company provided. Please provide correct Company code or contact to admin.");
-            else
-                _appUtilityService.ConfigureDatabase(currentSession.CompanyCode);
-
             if (currentSession.CurrentUserDetail.OrganizationId <= 0
-                || currentSession.CurrentUserDetail.CompanyId <= 0)
+            || currentSession.CurrentUserDetail.CompanyId <= 0)
                 throw new HiringBellException("Invalid Organization id or Company id. Please contact to admin.");
 
-            if (string.IsNullOrEmpty(userId))
-                throw new HiringBellException("Invalid employee id used. Please contact to admin.");
-
             currentSession.CurrentUserDetail.FullName = currentSession.CurrentUserDetail.FirstName
-                                                        + " " +
-                                                        currentSession.CurrentUserDetail.LastName;
+            + " " +
+            currentSession.CurrentUserDetail.LastName;
 
             currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
             currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, currentSession.TimeZone);
-            currentSession.CurrentUserDetail.UserId = Convert.ToInt32(userId);
         }
     }
 }

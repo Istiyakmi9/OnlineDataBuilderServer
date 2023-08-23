@@ -1,7 +1,8 @@
 ﻿namespace ModalLayer.Modal
 {
-    public class DbConfigModal
+    public class MasterConnections
     {
+        public int EmsMasterId { set; get; }
         public string OrganizationCode { set; get; }
         public string Code { set; get; }
         public string Schema { set; get; }

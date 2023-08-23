@@ -1,3 +1,4 @@
+using ModalLayer.Modal;
 using System.Collections.Concurrent;
 using System.Data;
 
@@ -5,20 +6,21 @@ namespace ServiceLayer.Caching
 {
     public enum CacheTable
     {
-        AccessLevel = 1,
-        LeavePlan = 2,
-        Company = 3
+        MasterConnections = 1,
+        AccessLevel = 2,
+        LeavePlan = 3,
+        Company = 4
     }
 
     public class Cache
     {
-        private readonly ConcurrentDictionary<CacheTable, DataTable> _table;
+        private readonly ConcurrentDictionary<CacheTable, dynamic> _table;
         private static readonly object _lock = new object();
         private static Cache _cache = null;
 
         private Cache()
         {
-            _table = new ConcurrentDictionary<CacheTable, DataTable>();
+            _table = new ConcurrentDictionary<CacheTable, dynamic>();
         }
 
         public bool IsEmpty()
@@ -41,20 +43,21 @@ namespace ServiceLayer.Caching
             return _cache;
         }
 
-        public DataTable Get(CacheTable key)
+        public dynamic Get(CacheTable key)
         {
-            DataTable value = null;
+            dynamic value = null;
             if (_table.ContainsKey(key))
             {
                 _table.TryGetValue(key, out value);
                 return value;
             }
+
             return value;
         }
 
-        public void Add(CacheTable key, DataTable value)
+        public void AddOrUpdate(CacheTable key, dynamic value)
         {
-            DataTable oldValue = null;
+            dynamic oldValue = null;
             if (_table.ContainsKey(key))
             {
                 _table.TryGetValue(key, out oldValue);
@@ -71,11 +74,16 @@ namespace ServiceLayer.Caching
             _table.Clear();
         }
 
+        public void Remove(CacheTable cacheTable)
+        {
+            _table.TryRemove(cacheTable, out _);
+        }
+
         public void ReLoad(CacheTable tableName, DataTable table)
         {
             if (table != null && table.Rows.Count > 0)
             {
-                DataTable oldTable = default(DataTable);
+                dynamic oldTable = default(dynamic);
                 switch (tableName)
                 {
                     case CacheTable.AccessLevel:
