@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Office2021.DocumentTasks;
+using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -58,9 +60,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("GenerateUpdatedPageMail")]
-        public IResponse<ApiResponse> GenerateUpdatedPageMail(EmailLinkConfig emailLinkConfig)
+        public async Task<ApiResponse> GenerateUpdatedPageMail(EmailLinkConfig emailLinkConfig)
         {
-            var result = _templateService.GenerateUpdatedPageMailService(emailLinkConfig);
+            var result = await _templateService.GenerateUpdatedPageMailService(emailLinkConfig);
             return BuildResponse(result);
         }
     }

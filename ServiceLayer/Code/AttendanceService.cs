@@ -88,7 +88,7 @@ namespace ServiceLayer.Code
 
             int weekDays = 0;
             int totalMinute = 0;
-            int i = 0;                
+            int i = 0;
             DateTime workingDate = timezoneFirstDate;
             while (i < totalNumOfDaysInPresentMonth)
             {
@@ -240,7 +240,7 @@ namespace ServiceLayer.Code
                     IsOpen = i >= days ? true : false,
                     Emails = "[]"
                 });
-                
+
                 i++;
             }
 
@@ -421,8 +421,8 @@ namespace ServiceLayer.Code
             int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
             if (attendances.Count == DateTime.UtcNow.Day || DateTime.UtcNow.Day < daysLimit)
             {
-                if (DateTime.UtcNow.Day < daysLimit)
-                    daysLimit = daysLimit - DateTime.UtcNow.Day;
+                //if (DateTime.UtcNow.Day < daysLimit)
+                //    daysLimit = daysLimit - DateTime.UtcNow.Day;
 
                 foreach (var item in attendances)
                 {
@@ -433,8 +433,8 @@ namespace ServiceLayer.Code
                         else
                             item.IsOpen = false;
 
-                        daysLimit--;
                     }
+                    daysLimit--;
                 }
 
             }
@@ -1008,11 +1008,8 @@ namespace ServiceLayer.Code
                     templateReplaceModal.ToAddress.Add(email.Email);
                 }
             }
-            var result = Task.Run(async () =>
-                await SendEmailWithTemplate(compalintOrRequestWithEmail, templateReplaceModal)
-            );
 
-            await Task.CompletedTask;
+            await SendEmailWithTemplate(compalintOrRequestWithEmail, templateReplaceModal);
         }
         private async Task<EmailSenderModal> SendEmailWithTemplate(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, TemplateReplaceModal templateReplaceModal)
         {

@@ -166,7 +166,6 @@ namespace EMailService.Service
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");
 
             await Task.Run(() => Send(emailSenderModal));
-            await Task.CompletedTask;
         }
 
         private string Send(EmailSenderModal emailSenderModal)

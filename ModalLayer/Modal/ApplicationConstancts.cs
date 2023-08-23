@@ -95,8 +95,9 @@ public class ApplicationConstants
     public const int AttendanceApprovalStatusEmailTemplate = 8;
     public const int TimesheetApprovalStatusEmailTemplate = 9;
     public const int ForgotPasswordEmailTemplate = 10;
-    public const int NewProjectAssignEmailTemplate = 11;
-    public const int MigrateApprovalToNewLevel = 12;
+    //public const int NewProjectAssignEmailTemplate = 11;
+    public const int MigrateApprovalToNewLevel = 11;
+    public const int PayrollTemplate = 12;
 
     public const int ReportingManager = 1;
     public const int SeniorHRManager = 2;
