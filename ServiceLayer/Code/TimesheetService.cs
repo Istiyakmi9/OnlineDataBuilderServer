@@ -241,7 +241,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
-            _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
+            await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
             return await Task.FromResult(timesheetDetail);
         }
 
@@ -279,7 +279,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
-            _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
+            await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
             return await Task.FromResult("successfull");
         }
 
