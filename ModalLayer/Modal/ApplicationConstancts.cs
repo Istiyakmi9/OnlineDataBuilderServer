@@ -66,7 +66,7 @@ public class ApplicationConstants
     public const string Leave = "Leave";
     public const string LeaveRequest = "Leave Request";
     public const string Timesheet = "Timesheet";
-    public const string DailyAttendance = "Daily Attendance";
+    public const string DailyAttendance = "Attendance: ";
     public const int Only = 1;
     public const int All = 0;
 
