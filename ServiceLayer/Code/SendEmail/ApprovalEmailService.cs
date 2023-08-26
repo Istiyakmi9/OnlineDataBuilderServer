@@ -42,11 +42,7 @@ namespace ServiceLayer.Code.SendEmail
         public async Task AttendaceApprovalStatusSendEmail(Attendance attendanceDetails, ItemStatus status)
         {
             var templateReplaceModal = await GetAttendanceApprovalTemplate(attendanceDetails, status);
-            var result = Task.Run(async () =>
-                await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal)
-            );
-
-            await Task.CompletedTask;
+            await _emailService.SendEmailWithTemplate(ApplicationConstants.AttendanceApprovalStatusEmailTemplate, templateReplaceModal);
         }
 
         #endregion
@@ -113,10 +109,7 @@ namespace ServiceLayer.Code.SendEmail
         public async Task TimesheetApprovalStatusSendEmail(TimesheetDetail timesheet, List<TimesheetDetail> timesheets, ItemStatus status)
         {
             var templateReplaceModal = await GetTimesheetApprovalTemplate(timesheet, timesheets, status);
-            var result = Task.Run(async () =>
-                await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetApprovalStatusEmailTemplate, templateReplaceModal)
-            );
-            await Task.CompletedTask;
+            await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetApprovalStatusEmailTemplate, templateReplaceModal);
         }
 
         #endregion

@@ -36,7 +36,7 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             CurrentSession currentSession,
             ICompanyService companyService,
-            FileLocationDetail fileLocationDetail, 
+            FileLocationDetail fileLocationDetail,
             IFileService fileService,
             ITimezoneConverter timezoneConverter)
         {
@@ -62,10 +62,19 @@ namespace ServiceLayer.Code
             if (template == null)
                 throw new HiringBellException("Fail to get Leave Request template. Please contact to admin.");
 
+            switch (TemplateId)
+            {
+                case 2:
+                    templateReplaceModal.Subject = _currentSession.CurrentUserDetail.FullName + " | " + templateReplaceModal.RequestType + " | " + templateReplaceModal.FromDate.ToString("dd MMM, yyyy");
+                    break;
+                default:
+                    templateReplaceModal.Subject = template.SubjectLine;
+                    templateReplaceModal.Title = template.EmailTitle;
+                    break;
+            }
+
             templateReplaceModal.CompanyName = template.SignatureDetail;
             templateReplaceModal.BodyContent = template.BodyContent;
-            templateReplaceModal.Subject = template.SubjectLine;
-            templateReplaceModal.Title = template.EmailTitle;
             var emailSenderModal = await ReplaceActualData(templateReplaceModal, template);
 
             await _eMailManager.SendMailAsync(emailSenderModal);
@@ -116,7 +125,7 @@ namespace ServiceLayer.Code
                 };
             }
 
-            emailSenderModal.Title = templateReplaceModal.Title.Replace("[[REQUEST-TYPE]]", templateReplaceModal.RequestType)
+            emailSenderModal.Title = templateReplaceModal.Title.Replace("[[REQUEST-TYPE]]", templateReplaceModal.Title)
                                     .Replace("[[DEVELOPER-NAME]]", templateReplaceModal.DeveloperName)
                                     .Replace("[[ACTION-TYPE]]", templateReplaceModal.ActionType);
 

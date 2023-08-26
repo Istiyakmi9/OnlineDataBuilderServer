@@ -173,7 +173,23 @@ namespace ServiceLayer.Code
                 {
                     loginResponse = new LoginResponse();
                     var loginDetail = Converter.ToType<LoginDetail>(ds.Tables[0]);
-                    if (loginDetail != null)
+                    loginResponse.Menu = ds.Tables[1];
+                    loginResponse.Department = ds.Tables[3];
+                    loginResponse.Roles = ds.Tables[4];
+                    loginResponse.UserTypeId = authUser.UserTypeId;
+                    var companies = Converter.ToList<Organization>(ds.Tables[5]);
+                    loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);
+                    var currentCompany = loginResponse.Companies.Find(x => x.CompanyId == loginDetail.CompanyId);
+                    loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
+                                                   .Select(x => new AutoCompleteEmployees
+                                                   {
+                                                       value = x.Field<long>("I"),
+                                                       text = x.Field<string>("N"),
+                                                       email = x.Field<string>("E"),
+                                                       selected = false
+                                                   }).ToList<AutoCompleteEmployees>();
+
+                    if (loginDetail != null && currentCompany != null)
                     {
                         var userDetail = new UserDetail
                         {
@@ -183,7 +199,7 @@ namespace ServiceLayer.Code
                             Mobile = loginDetail.Mobile,
                             Email = loginDetail.Email,
                             UserId = loginDetail.UserId,
-                            CompanyName = loginDetail.CompanyName,
+                            CompanyName = currentCompany.CompanyName,
                             UserTypeId = loginDetail.UserTypeId,
                             OrganizationId = loginDetail.OrganizationId,
                             CompanyId = loginDetail.CompanyId,
@@ -199,6 +215,7 @@ namespace ServiceLayer.Code
                             CompanyCode = authUser.CompanyCode
                         };
 
+                        loginResponse.UserDetail = userDetail;
                         var _token = _authenticationService.Authenticate(userDetail);
                         if (_token != null)
                         {
@@ -206,22 +223,10 @@ namespace ServiceLayer.Code
                             userDetail.TokenExpiryDuration = DateTime.Now.AddHours(_jwtSetting.AccessTokenExpiryTimeInSeconds);
                             userDetail.RefreshToken = _token.RefreshToken;
                         }
-
-                        loginResponse.Menu = ds.Tables[1];
-                        loginResponse.Department = ds.Tables[3];
-                        loginResponse.Roles = ds.Tables[4];
-                        loginResponse.UserDetail = userDetail;
-                        loginResponse.UserTypeId = authUser.UserTypeId;
-                        var companies = Converter.ToList<Organization>(ds.Tables[5]);
-                        loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);
-                        loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
-                                                       .Select(x => new AutoCompleteEmployees
-                                                       {
-                                                           value = x.Field<long>("I"),
-                                                           text = x.Field<string>("N"),
-                                                           email = x.Field<string>("E"),
-                                                           selected = false
-                                                       }).ToList<AutoCompleteEmployees>();
+                    }
+                    else
+                    {
+                        throw HiringBellException.ThrowBadRequest("Fail to get user detail. Please contact to admin.");
                     }
                 }
             }

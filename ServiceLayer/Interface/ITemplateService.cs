@@ -12,6 +12,6 @@ namespace ServiceLayer.Interface
         List<AnnexureOfferLetter> GetAnnextureService(int CompanyId, int LetterType);
         string EmailLinkConfigInsUpdateService(EmailLinkConfig emailLinkConfig);
         Task<dynamic> EmailLinkConfigGetByPageNameService(string PageName, int CompanyId);
-        string GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig);
+        Task<string> GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig);
     }
 }

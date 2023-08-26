@@ -100,6 +100,10 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
         private async Task RegisterNewEmployee(UploadedPayrollData emp)
         {
+            var salarygroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC = emp.CTC });
+            if (salarygroup == null)
+                throw HiringBellException.ThrowBadRequest("Salary group not found. Please contact to admin");
+
             Employee employee = new Employee
             {
                 AadharNo = "NA",
@@ -124,7 +128,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 OrganizationId = 1,
                 LeavePlanId = 1,
                 PayrollGroupId = 0,
-                SalaryGroupId = 6,
+                SalaryGroupId = salarygroup.SalaryGroupId,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 NoticePeriodId = 0,
                 FatherName = "NA",

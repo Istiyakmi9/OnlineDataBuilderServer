@@ -28,6 +28,7 @@ namespace ModalLayer.Modal
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
         public long? UpdatedBy { set; get; }
+        public WorkType WorkTypeId { set; get; }
     }
 
     public class PayrollEmployeeData : Attendance
@@ -43,5 +44,14 @@ namespace ModalLayer.Modal
         public int FinancialYear { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public DateTime Doj { get; set; }
+    }
+
+    public enum WorkType
+    {
+        WORKFROMHOME = 1,
+        WORKFROMOFFICE = 2,
+        LEAVE = 3,
+        FIRSTHALFDAY = 4,
+        SECONDHALFDAY = 5
     }
 }

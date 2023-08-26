@@ -214,7 +214,7 @@ namespace ServiceLayer.Code
             return new { EmailLinkConfig = emaillinkconfig, Files = companyFiles};
         }
 
-        public string GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig)
+        public async Task<string> GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig)
         {
             var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = emailLinkConfig.EmailTemplateId });
             if (template == null)
@@ -245,8 +245,8 @@ namespace ServiceLayer.Code
                 Title = template.EmailTitle
             };
 
-            _eMailManager.SendMailAsync(emailSenderModal);
-            return "Email send successfuly";
+            await _eMailManager.SendMailAsync(emailSenderModal);
+            return await Task.FromResult("Email send successfuly");
         }
     }
 }

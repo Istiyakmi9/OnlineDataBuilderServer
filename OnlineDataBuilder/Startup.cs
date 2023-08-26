@@ -162,15 +162,10 @@ namespace OnlineDataBuilder
                 return locationDetail;
             });
 
-            services.AddScoped<IEMailManager, EMailManager>(x =>
-                EMailManager.GetInstance(
-                    x.GetRequiredService<FileLocationDetail>(),
-                    x.GetRequiredService<IDb>()
-                )
-            );
+            services.AddScoped<IEMailManager, EMailManager>();
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
-            services.AddScoped<HtmlToPdfConverter>();            
+            services.AddScoped<HtmlToPdfConverter>();
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<ISalaryComponentService, SalaryComponentService>();
             services.AddScoped<ICompanyService, CompanyService>();

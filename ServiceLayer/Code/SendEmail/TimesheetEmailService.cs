@@ -27,13 +27,10 @@ namespace ServiceLayer.Code.SendEmail
             _emailService = emailService;
         }
 
-        public void SendSubmitTimesheetEmail(TimesheetDetail timesheetDetail)
+        public async Task SendSubmitTimesheetEmail(TimesheetDetail timesheetDetail)
         {
-            Task task = Task.Run(async () =>
-            {
-                var emailRequestModal = await GetTemplate(timesheetDetail);
-                await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetSubmittedEmailTemplate, emailRequestModal);
-            });
+            var emailRequestModal = await GetTemplate(timesheetDetail);
+            await _emailService.SendEmailWithTemplate(ApplicationConstants.TimesheetSubmittedEmailTemplate, emailRequestModal);
         }
 
         private async Task<TemplateReplaceModal> GetTemplate(TimesheetDetail timesheetDetail)
