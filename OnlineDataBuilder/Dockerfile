@@ -17,7 +17,6 @@ COPY ["ModalLayer/ModalLayer.csproj", "ModalLayer/"]
 COPY ["BottomhalfCore/BottomhalfCore.csproj", "BottomhalfCore/"]
 COPY ["Bot.DOMConverter/Bot.DOMConverter/Bot.DOMConverter.csproj", "Bot.DOMConverter/Bot.DOMConverter/"]
 COPY ["ServiceLayer/ServiceLayer.csproj", "ServiceLayer/"]
-COPY ["SocialMediaServices/SocialMediaServices.csproj", "SocialMediaServices/"]
 RUN dotnet restore "OnlineDataBuilder/OnlineDataBuilder.csproj"
 COPY . .
 WORKDIR "/src/OnlineDataBuilder"
