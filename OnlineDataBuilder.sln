@@ -17,8 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocMaker", "DocMaker\DocMak
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EMailService", "EMailService\EMailService.csproj", "{350C95A4-87EF-4BC1-A5B1-442FDFAB2F9E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocialMediaServices", "SocialMediaServices\SocialMediaServices.csproj", "{5CB52B98-4A30-4266-B825-89CA80DDCDE9}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DocxToHtml", "DocxToHtml", "{51C9FFA5-6261-4F4B-8E00-5CADCE516D3C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HtmlConverter", "DocxToHtml\HtmlConverter\HtmlConverter.csproj", "{F9BC3B7D-6D8D-4442-A08C-6BDD5AC9A269}"
