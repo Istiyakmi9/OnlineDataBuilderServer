@@ -30,7 +30,6 @@ using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
-using SocialMediaServices;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -120,13 +119,11 @@ namespace OnlineDataBuilder
             services.AddScoped<ILiveUrlService, LiveUrlService>();
             services.AddScoped<IUserService, UserService>();
 
-
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>();
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
             services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
-            services.AddScoped<IMediaService, GooogleService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<CommonFilterService>();
             services.AddScoped<IClientsService, ClientsService>();

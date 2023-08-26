@@ -12,6 +12,7 @@ namespace ModalLayer.Modal
         public string Subject { set; get; }
         public List<string> CC { set; get; } = new List<string>();
         public List<string> BCC { set; get; } = new List<string>();
+        public FileLocationDetail FileLocationDetail { set; get; }
         public List<FileDetail> FileDetails { set; get; }
         public EmailSettingDetail EmailSettingDetails { set; get; }
     }

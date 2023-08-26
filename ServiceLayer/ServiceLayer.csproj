@@ -18,7 +18,6 @@
     <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
     <ProjectReference Include="..\EMailService\EMailService.csproj" />
     <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
-    <ProjectReference Include="..\SocialMediaServices\SocialMediaServices.csproj" />
     <ProjectReference Include="..\DocMaker\DocMaker.csproj" />
   </ItemGroup>
 

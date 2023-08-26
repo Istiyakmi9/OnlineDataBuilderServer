@@ -66,14 +66,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(userDetail, HttpStatusCode.OK);
         }
 
-        [HttpPost("SignUpViaSocialMedia")]
-        [AllowAnonymous]
-        public async Task<ApiResponse> SignUpViaSocialMedia(UserDetail userDetail)
-        {
-            var result = await loginService.SignUpUser(userDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
-        }
-
         [HttpPost("ResetEmployeePassword")]
         public IResponse<ApiResponse> ResetEmployeePassword(UserDetail authUser)
         {

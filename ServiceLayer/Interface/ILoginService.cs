@@ -11,7 +11,6 @@ namespace ServiceLayer.Interface
         Task<bool> RegisterNewCompany(RegistrationForm registrationForm);
         Boolean RemoveUserDetailService(string Token);
         UserDetail GetUserDetail(AuthUser authUser);
-        Task<LoginResponse> SignUpUser(UserDetail userDetail);
         string ResetEmployeePassword (UserDetail authUser);
         Task<string> ForgotPasswordService(string email);
     }

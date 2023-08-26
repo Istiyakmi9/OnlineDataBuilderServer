@@ -7,8 +7,6 @@ using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
-using SocialMediaServices;
-using SocialMediaServices.Modal;
 using System;
 using System.Data;
 using System.Linq;
@@ -22,7 +20,6 @@ namespace ServiceLayer.Code
     {
         private readonly IDb db;
         private readonly JwtSetting _jwtSetting;
-        private readonly IMediaService _mediaService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IConfiguration _configuration;
         private readonly IEMailManager _emailManager;
@@ -31,7 +28,6 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
-            IMediaService mediaService,
             IAuthenticationService authenticationService,
             IEMailManager emailManager,
             ICommonService commonService,
@@ -42,7 +38,6 @@ namespace ServiceLayer.Code
             this.db = db;
             _configuration = configuration;
             _jwtSetting = options.Value;
-            _mediaService = mediaService;
             _authenticationService = authenticationService;
             _emailManager = emailManager;
             _commonService = commonService;
@@ -65,33 +60,6 @@ namespace ServiceLayer.Code
 
             return userDetail;
         }
-
-        public async Task<LoginResponse> SignUpUser(UserDetail userDetail)
-        {
-            LoginResponse loginResponse = null;
-            GoogleResponseModal googleResponseModal = await _mediaService.FetchUserProfileByAccessToken(userDetail.AccessToken);
-            if (googleResponseModal != null)
-            {
-                userDetail.EmailId = googleResponseModal.email;
-
-                var ResultSet = this.db.Execute("sp_UserDetail_Ins", new
-                {
-                    UserId = userDetail.UserId,
-                    FirstName = userDetail.FirstName,
-                    LastName = userDetail.LastName,
-                    MobileNo = userDetail.Mobile,
-                    EmailId = userDetail.EmailId,
-                    Address = userDetail.Address,
-                    CompanyName = userDetail.CompanyName,
-                    AdminId = _currentSession.CurrentUserDetail.UserId,
-                }, true);
-
-                if (!string.IsNullOrEmpty(ResultSet.statusMessage))
-                    loginResponse = await FetchUserDetail(userDetail, "sp_Userlogin_Auth");
-            }
-            return loginResponse;
-        }
-
 
         public string GetUserLoginDetail(UserDetail authUser)
         {
