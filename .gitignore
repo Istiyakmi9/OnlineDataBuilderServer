@@ -9,6 +9,7 @@ _ReSharper.*
 bin
 **/bin/*
 obj
+**/obj/*
 packages
 **/.vs/*
 **/Documents/Bills
