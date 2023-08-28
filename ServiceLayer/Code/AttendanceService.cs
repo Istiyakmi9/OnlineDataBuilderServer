@@ -1,8 +1,10 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using Confluent.Kafka;
 using EMailService.Service;
 using ModalLayer;
+using ModalLayer.Kafka;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
@@ -28,7 +30,7 @@ namespace ServiceLayer.Code
         private readonly IEmailService _emailService;
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
-
+        private readonly ProducerConfig _producerConfig;
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -36,7 +38,8 @@ namespace ServiceLayer.Code
             AttendanceEmailService attendanceEmailService,
             IEmailService emailService,
             IEMailManager eMailManager,
-            FileLocationDetail fileLocationDetail)
+            FileLocationDetail fileLocationDetail,
+            ProducerConfig producerConfig)
         {
             _db = db;
             _companyService = companyService;
@@ -46,6 +49,7 @@ namespace ServiceLayer.Code
             _emailService = emailService;
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
+            _producerConfig = producerConfig;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -593,7 +597,18 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable submit the attendace");
 
             Result = ApplicationConstants.Updated;
-            await _attendanceEmailService.SendSubmitAttendanceEmail(presentAttendance);
+            var result = JsonConvert.SerializeObject(presentAttendance);
+            using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
+            {
+                await producer.ProduceAsync("testdata", new Message<Null, string>
+                {
+                    Value = result
+                });
+
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+            //await _attendanceEmailService.SendSubmitAttendanceEmail(presentAttendance);
+
             return workingattendance;
         }
 

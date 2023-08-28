@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Confluent.Kafka;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ModalLayer.Kafka;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Leaves;
+using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -19,16 +20,43 @@ namespace OnlineDataBuilder.Controllers
     public class AttendanceController : BaseController
     {
         private readonly IAttendanceService _attendanceService;
+        private readonly ProducerConfig _producerConfig;
 
-        public AttendanceController(IAttendanceService attendanceService)
+        public AttendanceController(IAttendanceService attendanceService,
+            ProducerConfig producerConfig)
         {
             _attendanceService = attendanceService;
+            _producerConfig = producerConfig;
         }
 
         [HttpPost("GetAttendanceByUserId")]
         public async Task<ApiResponse> GetAttendanceByUserId(Attendance attendance)
         {
             var result = await _attendanceService.GetAttendanceByUserId(attendance);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpGet("SendEmailNotification")]
+        [AllowAnonymous]
+        public async Task<ApiResponse> SendEmailNotification()
+        {
+            KafkaEmailDetail kafkaEmailDetail = new KafkaEmailDetail
+            {
+                Body = "Email html tempalate",
+                Subject = "Testing"
+            };
+
+            var result = JsonConvert.SerializeObject(kafkaEmailDetail);
+            using(var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
+            {
+                await producer.ProduceAsync("testdata", new Message<Null, string>
+                {
+                    Value = result
+                });
+
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+            
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
