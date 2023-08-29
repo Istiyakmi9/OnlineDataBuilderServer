@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Kafka;
@@ -24,14 +25,17 @@ namespace OnlineDataBuilder.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ProducerConfig _producerConfig;
         private readonly KafkaServiceConfig _kafkaServiceConfig;
+        private readonly ILogger<AttendanceController> _logger;
 
         public AttendanceController(IAttendanceService attendanceService,
             ProducerConfig producerConfig,
-            IOptions<KafkaServiceConfig> options)
+            IOptions<KafkaServiceConfig> options,
+            ILogger<AttendanceController> logger)
         {
             _attendanceService = attendanceService;
             _producerConfig = producerConfig;
             _kafkaServiceConfig = options.Value;
+            _logger = logger;
         }
 
         [HttpPost("GetAttendanceByUserId")]
@@ -52,14 +56,17 @@ namespace OnlineDataBuilder.Controllers
             };
 
             var result = JsonConvert.SerializeObject(kafkaEmailDetail);
-            using(var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
+            _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.AttendanceEmailTopic}, Service: {_kafkaServiceConfig.ServiceName}");
+            using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
             {
+                _logger.LogInformation($"[Kafka] Sending mesage: {result}");
                 await producer.ProduceAsync(_kafkaServiceConfig.AttendanceEmailTopic, new Message<Null, string>
                 {
                     Value = result
                 });
 
                 producer.Flush(TimeSpan.FromSeconds(10));
+                _logger.LogInformation($"[Kafka] Messge send successfully");
             }
             
             return BuildResponse(result, HttpStatusCode.OK);
