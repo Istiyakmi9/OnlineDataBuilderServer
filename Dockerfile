@@ -8,6 +8,7 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
 WORKDIR /src
+ENV ASPNETCORE_ENVIRONMENT Production
 COPY ["OnlineDataBuilder/OnlineDataBuilder.csproj", "OnlineDataBuilder/"]
 COPY ["EMailService/EMailService.csproj", "EMailService/"]
 COPY ["DocMaker/DocMaker.csproj", "DocMaker/"]
