@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Kafka;
 using ModalLayer.Modal;
@@ -26,11 +27,11 @@ namespace OnlineDataBuilder.Controllers
 
         public AttendanceController(IAttendanceService attendanceService,
             ProducerConfig producerConfig,
-            KafkaServiceConfig kafkaServiceConfig)
+            IOptions<KafkaServiceConfig> options)
         {
             _attendanceService = attendanceService;
             _producerConfig = producerConfig;
-            _kafkaServiceConfig = kafkaServiceConfig;
+            _kafkaServiceConfig = options.Value;
         }
 
         [HttpPost("GetAttendanceByUserId")]
