@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ModalLayer;
 using ModalLayer.Kafka;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -21,12 +22,15 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly IAttendanceService _attendanceService;
         private readonly ProducerConfig _producerConfig;
+        private readonly KafkaServiceConfig _kafkaServiceConfig;
 
         public AttendanceController(IAttendanceService attendanceService,
-            ProducerConfig producerConfig)
+            ProducerConfig producerConfig,
+            KafkaServiceConfig kafkaServiceConfig)
         {
             _attendanceService = attendanceService;
             _producerConfig = producerConfig;
+            _kafkaServiceConfig = kafkaServiceConfig;
         }
 
         [HttpPost("GetAttendanceByUserId")]
@@ -49,7 +53,7 @@ namespace OnlineDataBuilder.Controllers
             var result = JsonConvert.SerializeObject(kafkaEmailDetail);
             using(var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
             {
-                await producer.ProduceAsync("test", new Message<Null, string>
+                await producer.ProduceAsync(_kafkaServiceConfig.AttendanceEmailTopic, new Message<Null, string>
                 {
                     Value = result
                 });

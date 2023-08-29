@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using ModalLayer;
 using ModalLayer.Kafka;
 using ModalLayer.Modal;
 using Newtonsoft.Json.Serialization;
@@ -98,6 +99,7 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
+            services.Configure<KafkaServiceConfig>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
 
             string connectionString = Configuration.GetConnectionString("EmsMasterCS");
             services.AddScoped<IDb, Db>();
@@ -166,7 +168,7 @@ namespace OnlineDataBuilder
             var kafkaServerDetail = new ProducerConfig();
             Configuration.Bind("KafkaServerDetail", kafkaServerDetail);
 
-            services.AddSingleton<ProducerConfig>(kafkaServerDetail);
+            services.AddSingleton<ProducerConfig>(kafkaServerDetail);            
 
             services.AddScoped<IEMailManager, EMailManager>();
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
