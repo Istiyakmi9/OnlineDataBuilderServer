@@ -49,7 +49,7 @@ namespace OnlineDataBuilder.Controllers
             var result = JsonConvert.SerializeObject(kafkaEmailDetail);
             using(var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
             {
-                await producer.ProduceAsync("testdata", new Message<Null, string>
+                await producer.ProduceAsync("test", new Message<Null, string>
                 {
                     Value = result
                 });
