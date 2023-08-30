@@ -5,6 +5,7 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <UserSecretsId>4662a442-f472-49ee-8e5c-07fa89867961</UserSecretsId>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+    <DockerfileContext>..\..\ems</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,11 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EMailService\EMailService.csproj" />
-    <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Documents\htmltemplates\billing\staffingBillPdfFormat.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -53,5 +49,11 @@
 
   <ItemGroup>
     <Folder Include="ExceptionFiles\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
+    <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
+    <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
 </Project>
