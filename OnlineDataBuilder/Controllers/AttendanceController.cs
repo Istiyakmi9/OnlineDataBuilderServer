@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Kafka;
 using ModalLayer.Modal;
+using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
@@ -45,17 +46,11 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [HttpGet("SendEmailNotification")]
+        [HttpPost("SendEmailNotification")]
         [AllowAnonymous]
-        public async Task<ApiResponse> SendEmailNotification()
+        public async Task<ApiResponse> SendEmailNotification(AttendanceTemplateModel attendanceTemplateModel)
         {
-            KafkaEmailDetail kafkaEmailDetail = new KafkaEmailDetail
-            {
-                Body = "Email html tempalate",
-                Subject = "Testing"
-            };
-
-            var result = JsonConvert.SerializeObject(kafkaEmailDetail);
+            var result = JsonConvert.SerializeObject(attendanceTemplateModel);
             _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.AttendanceEmailTopic}, Service: {_kafkaServiceConfig.ServiceName}");
             using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
             {
