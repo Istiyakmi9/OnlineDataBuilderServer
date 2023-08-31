@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
@@ -117,7 +118,7 @@ namespace ServiceLayer.Code
                 if (attendanceDetail.AttendenceDetailId <= 0)
                     throw new HiringBellException("Invalid attendance day selected");
 
-                var attendance = _db.Get<Attendance>("sp_attendance_get_byid", new
+                var attendance = _db.Get<Attendance>(ConfigurationDetail.sp_attendance_get_byid, new
                 {
                     AttendanceId = attendanceDetail.AttendanceId
                 });
@@ -136,7 +137,7 @@ namespace ServiceLayer.Code
 
                 currentAttendance.PresentDayStatus = (int)status;
                 //ChnageSessionType(currentAttendance);
-                var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
+                var Result = _db.Execute<Attendance>(ConfigurationDetail.sp_attendance_update_request, new
                 {
                     AttendanceId = attendanceDetail.AttendanceId,
                     AttendanceDetail = JsonConvert.SerializeObject(allAttendance),

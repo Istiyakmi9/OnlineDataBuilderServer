@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
@@ -58,7 +59,7 @@ namespace ServiceLayer.Code
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
         {
-            var result = this.db.Execute<string>("SP_OnlineDocument_InsUpd", new
+            var result = this.db.Execute<string>(ConfigurationDetail.SP_OnlineDocument_InsUpd, new
             {
                 Title = createPageModel.OnlineDocumentModel.Title,
                 Description = createPageModel.OnlineDocumentModel.Description,
@@ -81,13 +82,13 @@ namespace ServiceLayer.Code
                 PageIndex = createPageModel.PageIndex,
                 PageSize = createPageModel.PageSize,
                 SortBy = createPageModel.SortBy
-            }, "SP_OnlineDocument_Get");
+            }, ConfigurationDetail.SP_OnlineDocument_Get);
         }
 
         public DocumentWithFileModel GetOnlineDocumentsWithFiles(FilterModel filterModel)
         {
             DocumentWithFileModel documentWithFileModel = new DocumentWithFileModel();
-            var Result = this.db.GetDataSet("SP_OnlineDocument_With_Files_Get", new
+            var Result = this.db.GetDataSet(ConfigurationDetail.SP_OnlineDocument_With_Files_Get, new
             {
                 SearchString = filterModel.SearchString,
                 PageIndex = filterModel.PageIndex,
@@ -122,7 +123,7 @@ namespace ServiceLayer.Code
 
 
                 DataSet documentFileSet = Converter.ToDataSet<DocumentFile>(deletingFiles);
-                DataSet FileSet = db.GetDataSet("sp_OnlieDocument_GetFiles", new
+                DataSet FileSet = db.GetDataSet(ConfigurationDetail.sp_OnlieDocument_GetFiles, new
                 {
                     DocumentId = fileDetails.FirstOrDefault().DocumentId,
                     FileUid = fileDetails.Select(x => x.FileUid.ToString()).Aggregate((x, y) => x + "," + y),
@@ -131,7 +132,7 @@ namespace ServiceLayer.Code
                 if (FileSet.Tables.Count > 0)
                 {
                     // db.InsertUpdateBatchRecord("sp_OnlieDocument_Del_Multi", documentFileSet.Tables[0]);
-                    db.BulkExecuteAsync<DocumentFile>("sp_OnlieDocument_Del_Multi", deletingFiles);
+                    db.BulkExecuteAsync<DocumentFile>(ConfigurationDetail.sp_OnlieDocument_Del_Multi, deletingFiles);
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
                     _fileService.DeleteFiles(files);
                     Result = "Success";
@@ -148,7 +149,7 @@ namespace ServiceLayer.Code
                 editFile.BillTypeId = 1;
                 editFile.UserId = 1;
 
-                int rowsAffected = await db.BulkExecuteAsync<Files>("sp_Files_InsUpd", new List<Files>() { editFile });
+                int rowsAffected = await db.BulkExecuteAsync<Files>(ConfigurationDetail.sp_Files_InsUpd, new List<Files>() { editFile });
                 Result = "Fail";
                 if (rowsAffected > 0)
                     Result = "Success";
@@ -158,13 +159,13 @@ namespace ServiceLayer.Code
 
         public Bills GetBillData()
         {
-            Bills bill = db.Get<Bills>("sp_billdata_get", new { BillTypeUid = 1 });
+            Bills bill = db.Get<Bills>(ConfigurationDetail.sp_billdata_get, new { BillTypeUid = 1 });
             return bill;
         }
 
         public DataSet GetFilesAndFolderByIdService(string Type, string Uid, FilterModel filterModel)
         {
-            var Result = this.db.GetDataSet("sp_billdetail_filter", new
+            var Result = this.db.GetDataSet(ConfigurationDetail.sp_billdetail_filter, new
             {
                 Type = Type,
                 Uid = Uid,
@@ -225,7 +226,7 @@ namespace ServiceLayer.Code
                 BankDetail senderBankDetail = null;
                 List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
 
-                var Result = this.db.GetDataSet("sp_ExistingBill_GetById", new
+                var Result = this.db.GetDataSet(ConfigurationDetail.sp_ExistingBill_GetById, new
                 {
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                     EmployeeId = fileDetail.EmployeeId,
@@ -377,7 +378,7 @@ namespace ServiceLayer.Code
             string status = string.Empty;
             TimeZoneInfo istTimeZome = TZConvert.GetTimeZoneInfo("India Standard Time");
             fileDetail.UpdatedOn = TimeZoneInfo.ConvertTimeFromUtc(fileDetail.UpdatedOn, istTimeZome);
-            status = this.db.Execute<string>("sp_FileDetail_PatchRecord", new
+            status = this.db.Execute<string>(ConfigurationDetail.sp_FileDetail_PatchRecord, new
             {
                 FileId = Uid,
                 StatusId = fileDetail.StatusId,
@@ -392,7 +393,7 @@ namespace ServiceLayer.Code
         public async Task<string> UploadDocumentRecord(List<ProfessionalUserDetail> uploadDocuments)
         {
             string result = "Fail to insert or update";
-            var rowsAffected = await this.db.BulkExecuteAsync("sp_ProfessionalCandidates_InsUpdate", uploadDocuments, true);
+            var rowsAffected = await this.db.BulkExecuteAsync(ConfigurationDetail.sp_ProfessionalCandidates_InsUpdate, uploadDocuments, true);
             if (rowsAffected > 0)
                 result = "Uploaded success";
             return result;
@@ -401,7 +402,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetProfessionalCandidatesRecords(FilterModel filterModel)
         {
-            DataSet Result = this.db.GetDataSet("SP_professionalcandidates_filter", new
+            DataSet Result = this.db.GetDataSet(ConfigurationDetail.SP_professionalcandidates_filter, new
             {
                 SearchString = filterModel.SearchString,
                 PageIndex = filterModel.PageIndex,
@@ -457,7 +458,7 @@ namespace ServiceLayer.Code
                         string userEmail = null;
                         if (file.UserTypeId == UserType.Employee)
                         {
-                            var employee = this.db.Get<Employee>("SP_Employees_ById", new
+                            var employee = this.db.Get<Employee>(ConfigurationDetail.SP_Employees_ById, new
                             {
                                 EmployeeId = file.UserId,
                                 IsActive = 1,
@@ -517,7 +518,7 @@ namespace ServiceLayer.Code
             DataSet Result = null;
             if (fileDetail != null)
             {
-                Result = this.db.GetDataSet("sp_document_filedetail_get", new
+                Result = this.db.GetDataSet(ConfigurationDetail.sp_document_filedetail_get, new
                 {
                     OwnerId = fileDetail.UserId,
                     UserTypeId = (int)fileDetail.UserTypeId,
@@ -547,7 +548,7 @@ namespace ServiceLayer.Code
             //var dataSet = new DataSet();
             //dataSet.Tables.Add(table);
 
-            return this.db.GetDataSet(ApplicationConstants.InserUserFileDetail, new { InsertFileJsonData = JsonConvert.SerializeObject(fileInfo) });
+            return this.db.GetDataSet(ConfigurationDetail.sp_document_filedetail_insupd, new { InsertFileJsonData = JsonConvert.SerializeObject(fileInfo) });
         }
     }
 }

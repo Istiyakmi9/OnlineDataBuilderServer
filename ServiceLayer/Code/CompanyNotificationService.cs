@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -30,13 +31,13 @@ namespace ServiceLayer.Code
 
         public DataSet GetDepartmentsAndRolesService()
         {
-            var result = _db.FetchDataSet("sp_department_and_roles_getall", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_department_and_roles_getall, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             return result;
         }
 
         public List<CompanyNotification> GetNotificationRecordService(FilterModel filterModel)
         {
-            var result = _db.GetList<CompanyNotification>("SP_company_notification_getby_filter", new
+            var result = _db.GetList<CompanyNotification>(ConfigurationDetail.SP_company_notification_getby_filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -55,7 +56,7 @@ namespace ServiceLayer.Code
         public List<CompanyNotification> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
         {
             ValidateCompanyNotification(notification);
-            var oldNotification = _db.Get<CompanyNotification>("SP_company_notification_getby_id", new { NotificationId = notification.NotificationId });
+            var oldNotification = _db.Get<CompanyNotification>(ConfigurationDetail.SP_company_notification_getby_id, new { NotificationId = notification.NotificationId });
             if (oldNotification == null)
                 oldNotification = notification;
             else
@@ -96,7 +97,7 @@ namespace ServiceLayer.Code
 
                     foreach (var n in files)
                     {
-                        Result = _db.Execute<string>("sp_company_files_insupd", new
+                        Result = _db.Execute<string>(ConfigurationDetail.sp_company_files_insupd, new
                         {
                             CompanyFileId = n.FileUid,
                             CompanyId = notification.CompanyId,
@@ -124,7 +125,7 @@ namespace ServiceLayer.Code
                     }
                 }
                 notification.FileIds = JsonConvert.SerializeObject(fileIds);
-                var result = _db.Execute<CompanyNotification>("sp_company_notification_insupd", notification, true);
+                var result = _db.Execute<CompanyNotification>(ConfigurationDetail.sp_company_notification_insupd, notification, true);
                 if (string.IsNullOrEmpty(result))
                     throw HiringBellException.ThrowBadRequest("Fail to insert or update company notification");
             }

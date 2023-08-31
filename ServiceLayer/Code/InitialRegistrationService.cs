@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -21,7 +22,7 @@ namespace ServiceLayer.Code
         {
             string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
             CompanyDetailValidation(companyDetail);
-            var result = _db.Execute<RegistrationForm>("sp_new_registration", new
+            var result = _db.Execute<RegistrationForm>(ConfigurationDetail.sp_new_registration, new
             {
                 companyDetail.OrganizationName,
                 companyDetail.CompanyName,

@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -6,11 +7,9 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -39,7 +38,7 @@ namespace ServiceLayer.Code
         public PfEsiSetting GetSalaryComponentService(int CompanyId)
         {
             PfEsiSetting pfEsiSettings = new PfEsiSetting();
-            var value = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
+            var value = _db.Get<PfEsiSetting>(ConfigurationDetail.sp_pf_esi_setting_get, new { CompanyId });
             if (value != null)
                 pfEsiSettings = value;
 
@@ -49,7 +48,7 @@ namespace ServiceLayer.Code
         public async Task<PfEsiSetting> PfEsiSetting(int CompanyId, PfEsiSetting pfesiSetting)
         {
             string value = string.Empty;
-            var existing = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId });
+            var existing = _db.Get<PfEsiSetting>(ConfigurationDetail.sp_pf_esi_setting_get, new { CompanyId });
             if (existing != null)
             {
                 existing.PFEnable = pfesiSetting.PFEnable;
@@ -79,7 +78,7 @@ namespace ServiceLayer.Code
                 existing = pfesiSetting;
 
             pfesiSetting.Admin = _currentSession.CurrentUserDetail.UserId;
-            value = _db.Execute<PfEsiSetting>("sp_pf_esi_setting_insupd", existing, true);
+            value = _db.Execute<PfEsiSetting>(ConfigurationDetail.sp_pf_esi_setting_insupd, existing, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
             else
@@ -90,7 +89,7 @@ namespace ServiceLayer.Code
 
         private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
         {
-            var ds = _db.GetDataSet("sp_salary_group_and_components_get", new { CompanyId = pfesiSetting.CompanyId });
+            var ds = _db.GetDataSet(ConfigurationDetail.sp_salary_group_and_components_get, new { CompanyId = pfesiSetting.CompanyId });
 
             if (!ds.IsValidDataSet(ds))
                 throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
@@ -122,7 +121,7 @@ namespace ServiceLayer.Code
                 component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
 
                 gp.SalaryComponents = JsonConvert.SerializeObject(component);
-                _db.Execute("sp_salary_group_insupd", new
+                _db.Execute(ConfigurationDetail.sp_salary_group_insupd, new
                 {
                     gp.SalaryGroupId,
                     gp.CompanyId,
@@ -139,19 +138,19 @@ namespace ServiceLayer.Code
 
         public List<OrganizationDetail> GetOrganizationInfo()
         {
-            List<OrganizationDetail> organizations = _db.GetList<OrganizationDetail>("sp_organization_setting_get", false);
+            List<OrganizationDetail> organizations = _db.GetList<OrganizationDetail>(ConfigurationDetail.sp_organization_setting_get, false);
             return organizations;
         }
 
         public BankDetail GetOrganizationBankDetailInfoService(int OrganizationId)
         {
-            BankDetail result = _db.Get<BankDetail>("sp_bank_accounts_get_by_orgId", new { OrganizationId });
+            BankDetail result = _db.Get<BankDetail>(ConfigurationDetail.sp_bank_accounts_get_by_orgId, new { OrganizationId });
             return result;
         }
 
         public Payroll GetPayrollSetting(int CompanyId)
         {
-            var result = _db.Get<Payroll>("sp_payroll_cycle_setting_getById", new { CompanyId });
+            var result = _db.Get<Payroll>(ConfigurationDetail.sp_payroll_cycle_setting_getById, new { CompanyId });
             return result;
         }
 
@@ -159,7 +158,7 @@ namespace ServiceLayer.Code
         {
             ValidatePayrollSetting(payroll);
 
-            var status = _db.Execute<Payroll>("sp_payroll_cycle_setting_intupd",
+            var status = _db.Execute<Payroll>(ConfigurationDetail.sp_payroll_cycle_setting_intupd,
                 new
                 {
                     PayrollCycleSettingId = payroll.PayrollCycleSettingId,
@@ -222,7 +221,7 @@ namespace ServiceLayer.Code
             if (component.Formula != ApplicationConstants.AutoCalculation)
                 formulavalue = calculateExpressionUsingInfixDS(component.Formula, 0);
 
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = groupId });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>(ConfigurationDetail.sp_salary_group_getById, new { SalaryGroupId = groupId });
             if (salaryGroup == null)
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
 
@@ -265,7 +264,7 @@ namespace ServiceLayer.Code
             }
 
             salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
-            var status = await _db.ExecuteAsync("sp_salary_group_insupd", new
+            var status = await _db.ExecuteAsync(ConfigurationDetail.sp_salary_group_insupd, new
             {
                 salaryGroup.SalaryGroupId,
                 salaryGroup.CompanyId,
@@ -393,7 +392,7 @@ namespace ServiceLayer.Code
         public async Task<List<SalaryComponents>> ActivateCurrentComponentService(List<SalaryComponents> components)
         {
             List<SalaryComponents> salaryComponents = new List<SalaryComponents>();
-            var salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            var salaryComponent = _db.GetList<SalaryComponents>(ConfigurationDetail.sp_salary_components_get);
             if (salaryComponent != null)
             {
                 SalaryComponents componentItem = null;
@@ -456,7 +455,7 @@ namespace ServiceLayer.Code
             if (componentTypeId < 0)
                 throw new HiringBellException("Invalid component type passed.");
 
-            List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = componentTypeId });
+            List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>(ConfigurationDetail.sp_salary_components_get_type, new { ComponentTypeId = componentTypeId });
             if (salaryComponent == null)
                 throw new HiringBellException("Fail to retrieve component detail.");
 
@@ -465,7 +464,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> FetchActiveComponentService()
         {
-            List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> salaryComponent = _db.GetList<SalaryComponents>(ConfigurationDetail.sp_salary_components_get);
             if (salaryComponent == null)
                 throw new HiringBellException("Fail to retrieve component detail.");
 
@@ -479,7 +478,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(componentId))
                 throw new HiringBellException("Invalid component passed.");
 
-            salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get_type", new { ComponentTypeId = 0 });
+            salaryComponents = _db.GetList<SalaryComponents>(ConfigurationDetail.sp_salary_components_get_type, new { ComponentTypeId = 0 });
             if (salaryComponents == null)
                 throw new HiringBellException("Fail to retrieve component detail.");
 
@@ -494,7 +493,7 @@ namespace ServiceLayer.Code
                 salaryComponent.IncludeInPayslip = component.IncludeInPayslip;
                 salaryComponent.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-                var status = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
+                var status = _db.Execute<SalaryComponents>(ConfigurationDetail.sp_salary_components_insupd, new
                 {
                     salaryComponent.ComponentId,
                     salaryComponent.ComponentFullName,

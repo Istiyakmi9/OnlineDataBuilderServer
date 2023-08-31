@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer.Modal;
@@ -37,14 +38,14 @@ namespace ServiceLayer.Code
         {
             try
             {
-                var timesheets = _db.GetList<TimesheetDetail>("sp_employee_timesheet_get_bydate", new
+                var timesheets = _db.GetList<TimesheetDetail>(ConfigurationDetail.sp_employee_timesheet_get_bydate, new
                 {
                     TimesheetEndDate = TimesheetStartDate
                 });
 
                 if (timesheets.Count == 0)
                 {
-                    var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
+                    var counts = await _db.ExecuteAsync(ConfigurationDetail.sp_timesheet_runweekly_data, new
                     {
                         TimesheetStartDate = TimesheetStartDate
                     }, true);
@@ -81,7 +82,7 @@ namespace ServiceLayer.Code
             else if (timesheetDetail.TimesheetStatus == (int)ItemStatus.Approved)
                 filter.SearchString += $"and TimesheetStatus = {timesheetDetail.TimesheetStatus}";
 
-            var Result = _db.GetList<TimesheetDetail>("sp_employee_timesheet_filter", new
+            var Result = _db.GetList<TimesheetDetail>(ConfigurationDetail.sp_employee_timesheet_filter, new
             {
                 filter.SearchString,
                 filter.PageIndex,
@@ -160,7 +161,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.TimesheetId <= 0)
                 throw new HiringBellException("Invalid Timesheet id passed.");
 
-            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_getby_id", new
+            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>(ConfigurationDetail.sp_employee_timesheet_getby_id, new
             {
                 TimesheetId = timesheetDetail.TimesheetId
             });
@@ -199,7 +200,7 @@ namespace ServiceLayer.Code
                 ActualBurnedMinutes += i.ActualBurnedMinutes;
             });
 
-            var result = _db.Execute<TimesheetDetail>(ApplicationConstants.InsertUpdateTimesheet, new
+            var result = _db.Execute<TimesheetDetail>(ConfigurationDetail.sp_attendance_insupd, new
             {
                 timeSheetDetail.TimesheetId,
                 timeSheetDetail.EmployeeId,
@@ -232,7 +233,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ClientId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
 
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(ConfigurationDetail.sp_work_shifts_by_clientId, new { ClientId = timesheetDetail.ClientId });
 
             timesheetDetail.TimesheetStatus = (int)ItemStatus.Submitted;
             timesheetDetail.IsSubmitted = true;
@@ -253,7 +254,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ClientId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
 
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(ConfigurationDetail.sp_work_shifts_by_clientId, new { ClientId = timesheetDetail.ClientId });
 
             timesheetDetail.IsSubmitted = false;
             timesheetDetail.IsSaved = true;
@@ -272,7 +273,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ClientId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
 
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(ConfigurationDetail.sp_work_shifts_by_clientId, new { ClientId = timesheetDetail.ClientId });
 
             timesheetDetail.TimesheetStatus = (int)ItemStatus.Submitted;
             var result = this.UpdateOrInsertTimesheetDetail(timesheetDetail, shiftDetail);
@@ -290,7 +291,7 @@ namespace ServiceLayer.Code
             List<TimesheetDetail> timesheetDetail = new List<TimesheetDetail>();
             DateTime current = DateTime.UtcNow;
 
-            var currentTimesheetDetail = _db.Get<TimesheetDetail>("sp_employee_timesheet_get", new
+            var currentTimesheetDetail = _db.Get<TimesheetDetail>(ConfigurationDetail.sp_employee_timesheet_get, new
             {
                 EmployeeId = employeeId,
                 ClientId = clientId,
@@ -309,7 +310,7 @@ namespace ServiceLayer.Code
             int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, timesheetDetail.ForMonth);
             var lastDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, daysInMonth);
             var firstDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, 1);
-            List<TimesheetDetail> currentTimesheetDetail = _db.GetList<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
+            List<TimesheetDetail> currentTimesheetDetail = _db.GetList<TimesheetDetail>(ConfigurationDetail.sp_employee_timesheet_getby_empid, new
             {
                 timesheetDetail.EmployeeId,
                 timesheetDetail.ForYear,
@@ -352,7 +353,7 @@ namespace ServiceLayer.Code
             var lastDate = new DateTime(fileDetail.ForYear, now.Month, daysInMonth);
             var firstDate = new DateTime(fileDetail.ForYear, now.Month, 1);
 
-            var Result = _db.FetchDataSet("sp_EmployeeBillDetail_ById", new
+            var Result = _db.FetchDataSet(ConfigurationDetail.sp_EmployeeBillDetail_ById, new
             {
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 EmployeeId = fileDetail.EmployeeId,

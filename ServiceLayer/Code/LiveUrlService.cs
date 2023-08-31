@@ -1,10 +1,8 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text;
 
 namespace ServiceLayer.Code
 {
@@ -25,7 +23,7 @@ namespace ServiceLayer.Code
             if (filterModel.PageSize < 10)
                 filterModel.PageSize = 10;
 
-            DataSet ds = this.db.GetDataSet("SP_liveurl_get", new
+            DataSet ds = this.db.GetDataSet(ConfigurationDetail.SP_liveurl_get, new
             {
                 searchString = filterModel.SearchString,
                 pageIndex = filterModel.PageIndex,
@@ -42,7 +40,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(liveUrlModal.url))
                 return null;
 
-            this.db.Execute("SP_liveurl_InsUpd", new
+            this.db.Execute(ConfigurationDetail.SP_liveurl_InsUpd, new
             {
                 savedUrlId = liveUrlModal.savedUrlId,
                 method = liveUrlModal.method,

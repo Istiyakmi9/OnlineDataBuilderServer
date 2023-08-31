@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -75,7 +76,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid request. Please check your detail first.");
 
             string message = string.Empty;
-            (var leaveRequestDetail, LeavePlanType leavePlanType) = _db.Get<LeaveRequestDetail, LeavePlanType>("sp_employee_leave_request_GetById", new
+            (var leaveRequestDetail, LeavePlanType leavePlanType) = _db.Get<LeaveRequestDetail, LeavePlanType>(ConfigurationDetail.sp_employee_leave_request_GetById, new
             {
                 LeaveRequestNotificationId = requestDetail.LeaveRequestNotificationId
             });
@@ -123,7 +124,7 @@ namespace ServiceLayer.Code
             singleLeaveDetail.RespondedBy = _currentSession.CurrentUserDetail.UserId;
             leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(completeLeaveDetail);
 
-            message = _db.Execute<LeaveRequestNotification>("sp_leave_notification_and_request_InsUpdate", new
+            message = _db.Execute<LeaveRequestNotification>(ConfigurationDetail.sp_leave_notification_and_request_InsUpdate, new
             {
                 leaveRequestDetail.LeaveRequestId,
                 leaveRequestDetail.EmployeeId,
@@ -173,7 +174,7 @@ namespace ServiceLayer.Code
                 _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
                 _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
 
-                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new
+                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>(ConfigurationDetail.sp_employee_leave_level_migration, new
                 {
                     Year = DateTime.UtcNow.Year,
                     setting.CompanyId
@@ -303,7 +304,7 @@ namespace ServiceLayer.Code
         private async Task UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, RequestChainModal chain)
         {
             // update employee_leave_request table and update leave_request_notification to next manager
-            var result = _db.Execute<string>("sp_leave_request_and_notification_update_level", new
+            var result = _db.Execute<string>(ConfigurationDetail.sp_leave_request_and_notification_update_level, new
             {
                 leaveRequestDetail.LeaveRequestId,
                 leaveRequestDetail.LeaveDetail,

@@ -1,12 +1,10 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Interface;
-using EMailService.Service;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -14,30 +12,18 @@ namespace ServiceLayer.Code
     public class TimesheetRequestService : ITimesheetRequestService
     {
         private readonly IDb _db;
-        private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly IAttendanceRequestService _attendanceRequestService;
-        private readonly IEMailManager _eMailManager;
-        private readonly IEmailService _emailService;
-        private readonly ICommonService _commonService;
         private readonly ApprovalEmailService _approvalEmailService;
 
         public TimesheetRequestService(IDb db,
-            ITimezoneConverter timezoneConverter,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            IEmailService emailService,
-            IAttendanceRequestService attendanceRequestService,
-            ICommonService commonService,
-            IEMailManager eMailManager)
+            IAttendanceRequestService attendanceRequestService)
         {
             _db = db;
-            _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
-            _eMailManager = eMailManager;
-            _commonService = commonService;
-            _emailService = emailService;
             _approvalEmailService = approvalEmailService;
         }
 
@@ -58,7 +44,7 @@ namespace ServiceLayer.Code
             if (timesheetId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
 
-            TimesheetDetail timesheet = _db.Get<TimesheetDetail>("sp_employee_timesheet_getby_timesheetid", new
+            TimesheetDetail timesheet = _db.Get<TimesheetDetail>(ConfigurationDetail.sp_employee_timesheet_getby_timesheetid, new
             {
                 TimesheetId = timesheetId
             });
@@ -67,7 +53,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid timesheet found. Please contact admin.");
 
             // this call is used for only upadate AttendanceDetail json object
-            var Result = _db.Execute<TimesheetDetail>("sp_timesheet_upd_by_id", new
+            var Result = _db.Execute<TimesheetDetail>(ConfigurationDetail.sp_timesheet_upd_by_id, new
             {
                 timesheet.TimesheetId,
                 TimesheetStatus = (int)itemStatus,

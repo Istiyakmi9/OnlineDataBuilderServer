@@ -1,8 +1,8 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using ModalLayer;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -35,7 +35,7 @@ namespace ServiceLayer
         {
             if (_calendars == null)
             {
-                _calendars = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _session.CurrentUserDetail.CompanyId });
+                _calendars = _db.GetList<Calendar>(ConfigurationDetail.sp_company_calendar_get_by_company, new { CompanyId = _session.CurrentUserDetail.CompanyId });
             }
         }
 
@@ -203,7 +203,7 @@ namespace ServiceLayer
 
         public List<Calendar> GetAllHolidayService(FilterModel filterModel)
         {
-            var result = _db.GetList<Calendar>("SP_company_calender_getby_filter", new
+            var result = _db.GetList<Calendar>(ConfigurationDetail.SP_company_calender_getby_filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -217,7 +217,7 @@ namespace ServiceLayer
         {
             var existCalendar = new Calendar();
             ValidateCalender(calendar);
-            var result = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = calendar.CompanyId });
+            var result = _db.GetList<Calendar>(ConfigurationDetail.sp_company_calendar_get_by_company, new { CompanyId = calendar.CompanyId });
             if (result.Count > 0)
             {
                 existCalendar = result.Find(x => x.CompanyCalendarId == calendar.CompanyCalendarId);
@@ -239,7 +239,7 @@ namespace ServiceLayer
             }
             existCalendar = calendar;
             existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
-            var value = _db.Execute<Calendar>("sp_company_calendar_insupd", existCalendar, true);
+            var value = _db.Execute<Calendar>(ConfigurationDetail.sp_company_calendar_insupd, existCalendar, true);
             if (string.IsNullOrEmpty(value))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
 
@@ -278,7 +278,7 @@ namespace ServiceLayer
             if (CompanyCalendarId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid holiday selected. Please select a vlid holiday");
 
-            var result = _db.Execute<Calendar>("sp_company_calender_delete_by_calenderid", new { CompanyCalendarId = CompanyCalendarId }, true);
+            var result = _db.Execute<Calendar>(ConfigurationDetail.sp_company_calender_delete_by_calenderid, new { CompanyCalendarId = CompanyCalendarId }, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to delete holiday");
 

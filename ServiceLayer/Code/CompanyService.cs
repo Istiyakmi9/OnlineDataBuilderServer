@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -31,7 +32,7 @@ namespace ServiceLayer.Code
         }
         public List<OrganizationDetail> GetAllCompany()
         {
-            var result = _db.GetList<OrganizationDetail>("sp_company_get", false);
+            var result = _db.GetList<OrganizationDetail>(ConfigurationDetail.sp_company_get, false);
             return result;
         }
 
@@ -40,7 +41,7 @@ namespace ServiceLayer.Code
             if (companyId <= 0)
                 throw new HiringBellException("Invalid compnay id. Unable to update detail.");
 
-            OrganizationDetail companyGrp = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = companyId });
+            OrganizationDetail companyGrp = _db.Get<OrganizationDetail>(ConfigurationDetail.sp_company_getById, new { CompanyId = companyId });
             if (companyGrp == null)
                 throw new HiringBellException("Compnay detail not found");
 
@@ -49,7 +50,7 @@ namespace ServiceLayer.Code
             companyGrp.CompanyDetail = companyGroup.CompanyDetail;
             companyGrp.CompanyName = companyGroup.CompanyName;
 
-            var value = _db.Execute<OrganizationDetail>("sp_company_intupd", companyGrp, true);
+            var value = _db.Execute<OrganizationDetail>(ConfigurationDetail.sp_company_intupd, companyGrp, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
@@ -63,7 +64,7 @@ namespace ServiceLayer.Code
             ValidateCompanyGroup(companyGroup);
 
             List<OrganizationDetail> companyGrp = null;
-            companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
+            companyGrp = _db.GetList<OrganizationDetail>(ConfigurationDetail.sp_company_get, false);
             OrganizationDetail result = companyGrp.Find(x => x.CompanyName == companyGroup.CompanyName);
             if (result != null)
                 throw new HiringBellException("Company Already exist.");
@@ -72,11 +73,11 @@ namespace ServiceLayer.Code
             result = companyGroup;
             companyGrp.Add(result);
 
-            var value = _db.Execute<OrganizationDetail>("sp_company_intupd", result, true);
+            var value = _db.Execute<OrganizationDetail>(ConfigurationDetail.sp_company_intupd, result, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Fail to insert company group.");
 
-            companyGrp = _db.GetList<OrganizationDetail>("sp_company_get", false);
+            companyGrp = _db.GetList<OrganizationDetail>(ConfigurationDetail.sp_company_get, false);
             // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(companyGrp));
             return companyGrp;
         }
@@ -101,14 +102,14 @@ namespace ServiceLayer.Code
 
         public dynamic GetCompanyById(int CompanyId)
         {
-            OrganizationDetail result = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId });
-            List<Files> files = _db.GetList<Files>("sp_userFiles_GetBy_OwnerId", new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
+            OrganizationDetail result = _db.Get<OrganizationDetail>(ConfigurationDetail.sp_company_getById, new { CompanyId });
+            List<Files> files = _db.GetList<Files>(ConfigurationDetail.sp_userFiles_GetBy_OwnerId, new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
             return new { OrganizationDetail = result, Files = files };
         }
 
         public OrganizationDetail GetOrganizationDetailService()
         {
-            var ResultSet = _db.FetchDataSet("sp_organization_detail_get");
+            var ResultSet = _db.FetchDataSet(ConfigurationDetail.sp_organization_detail_get);
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
 
@@ -126,7 +127,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(companyInfo.CompanyName))
                 throw new HiringBellException("Invalid company name.");
 
-            var ResultSet = _db.FetchDataSet("sp_organization_detail_get");
+            var ResultSet = _db.FetchDataSet(ConfigurationDetail.sp_organization_detail_get);
             if (ResultSet.Tables.Count != 2)
                 throw new HiringBellException("Unable to get organization detail.");
 
@@ -195,7 +196,7 @@ namespace ServiceLayer.Code
                 company.IsPrimaryAccount = true;
             }
 
-            var status = _db.Execute<OrganizationDetail>("sp_organization_intupd", company, true);
+            var status = _db.Execute<OrganizationDetail>(ConfigurationDetail.sp_organization_intupd, company, true);
 
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to insert or update.");
@@ -245,7 +246,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
+                var batchResult = await _db.BulkExecuteAsync(ConfigurationDetail.sp_userfiledetail_Upload, fileInfo, true);
             }
             catch
             {
@@ -263,7 +264,7 @@ namespace ServiceLayer.Code
             OrganizationDetail company = new OrganizationDetail();
             ValidateCompany(companyInfo);
 
-            company = _db.Get<OrganizationDetail>("sp_company_getById", new { companyInfo.CompanyId });
+            company = _db.Get<OrganizationDetail>(ConfigurationDetail.sp_company_getById, new { companyInfo.CompanyId });
 
             if (company == null)
                 throw new HiringBellException("Unable to find company. Please contact to admin.");
@@ -296,7 +297,7 @@ namespace ServiceLayer.Code
             company.GSTNo = companyInfo.GSTNo;
             company.TradeLicenseNo = companyInfo.TradeLicenseNo;
 
-            var status = _db.Execute<OrganizationDetail>("sp_company_intupd", company, true);
+            var status = _db.Execute<OrganizationDetail>(ConfigurationDetail.sp_company_intupd, company, true);
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to insert or update.");
 
@@ -344,7 +345,7 @@ namespace ServiceLayer.Code
             List<BankDetail> bankDetails = null;
             ValidateBankDetail(bankDetail);
 
-            var bank = _db.Get<BankDetail>("sp_bank_accounts_getById", new { bankDetail.BankAccountId });
+            var bank = _db.Get<BankDetail>(ConfigurationDetail.sp_bank_accounts_getById, new { bankDetail.BankAccountId });
 
             if (bank == null)
                 bank = bankDetail;
@@ -363,7 +364,7 @@ namespace ServiceLayer.Code
             }
             bank.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-            var status = _db.Execute<BankDetail>("sp_bank_accounts_intupd", bank, true);
+            var status = _db.Execute<BankDetail>(ConfigurationDetail.sp_bank_accounts_intupd, bank, true);
 
             if (string.IsNullOrEmpty(status))
             {
@@ -405,7 +406,7 @@ namespace ServiceLayer.Code
 
         public List<BankDetail> GetCompanyBankDetail(FilterModel filterModel)
         {
-            List<BankDetail> result = _db.GetList<BankDetail>("sp_bank_accounts_getby_cmpId", new
+            List<BankDetail> result = _db.GetList<BankDetail>(ConfigurationDetail.sp_bank_accounts_getby_cmpId, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -419,7 +420,7 @@ namespace ServiceLayer.Code
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
-            var result = _db.FetchDataSet("sp_company_setting_get_byid", new { CompanyId = companyId });
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_company_setting_get_byid, new { CompanyId = companyId });
             if (result == null || result.Tables.Count != 2)
                 throw new HiringBellException("Fail to get company setting details. Please contact to admin");
 
@@ -443,7 +444,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.IsJoiningBarrierDayPassed = companySetting.IsJoiningBarrierDayPassed;
             }
 
-            var status = await _db.ExecuteAsync("sp_company_setting_insupd", new
+            var status = await _db.ExecuteAsync(ConfigurationDetail.sp_company_setting_insupd, new
             {
                 companySettingDetail.CompanyId,
                 companySettingDetail.SettingId,
@@ -473,7 +474,7 @@ namespace ServiceLayer.Code
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
-            var result = _db.FetchDataSet("sp_company_setting_get_byid", new { CompanyId = companyId });
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_company_setting_get_byid, new { CompanyId = companyId });
             if (result == null || result.Tables.Count != 2)
                 throw new HiringBellException("Fail to get company setting details. Please contact to admin");
 
@@ -492,7 +493,7 @@ namespace ServiceLayer.Code
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
-            var companySettingDetail = _db.Get<CompanySetting>("sp_company_setting_get_byid", new { CompanyId = companyId });
+            var companySettingDetail = _db.Get<CompanySetting>(ConfigurationDetail.sp_company_setting_get_byid, new { CompanyId = companyId });
             if (companySettingDetail == null)
                 throw new HiringBellException("Fail to get company setting details. Please contact to admin");
 
@@ -519,7 +520,7 @@ namespace ServiceLayer.Code
             _fileService.SaveFileToLocation(FolderPath, files, fileCollection);
 
             Files fileDetail = files.First();
-            var result = await _db.ExecuteAsync("sp_company_files_insupd", new
+            var result = await _db.ExecuteAsync(ConfigurationDetail.sp_company_files_insupd, new
             {
                 CompanyFileId = uploadedFileDetail.FileId,
                 CompanyId = uploadedFileDetail.CompanyId,
@@ -534,13 +535,13 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw new HiringBellException("Fail to insert or udpate file data.");
 
-            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = uploadedFileDetail.CompanyId });
+            var fileList = _db.GetList<Files>(ConfigurationDetail.sp_company_files_get_byid, new { CompanyId = uploadedFileDetail.CompanyId });
             return fileList;
         }
 
         public async Task<List<Files>> GetCompanyFiles(int CompanyId)
         {
-            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId });
+            var fileList = _db.GetList<Files>(ConfigurationDetail.sp_company_files_get_byid, new { CompanyId });
             return await Task.FromResult(fileList);
         }
 
@@ -549,7 +550,7 @@ namespace ServiceLayer.Code
             if (companyFile == null)
                 throw new HiringBellException("Invalid file selected");
 
-            var result = await _db.ExecuteAsync("sp_company_files_delete_by_id", new { CompanyFileId = companyFile.FileId });
+            var result = await _db.ExecuteAsync(ConfigurationDetail.sp_company_files_delete_by_id, new { CompanyFileId = companyFile.FileId });
             if (result.rowsEffected == 0)
                 throw new HiringBellException("Fail to delete the file.");
 
@@ -559,7 +560,7 @@ namespace ServiceLayer.Code
                 if (File.Exists(ActualPath))
                     File.Delete(ActualPath);
             }
-            var fileList = _db.GetList<Files>("sp_company_files_get_byid", new { CompanyId = companyFile.CompanyId });
+            var fileList = _db.GetList<Files>(ConfigurationDetail.sp_company_files_get_byid, new { CompanyId = companyFile.CompanyId });
             return fileList;
 
         }

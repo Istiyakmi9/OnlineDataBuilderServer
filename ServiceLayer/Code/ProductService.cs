@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -28,7 +29,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetAllProductsService(FilterModel filterModel)
         {
-            (List<Product> product, List<ProductCatagory> productCatagory) = _db.GetList<Product, ProductCatagory>("SP_product_getby_filter", new
+            (List<Product> product, List<ProductCatagory> productCatagory) = _db.GetList<Product, ProductCatagory>(ConfigurationDetail.SP_product_getby_filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -40,14 +41,14 @@ namespace ServiceLayer.Code
 
         public DataSet GetProductImagesService(string FileIds)
         {
-            var result = _db.FetchDataSet("sp_company_files_get_byids_json", new { CompanyFileId = FileIds });
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_company_files_get_byids_json, new { CompanyFileId = FileIds });
             return result;
         }
 
         public dynamic ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection)
         {
             validateProduct(product);
-            var oldproduct = _db.Get<Product>("sp_prdoduct_getby_id", new { ProductId = product.ProductId });
+            var oldproduct = _db.Get<Product>(ConfigurationDetail.sp_prdoduct_getby_id, new { ProductId = product.ProductId });
             if (oldproduct == null)
                 oldproduct = product;
             else
@@ -111,7 +112,7 @@ namespace ServiceLayer.Code
 
                     foreach (var n in files)
                     {
-                        Result = _db.Execute<string>("sp_company_files_insupd", new
+                        Result = _db.Execute<string>(ConfigurationDetail.sp_company_files_insupd, new
                         {
                             CompanyFileId = n.FileUid,
                             CompanyId = product.CompanyId,
@@ -138,7 +139,7 @@ namespace ServiceLayer.Code
                     fileIds = oldfileid.Concat(fileIds).ToList();
 
                 product.FileIds = JsonConvert.SerializeObject(fileIds);
-                var result = _db.Execute<CompanyNotification>("sp_product_insupd", product, true);
+                var result = _db.Execute<CompanyNotification>(ConfigurationDetail.sp_product_insupd, product, true);
                 if (string.IsNullOrEmpty(result))
                     throw HiringBellException.ThrowBadRequest("Fail to insert or update product details");
             }
@@ -157,7 +158,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(productCatagory.CatagoryDescription))
                 throw HiringBellException.ThrowBadRequest("Prodcut catagory description is null");
 
-            var catagory = _db.Get<ProductCatagory>("sp_catagory_getby_id", new { CatagoryId = productCatagory.CatagoryId });
+            var catagory = _db.Get<ProductCatagory>(ConfigurationDetail.sp_catagory_getby_id, new { CatagoryId = productCatagory.CatagoryId });
             if (catagory == null)
                 catagory = productCatagory;
             else
@@ -166,7 +167,7 @@ namespace ServiceLayer.Code
                 catagory.CatagoryDescription = productCatagory.CatagoryDescription;
                 catagory.GroupId = productCatagory.GroupId;
             }
-            var result = _db.Execute<string>("sp_catagory_insupd", catagory, true);
+            var result = _db.Execute<string>(ConfigurationDetail.sp_catagory_insupd, catagory, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update catagory");
             FilterModel filterModel = new FilterModel();
@@ -175,7 +176,7 @@ namespace ServiceLayer.Code
 
         public List<ProductCatagory> GetProductCatagoryService(FilterModel filterModel)
         {
-            var result = _db.GetList<ProductCatagory>("sp_catagory_getby_filter", new
+            var result = _db.GetList<ProductCatagory>(ConfigurationDetail.sp_catagory_getby_filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
