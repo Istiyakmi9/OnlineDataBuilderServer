@@ -12,7 +12,7 @@ namespace ModalLayer.Modal
         public string DocumentFolder { set; get; }
         public string UserFolder { set; get; }
         public string BillFolder { set; get; }
-        public List<string> HtmlTemplaePath { set; get; }
+        public List<string> HtmlTemplatePath { set; get; }
         public string User { set; get; }
         public string BillsPath { set; get; }
         public string StaffingBillTemplate { set; get; }

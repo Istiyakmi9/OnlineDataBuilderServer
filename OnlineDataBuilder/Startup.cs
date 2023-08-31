@@ -152,7 +152,7 @@ namespace OnlineDataBuilder
                     RootPath = this.Env.ContentRootPath,
                     BillsPath = fileLocationDetail.BillsPath,
                     Location = fileLocationDetail.Location,
-                    HtmlTemplaePath = fileLocationDetail.HtmlTemplaePath,
+                    HtmlTemplatePath = fileLocationDetail.HtmlTemplatePath,
                     StaffingBillPdfTemplate = fileLocationDetail.StaffingBillPdfTemplate,
                     StaffingBillTemplate = fileLocationDetail.StaffingBillTemplate,
                     PaysliplTemplate = fileLocationDetail.PaysliplTemplate,

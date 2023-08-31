@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -49,7 +50,7 @@ namespace ServiceLayer.Code
             int approvalWorkFlowId = approvalWorkFlowModal.ApprovalWorkFlowId;
             ValidateApprovalWorkFlowDetail(approvalWorkFlowModal);
 
-            var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>("sp_approval_chain_detail_filter", new
+            var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>(ConfigurationDetail.sp_approval_chain_detail_filter, new
             {
                 SearchString = GetSelectQuery(approvalWorkFlowModal),
             });
@@ -123,7 +124,7 @@ namespace ServiceLayer.Code
                         }
                     ).ToList<object>();
 
-            var result = await _db.BatchInsetUpdate("sp_approval_work_flow_insupd",
+            var result = await _db.BatchInsetUpdate(ConfigurationDetail.sp_approval_work_flow_insupd,
                 new
                 {
                     approvalWorkFlowModal.ApprovalWorkFlowId,
@@ -182,7 +183,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(filterModel.SearchString))
                 filterModel.SearchString = "1=1";
 
-            var result = _db.GetList<ApprovalWorkFlowModal>("sp_approval_work_flow_filter", new
+            var result = _db.GetList<ApprovalWorkFlowModal>(ConfigurationDetail.sp_approval_work_flow_filter, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -198,7 +199,7 @@ namespace ServiceLayer.Code
             string searchString = string.Empty;
             ApprovalWorkFlowChain approvalWorkFlowChain = null;
 
-            (List<ApprovalWorkFlowChainFilter> approvalWorkFlow, List<EmployeeRole> employeeRole) = _db.GetList<ApprovalWorkFlowChainFilter, EmployeeRole>("sp_approval_chain_detail_by_id", new
+            (List<ApprovalWorkFlowChainFilter> approvalWorkFlow, List<EmployeeRole> employeeRole) = _db.GetList<ApprovalWorkFlowChainFilter, EmployeeRole>(ConfigurationDetail.sp_approval_chain_detail_by_id, new
             {
                 ApprovalWorkFlowId
             });
@@ -250,7 +251,7 @@ namespace ServiceLayer.Code
             if (approvalChainDetailId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid approval chain selected for delete");
 
-            var result = _db.Execute<ApprovalChainDetail>("sp_approval_chain_detail_delete_byid", new { ApprovalChainDetailId = approvalChainDetailId }, true);
+            var result = _db.Execute<ApprovalChainDetail>(ConfigurationDetail.sp_approval_chain_detail_delete_byid, new { ApprovalChainDetailId = approvalChainDetailId }, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to delete chain level. Please contact to admin");
 

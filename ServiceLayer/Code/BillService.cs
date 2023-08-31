@@ -70,13 +70,13 @@ namespace ServiceLayer.Code
             FileDetail fileDetail = new FileDetail();
             billModal.BillTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
-                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                 _fileLocationDetail.StaffingBillTemplate
             );
 
             billModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
-                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                 _fileLocationDetail.StaffingBillPdfTemplate
             );
 
@@ -440,7 +440,7 @@ namespace ServiceLayer.Code
         {
             billModal.BillTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                         _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                         _fileLocationDetail.StaffingBillTemplate
                     );
 
@@ -449,7 +449,7 @@ namespace ServiceLayer.Code
 
             billModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
-                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                 _fileLocationDetail.StaffingBillPdfTemplate
             );
 
@@ -789,13 +789,13 @@ namespace ServiceLayer.Code
 
                     string templatePath = Path.Combine(_fileLocationDetail.RootPath,
                         _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                         _fileLocationDetail.StaffingBillTemplate
                     );
 
                     string pdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                         _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                         _fileLocationDetail.StaffingBillPdfTemplate
                     );
 
@@ -1148,7 +1148,7 @@ namespace ServiceLayer.Code
         {
             payslipModal.PayslipTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                         _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                        Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                         _fileLocationDetail.PaysliplTemplate
                     );
 
@@ -1158,7 +1158,7 @@ namespace ServiceLayer.Code
 
             payslipModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
                 _fileLocationDetail.Location,
-                Path.Combine(_fileLocationDetail.HtmlTemplaePath.ToArray()),
+                Path.Combine(_fileLocationDetail.HtmlTemplatePath.ToArray()),
                 _fileLocationDetail.PaysliplTemplate
             );
 
