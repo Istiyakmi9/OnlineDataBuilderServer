@@ -49,7 +49,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPut("ApproveAttendanceRequest/{filterId}")]
         public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
@@ -57,7 +56,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPut("RejectAttendanceRequest/{filterId}")]
         public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
@@ -65,7 +63,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPut("ReAssigneAttendanceRequest/{filterId}")]
         public IResponse<ApiResponse> ReAssigneToOtherManager(AttendenceDetail attendanceDetail)
         {
