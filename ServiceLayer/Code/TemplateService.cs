@@ -1,5 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using EMailService.Service;
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
@@ -44,7 +44,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(annexureOfferLetter.BodyContent))
                 throw new HiringBellException("Body content is null or empty");
 
-            AnnexureOfferLetter letter = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_id", new { AnnexureOfferLetterId = annexureOfferLetter.AnnexureOfferLetterId });
+            AnnexureOfferLetter letter = _db.Get<AnnexureOfferLetter>(ConfigurationDetail.sp_annexure_offer_letter_getby_id, new { AnnexureOfferLetterId = annexureOfferLetter.AnnexureOfferLetterId });
             if (letter == null)
                 letter = annexureOfferLetter;
             else
@@ -68,7 +68,7 @@ namespace ServiceLayer.Code
             letter.AdminId = _currentSession.CurrentUserDetail.UserId;
             letter.LetterType = LetterType;
             letter.FilePath = filepath;
-            var result = _db.Execute<AnnexureOfferLetter>("sp_annexure_offer_letter_insupd", letter, true);
+            var result = _db.Execute<AnnexureOfferLetter>(ConfigurationDetail.sp_annexure_offer_letter_insupd, letter, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
             var letterId = Convert.ToInt32(result);
@@ -78,7 +78,7 @@ namespace ServiceLayer.Code
 
         public AnnexureOfferLetter GetOfferLetterService(int CompanyId, int LetterType)
         {
-            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
+            var result = _db.Get<AnnexureOfferLetter>(ConfigurationDetail.sp_annexure_offer_letter_getby_lettertype, new { CompanyId, LetterType });
 
             if (result != null)
             {
@@ -94,7 +94,7 @@ namespace ServiceLayer.Code
 
         public EmailTemplate GetBillingTemplateDetailService()
         {
-            var detail = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = 1 });
+            var detail = _db.Get<EmailTemplate>(ConfigurationDetail.sp_email_template_get, new { EmailTemplateId = 1 });
             if (!string.IsNullOrEmpty(detail.BodyContent))
                 detail.BodyContent = JsonConvert.DeserializeObject<string>(detail.BodyContent);
 
@@ -103,7 +103,7 @@ namespace ServiceLayer.Code
 
         public List<AnnexureOfferLetter> GetAnnextureService(int CompanyId, int LetterType)
         {
-            var result = _db.GetList<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
+            var result = _db.GetList<AnnexureOfferLetter>(ConfigurationDetail.sp_annexure_offer_letter_getby_lettertype, new { CompanyId, LetterType });
             if (result.Count > 0)
             {
                 foreach (var item in result)
@@ -124,7 +124,7 @@ namespace ServiceLayer.Code
         public string EmailLinkConfigInsUpdateService(EmailLinkConfig emailLinkConfig)
         {
             validateEmailLinkCOnfig(emailLinkConfig);
-            EmailLinkConfig existEmailLinkConfig = _db.Get<EmailLinkConfig>("sp_email_template_get", new { emailLinkConfig.EmailTemplateId });
+            EmailLinkConfig existEmailLinkConfig = _db.Get<EmailLinkConfig>(ConfigurationDetail.sp_email_template_get, new { emailLinkConfig.EmailTemplateId });
             if (existEmailLinkConfig == null)
             {
                 existEmailLinkConfig = emailLinkConfig;
@@ -150,7 +150,7 @@ namespace ServiceLayer.Code
             existEmailLinkConfig.BodyContent = JsonConvert.SerializeObject(emailLinkConfig.BodyContent);
             existEmailLinkConfig.EmailsJson = JsonConvert.SerializeObject(emailLinkConfig.Emails);
             existEmailLinkConfig.FileId = emailLinkConfig.FileId;
-            var tempId = _db.Execute<EmailLinkConfig>("sp_email_link_config_insupd", existEmailLinkConfig, true);
+            var tempId = _db.Execute<EmailLinkConfig>(ConfigurationDetail.sp_email_link_config_insupd, existEmailLinkConfig, true);
             if (string.IsNullOrEmpty(tempId))
                 throw new HiringBellException("Fail to insert or updfate");
 
@@ -210,13 +210,13 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid company selected");
 
             List<Files> companyFiles = await _companyService.GetCompanyFiles(CompanyId);
-            var emaillinkconfig = _db.Get<EmailLinkConfig>("sp_email_link_config_getBy_pagename", new { CompanyId = CompanyId, PageName = PageName });
+            var emaillinkconfig = _db.Get<EmailLinkConfig>(ConfigurationDetail.sp_email_link_config_getBy_pagename, new { CompanyId = CompanyId, PageName = PageName });
             return new { EmailLinkConfig = emaillinkconfig, Files = companyFiles};
         }
 
         public async Task<string> GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig)
         {
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId = emailLinkConfig.EmailTemplateId });
+            var template = _db.Get<EmailTemplate>(ConfigurationDetail.sp_email_template_get, new { EmailTemplateId = emailLinkConfig.EmailTemplateId });
             if (template == null)
                 throw new HiringBellException("Fail to get Leave Request template. Please contact to admin.");
 

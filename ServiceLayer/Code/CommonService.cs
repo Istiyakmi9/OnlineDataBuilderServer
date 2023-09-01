@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace ServiceLayer.Code
         public List<Employee> LoadEmployeeData()
         {
             FilterModel filterModel = new FilterModel();
-            List<Employee> employeeTable = _db.GetList<Employee>("SP_Employees_Get", new
+            List<Employee> employeeTable = _db.GetList<Employee>(ConfigurationDetail.SP_Employees_Get, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -33,7 +34,7 @@ namespace ServiceLayer.Code
         public EmailTemplate GetTemplate(int EmailTemplateId)
         {
             (EmailTemplate emailTemplate, EmailSettingDetail emailSetting) =
-                _db.GetMulti<EmailTemplate, EmailSettingDetail>("sp_email_template_by_id", new { EmailTemplateId });
+                _db.GetMulti<EmailTemplate, EmailSettingDetail>(ConfigurationDetail.sp_email_template_by_id, new { EmailTemplateId });
 
             if (emailSetting == null)
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");

@@ -1,6 +1,6 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
-using NUnit.Framework.Internal.Execution;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 
@@ -19,7 +19,7 @@ namespace ServiceLayer.Code
 
         public List<ShiftDetail> GetAllShiftService(FilterModel filterModel)
         {
-            var result = _db.GetList<ShiftDetail>("sp_work_shifts_filter", new
+            var result = _db.GetList<ShiftDetail>(ConfigurationDetail.sp_work_shifts_filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -32,7 +32,7 @@ namespace ServiceLayer.Code
         public List<ShiftDetail> UpdateWorkShiftService(ShiftDetail shiftDetail)
         {
             ValidateWorkShift(shiftDetail);
-            var existingShift = _db.Get<ShiftDetail>("sp_work_shifts_getby_id", new { WorkShiftId = shiftDetail.WorkShiftId });
+            var existingShift = _db.Get<ShiftDetail>(ConfigurationDetail.sp_work_shifts_getby_id, new { WorkShiftId = shiftDetail.WorkShiftId });
             if (existingShift == null)
                 throw HiringBellException.ThrowBadRequest("No record found for the given shift. Please contact to admin.");
 
@@ -67,7 +67,7 @@ namespace ServiceLayer.Code
         private List<ShiftDetail> WorkShiftInsertUpdateService(ShiftDetail shiftDetail)
         {
             shiftDetail.AdminId = _session.CurrentUserDetail.UserId;
-            var result = _db.Execute<ShiftDetail>("sp_work_shifts_insupd", shiftDetail, true);
+            var result = _db.Execute<ShiftDetail>(ConfigurationDetail.sp_work_shifts_insupd, shiftDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update shift detail");
 
@@ -113,13 +113,13 @@ namespace ServiceLayer.Code
 
         public ShiftDetail GetWorkShiftByIdService(int WorkShiftId)
         {
-            var result = _db.Get<ShiftDetail>("sp_work_shifts_getby_id", new { WorkShiftId = WorkShiftId });
+            var result = _db.Get<ShiftDetail>(ConfigurationDetail.sp_work_shifts_getby_id, new { WorkShiftId = WorkShiftId });
             return result;
         }
 
         public ShiftDetail GetWorkShiftByEmpIdService(int EmployeeId)
         {
-            var result = _db.Get<ShiftDetail>("sp_work_shifts_getby_empid", new { EmployeeId = EmployeeId });
+            var result = _db.Get<ShiftDetail>(ConfigurationDetail.sp_work_shifts_getby_empid, new { EmployeeId = EmployeeId });
             return result;
         }
     }

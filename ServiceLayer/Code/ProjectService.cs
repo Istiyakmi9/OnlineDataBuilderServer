@@ -1,7 +1,7 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ namespace ServiceLayer.Code
             if (project.ProjectId <= 0)
                 throw new HiringBellException("Invalid project id");
 
-            Project projectDetail = _db.Get<Project>("sp_project_detail_getby_id", new { project.ProjectId });
+            Project projectDetail = _db.Get<Project>(ConfigurationDetail.sp_project_detail_getby_id, new { project.ProjectId });
             if (projectDetail == null)
                 throw new HiringBellException("Invalid project selected");
 
@@ -52,7 +52,7 @@ namespace ServiceLayer.Code
             projectDetail.DocumentPath = filepath;
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-            var result = _db.Execute<Project>("sp_wiki_detail_upd", projectDetail, true);
+            var result = _db.Execute<Project>(ConfigurationDetail.sp_wiki_detail_upd, projectDetail, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
 
@@ -63,7 +63,7 @@ namespace ServiceLayer.Code
         {
             string result = string.Empty;
             this.ProjectDetailValidtion(projectDetail);
-            Project project = _db.Get<Project>("sp_project_detail_getby_id", new { projectDetail.ProjectId });
+            Project project = _db.Get<Project>(ConfigurationDetail.sp_project_detail_getby_id, new { projectDetail.ProjectId });
             if (project == null)
             {
                 project = projectDetail;
@@ -103,7 +103,7 @@ namespace ServiceLayer.Code
                                 LastDateOnProject = null
                             }).ToList<object>();
                 result = await _db.BatchInsetUpdate(
-                    "sp_project_detail_insupd",
+                    ConfigurationDetail.sp_project_detail_insupd,
                     project,
                     data);
 
@@ -114,7 +114,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                result = _db.Execute<Project>("sp_project_detail_insupd", project, true);
+                result = _db.Execute<Project>(ConfigurationDetail.sp_project_detail_insupd, project, true);
                 if (string.IsNullOrEmpty(result))
                     throw new HiringBellException("Fail to Insert or Update");
 
@@ -126,7 +126,7 @@ namespace ServiceLayer.Code
 
         public Project GetAllWikiService(long ProjectId)
         {
-            var result = _db.Get<Project>("sp_project_detail_getby_id", new { ProjectId });
+            var result = _db.Get<Project>(ConfigurationDetail.sp_project_detail_getby_id, new { ProjectId });
             if (File.Exists(result.DocumentPath))
             {
                 var txt = File.ReadAllText(result.DocumentPath);
@@ -137,7 +137,7 @@ namespace ServiceLayer.Code
 
         public List<Project> GetAllProjectDeatilService(FilterModel filterModel)
         {
-            var result = _db.GetList<Project>("sp_project_detail_getall", new
+            var result = _db.GetList<Project>(ConfigurationDetail.sp_project_detail_getall, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -162,7 +162,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetProjectPageDetailService(long ProjectId)
         {
-            var result = _db.FetchDataSet("sp_project_get_page_data", new { ProjectId = ProjectId });
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_project_get_page_data, new { ProjectId = ProjectId });
 
             if (result.Tables.Count != 4)
                 throw HiringBellException.ThrowBadRequest("Project detail not found. Please contact to admin.");
@@ -182,7 +182,7 @@ namespace ServiceLayer.Code
             if (projectId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid prohect selected");
 
-            var teamMembers = _db.GetList<ProjectMemberDetail>("sp_project_member_getby_projectid", new { ProjectId = projectId });
+            var teamMembers = _db.GetList<ProjectMemberDetail>(ConfigurationDetail.sp_project_member_getby_projectid, new { ProjectId = projectId });
             if (teamMembers == null || teamMembers.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Team member record not found");
 
@@ -191,7 +191,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("You can't be deleted these member");
 
             teamMember.IsActive = false;
-            var result = _db.Execute<ProjectMemberDetail>("sp_team_member_upd", teamMember, true);
+            var result = _db.Execute<ProjectMemberDetail>(ConfigurationDetail.sp_team_member_upd, teamMember, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to delete team member");
 

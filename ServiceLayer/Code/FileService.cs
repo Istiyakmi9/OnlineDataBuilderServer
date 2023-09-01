@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -229,7 +230,7 @@ namespace CoreServiceLayer.Implementation
 
         public DataSet DeleteFiles(long userId, List<string> fileIds, int userTypeId)
         {
-            this.DeleteFilesEntry(fileIds, ApplicationConstants.GetUserFileById);
+            this.DeleteFilesEntry(fileIds, ConfigurationDetail.sp_document_filedetail_getById);
             var resultSet = GetUserFilesById(userId, userTypeId);
             return resultSet;
         }
@@ -239,7 +240,7 @@ namespace CoreServiceLayer.Implementation
             DataSet Result = null;
             if (userId > 0)
             {
-                Result = _db.GetDataSet("sp_document_filedetail_get", new
+                Result = _db.GetDataSet(ConfigurationDetail.sp_document_filedetail_get, new
                 {
                     OwnerId = userId,
                     UserTypeId = userTypeId,
@@ -294,7 +295,7 @@ namespace CoreServiceLayer.Implementation
                             fileDetail
                         };
 
-                        this.InsertFileDetails(files, ApplicationConstants.InserUserFileDetail);
+                        this.InsertFileDetails(files, ConfigurationDetail.sp_document_filedetail_insupd);
                         dataSet = this.GetUserFilesById(fileDetail.UserId, (int)fileDetail.UserTypeId);
                     }
                 }
@@ -342,7 +343,7 @@ namespace CoreServiceLayer.Implementation
                 if (FileSet.Tables.Count > 0)
                 {
                     List<Files> files = Converter.ToList<Files>(FileSet.Tables[0]);
-                    var dbResult = _db.Execute(ApplicationConstants.deleteUserFile, new
+                    var dbResult = _db.Execute(ConfigurationDetail.sp_document_filedetail_delete, new
                     {
                         FileIds = fileIds.Aggregate((x, y) => x + "," + y)
                     }, true);

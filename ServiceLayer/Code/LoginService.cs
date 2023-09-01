@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Service;
 using Microsoft.Extensions.Configuration;
@@ -52,7 +53,7 @@ namespace ServiceLayer.Code
         }
         public UserDetail GetUserDetail(AuthUser authUser)
         {
-            UserDetail userDetail = this.db.Get<UserDetail>("sp_UserDetail_GetByMobileOrEmail", new
+            UserDetail userDetail = this.db.Get<UserDetail>(ConfigurationDetail.sp_UserDetail_GetByMobileOrEmail, new
             {
                 email = authUser.Email,
                 mobile = authUser.MobileNo,
@@ -290,7 +291,7 @@ namespace ServiceLayer.Code
                 );
                 registrationForm.Password = EncreptedPassword;
 
-                var status = this.db.Execute<string>("sp_new_registration", new
+                var status = this.db.Execute<string>(ConfigurationDetail.sp_new_registration, new
                 {
                     registrationForm.OrganizationName,
                     registrationForm.CompanyName,

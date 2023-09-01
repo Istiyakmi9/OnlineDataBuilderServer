@@ -1,7 +1,7 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
 using System.Data;
 using System.Linq;
@@ -29,7 +29,7 @@ namespace ServiceLayer.Code
 
             
             //var result = await _db.BatchInsertUpdateAsync("sp_role_accessibility_mapping_InsUpd", ds.Tables[0], false);
-            var rowsAffected = await _db.BulkExecuteAsync("sp_role_accessibility_mapping_InsUpd", permissionMenu);
+            var rowsAffected = await _db.BulkExecuteAsync(ConfigurationDetail.sp_role_accessibility_mapping_InsUpd, permissionMenu);
 
             return ApplicationConstants.Successfull;
         }
@@ -39,7 +39,7 @@ namespace ServiceLayer.Code
             DataSet result = null;
             if (accessLevelId > 0)
             {
-                result = _db.FetchDataSet("sp_RolesAndMenu_GetAll", new
+                result = _db.FetchDataSet(ConfigurationDetail.sp_RolesAndMenu_GetAll, new
                 {
                     accessLevelId
                 });
@@ -49,7 +49,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetRoles()
         {
-            DataSet result = _db.GetDataSet("sp_AccessLevel_Sel");
+            DataSet result = _db.GetDataSet(ConfigurationDetail.sp_AccessLevel_Sel);
             return result;
         }
 
@@ -69,7 +69,7 @@ namespace ServiceLayer.Code
                 new DbParam(accessLevelId, typeof(string), "_AccessLevelId")
             };
 
-            var result = _db.FetchDataSet("sp_AccessLevel_InsUpd", dbParams, true);
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_AccessLevel_InsUpd, dbParams, true);
             return result;
         }
     }

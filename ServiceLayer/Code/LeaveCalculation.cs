@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
@@ -95,7 +96,7 @@ namespace ServiceLayer.Code
 
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
         {
-            var result = _db.FetchDataSet("sp_leave_type_detail_get_by_employeeId", new { EmployeeId });
+            var result = _db.FetchDataSet(ConfigurationDetail.sp_leave_type_detail_get_by_employeeId, new { EmployeeId });
             if (!ApplicationConstants.IsValidDataSet(result, 3))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
 
@@ -132,7 +133,7 @@ namespace ServiceLayer.Code
 
         public async Task<List<CompanySetting>> StartAccrualCycle(bool runTillMonthOfPresnetYear = false)
         {
-            var CompanySettings = _db.GetList<CompanySetting>("sp_company_setting_get_all");
+            var CompanySettings = _db.GetList<CompanySetting>(ConfigurationDetail.sp_company_setting_get_all);
             foreach (var setting in CompanySettings)
             {
                 if (setting.LeaveAccrualRunCronDayOfMonth == DateTime.Now.Day)
@@ -158,7 +159,7 @@ namespace ServiceLayer.Code
             {
                 try
                 {
-                    var employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
+                    var employeeAccrualData = _db.GetList<EmployeeAccrualData>(ConfigurationDetail.sp_leave_accrual_cycle_data_by_employee, new
                     {
                         OffsetIndex = offsetindex,
                         PageSize = 500
@@ -267,7 +268,7 @@ namespace ServiceLayer.Code
             int runDay = leaveCalculationModal.companySetting.PayrollCycleMonthlyRunDay;
             try
             {
-                EmployeeAccrualData employeeAccrual = _db.Get<EmployeeAccrualData>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = true });
+                EmployeeAccrualData employeeAccrual = _db.Get<EmployeeAccrualData>(ConfigurationDetail.SP_Employees_ById, new { EmployeeId = EmployeeId, IsActive = true });
 
                 if (employeeAccrual == null)
                     throw HiringBellException.ThrowBadRequest("Employee detail not found. Please contact to admin.");
@@ -331,7 +332,7 @@ namespace ServiceLayer.Code
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
 
-            var rowsAffected = await _db.BulkExecuteAsync("sp_employee_leave_request_update_accrual_detail", tableJsonData, false);
+            var rowsAffected = await _db.BulkExecuteAsync(ConfigurationDetail.sp_employee_leave_request_update_accrual_detail, tableJsonData, false);
             if (rowsAffected != employeeAccrualData.Count)
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
         }
@@ -341,7 +342,7 @@ namespace ServiceLayer.Code
             var leaveCalculationModal = new LeaveCalculationModal();
             leaveCalculationModal.timeZonePresentDate = DateTime.UtcNow;
 
-            var ds = _db.GetDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
+            var ds = _db.GetDataSet(ConfigurationDetail.sp_leave_accrual_cycle_master_data, new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
             if (ds != null && ds.Tables.Count == 3)
             {
@@ -637,7 +638,7 @@ namespace ServiceLayer.Code
 
         private void LoadCalculationData(long EmployeeId, LeaveCalculationModal leaveCalculationModal)
         {
-            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new
+            var ds = _db.FetchDataSet(ConfigurationDetail.sp_leave_plan_calculation_get, new
             {
                 EmployeeId,
                 _currentSession.CurrentUserDetail.ReportingManagerId,
@@ -811,7 +812,7 @@ namespace ServiceLayer.Code
             leaveCalculationModal.leaveTypeBriefs = leaveTypeBriefs;
 
             leaveCalculationModal.leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
-            result = _db.Execute<LeaveRequestDetail>("sp_leave_notification_and_request_InsUpdate", new
+            result = _db.Execute<LeaveRequestDetail>(ConfigurationDetail.sp_leave_notification_and_request_InsUpdate, new
             {
                 leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
                 leaveCalculationModal.leaveRequestDetail.EmployeeId,
@@ -857,7 +858,7 @@ namespace ServiceLayer.Code
 
                 foreach (var n in fileDetail)
                 {
-                    Result = await _db.ExecuteAsync("sp_userfiledetail_Upload", new
+                    Result = await _db.ExecuteAsync(ConfigurationDetail.sp_userfiledetail_Upload, new
                     {
                         FileId = n.FileUid,
                         FileOwnerId = employee.EmployeeUid,
@@ -881,7 +882,7 @@ namespace ServiceLayer.Code
         {
 
             var requestChainModals = new List<RequestChainModal>();
-            var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
+            var resultSet = _db.GetDataSet(ConfigurationDetail.sp_workflow_chain_by_ids, new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
             });
@@ -988,7 +989,7 @@ namespace ServiceLayer.Code
 
         private List<ProjectMemberDetail> LoadOtherProjects(int nextOffset)
         {
-            return _db.GetList<ProjectMemberDetail>("sp_project_basic_detail_page_by_offset", new
+            return _db.GetList<ProjectMemberDetail>(ConfigurationDetail.sp_project_basic_detail_page_by_offset, new
             {
                 PageSize = 100,
                 OffsetSize = nextOffset

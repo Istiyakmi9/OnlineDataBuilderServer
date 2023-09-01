@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.Configuration;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace ServiceLayer.Code
 
         public async Task<List<ServiceRequest>> GetServiceRequestService(FilterModel filter)
         {
-            List<ServiceRequest> ServiceRequests = _db.GetList<ServiceRequest>("sp_service_request_filter", new
+            List<ServiceRequest> ServiceRequests = _db.GetList<ServiceRequest>(ConfigurationDetail.sp_service_request_filter, new
             {
                 filter.SearchString,
                 filter.SortBy,
@@ -32,7 +33,7 @@ namespace ServiceLayer.Code
         public async Task<List<ServiceRequest>> AddUpdateServiceRequestService(ServiceRequest serviceRequest)
         {
             validateServiceRequest(serviceRequest);
-            var oldrequest = _db.Get<ServiceRequest>("sp_service_request_sel_by_id", new { ServiceRequestId = serviceRequest.ServiceRequestId });
+            var oldrequest = _db.Get<ServiceRequest>(ConfigurationDetail.sp_service_request_sel_by_id, new { ServiceRequestId = serviceRequest.ServiceRequestId });
             if (oldrequest == null)
                 oldrequest = serviceRequest;
             else
@@ -51,7 +52,7 @@ namespace ServiceLayer.Code
             }
             oldrequest.AdminId = _currentSession.CurrentUserDetail.UserId;
             oldrequest.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
-            var result = _db.Execute<string>("sp_service_request_ins_upd", oldrequest, true);
+            var result = _db.Execute<string>(ConfigurationDetail.sp_service_request_ins_upd, oldrequest, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update service request");
 
