@@ -48,7 +48,7 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost("SendEmailNotification")]
         [AllowAnonymous]
-        public async Task<ApiResponse> SendEmailNotification(AttendanceTemplateModel attendanceTemplateModel)
+        public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)
         {
             var result = JsonConvert.SerializeObject(attendanceTemplateModel);
             _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.AttendanceEmailTopic}, Service: {_kafkaServiceConfig.ServiceName}");

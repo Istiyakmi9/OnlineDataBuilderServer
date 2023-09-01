@@ -6,6 +6,7 @@ using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Kafka;
 using ModalLayer.Modal;
+using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -31,6 +32,8 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ProducerConfig _producerConfig;
+        private readonly KafkaNotificationService _kafkaNotificationService;
+
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -39,7 +42,8 @@ namespace ServiceLayer.Code
             IEmailService emailService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            ProducerConfig producerConfig)
+            ProducerConfig producerConfig,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _companyService = companyService;
@@ -50,6 +54,7 @@ namespace ServiceLayer.Code
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
             _producerConfig = producerConfig;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -607,7 +612,21 @@ namespace ServiceLayer.Code
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
-            //await _attendanceEmailService.SendSubmitAttendanceEmail(presentAttendance);
+
+            AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
+            {
+                ActionType = ApplicationConstants.Submitted,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DayCount = presentAttendance.TotalDays,
+                DeveloperName = presentAttendance.EmployeeName,
+                FromDate = presentAttendance.AttendanceDay,
+                ManagerName = presentAttendance.ManagerName,
+                Message = presentAttendance.UserComments,
+                RequestType = "Work From Home",
+                ToAddress = new List<string> { "istiyaq.mi9@gmail.com" },
+            };
+
+            await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
 
             return workingattendance;
         }

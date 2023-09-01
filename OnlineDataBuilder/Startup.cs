@@ -170,6 +170,7 @@ namespace OnlineDataBuilder
             Configuration.Bind("KafkaServerDetail", kafkaServerDetail);
 
             services.AddSingleton<ProducerConfig>(kafkaServerDetail);            
+            services.AddSingleton<KafkaNotificationService>();            
 
             services.AddScoped<IEMailManager, EMailManager>();
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();

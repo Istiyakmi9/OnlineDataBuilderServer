@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Interface;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -20,13 +21,15 @@ namespace ServiceLayer.Code
         private readonly ILogger<AttendanceRequestService> _logger;
         private readonly IEmailService _emailService;
         private readonly ApprovalEmailService _approvalEmailService;
+        private readonly KafkaNotificationService _kafkaNotificationService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ApprovalEmailService approvalEmailService,
             IEmailService emailService,
-            ILogger<AttendanceRequestService> logger)
+            ILogger<AttendanceRequestService> logger,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -34,6 +37,7 @@ namespace ServiceLayer.Code
             _approvalEmailService = approvalEmailService;
             _logger = logger;
             _emailService = emailService;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure, ItemStatus itemStatus = ItemStatus.Pending)
@@ -148,7 +152,21 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update attendance status");
                 else
                     requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
-                Task task = Task.Run(async () => await _approvalEmailService.AttendaceApprovalStatusSendEmail(attendance, status));
+
+                AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
+                {
+                    ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = attendanceDetail.TotalDays,
+                    DeveloperName = attendanceDetail.EmployeeName,
+                    FromDate = attendanceDetail.AttendanceDay,
+                    ManagerName = attendanceDetail.ManagerName,
+                    Message = attendanceDetail.UserComments,
+                    RequestType = "Work From Home",
+                    ToAddress = new List<string> { "istiyaq.mi9@gmail.com" },
+                };
+
+                await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
 
                 return await Task.FromResult(requestModel);
             }
