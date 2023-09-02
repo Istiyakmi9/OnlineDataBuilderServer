@@ -4,7 +4,6 @@ using BottomhalfCore.Services.Interface;
 using Confluent.Kafka;
 using EMailService.Service;
 using ModalLayer;
-using ModalLayer.Kafka;
 using ModalLayer.Modal;
 using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;

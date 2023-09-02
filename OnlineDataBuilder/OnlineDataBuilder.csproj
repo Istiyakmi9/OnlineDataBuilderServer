@@ -52,8 +52,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
-    <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
 </Project>

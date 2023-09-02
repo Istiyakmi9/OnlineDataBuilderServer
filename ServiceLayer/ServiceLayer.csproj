@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BottomHalf.Utilities" Version="1.0.2" />
     <PackageReference Include="Confluent.Kafka" Version="2.2.0" />
     <PackageReference Include="ExcelDataReader.DataSet" Version="3.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
@@ -16,10 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
     <ProjectReference Include="..\EMailService\EMailService.csproj" />
-    <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
-    <ProjectReference Include="..\DocMaker\DocMaker.csproj" />
   </ItemGroup>
 
 </Project>
