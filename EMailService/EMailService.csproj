@@ -5,13 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Bot.CoreBottomHalf" Version="1.0.3" />
     <PackageReference Include="EAGetMail" Version="5.2.5" />
     <PackageReference Include="MailKit" Version="3.4.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\BottomhalfCore\BottomhalfCore.csproj" />
-    <ProjectReference Include="..\ModalLayer\ModalLayer.csproj" />
   </ItemGroup>
 
 </Project>
