@@ -16,13 +16,11 @@ namespace EMailService.Service
 {
     public class EMailManager : IEMailManager
     {
-        private static EMailManager _instance;
-        private static object _lock = new object();
         private readonly FileLocationDetail _fileLocationDetail;
         private EmailSettingDetail _emailSettingDetail;
         private readonly IDb _db;
 
-        private EMailManager(FileLocationDetail fileLocationDetail, IDb db)
+        public EMailManager(FileLocationDetail fileLocationDetail, IDb db)
         {
             _fileLocationDetail = fileLocationDetail;
             _db = db;
@@ -30,7 +28,7 @@ namespace EMailService.Service
 
         private void GetDefaultEmailDetail()
         {
-            _instance._emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
         }
 
         public EmailTemplate GetTemplate(EmailRequestModal emailRequestModal)
@@ -83,18 +81,6 @@ namespace EMailService.Service
             return emailTemplate;
         }
 
-        public static EMailManager GetInstance(FileLocationDetail fileLocationDetail, IDb db)
-        {
-            if (_instance == null)
-                lock (_lock)
-                    if (_instance == null)
-                    {
-                        _instance = new EMailManager(fileLocationDetail, db);
-                    }
-
-            return _instance;
-        }
-
         private List<InboxMailDetail> ReadPOP3Email(EmailSettingDetail emailSettingDetail)
         {
             List<InboxMailDetail> inboxMailDetails = new List<InboxMailDetail>();
@@ -142,8 +128,8 @@ namespace EMailService.Service
         {
             if (emailSettingDetail == null)
             {
-                _instance.GetDefaultEmailDetail();
-                emailSettingDetail = _instance._emailSettingDetail;
+                GetDefaultEmailDetail();
+                emailSettingDetail = _emailSettingDetail;
             }
 
             return ReadPOP3Email(emailSettingDetail);
@@ -160,7 +146,7 @@ namespace EMailService.Service
 
         public async Task SendMailAsync(EmailSenderModal emailSenderModal)
         {
-            _instance.GetDefaultEmailDetail();
+            GetDefaultEmailDetail();
             if (_emailSettingDetail == null)
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");
 
